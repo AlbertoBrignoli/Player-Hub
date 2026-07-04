@@ -26,13 +26,11 @@ export default function App() {
   // Sessione presente ma profilo assente = email non in whitelist (trigger ha bloccato)
   if (!profile) return <NoAccess />
 
-  // Il creator parte (e torna) sul calendario editoriale: la dashboard è business.
-  const home = profile.role === 'creator' ? 'editorial' : 'dashboard'
-  const route = routeState ?? home
+  const route = routeState ?? 'dashboard'
 
   const view = (() => {
     switch (route) {
-      case 'dashboard': return profile.role === 'creator' ? <Editorial /> : <Dashboard goto={setRoute} />
+      case 'dashboard': return <Dashboard goto={setRoute} />
       case 'performance': return <Performance />
       case 'contracts': return <Contracts />
       case 'documents': return <Documents />
@@ -43,7 +41,7 @@ export default function App() {
       case 'tasks': return <Tasks />
       case 'messages': return <Messages />
       case 'settings': return <Settings />
-      default: return profile.role === 'creator' ? <Editorial /> : <Dashboard goto={setRoute} />
+      default: return <Dashboard goto={setRoute} />
     }
   })()
 
