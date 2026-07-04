@@ -7,7 +7,6 @@ import { Spinner } from './components/ui'
 import Dashboard from './modules/Dashboard'
 import Performance from './modules/Performance'
 import Contracts from './modules/Contracts'
-import Payments from './modules/Payments'
 import Documents from './modules/Documents'
 import Sponsors from './modules/Sponsors'
 import Agenda from './modules/Agenda'
@@ -30,7 +29,6 @@ export default function App() {
       case 'dashboard': return <Dashboard goto={setRoute} />
       case 'performance': return <Performance />
       case 'contracts': return <Contracts />
-      case 'payments': return <Payments />
       case 'documents': return <Documents />
       case 'sponsors': return <Sponsors />
       case 'agenda': return <Agenda />

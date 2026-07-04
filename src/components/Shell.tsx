@@ -12,7 +12,6 @@ export const NAV: { group: string; items: NavDef[] }[] = [
   ]},
   { group: 'Gestione', items: [
     { key: 'contracts', label: 'Contratti', icon: '📄' },
-    { key: 'payments', label: 'Compensi', icon: '💶' },
     { key: 'documents', label: 'Documenti', icon: '🗂' },
     { key: 'sponsors', label: 'Sponsor', icon: '🤝' },
   ]},
@@ -30,7 +29,6 @@ const TITLES: Record<string, { t: string; s: string }> = {
   dashboard: { t: 'Dashboard', s: 'Quadro generale della gestione' },
   performance: { t: 'Performance', s: 'Statistiche, partite e rendimento' },
   contracts: { t: 'Contratti', s: 'Accordi sportivi e scadenze' },
-  payments: { t: 'Compensi & Pagamenti', s: 'Entrate, uscite e scadenzario' },
   documents: { t: 'Documenti', s: 'Archivio file riservato' },
   sponsors: { t: 'Sponsor & Commerciale', s: 'Accordi e deliverable' },
   agenda: { t: 'Agenda', s: 'Impegni e appuntamenti' },

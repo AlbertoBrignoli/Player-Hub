@@ -3,13 +3,12 @@ import { supabase, PLAYER_NAME } from '../lib/supabase'
 import { useAuth } from '../auth/AuthContext'
 import { Stat, Spinner, Badge } from '../components/ui'
 import { fmtMoney, fmtDate, fmtDateTime, daysUntil } from '../lib/format'
-import type { Player, Payment, Task, EventItem, Contract, Sponsor } from '../lib/types'
+import type { Player, Task, EventItem, Contract, Sponsor } from '../lib/types'
 
 export default function Dashboard({ goto }: { goto: (r: string) => void }) {
   const { profile } = useAuth()
   const [loading, setLoading] = useState(true)
   const [player, setPlayer] = useState<Player | null>(null)
-  const [payments, setPayments] = useState<Payment[]>([])
   const [tasks, setTasks] = useState<Task[]>([])
   const [events, setEvents] = useState<EventItem[]>([])
   const [contracts, setContracts] = useState<Contract[]>([])
@@ -17,16 +16,14 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
 
   useEffect(() => {
     (async () => {
-      const [p, pay, tk, ev, ct, sp] = await Promise.all([
+      const [p, tk, ev, ct, sp] = await Promise.all([
         supabase.from('player').select('*').limit(1).maybeSingle(),
-        supabase.from('crm_payments').select('*'),
         supabase.from('crm_tasks').select('*'),
         supabase.from('crm_events').select('*').gte('start_at', new Date().toISOString()).order('start_at').limit(5),
         supabase.from('crm_contracts').select('*'),
         supabase.from('crm_sponsors').select('*'),
       ])
       setPlayer(p.data as Player)
-      setPayments((pay.data as Payment[]) || [])
       setTasks((tk.data as Task[]) || [])
       setEvents((ev.data as EventItem[]) || [])
       setContracts((ct.data as Contract[]) || [])
@@ -37,8 +34,6 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
 
   if (loading) return <Spinner />
 
-  const upcomingPayments = payments.filter(p => !p.paid && p.direction === 'in')
-  const incomeYear = payments.filter(p => p.direction === 'in').reduce((s, p) => s + Number(p.amount), 0)
   const openTasks = tasks.filter(t => t.status !== 'done')
   const nextEvent = events[0]
   const nextContractExpiry = contracts
@@ -77,9 +72,10 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
 
       {/* KPI */}
       <div className="grid g4">
-        <Stat icon="💶" label="Incassi registrati" value={fmtMoney(incomeYear)} sub={`${payments.filter(p => p.direction === 'in').length} voci`} />
-        <Stat icon="⏳" label="Pagamenti da incassare" value={upcomingPayments.length} tone="var(--gold)"
-          sub={fmtMoney(upcomingPayments.reduce((s, p) => s + Number(p.amount), 0))} />
+        <Stat icon="📄" label="Contratti attivi" value={contracts.filter(c => c.status === 'active').length}
+          sub={nextContractExpiry ? `prossima scadenza tra ${nextContractExpiry.d} gg` : `${contracts.length} totali`} />
+        <Stat icon="🗓" label="Impegni in agenda" value={events.length}
+          sub={nextEvent ? fmtDateTime(nextEvent.start_at) : 'nessuno in programma'} />
         <Stat icon="✓" label="Task aperte" value={openTasks.length} tone={openTasks.length ? 'var(--accent)' : undefined}
           sub={`${tasks.filter(t => t.status === 'done').length} completate`} />
         <Stat icon="🤝" label="Sponsor attivi" value={activeSponsors.length}
@@ -122,16 +118,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
                 <Badge tone={nextContractExpiry.d! < 90 ? 'red' : 'gold'}>{nextContractExpiry.d} gg</Badge>
               </div>
             )}
-            {upcomingPayments.slice(0, 3).map(p => (
-              <div className="row" key={p.id}>
-                <div className="row-main">
-                  <div className="row-title">{p.description || p.category}</div>
-                  <div className="row-sub">Incasso previsto {fmtDate(p.due_date)}</div>
-                </div>
-                <div className="row-right"><b className="mono">{fmtMoney(Number(p.amount), p.currency)}</b></div>
-              </div>
-            ))}
-            {!nextContractExpiry && upcomingPayments.length === 0 && (
+            {!nextContractExpiry && (
               <div className="faint" style={{ padding: '10px 0' }}>Tutto in ordine, nessuna scadenza imminente. ✅</div>
             )}
           </div>
