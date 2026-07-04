@@ -1,0 +1,42 @@
+export function fmtMoney(n: number | null | undefined, currency = 'EUR') {
+  if (n == null) return '—'
+  try {
+    return new Intl.NumberFormat('it-IT', { style: 'currency', currency, maximumFractionDigits: 0 }).format(n)
+  } catch {
+    return `${n} ${currency}`
+  }
+}
+
+export function fmtDate(d: string | null | undefined) {
+  if (!d) return '—'
+  const dt = new Date(d)
+  if (isNaN(dt.getTime())) return '—'
+  return dt.toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+export function fmtDateTime(d: string | null | undefined) {
+  if (!d) return '—'
+  const dt = new Date(d)
+  if (isNaN(dt.getTime())) return '—'
+  return dt.toLocaleString('it-IT', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+}
+
+export function daysUntil(d: string | null | undefined): number | null {
+  if (!d) return null
+  const dt = new Date(d)
+  if (isNaN(dt.getTime())) return null
+  return Math.ceil((dt.getTime() - Date.now()) / 86400000)
+}
+
+export function timeAgo(d: string) {
+  const diff = (Date.now() - new Date(d).getTime()) / 1000
+  if (diff < 60) return 'adesso'
+  if (diff < 3600) return `${Math.floor(diff / 60)} min fa`
+  if (diff < 86400) return `${Math.floor(diff / 3600)} h fa`
+  return fmtDate(d)
+}
+
+export function initials(name: string | null | undefined) {
+  if (!name) return '?'
+  return name.split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase()
+}
