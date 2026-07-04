@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { Spinner, Stat, Badge, Empty } from '../components/ui'
 import { fmtDate } from '../lib/format'
-import type { Player, Match, SeasonStat } from '../lib/types'
+import type { Player, Match, SeasonStat, StatsMatch, StatsSeason } from '../lib/types'
 
 interface News { id: string; title: string; source: string | null; url: string | null; published_at: string | null }
 
@@ -12,19 +12,25 @@ export default function Performance() {
   const [matches, setMatches] = useState<Match[]>([])
   const [stats, setStats] = useState<SeasonStat[]>([])
   const [news, setNews] = useState<News[]>([])
+  const [tech, setTech] = useState<StatsMatch[]>([])
+  const [techSeason, setTechSeason] = useState<StatsSeason[]>([])
 
   useEffect(() => {
     (async () => {
-      const [p, m, s, n] = await Promise.all([
+      const [p, m, s, n, t, ts] = await Promise.all([
         supabase.from('player').select('*').limit(1).maybeSingle(),
         supabase.from('matches').select('*').order('match_date', { ascending: false }),
         supabase.from('player_stats_api').select('*').order('season', { ascending: false }),
         supabase.from('news').select('id,title,source,url,published_at').order('published_at', { ascending: false }).limit(6),
+        supabase.from('player_stats_match').select('*').order('match_date', { ascending: false }),
+        supabase.from('player_stats_season').select('*').order('competition'),
       ])
       setPlayer(p.data as Player)
       setMatches((m.data as Match[]) || [])
       setStats((s.data as SeasonStat[]) || [])
       setNews((n.data as News[]) || [])
+      setTech((t.data as StatsMatch[]) || [])
+      setTechSeason((ts.data as StatsSeason[]) || [])
       setLoading(false)
     })()
   }, [])
@@ -81,6 +87,69 @@ export default function Performance() {
                 </div>
               )
             })}
+          </div>
+        </div>
+      )}
+
+      {techSeason.length > 0 && (
+        <div className="card">
+          <div className="card-head">
+            <div className="card-title">📐 Dati tecnici · medie stagionali</div>
+            <div className="card-hint">percentuali calcolate da Supabase</div>
+          </div>
+          <div className="grid g2" style={{ gap: 14 }}>
+            {techSeason.map(c => (
+              <div className="card" key={c.competition} style={{ background: 'var(--bg-2)' }}>
+                <div style={{ fontWeight: 700, marginBottom: 10 }}>{c.competition} <span className="faint" style={{ fontWeight: 400, fontSize: 12 }}>· {c.partite} partite, {c.minuti}'</span></div>
+                <div className="grid g3" style={{ gap: 10 }}>
+                  <PctFact k="Precisione passaggi" v={c.pass_pct} sub={`${c.passaggi_media}/partita`} />
+                  <PctFact k="Passaggi in avanti" v={c.passaggi_avanti_pct} sub={`${c.passaggi_avanti_media}/partita`} />
+                  <PctFact k="Lanci lunghi" v={c.lanci_lunghi_pct} sub={`${c.lanci_lunghi_media}/partita`} />
+                  <PctFact k="Duelli vinti" v={c.duelli_pct} sub={`${c.duelli_media}/partita`} />
+                  <PctFact k="Duelli aerei" v={c.duelli_aerei_pct} sub={`${c.duelli_aerei_media}/partita`} />
+                  <PctFact k="Azioni riuscite" v={c.azioni_pct} />
+                  <MiniFact k="Intercetti/partita" v={c.intercetti_media} />
+                  <MiniFact k="Recuperi/partita" v={c.palle_recuperate_media} />
+                  <MiniFact k="xG medio" v={c.xg_medio} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {tech.length > 0 && (
+        <div className="card">
+          <div className="card-head">
+            <div className="card-title">🔬 Dati tecnici · partita per partita</div>
+            <div className="card-hint">{tech.length} partite</div>
+          </div>
+          <div style={{ overflowX: 'auto' }}>
+            <table className="table">
+              <thead><tr>
+                <th>Data</th><th>Match</th><th>Comp.</th><th>Min.</th>
+                <th>Pass %</th><th>Avanti %</th><th>Lanci %</th><th>Duelli %</th><th>Aerei %</th><th>Azioni %</th><th>Int.</th><th>Rec.</th><th>xG</th>
+              </tr></thead>
+              <tbody>
+                {tech.map(t => (
+                  <tr key={t.id}>
+                    <td className="faint">{fmtDate(t.match_date)}</td>
+                    <td><b>{t.match_name}</b></td>
+                    <td className="muted">{t.competition === 'UEFA Champions League' ? 'UCL' : 'SLG'}</td>
+                    <td className="mono">{t.minutes ?? '—'}</td>
+                    <Pct v={t.pass_pct} n={t.passaggi_accurati} d={t.passaggi} />
+                    <Pct v={t.passaggi_avanti_pct} n={t.passaggi_avanti_accurati} d={t.passaggi_avanti} />
+                    <Pct v={t.lanci_lunghi_pct} n={t.lanci_lunghi_accurati} d={t.lanci_lunghi} />
+                    <Pct v={t.duelli_pct} n={t.duelli_vinti} d={t.duelli} />
+                    <Pct v={t.duelli_aerei_pct} n={t.duelli_aerei_vinti} d={t.duelli_aerei} />
+                    <Pct v={t.azioni_pct} n={t.azioni_riuscite} d={t.azioni_totali} />
+                    <td className="mono">{t.intercetti ?? '—'}</td>
+                    <td className="mono">{t.palle_recuperate ?? '—'}</td>
+                    <td className="mono">{t.xg ? Number(t.xg).toFixed(2) : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
@@ -153,4 +222,26 @@ export default function Performance() {
 
 function MiniFact({ k, v }: { k: string; v: any }) {
   return <div><div className="faint" style={{ fontSize: 11 }}>{k}</div><div style={{ fontWeight: 700, fontSize: 15 }}>{v ?? '—'}</div></div>
+}
+
+function PctFact({ k, v, sub }: { k: string; v: number | null; sub?: string }) {
+  const n = v == null ? null : Number(v)
+  const color = n == null ? undefined : n >= 70 ? 'var(--green)' : n >= 50 ? 'var(--accent)' : 'var(--gold)'
+  return (
+    <div>
+      <div className="faint" style={{ fontSize: 11 }}>{k}</div>
+      <div style={{ fontWeight: 750, fontSize: 17, color }}>{n == null ? '—' : `${n}%`}</div>
+      {sub && <div className="faint" style={{ fontSize: 10.5 }}>{sub}</div>}
+    </div>
+  )
+}
+
+function Pct({ v, n, d }: { v: number | null; n: number | null; d: number | null }) {
+  const val = v == null ? null : Number(v)
+  const color = val == null ? undefined : val >= 70 ? 'var(--green)' : val < 50 ? 'var(--gold)' : undefined
+  return (
+    <td className="mono" title={n != null && d != null ? `${n}/${d}` : undefined} style={{ color }}>
+      {val == null ? '—' : `${val}%`}
+    </td>
+  )
 }

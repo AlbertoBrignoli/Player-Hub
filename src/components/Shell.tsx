@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import { PLAYER_NAME } from '../lib/supabase'
 import { initials } from '../lib/format'
+import NotificationBell from './NotificationBell'
 
 export interface NavDef { key: string; label: string; icon: string; adminOnly?: boolean }
 
@@ -14,6 +15,10 @@ export const NAV: { group: string; items: NavDef[] }[] = [
     { key: 'contracts', label: 'Contratti', icon: '📄' },
     { key: 'documents', label: 'Documenti', icon: '🗂' },
     { key: 'sponsors', label: 'Sponsor', icon: '🤝' },
+  ]},
+  { group: 'Contenuti', items: [
+    { key: 'editorial', label: 'Cal. Editoriale', icon: '📆' },
+    { key: 'media', label: 'Media', icon: '📸' },
   ]},
   { group: 'Operatività', items: [
     { key: 'agenda', label: 'Agenda', icon: '🗓' },
@@ -30,6 +35,8 @@ const TITLES: Record<string, { t: string; s: string }> = {
   performance: { t: 'Performance', s: 'Statistiche, partite e rendimento' },
   contracts: { t: 'Contratti', s: 'Accordi sportivi e scadenze' },
   documents: { t: 'Documenti', s: 'Archivio file riservato' },
+  editorial: { t: 'Calendario Editoriale', s: 'Partite, copy e grafiche pronte da pubblicare' },
+  media: { t: 'Media', s: 'Foto, selezioni e grafiche del team' },
   sponsors: { t: 'Sponsor & Commerciale', s: 'Accordi e deliverable' },
   agenda: { t: 'Agenda', s: 'Impegni e appuntamenti' },
   tasks: { t: 'Task', s: 'Attività condivise' },
@@ -93,7 +100,7 @@ export default function Shell({ route, setRoute, right, children }: {
               <div className="page-sub">{title.s}</div>
             </div>
           </div>
-          <div className="flex gap">{right}</div>
+          <div className="flex gap" style={{ alignItems: 'center' }}>{right}<NotificationBell goto={setRoute} /></div>
         </div>
         <div className="content">{children}</div>
       </div>

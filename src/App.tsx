@@ -8,6 +8,8 @@ import Dashboard from './modules/Dashboard'
 import Performance from './modules/Performance'
 import Contracts from './modules/Contracts'
 import Documents from './modules/Documents'
+import Editorial from './modules/Editorial'
+import Media from './modules/Media'
 import Sponsors from './modules/Sponsors'
 import Agenda from './modules/Agenda'
 import Tasks from './modules/Tasks'
@@ -30,6 +32,8 @@ export default function App() {
       case 'performance': return <Performance />
       case 'contracts': return <Contracts />
       case 'documents': return <Documents />
+      case 'editorial': return <Editorial />
+      case 'media': return <Media />
       case 'sponsors': return <Sponsors />
       case 'agenda': return <Agenda />
       case 'tasks': return <Tasks />

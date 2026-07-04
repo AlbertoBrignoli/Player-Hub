@@ -159,3 +159,128 @@ export interface AllowedEmail {
   note: string | null
   created_at: string
 }
+
+export interface EditorialAsset {
+  path: string
+  name: string
+  uploaded_at: string
+  by: string | null
+}
+
+export interface EditorialEntry {
+  id: string
+  entry_date: string
+  type: 'partita' | 'post' | 'story' | 'carosello' | 'altro'
+  title: string
+  match_id: string | null
+  match_info: {
+    fixture_id?: number | string | null
+    league?: string | null
+    round?: string | null
+    venue?: string | null
+    stadium?: string | null
+    home_team?: string | null
+    away_team?: string | null
+    opponent?: string | null
+    kickoff?: string | null
+    status?: string | null
+    team_score?: number | null
+    opponent_score?: number | null
+  } | null
+  copy_text: string | null
+  assets: EditorialAsset[]
+  status: 'da_preparare' | 'copy_pronto' | 'grafica_caricata' | 'pronto' | 'pubblicato'
+  notes: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface MediaItem {
+  id: string
+  storage_path: string
+  file_name: string | null
+  kind: 'foto' | 'grafica' | 'carosello'
+  status: 'nuova' | 'selezionata' | 'scartata' | 'lavorata'
+  source_ids: string[] | null
+  editorial_id: string | null
+  uploaded_by: string | null
+  uploaded_role: string | null
+  note: string | null
+  created_at: string
+}
+
+export interface NotificationItem {
+  id: string
+  recipient_role: Role
+  title: string
+  body: string | null
+  route: string | null
+  read_at: string | null
+  created_at: string
+}
+
+export interface StatsMatch {
+  id: string
+  match_date: string
+  competition: string
+  match_name: string
+  minutes: number | null
+  goal: number | null
+  assist: number | null
+  xg: number | null
+  passaggi: number | null
+  passaggi_accurati: number | null
+  pass_pct: number | null
+  passaggi_avanti: number | null
+  passaggi_avanti_accurati: number | null
+  passaggi_avanti_pct: number | null
+  lanci_lunghi: number | null
+  lanci_lunghi_accurati: number | null
+  lanci_lunghi_pct: number | null
+  duelli: number | null
+  duelli_vinti: number | null
+  duelli_pct: number | null
+  duelli_aerei: number | null
+  duelli_aerei_vinti: number | null
+  duelli_aerei_pct: number | null
+  duelli_difensivi: number | null
+  duelli_dif_vinti: number | null
+  duelli_dif_pct: number | null
+  azioni_totali: number | null
+  azioni_riuscite: number | null
+  azioni_pct: number | null
+  intercetti: number | null
+  spazzate: number | null
+  palle_recuperate: number | null
+  palle_perse: number | null
+  falli: number | null
+  cartellini_gialli: number | null
+  cartellini_rossi: number | null
+}
+
+export interface StatsSeason {
+  competition: string
+  partite: number
+  minuti: number
+  goal: number
+  assist: number
+  xg_medio: number | null
+  passaggi_media: number | null
+  pass_pct: number | null
+  passaggi_avanti_media: number | null
+  passaggi_avanti_pct: number | null
+  lanci_lunghi_media: number | null
+  lanci_lunghi_pct: number | null
+  duelli_media: number | null
+  duelli_pct: number | null
+  duelli_aerei_media: number | null
+  duelli_aerei_pct: number | null
+  duelli_dif_pct: number | null
+  azioni_pct: number | null
+  intercetti_media: number | null
+  spazzate_media: number | null
+  palle_recuperate_media: number | null
+  palle_perse_media: number | null
+  cartellini_gialli: number
+  cartellini_rossi: number
+}
