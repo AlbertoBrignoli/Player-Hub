@@ -11,7 +11,7 @@ export default function Settings() {
   const { rows, loading, reload } = useCollection<AllowedEmail>('crm_allowed_emails', { orderBy: 'created_at', ascending: true })
   const { rows: profiles } = useCollection<Profile>('crm_profiles', { orderBy: 'created_at', ascending: true })
   const [email, setEmail] = useState('')
-  const [role, setRole] = useState<'player' | 'admin'>('player')
+  const [role, setRole] = useState<'player' | 'admin' | 'creator'>('player')
   const [note, setNote] = useState('')
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
@@ -39,7 +39,7 @@ export default function Settings() {
         </div>
         <div className="flex gap wrap" style={{ alignItems: 'flex-end' }}>
           <div style={{ flex: 2, minWidth: 200 }}><Field label="Email"><Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="giocatore@email.com" /></Field></div>
-          <div style={{ flex: 1, minWidth: 130 }}><Field label="Ruolo"><Select value={role} onChange={e => setRole(e.target.value as any)}><option value="player">Giocatore</option><option value="admin">AUVI · Admin</option></Select></Field></div>
+          <div style={{ flex: 1, minWidth: 130 }}><Field label="Ruolo"><Select value={role} onChange={e => setRole(e.target.value as any)}><option value="player">Giocatore</option><option value="admin">AUVI · Advisor</option><option value="creator">Team · Creator</option></Select></Field></div>
           <div style={{ flex: 1, minWidth: 130 }}><Field label="Nota"><Input value={note} onChange={e => setNote(e.target.value)} placeholder="es. Lorenzo" /></Field></div>
           <button className="btn btn-primary" style={{ marginBottom: 14 }} disabled={busy || !email} onClick={add}>+ Autorizza</button>
         </div>
@@ -52,7 +52,7 @@ export default function Settings() {
               {rows.map(r => (
                 <tr key={r.email}>
                   <td><b>{r.email}</b></td>
-                  <td><Badge tone={r.role === 'admin' ? 'blue' : 'accent'}>{r.role === 'admin' ? 'AUVI · Admin' : 'Giocatore'}</Badge></td>
+                  <td><Badge tone={r.role === 'admin' ? 'blue' : r.role === 'creator' ? 'gold' : 'accent'}>{r.role === 'admin' ? 'AUVI · Advisor' : r.role === 'creator' ? 'Team · Creator' : 'Giocatore'}</Badge></td>
                   <td className="muted">{r.note || '—'}</td>
                   <td>{connected(r.email) ? <Badge tone="green">Attivo</Badge> : <Badge tone="gold">In attesa 1° login</Badge>}</td>
                   <td className="faint">{fmtDate(r.created_at)}</td>

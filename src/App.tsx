@@ -18,7 +18,7 @@ import Settings from './modules/Settings'
 
 export default function App() {
   const { session, profile, loading } = useAuth()
-  const [route, setRoute] = useState('dashboard')
+  const [routeState, setRoute] = useState<string | null>(null)
 
   if (loading) return <Spinner />
   if (!session) return <Login />
@@ -26,9 +26,13 @@ export default function App() {
   // Sessione presente ma profilo assente = email non in whitelist (trigger ha bloccato)
   if (!profile) return <NoAccess />
 
+  // Il creator parte (e torna) sul calendario editoriale: la dashboard è business.
+  const home = profile.role === 'creator' ? 'editorial' : 'dashboard'
+  const route = routeState ?? home
+
   const view = (() => {
     switch (route) {
-      case 'dashboard': return <Dashboard goto={setRoute} />
+      case 'dashboard': return profile.role === 'creator' ? <Editorial /> : <Dashboard goto={setRoute} />
       case 'performance': return <Performance />
       case 'contracts': return <Contracts />
       case 'documents': return <Documents />
@@ -39,7 +43,7 @@ export default function App() {
       case 'tasks': return <Tasks />
       case 'messages': return <Messages />
       case 'settings': return <Settings />
-      default: return <Dashboard goto={setRoute} />
+      default: return profile.role === 'creator' ? <Editorial /> : <Dashboard goto={setRoute} />
     }
   })()
 

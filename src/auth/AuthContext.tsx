@@ -1,13 +1,15 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
-import type { Profile } from '../lib/types'
+import type { Profile, Role } from '../lib/types'
 
 interface AuthState {
   session: Session | null
   profile: Profile | null
   loading: boolean
   isAdmin: boolean
+  isTeam: boolean // admin o creator: chi prepara contenuti
+  role: Role | null
   signOut: () => Promise<void>
   refreshProfile: () => Promise<void>
 }
@@ -47,6 +49,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     profile,
     loading,
     isAdmin: profile?.role === 'admin',
+    isTeam: profile?.role === 'admin' || profile?.role === 'creator',
+    role: profile?.role ?? null,
     signOut: async () => { await supabase.auth.signOut() },
     refreshProfile: async () => { if (session) await loadProfile(session.user.id) },
   }

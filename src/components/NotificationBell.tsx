@@ -5,11 +5,10 @@ import { timeAgo } from '../lib/format'
 import type { NotificationItem } from '../lib/types'
 
 export default function NotificationBell({ goto }: { goto: (route: string) => void }) {
-  const { isAdmin } = useAuth()
+  const { role } = useAuth()
   const [items, setItems] = useState<NotificationItem[]>([])
   const [open, setOpen] = useState(false)
   const wrapRef = useRef<HTMLDivElement>(null)
-  const role = isAdmin ? 'admin' : 'player'
 
   async function load() {
     const { data } = await supabase.from('crm_notifications')
@@ -22,7 +21,8 @@ export default function NotificationBell({ goto }: { goto: (route: string) => vo
     const ch = supabase.channel('crm_notifications_rt')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'crm_notifications' }, payload => {
         const n = payload.new as NotificationItem
-        if (n.recipient_role === role) setItems(prev => [n, ...prev].slice(0, 25))
+        const mine = n.recipient_role === role || (n.recipient_role === 'team' && (role === 'admin' || role === 'creator'))
+        if (mine) setItems(prev => [n, ...prev].slice(0, 25))
       })
       .subscribe()
     return () => { supabase.removeChannel(ch) }

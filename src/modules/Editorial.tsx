@@ -29,7 +29,7 @@ const MONTHS = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'L
 const DOW = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom']
 
 export default function Editorial() {
-  const { isAdmin } = useAuth()
+  const { isTeam } = useAuth()
   const { rows, loading, reload } = useCollection<EditorialEntry>('crm_editorial', { orderBy: 'entry_date', ascending: true })
   const today = new Date()
   const [ym, setYm] = useState<[number, number]>([today.getFullYear(), today.getMonth()])
@@ -82,7 +82,7 @@ export default function Editorial() {
             <button className={`pill-tab ${view === 'cal' ? 'active' : ''}`} onClick={() => setView('cal')}>Calendario</button>
             <button className={`pill-tab ${view === 'lista' ? 'active' : ''}`} onClick={() => setView('lista')}>Lista</button>
           </div>
-          {isAdmin && <button className="btn btn-primary" onClick={() => setCreating(true)}>＋ Contenuto</button>}
+          {isTeam && <button className="btn btn-primary" onClick={() => setCreating(true)}>＋ Contenuto</button>}
         </div>
       </div>
 
@@ -124,7 +124,6 @@ export default function Editorial() {
       {openEntry && (
         <EntryModal
           entry={rows.find(e => e.id === openEntry.id) || openEntry}
-          isAdmin={isAdmin}
           onClose={() => setOpenEntry(null)}
           onChanged={reload}
         />
@@ -158,10 +157,10 @@ function EntryList({ title, entries, onOpen, empty }: {
   )
 }
 
-function EntryModal({ entry, isAdmin, onClose, onChanged }: {
-  entry: EditorialEntry; isAdmin: boolean; onClose: () => void; onChanged: () => void
+function EntryModal({ entry, onClose, onChanged }: {
+  entry: EditorialEntry; onClose: () => void; onChanged: () => void
 }) {
-  const { profile } = useAuth()
+  const { profile, isAdmin, isTeam } = useAuth()
   const [copy, setCopy] = useState(entry.copy_text || '')
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -210,7 +209,7 @@ function EntryModal({ entry, isAdmin, onClose, onChanged }: {
       const assets = [...(entry.assets || []), ...added]
       const status = ['da_preparare', 'copy_pronto'].includes(entry.status) ? 'grafica_caricata' : entry.status
       await updateRow('crm_editorial', entry.id, { assets, status })
-      notify(isAdmin ? 'player' : 'admin', `🎨 Grafica caricata: ${entry.title}`,
+      notify(isTeam ? 'player' : 'team', `🎨 Grafica caricata: ${entry.title}`,
         `${added.length} file pront${added.length > 1 ? 'i' : 'o'} nel calendario editoriale.`, 'editorial')
       onChanged()
     }
@@ -279,11 +278,11 @@ function EntryModal({ entry, isAdmin, onClose, onChanged }: {
             <div className="flex gap">
               <button className="btn btn-sm" onClick={copyToClipboard} disabled={!copy}>{copied ? 'Copiato ✓' : 'Copia'}</button>
               <button className="btn btn-sm" onClick={downloadCopy} disabled={!copy}>Scarica .txt</button>
-              {isAdmin && <button className="btn btn-primary btn-sm" disabled={saving} onClick={saveCopy}>{saving ? 'Salvo…' : 'Salva copy'}</button>}
+              {isTeam && <button className="btn btn-primary btn-sm" disabled={saving} onClick={saveCopy}>{saving ? 'Salvo…' : 'Salva copy'}</button>}
             </div>
           </div>
-          <Textarea rows={5} value={copy} onChange={e => setCopy(e.target.value)} readOnly={!isAdmin}
-            placeholder={isAdmin ? 'Scrivi qui il copy del post: didascalia, hashtag, tag…' : 'Il copy non è ancora pronto.'} />
+          <Textarea rows={5} value={copy} onChange={e => setCopy(e.target.value)} readOnly={!isTeam}
+            placeholder={isTeam ? 'Scrivi qui il copy del post: didascalia, hashtag, tag…' : 'Il copy non è ancora pronto.'} />
         </div>
 
         <div>

@@ -17,7 +17,7 @@ const MEDIA_STATUS: Record<string, { label: string; tone?: 'green' | 'red' | 'go
 }
 
 export default function Media() {
-  const { session, profile, isAdmin } = useAuth()
+  const { session, profile, isAdmin, isTeam, role } = useAuth()
   const { rows, loading, reload } = useCollection<MediaItem>('crm_media', { orderBy: 'created_at' })
   const [tab, setTab] = useState<'foto' | 'selezionate' | 'grafiche'>('foto')
   const [urls, setUrls] = useState<Record<string, string>>({})
@@ -56,17 +56,17 @@ export default function Media() {
         status: kind === 'foto' ? 'nuova' : 'lavorata',
         source_ids: kind === 'grafica' && selezionate.length ? selezionate.map(s => s.id) : null,
         uploaded_by: session?.user.id,
-        uploaded_role: isAdmin ? 'admin' : 'player',
+        uploaded_role: role,
       })
       if (!ins.error) ok++
     }
     if (ok > 0) {
       if (kind === 'foto') {
-        if (isAdmin) {
+        if (isTeam) {
           notify('player', '📸 Materiale pronto per essere selezionato',
             `Il team ha caricato ${ok} nuov${ok > 1 ? 'e foto' : 'a foto'}: scegli quelle che ti piacciono.`, 'media')
         } else {
-          notify('admin', '📸 Nuove foto dal giocatore', `${profile?.full_name || 'Il giocatore'} ha caricato ${ok} foto.`, 'media')
+          notify('team', '📸 Nuove foto dal giocatore', `${profile?.full_name || 'Il giocatore'} ha caricato ${ok} foto.`, 'media')
         }
       } else {
         // Grafica pronta: le foto selezionate usate come sorgente diventano "lavorate".
@@ -86,7 +86,7 @@ export default function Media() {
     const next = m.status === 'selezionata' ? 'nuova' : 'selezionata'
     await updateRow('crm_media', m.id, { status: next })
     if (next === 'selezionata') {
-      notify('admin', '⭐ Foto selezionata', `${profile?.full_name || 'Il giocatore'} ha scelto "${m.file_name}": pronta per la grafica.`, 'media')
+      notify('team', '⭐ Foto selezionata', `${profile?.full_name || 'Il giocatore'} ha scelto "${m.file_name}": pronta per la grafica.`, 'media')
     }
     reload()
   }
@@ -112,7 +112,7 @@ export default function Media() {
         <div>
           <div style={{ fontWeight: 650 }}>Libreria media</div>
           <div className="faint" style={{ fontSize: 12.5 }}>
-            {isAdmin
+            {isTeam
               ? 'Carica le foto: il giocatore riceve la notifica e seleziona. Sulle selezionate carichi grafiche e caroselli.'
               : 'Il team carica il materiale: seleziona le foto che ti piacciono e riceverai le grafiche pronte.'}
           </div>
@@ -123,7 +123,7 @@ export default function Media() {
           </button>
           <input ref={fotoRef} type="file" accept="image/*" multiple hidden
             onChange={e => uploadFiles(Array.from(e.target.files || []), 'foto')} />
-          {isAdmin && (
+          {isTeam && (
             <>
               <button className="btn" disabled={uploading} onClick={() => graficaRef.current?.click()}
                 title={selezionate.length ? `Collegata alle ${selezionate.length} foto selezionate` : undefined}>
@@ -163,7 +163,7 @@ export default function Media() {
                   <span className="faint" style={{ fontSize: 11 }}>{fmtDate(m.created_at)}</span>
                 </div>
                 <div className="flex gap" style={{ marginTop: 8 }}>
-                  {m.kind === 'foto' && !isAdmin && m.status !== 'lavorata' && (
+                  {m.kind === 'foto' && role === 'player' && m.status !== 'lavorata' && (
                     <button className={`btn btn-sm ${m.status === 'selezionata' ? '' : 'btn-primary'}`} style={{ flex: 1 }} onClick={() => toggleSelect(m)}>
                       {m.status === 'selezionata' ? '★ Tolgo' : '☆ Seleziona'}
                     </button>

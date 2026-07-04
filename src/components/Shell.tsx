@@ -4,26 +4,27 @@ import { PLAYER_NAME } from '../lib/supabase'
 import { initials } from '../lib/format'
 import NotificationBell from './NotificationBell'
 
-export interface NavDef { key: string; label: string; icon: string; adminOnly?: boolean }
+export interface NavDef { key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[] }
 
+// roles: chi vede la voce (default: tutti). Il creator vede solo contenuti e performance.
 export const NAV: { group: string; items: NavDef[] }[] = [
   { group: 'Panoramica', items: [
-    { key: 'dashboard', label: 'Dashboard', icon: '◎' },
+    { key: 'dashboard', label: 'Dashboard', icon: '◎', roles: ['admin', 'player'] },
     { key: 'performance', label: 'Performance', icon: '⚽' },
   ]},
   { group: 'Gestione', items: [
-    { key: 'contracts', label: 'Contratti', icon: '📄' },
-    { key: 'documents', label: 'Documenti', icon: '🗂' },
-    { key: 'sponsors', label: 'Sponsor', icon: '🤝' },
+    { key: 'contracts', label: 'Contratti', icon: '📄', roles: ['admin', 'player'] },
+    { key: 'documents', label: 'Documenti', icon: '🗂', roles: ['admin', 'player'] },
+    { key: 'sponsors', label: 'Sponsor', icon: '🤝', roles: ['admin', 'player'] },
   ]},
   { group: 'Contenuti', items: [
     { key: 'editorial', label: 'Cal. Editoriale', icon: '📆' },
     { key: 'media', label: 'Media', icon: '📸' },
   ]},
   { group: 'Operatività', items: [
-    { key: 'agenda', label: 'Agenda', icon: '🗓' },
-    { key: 'tasks', label: 'Task', icon: '✓' },
-    { key: 'messages', label: 'Messaggi', icon: '💬' },
+    { key: 'agenda', label: 'Agenda', icon: '🗓', roles: ['admin', 'player'] },
+    { key: 'tasks', label: 'Task', icon: '✓', roles: ['admin', 'player'] },
+    { key: 'messages', label: 'Messaggi', icon: '💬', roles: ['admin', 'player'] },
   ]},
   { group: 'Sistema', items: [
     { key: 'settings', label: 'Impostazioni', icon: '⚙', adminOnly: true },
@@ -47,7 +48,7 @@ const TITLES: Record<string, { t: string; s: string }> = {
 export default function Shell({ route, setRoute, right, children }: {
   route: string; setRoute: (r: string) => void; right?: React.ReactNode; children: React.ReactNode
 }) {
-  const { profile, isAdmin, signOut } = useAuth()
+  const { profile, isAdmin, role, signOut } = useAuth()
   const [open, setOpen] = useState(false)
   const title = TITLES[route] || { t: '', s: '' }
 
@@ -64,7 +65,7 @@ export default function Shell({ route, setRoute, right, children }: {
         </div>
         <nav className="nav">
           {NAV.map(g => {
-            const items = g.items.filter(i => !i.adminOnly || isAdmin)
+            const items = g.items.filter(i => (!i.adminOnly || isAdmin) && (!i.roles || (role && i.roles.includes(role))))
             if (!items.length) return null
             return (
               <React.Fragment key={g.group}>
@@ -84,7 +85,7 @@ export default function Shell({ route, setRoute, right, children }: {
             <div className="avatar">{initials(profile?.full_name || profile?.email)}</div>
             <div className="user-meta">
               <div className="user-name">{profile?.full_name || profile?.email}</div>
-              <div className="user-role">{isAdmin ? 'AUVI · Admin' : 'Giocatore'}</div>
+              <div className="user-role">{role === 'admin' ? 'AUVI · Advisor' : role === 'creator' ? 'Team · Creator' : 'Giocatore'}</div>
             </div>
             <button className="btn-ghost" style={{ marginLeft: 'auto', padding: 6 }} title="Esci" onClick={signOut}>⎋</button>
           </div>

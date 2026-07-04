@@ -1,4 +1,4 @@
-export type Role = 'admin' | 'player'
+export type Role = 'admin' | 'player' | 'creator'
 
 export interface Profile {
   id: string
@@ -211,7 +211,7 @@ export interface MediaItem {
 
 export interface NotificationItem {
   id: string
-  recipient_role: Role
+  recipient_role: Role | 'team'
   title: string
   body: string | null
   route: string | null
