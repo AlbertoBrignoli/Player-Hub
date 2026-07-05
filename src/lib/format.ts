@@ -50,3 +50,10 @@ export function fileExt(name: string | null | undefined) {
   const m = (name || '').match(/\.([a-z0-9]+)$/i)
   return m ? m[1].toUpperCase() : 'FILE'
 }
+
+// Stagione calcistica (luglio-giugno): '2025/26' per una data di ottobre 2025 o marzo 2026.
+export function seasonOf(d: string | Date) {
+  const dt = typeof d === 'string' ? new Date(d) : d
+  const y = dt.getMonth() >= 6 ? dt.getFullYear() : dt.getFullYear() - 1
+  return `${y}/${String((y + 1) % 100).padStart(2, '0')}`
+}

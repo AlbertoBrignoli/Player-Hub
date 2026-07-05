@@ -228,6 +228,8 @@ export interface StatsMatch {
   goal: number | null
   assist: number | null
   xg: number | null
+  tiri: number | null
+  tiri_porta: number | null
   passaggi: number | null
   passaggi_accurati: number | null
   pass_pct: number | null
