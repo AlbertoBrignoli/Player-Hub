@@ -13,7 +13,7 @@ export default function Media() {
   const { session, profile, isTeam, role } = useAuth()
   const { rows, loading, reload } = useCollection<MediaItem>('crm_media', { orderBy: 'created_at' })
   const { rows: entries } = useCollection<EditorialEntry>('crm_editorial', { orderBy: 'entry_date', ascending: true })
-  const [tab, setTab] = useState<'approvare' | 'pubblicare' | 'pubblicati'>('approvare')
+  const [tab, setTab] = useState<'approvare' | 'approvate' | 'pubblicare' | 'pubblicati'>('approvare')
   const [urls, setUrls] = useState<Record<string, string>>({})
   const [uploading, setUploading] = useState(false)
   const [err, setErr] = useState('')
@@ -23,7 +23,8 @@ export default function Media() {
   const graficaRef = useRef<HTMLInputElement>(null)
 
   const daApprovare = rows.filter(m => m.status === 'da_approvare')
-  const daPubblicare = rows.filter(m => m.status === 'approvata' || m.status === 'da_pubblicare')
+  const approvate = rows.filter(m => m.status === 'approvata')
+  const daPubblicare = rows.filter(m => m.status === 'da_pubblicare')
   const pubblicati = rows.filter(m => m.status === 'pubblicata')
   const entryById = new Map(entries.map(e => [e.id, e]))
 
@@ -82,15 +83,20 @@ export default function Media() {
     })
   }
 
-  async function approvePicked() {
-    if (!picked.size || !targetEntry) return
-    const entry = entryById.get(targetEntry)
-    await Promise.all([...picked].map(id =>
-      updateRow('crm_media', id, { status: 'approvata', editorial_id: targetEntry })))
-    notify('team', `⭐ ${picked.size} foto approvat${picked.size > 1 ? 'e' : 'a'} da ${profile?.full_name || 'Lorenzo'}`,
-      entry ? `Per "${entry.title}" del ${fmtDate(entry.entry_date)}: il materiale è dentro la box, pronto per la grafica.` : undefined,
-      'editorial')
+  // Approva una o più foto. La box è opzionale: se scelta, il materiale si
+  // aggancia al contenuto; altrimenti finisce comunque tra le Approvate.
+  async function approve(ids: string[]) {
+    if (!ids.length) return
+    const entry = targetEntry ? entryById.get(targetEntry) : null
+    await Promise.all(ids.map(id =>
+      updateRow('crm_media', id, { status: 'approvata', editorial_id: targetEntry || null })))
+    notify('team', `⭐ ${ids.length} foto approvat${ids.length > 1 ? 'e' : 'a'} da ${profile?.full_name || 'Lorenzo'}`,
+      entry
+        ? `Per "${entry.title}" del ${fmtDate(entry.entry_date)}: il materiale è dentro la box, pronto per la grafica.`
+        : 'Le trovi in Media → Approvate, pronte da lavorare.',
+      entry ? 'editorial' : 'media')
     setPicked(new Set()); setTargetEntry('')
+    setTab('approvate')
     reload()
   }
 
@@ -117,7 +123,7 @@ export default function Media() {
 
   if (loading) return <Spinner />
 
-  const shown = tab === 'approvare' ? daApprovare : tab === 'pubblicare' ? daPubblicare : pubblicati
+  const shown = tab === 'approvare' ? daApprovare : tab === 'approvate' ? approvate : tab === 'pubblicare' ? daPubblicare : pubblicati
   const upcomingEntries = entries.filter(e => e.entry_date >= new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10))
 
   return (
@@ -148,8 +154,9 @@ export default function Media() {
       </div>
       {err && <div className="msg-err">{err}</div>}
 
-      <div className="pill-tabs" style={{ alignSelf: 'start' }}>
+      <div className="pill-tabs wrap" style={{ alignSelf: 'start' }}>
         <button className={`pill-tab ${tab === 'approvare' ? 'active' : ''}`} onClick={() => setTab('approvare')}>📥 Da approvare ({daApprovare.length})</button>
+        <button className={`pill-tab ${tab === 'approvate' ? 'active' : ''}`} onClick={() => setTab('approvate')}>⭐ Approvate ({approvate.length})</button>
         <button className={`pill-tab ${tab === 'pubblicare' ? 'active' : ''}`} onClick={() => setTab('pubblicare')}>🛠 Da pubblicare ({daPubblicare.length})</button>
         <button className={`pill-tab ${tab === 'pubblicati' ? 'active' : ''}`} onClick={() => setTab('pubblicati')}>✅ Pubblicati ({pubblicati.length})</button>
       </div>
@@ -157,28 +164,31 @@ export default function Media() {
       {tab === 'approvare' && role === 'player' && daApprovare.length > 0 && (
         <div className="card flex between wrap gap" style={{ alignItems: 'center', borderColor: picked.size ? 'var(--accent)' : undefined }}>
           <div style={{ fontWeight: 650 }}>
-            {picked.size ? `${picked.size} foto selezionat${picked.size > 1 ? 'e' : 'a'}` : 'Tocca le foto per selezionarle, poi scegli il contenuto'}
+            {picked.size ? `${picked.size} foto selezionat${picked.size > 1 ? 'e' : 'a'}` : 'Approva le singole foto col tasto ✓, o toccale per approvarne tante insieme'}
           </div>
-          <div className="flex gap" style={{ alignItems: 'center' }}>
-            <Select value={targetEntry} onChange={e => setTargetEntry(e.target.value)} style={{ minWidth: 230 }}>
-              <option value="">Approva per…</option>
+          <div className="flex gap wrap" style={{ alignItems: 'center' }}>
+            <Select value={targetEntry} onChange={e => setTargetEntry(e.target.value)} style={{ minWidth: 220 }}>
+              <option value="">Collega a un post (opzionale)</option>
               {upcomingEntries.map(e => (
                 <option key={e.id} value={e.id}>{fmtDate(e.entry_date)} · {e.title}</option>
               ))}
             </Select>
-            <button className="btn btn-primary" disabled={!picked.size || !targetEntry} onClick={approvePicked}>
-              ✓ Approva {picked.size || ''}
-            </button>
+            {picked.size > 0 && (
+              <button className="btn btn-primary" onClick={() => approve([...picked])}>
+                ✓ Approva {picked.size}
+              </button>
+            )}
           </div>
         </div>
       )}
 
       {shown.length === 0 ? (
         <div className="card">
-          <Empty icon={tab === 'pubblicati' ? '✅' : tab === 'pubblicare' ? '🛠' : '📥'}
-            title={tab === 'approvare' ? 'Niente da approvare' : tab === 'pubblicare' ? 'Niente in lavorazione' : 'Nessun contenuto pubblicato'}
+          <Empty icon={tab === 'pubblicati' ? '✅' : tab === 'pubblicare' ? '🛠' : tab === 'approvate' ? '⭐' : '📥'}
+            title={tab === 'approvare' ? 'Niente da approvare' : tab === 'approvate' ? 'Nessuna foto approvata' : tab === 'pubblicare' ? 'Niente in lavorazione' : 'Nessun contenuto pubblicato'}
             hint={tab === 'approvare' ? 'Le foto caricate dal team compaiono qui in attesa di approvazione.'
-              : tab === 'pubblicare' ? 'Qui trovi foto approvate e grafiche in preparazione.'
+              : tab === 'approvate' ? 'Le foto approvate dal giocatore arrivano qui in automatico, pronte da lavorare.'
+              : tab === 'pubblicare' ? 'Qui trovi le grafiche in preparazione.'
               : 'Le grafiche caricate nelle box del calendario finiscono qui.'} />
         </div>
       ) : (
@@ -213,16 +223,20 @@ export default function Media() {
                     <span className="faint" style={{ fontSize: 11 }}>{fmtDate(m.created_at)}</span>
                   </div>
                   {entry && <div className="faint" style={{ fontSize: 11 }}>→ {entry.title} · {fmtDate(entry.entry_date)}</div>}
-                  <div className="flex gap" style={{ marginTop: 8 }}>
-                    <button className="btn btn-sm" style={{ flex: 1 }} onClick={() => download(m)}>Scarica</button>
-                    {isTeam && tab === 'pubblicare' && (
-                      <button className="btn btn-sm" onClick={() => markPublished(m)} title="Segna come pubblicata">✓</button>
-                    )}
-                    {role === 'player' && tab === 'approvare' && (
+                  {role === 'player' && tab === 'approvare' ? (
+                    <div className="flex gap" style={{ marginTop: 8 }}>
+                      <button className="btn btn-primary btn-sm" style={{ flex: 1 }} onClick={() => approve([m.id])}>✓ Approva</button>
                       <button className="btn btn-sm" onClick={() => discard(m)} title="Scarta">✕</button>
-                    )}
-                    {(isTeam || m.uploaded_by === session?.user.id) && <ConfirmButton onConfirm={() => remove(m)}>🗑</ConfirmButton>}
-                  </div>
+                    </div>
+                  ) : (
+                    <div className="flex gap" style={{ marginTop: 8 }}>
+                      <button className="btn btn-sm" style={{ flex: 1 }} onClick={() => download(m)}>Scarica</button>
+                      {isTeam && tab === 'pubblicare' && (
+                        <button className="btn btn-sm" onClick={() => markPublished(m)} title="Segna come pubblicata">✓</button>
+                      )}
+                      {(isTeam || m.uploaded_by === session?.user.id) && <ConfirmButton onConfirm={() => remove(m)}>🗑</ConfirmButton>}
+                    </div>
+                  )}
                 </div>
               </div>
             )
