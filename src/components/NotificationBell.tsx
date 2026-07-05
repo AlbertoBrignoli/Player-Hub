@@ -2,13 +2,36 @@ import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../auth/AuthContext'
 import { timeAgo } from '../lib/format'
+import { enablePush, getPushState, isIosBrowser } from '../lib/push'
 import type { NotificationItem } from '../lib/types'
 
 export default function NotificationBell({ goto }: { goto: (route: string) => void }) {
-  const { role } = useAuth()
+  const { role, session } = useAuth()
   const [items, setItems] = useState<NotificationItem[]>([])
   const [open, setOpen] = useState(false)
+  const [pushState, setPushState] = useState<'on' | 'off' | 'unsupported'>('unsupported')
+  const [pushMsg, setPushMsg] = useState('')
   const wrapRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    getPushState().then(setPushState)
+    // Tap su una push col telefono: il service worker ci dice dove andare.
+    const onMsg = (e: MessageEvent) => { if (e.data?.type === 'push-route' && e.data.route) goto(e.data.route) }
+    navigator.serviceWorker?.addEventListener('message', onMsg)
+    return () => navigator.serviceWorker?.removeEventListener('message', onMsg)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function activatePush() {
+    if (!session || !role) return
+    if (isIosBrowser()) {
+      setPushMsg('Su iPhone: prima aggiungi l\'app alla schermata Home (Condividi → Aggiungi a Home), poi attiva da lì.')
+      return
+    }
+    setPushMsg('')
+    const err = await enablePush(session.user.id, role)
+    if (err) setPushMsg(err)
+    else { setPushState('on'); setPushMsg('Notifiche attive su questo dispositivo ✓') }
+  }
 
   async function load() {
     const { data } = await supabase.from('crm_notifications')
@@ -56,7 +79,13 @@ export default function NotificationBell({ goto }: { goto: (route: string) => vo
       </button>
       {open && (
         <div className="notif-pop">
-          <div className="notif-head">Notifiche</div>
+          <div className="notif-head flex between" style={{ alignItems: 'center' }}>
+            <span>Notifiche</span>
+            {pushState !== 'on' && (
+              <button className="btn btn-sm" onClick={activatePush}>📲 Attiva sul dispositivo</button>
+            )}
+          </div>
+          {pushMsg && <div className="faint" style={{ padding: '8px 16px', fontSize: 12, borderBottom: '1px solid var(--border)' }}>{pushMsg}</div>}
           {items.length === 0 ? (
             <div className="faint" style={{ padding: '14px 16px', fontSize: 13 }}>Nessuna notifica.</div>
           ) : items.map(n => (
