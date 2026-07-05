@@ -452,3 +452,12 @@ button { cursor: pointer; border: none; background: none; -webkit-tap-highlight-
 .anag-link { display: inline-flex; }
 .anag-link:hover .anag-ic { color: var(--text); border-color: var(--text-dim); }
 .anag-link:hover .anag div div:last-child { text-decoration: underline; }
+
+/* ===== Card "Foto da approvare" in Dashboard ===== */
+.dash-approve { cursor: pointer; transition: border-color .15s; }
+.dash-approve:hover { border-color: var(--text-dim); }
+.dash-approve-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; }
+@media (max-width: 880px) { .dash-approve-grid { grid-template-columns: repeat(4, 1fr); } }
+.dash-approve-cell { aspect-ratio: 1; border-radius: 9px; overflow: hidden; background: var(--bg-2); border: 1px solid var(--border); }
+.dash-approve-cell img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.dash-approve-ph { width: 100%; height: 100%; display: grid; place-items: center; color: var(--text-faint); }

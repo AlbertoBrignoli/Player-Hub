@@ -3,8 +3,10 @@ import { supabase, PLAYER_NAME } from '../lib/supabase'
 import { useAuth } from '../auth/AuthContext'
 import { Spinner, Badge } from '../components/ui'
 import Icon from '../components/Icon'
-import { fmtDate, fmtDateTime, daysUntil } from '../lib/format'
-import type { Player, Task, EventItem, Contract, Match, StatsMatch, EditorialEntry } from '../lib/types'
+import { fmtDate, fmtDateTime, daysUntil, isImageFile } from '../lib/format'
+import type { Player, Task, EventItem, Contract, Match, StatsMatch, EditorialEntry, MediaItem } from '../lib/types'
+
+const BUCKET = 'crm-media'
 
 const STATUS_LABEL: Record<string, { l: string; tone?: 'green' | 'gold' | 'blue' }> = {
   da_preparare: { l: 'Da preparare' },
@@ -23,11 +25,13 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
   const [events, setEvents] = useState<EventItem[]>([])
   const [contracts, setContracts] = useState<Contract[]>([])
   const [nextContent, setNextContent] = useState<EditorialEntry | null>(null)
+  const [toApprove, setToApprove] = useState<MediaItem[]>([])
+  const [approveUrls, setApproveUrls] = useState<Record<string, string>>({})
 
   useEffect(() => {
     (async () => {
       const todayKey = new Date().toISOString().slice(0, 10)
-      const [p, m, t, tk, ev, ct, ed] = await Promise.all([
+      const [p, m, t, tk, ev, ct, ed, ph] = await Promise.all([
         supabase.from('player').select('*').limit(1).maybeSingle(),
         supabase.from('matches').select('*').order('match_date', { ascending: true }),
         supabase.from('player_stats_match').select('*').order('match_date', { ascending: false }).limit(1),
@@ -36,6 +40,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
         supabase.from('crm_contracts').select('*'),
         supabase.from('crm_editorial').select('*').gte('entry_date', todayKey)
           .neq('status', 'pubblicato').order('entry_date').limit(1).maybeSingle(),
+        supabase.from('crm_media').select('*').eq('status', 'da_approvare').order('created_at', { ascending: false }),
       ])
       setPlayer(p.data as Player)
       setMatches((m.data as Match[]) || [])
@@ -44,6 +49,17 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
       setEvents((ev.data as EventItem[]) || [])
       setContracts((ct.data as Contract[]) || [])
       setNextContent(ed.data as EditorialEntry | null)
+      const photos = (ph.data as MediaItem[]) || []
+      setToApprove(photos)
+      const paths = photos.slice(0, 8).map(x => x.storage_path)
+      if (paths.length) {
+        const { data: signed } = await supabase.storage.from(BUCKET).createSignedUrls(paths, 3600)
+        if (signed) {
+          const next: Record<string, string> = {}
+          signed.forEach(d => { if (d.signedUrl && d.path) next[d.path] = d.signedUrl })
+          setApproveUrls(next)
+        }
+      }
       setLoading(false)
     })()
   }, [])
@@ -130,26 +146,30 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
 
       {/* Cose da fare */}
       <div className="grid g2">
-        <div className="card">
+        <button className="card dash-approve" onClick={() => goto('media')} style={{ textAlign: 'left', display: 'block', width: '100%' }}>
           <div className="card-head">
-            <div className="card-title">Attività aperte</div>
-            <button className="btn btn-ghost btn-sm" onClick={() => goto('tasks')}>Tutte →</button>
+            <div className="card-title">Foto da approvare{toApprove.length ? ` (${toApprove.length})` : ''}</div>
+            <span className="btn btn-ghost btn-sm">Apri Media →</span>
           </div>
-          {openTasks.length === 0 ? <div className="faint" style={{ padding: '8px 0' }}>Nessuna attività aperta.</div> : (
-            <div className="list">
-              {openTasks.slice(0, 5).map(t => (
-                <div className="row" key={t.id}>
-                  <span className="dot" style={{ background: t.priority === 'high' ? 'var(--red)' : t.priority === 'low' ? 'var(--text-faint)' : 'var(--gold)' }} />
-                  <div className="row-main">
-                    <div className="row-title">{t.title}</div>
-                    <div className="row-sub">{t.assignee === 'player' ? 'Assegnata a te' : 'In carico ad AUVI'}{t.due_date ? ` · entro ${fmtDate(t.due_date)}` : ''}</div>
+          {toApprove.length === 0 ? (
+            <div className="faint" style={{ padding: '8px 0' }}>Nessuna foto in attesa di approvazione.</div>
+          ) : (
+            <>
+              <div className="dash-approve-grid">
+                {toApprove.slice(0, 8).map(m => (
+                  <div className="dash-approve-cell" key={m.id}>
+                    {isImageFile(m.file_name) && approveUrls[m.storage_path]
+                      ? <img src={approveUrls[m.storage_path]} alt="" loading="lazy" />
+                      : <div className="dash-approve-ph"><Icon name="camera" size={16} strokeWidth={1.4} /></div>}
                   </div>
-                  <Badge tone={t.status === 'doing' ? 'blue' : undefined}>{t.status === 'doing' ? 'In corso' : 'Da fare'}</Badge>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+              <div className="faint" style={{ fontSize: 12, marginTop: 10 }}>
+                Tocca per aprire e approvare · {toApprove.length} in attesa
+              </div>
+            </>
           )}
-        </div>
+        </button>
 
         <div className="card">
           <div className="card-head">
