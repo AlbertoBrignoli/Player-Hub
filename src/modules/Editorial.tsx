@@ -37,6 +37,14 @@ export default function Editorial() {
   const [view, setView] = useState<'cal' | 'lista'>('cal')
   const [openEntry, setOpenEntry] = useState<EditorialEntry | null>(null)
   const [creating, setCreating] = useState(false)
+  const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 880px)').matches)
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 880px)')
+    const h = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+    mq.addEventListener('change', h)
+    return () => mq.removeEventListener('change', h)
+  }, [])
 
   const byDate = useMemo(() => {
     const m = new Map<string, EditorialEntry[]>()
@@ -94,7 +102,28 @@ export default function Editorial() {
         </div>
       </div>
 
-      {view === 'cal' ? (
+      {view === 'cal' && isMobile ? (
+        /* Vista agenda verticale ottimizzata per telefono */
+        <div className="grid" style={{ gap: 10 }}>
+          {(() => {
+            const days = cells.filter((d): d is string => !!d && (byDate.get(d) || []).length > 0)
+            if (days.length === 0) return <div className="card"><div className="faint" style={{ padding: '8px 0' }}>Nessun contenuto in {MONTHS[month]}.</div></div>
+            return days.map(day => (
+              <div className="card agenda-day" key={day}>
+                <div className={`agenda-date ${day === todayKey ? 'agenda-today' : ''}`}>
+                  <div className="agenda-dow">{DOW[(new Date(day + 'T12:00').getDay() + 6) % 7]}</div>
+                  <div className="agenda-num">{Number(day.slice(8))}</div>
+                </div>
+                <div className="agenda-items">
+                  {(byDate.get(day) || []).map(e => (
+                    <EntryChip key={e.id} e={e} onOpen={setOpenEntry} full />
+                  ))}
+                </div>
+              </div>
+            ))
+          })()}
+        </div>
+      ) : view === 'cal' ? (
         <div className="card" style={{ padding: 12 }}>
           <div className="cal-grid cal-head">
             {DOW.map(d => <div key={d} className="cal-dow">{d}</div>)}
@@ -105,11 +134,7 @@ export default function Editorial() {
               return (
                 <div key={i} className={`cal-cell ${!day ? 'cal-empty' : ''} ${day === todayKey ? 'cal-today' : ''}`}>
                   {day && <div className="cal-daynum">{Number(day.slice(8))}</div>}
-                  {entries.map(e => (
-                    <button key={e.id} className={`cal-chip cal-${e.status}`} onClick={() => setOpenEntry(e)} title={e.title}>
-                      {TYPES[e.type]?.icon} {e.title}
-                    </button>
-                  ))}
+                  {entries.map(e => <EntryChip key={e.id} e={e} onOpen={setOpenEntry} />)}
                 </div>
               )
             })}
@@ -132,6 +157,43 @@ export default function Editorial() {
       {creating && <NewEntryModal onClose={() => setCreating(false)} onCreated={() => { setCreating(false); reload() }} />}
     </div>
   )
+}
+
+// Chip nel calendario: per le partite una mini-card che si legge senza aprire,
+// per gli altri contenuti il chip compatto.
+function EntryChip({ e, onOpen, full }: { e: EditorialEntry; onOpen: (e: EditorialEntry) => void; full?: boolean }) {
+  if (e.type === 'partita' && e.match_info) {
+    const mi = e.match_info
+    const home = mi.venue === 'Home'
+    const time = mi.kickoff ? new Date(mi.kickoff).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : ''
+    const played = mi.status === 'FT' && mi.team_score != null
+    const score = played ? (home ? `${mi.team_score}–${mi.opponent_score}` : `${mi.opponent_score}–${mi.team_score}`) : null
+    return (
+      <button className={`cal-match cal-${e.status} ${full ? 'cal-w-full' : ''}`} onClick={() => onOpen(e)} title={e.title}>
+        <div className="cal-match-top">
+          <span className="cal-league">⚽ {shortLeague(mi.league)}</span>
+          <span>{home ? '🏠' : '✈️'} {score || time}</span>
+        </div>
+        <div className="cal-match-teams">{mi.home_team}<br />{mi.away_team}</div>
+        <div className="cal-match-state">{STATUSES[e.status]?.label}</div>
+      </button>
+    )
+  }
+  return (
+    <button className={`cal-chip cal-${e.status} ${full ? 'cal-w-full' : ''}`} onClick={() => onOpen(e)} title={e.title}>
+      {TYPES[e.type]?.icon} {e.title}
+    </button>
+  )
+}
+
+function shortLeague(l?: string | null) {
+  if (!l) return ''
+  if (/champions/i.test(l)) return 'UCL'
+  if (/europa league/i.test(l)) return 'UEL'
+  if (/conference/i.test(l)) return 'UECL'
+  if (/super league/i.test(l)) return 'SL'
+  if (/cup|coppa/i.test(l)) return 'CUP'
+  return l.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 4)
 }
 
 function EntryList({ title, entries, onOpen, empty }: {

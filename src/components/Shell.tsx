@@ -11,6 +11,7 @@ export const NAV: { group: string; items: NavDef[] }[] = [
   { group: 'Panoramica', items: [
     { key: 'dashboard', label: 'Dashboard', icon: '◎' },
     { key: 'performance', label: 'Performance', icon: '⚽' },
+    { key: 'editorial', label: 'Cal. Editoriale', icon: '📆' },
   ]},
   { group: 'Gestione', items: [
     { key: 'contracts', label: 'Contratti', icon: '📄' },
@@ -18,7 +19,6 @@ export const NAV: { group: string; items: NavDef[] }[] = [
     { key: 'sponsors', label: 'Sponsor', icon: '🤝' },
   ]},
   { group: 'Contenuti', items: [
-    { key: 'editorial', label: 'Cal. Editoriale', icon: '📆' },
     { key: 'media', label: 'Media', icon: '📸' },
   ]},
   { group: 'Operatività', items: [
