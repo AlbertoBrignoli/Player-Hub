@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { Spinner, Stat, Badge, Empty, Select } from '../components/ui'
 import { SeasonBlock, LastMatchGrid } from '../components/statbits'
+import Icon from '../components/Icon'
 import { fmtDate, fmtDateTime, seasonOf } from '../lib/format'
 import type { Player, Match, SeasonStat, StatsMatch, EditorialEntry } from '../lib/types'
 
@@ -93,7 +94,7 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
           <div className="card stadium-card">
             {player.stadium_photo_url && <img className="stadium-photo" src={player.stadium_photo_url} alt="" />}
             <div className="stadium-overlay">
-              <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.6px' }}>🏟 Casa · stagione {currentSeason}</div>
+              <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.6px' }}>Casa · stagione {currentSeason}</div>
               <div style={{ fontWeight: 750, fontSize: 15 }}>{player.stadium_name || '—'}</div>
               {player.stadium_capacity && <div className="faint" style={{ fontSize: 12 }}>{player.stadium_capacity.toLocaleString('it-IT')} posti</div>}
             </div>
@@ -104,7 +105,7 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
       {/* Focus: prossima partita + prossimo contenuto */}
       <div className="grid g2">
         <div className="card">
-          <div className="card-head"><div className="card-title">📅 Prossima partita</div></div>
+          <div className="card-head"><div className="card-title">Prossima partita</div></div>
           {nextMatch ? (
             <div>
               <div style={{ fontSize: 17, fontWeight: 750 }}>{nextMatch.home_team} vs {nextMatch.away_team}</div>
@@ -113,7 +114,7 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
               </div>
               <div className="flex gap wrap" style={{ marginTop: 10, gap: 8 }}>
                 <Badge tone="accent">{fmtDateTime(nextMatch.match_date)}</Badge>
-                <Badge>{nextMatch.venue === 'Home' ? '🏠 In casa' : '✈️ Trasferta'}</Badge>
+                <Badge>{nextMatch.venue === 'Home' ? 'In casa' : 'Trasferta'}</Badge>
               </div>
             </div>
           ) : <div className="faint" style={{ padding: '8px 0' }}>Nessuna partita in programma al momento.</div>}
@@ -121,7 +122,7 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
 
         <div className="card">
           <div className="card-head">
-            <div className="card-title">📣 Prossimo contenuto da pubblicare</div>
+            <div className="card-title">Prossimo contenuto da pubblicare</div>
             {goto && <button className="btn btn-ghost btn-sm" onClick={() => goto('editorial')}>Apri →</button>}
           </div>
           {nextContent ? (
@@ -135,7 +136,7 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
                 {nextContent.copy_text && <Badge tone="blue">Copy ✓</Badge>}
               </div>
             </div>
-          ) : <div className="faint" style={{ padding: '8px 0' }}>Niente in coda: calendario editoriale pulito. ✅</div>}
+          ) : <div className="faint" style={{ padding: '8px 0' }}>Niente in coda: calendario editoriale pulito.</div>}
         </div>
       </div>
 
@@ -143,7 +144,7 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
       {lastTech && (
         <div className="card">
           <div className="card-head">
-            <div className="card-title">🔬 Ultima partita · {lastTech.match_name}</div>
+            <div className="card-title">Ultima partita · {lastTech.match_name}</div>
             <div className="card-hint">{fmtDate(lastTech.match_date)} · {lastTech.competition}</div>
           </div>
           <LastMatchGrid m={lastTech} />
@@ -153,7 +154,7 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
       {/* Ultime 5: andamento rating */}
       {last5.length > 0 && (
         <div className="card">
-          <div className="card-head"><div className="card-title">⭐ Ultime 5 · andamento rating</div><div className="card-hint">scala 0–10</div></div>
+          <div className="card-head"><div className="card-title">Ultime 5 · andamento rating</div><div className="card-hint">scala 0–10</div></div>
           <div className="chart">
             {last5.map(m => {
               const r = Number(m.rating) || 0
@@ -172,16 +173,16 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
       {/* Stagione selezionabile (default: quella in corso) */}
       <div className="card">
         <div className="card-head">
-          <div className="card-title">📊 Stagione {season}</div>
+          <div className="card-title">Stagione {season}</div>
           <Select value={season} onChange={e => setSeason(e.target.value)} style={{ width: 130 }}>
             {seasons.map(s => <option key={s} value={s}>{s}</option>)}
           </Select>
         </div>
         <div className="grid g4" style={{ gap: 10, marginBottom: seasonTech.length ? 14 : 0 }}>
-          <Stat icon="🎯" label="Presenze" value={played.length} sub={`${totMin}' giocati`} />
-          <Stat icon="⭐" label="Rating medio" value={avgRating ? avgRating.toFixed(2) : '—'} tone="var(--accent)" sub={`${ratings.length} valutazioni`} />
-          <Stat icon="⚽" label="Gol" value={goals} />
-          <Stat icon="🅰️" label="Assist" value={assists} />
+          <Stat icon={<Icon name="check" size={13} />} label="Presenze" value={played.length} sub={`${totMin}' giocati`} />
+          <Stat icon={<Icon name="star" size={13} />} label="Rating medio" value={avgRating ? avgRating.toFixed(2) : '—'} tone="var(--accent)" sub={`${ratings.length} valutazioni`} />
+          <Stat icon={<Icon name="ball" size={13} />} label="Gol" value={goals} />
+          <Stat icon={<Icon name="send" size={13} />} label="Assist" value={assists} />
         </div>
         {seasonTech.length === 0 ? (
           <div className="faint" style={{ padding: '6px 0' }}>
@@ -198,7 +199,7 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
       {seasonTech.length > 0 && (
         <div className="card">
           <div className="card-head">
-            <div className="card-title">🔬 Partita per partita · {season}</div>
+            <div className="card-title">Partita per partita · {season}</div>
             <div className="card-hint">{seasonTech.length} partite</div>
           </div>
           <div style={{ overflowX: 'auto' }}>
@@ -254,7 +255,7 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
 
       {news.length > 0 && (
         <div className="card">
-          <div className="card-head"><div className="card-title">📰 Rassegna stampa</div></div>
+          <div className="card-head"><div className="card-title">Rassegna stampa</div></div>
           <div className="list">
             {news.map(n => (
               <a className="row" key={n.id} href={n.url || '#'} target="_blank" rel="noreferrer">

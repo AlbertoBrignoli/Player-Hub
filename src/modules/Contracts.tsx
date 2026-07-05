@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import { useCollection, insertRow, updateRow, deleteRow } from '../lib/useData'
 import { Modal, Field, Input, Textarea, Select, Badge, Empty, Spinner, ConfirmButton } from '../components/ui'
+import Icon from '../components/Icon'
 import { fmtMoney, fmtDate, daysUntil } from '../lib/format'
 import type { Contract } from '../lib/types'
 
@@ -21,7 +22,7 @@ export default function Contracts() {
         {isAdmin && <button className="btn btn-primary" onClick={() => setEdit(empty())}>+ Nuovo contratto</button>}
       </div>
 
-      {rows.length === 0 ? <Empty icon="📄" title="Nessun contratto" hint={isAdmin ? 'Aggiungi il primo contratto sportivo.' : undefined} /> : (
+      {rows.length === 0 ? <Empty icon={<Icon name="briefcase" size={30} strokeWidth={1.4} />} title="Nessun contratto" hint={isAdmin ? 'Aggiungi il primo contratto sportivo.' : undefined} /> : (
         <div className="grid g2">
           {rows.map(c => {
             const d = daysUntil(c.end_date)

@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../auth/AuthContext'
 import { useCollection, insertRow, deleteRow } from '../lib/useData'
 import { Empty, Spinner, Badge, Select, ConfirmButton } from '../components/ui'
+import Icon from '../components/Icon'
 import { fmtDate } from '../lib/format'
 import type { Doc } from '../lib/types'
 
@@ -60,7 +61,7 @@ export default function Documents() {
             {Object.entries(CATS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </Select>
           <button className="btn btn-primary" disabled={uploading} onClick={() => fileRef.current?.click()}>
-            {uploading ? 'Carico…' : '⬆ Carica file'}
+            <Icon name="upload" size={14} /> {uploading ? 'Carico…' : 'Carica file'}
           </button>
           <input ref={fileRef} type="file" hidden onChange={onFile} />
         </div>
@@ -68,7 +69,7 @@ export default function Documents() {
       {err && <div className="msg-err">{err}</div>}
 
       <div className="card">
-        {rows.length === 0 ? <Empty icon="🗂" title="Archivio vuoto" hint="Carica contratti, documenti d'identità, referti medici…" /> : (
+        {rows.length === 0 ? <Empty icon={<Icon name="archive" size={30} strokeWidth={1.4} />} title="Archivio vuoto" hint="Carica contratti, documenti d'identità, referti medici…" /> : (
           <div className="list">
             {rows.map(d => (
               <div className="row" key={d.id}>
@@ -90,12 +91,9 @@ export default function Documents() {
 }
 
 function fileIcon(mime: string | null) {
-  if (!mime) return '📎'
-  if (mime.includes('pdf')) return '📕'
-  if (mime.includes('image')) return '🖼'
-  if (mime.includes('sheet') || mime.includes('excel')) return '📊'
-  if (mime.includes('word') || mime.includes('document')) return '📘'
-  return '📎'
+  if (!mime) return <Icon name="file" size={17} strokeWidth={1.5} />
+  if (mime.includes('image')) return <Icon name="image" size={17} strokeWidth={1.5} />
+  return <Icon name="file" size={17} strokeWidth={1.5} />
 }
 function humanSize(n: number | null) {
   if (!n) return '—'

@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../auth/AuthContext'
 import { timeAgo } from '../lib/format'
 import { enablePush, getPushState, isIosBrowser } from '../lib/push'
+import Icon from './Icon'
 import type { NotificationItem } from '../lib/types'
 
 export default function NotificationBell({ goto }: { goto: (route: string) => void }) {
@@ -75,14 +76,14 @@ export default function NotificationBell({ goto }: { goto: (route: string) => vo
   return (
     <div className="bell-wrap" ref={wrapRef}>
       <button className="btn-ghost bell" title="Notifiche" onClick={() => { setOpen(o => !o); if (!open) markAllRead() }}>
-        🔔{unread > 0 && <span className="bell-dot">{unread > 9 ? '9+' : unread}</span>}
+        <Icon name="bell" size={18} />{unread > 0 && <span className="bell-dot">{unread > 9 ? '9+' : unread}</span>}
       </button>
       {open && (
         <div className="notif-pop">
           <div className="notif-head flex between" style={{ alignItems: 'center' }}>
             <span>Notifiche</span>
             {pushState !== 'on' && (
-              <button className="btn btn-sm" onClick={activatePush}>📲 Attiva sul dispositivo</button>
+              <button className="btn btn-sm" onClick={activatePush}><Icon name="smartphone" size={13} /> Attiva sul dispositivo</button>
             )}
           </div>
           {pushMsg && <div className="faint" style={{ padding: '8px 16px', fontSize: 12, borderBottom: '1px solid var(--border)' }}>{pushMsg}</div>}

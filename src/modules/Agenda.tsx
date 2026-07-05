@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import { useCollection, insertRow, updateRow, deleteRow } from '../lib/useData'
 import { Modal, Field, Input, Textarea, Select, Badge, Empty, Spinner, ConfirmButton } from '../components/ui'
+import Icon from '../components/Icon'
 import { fmtDateTime } from '../lib/format'
 import type { EventItem } from '../lib/types'
 
@@ -28,7 +29,7 @@ export default function Agenda() {
         {isAdmin && <button className="btn btn-primary" onClick={() => setEdit(empty())}>+ Nuovo impegno</button>}
       </div>
 
-      {rows.length === 0 ? <Empty icon="🗓" title="Agenda vuota" hint={isAdmin ? 'Aggiungi partite, impegni commerciali, appuntamenti.' : undefined} /> : (
+      {rows.length === 0 ? <Empty icon={<Icon name="clock" size={30} strokeWidth={1.4} />} title="Agenda vuota" hint={isAdmin ? 'Aggiungi partite, impegni commerciali, appuntamenti.' : undefined} /> : (
         <>
           <div className="card">
             <div className="card-head"><div className="card-title">In arrivo</div></div>

@@ -4,31 +4,32 @@ import { supabase, PLAYER_NAME } from '../lib/supabase'
 import { initials } from '../lib/format'
 import NotificationBell from './NotificationBell'
 import Toaster from './Toaster'
+import Icon from './Icon'
 import { Modal, Field, Input } from './ui'
 
 export interface NavDef { key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[] }
 
 export const NAV: { group: string; items: NavDef[] }[] = [
   { group: 'Panoramica', items: [
-    { key: 'dashboard', label: 'Dashboard', icon: '◎' },
-    { key: 'performance', label: 'Performance', icon: '⚽' },
-    { key: 'editorial', label: 'Cal. Editoriale', icon: '📆' },
+    { key: 'dashboard', label: 'Dashboard', icon: 'grid' },
+    { key: 'performance', label: 'Performance', icon: 'activity' },
+    { key: 'editorial', label: 'Cal. Editoriale', icon: 'calendar' },
   ]},
   { group: 'Gestione', items: [
-    { key: 'contracts', label: 'Contratti', icon: '📄' },
-    { key: 'documents', label: 'Documenti', icon: '🗂' },
-    { key: 'sponsors', label: 'Sponsor', icon: '🤝' },
+    { key: 'contracts', label: 'Contratti', icon: 'briefcase' },
+    { key: 'documents', label: 'Documenti', icon: 'archive' },
+    { key: 'sponsors', label: 'Sponsor', icon: 'award' },
   ]},
   { group: 'Contenuti', items: [
-    { key: 'media', label: 'Media', icon: '📸' },
+    { key: 'media', label: 'Media', icon: 'image' },
   ]},
   { group: 'Operatività', items: [
-    { key: 'agenda', label: 'Agenda', icon: '🗓' },
-    { key: 'tasks', label: 'Task', icon: '✓' },
-    { key: 'messages', label: 'Messaggi', icon: '💬' },
+    { key: 'agenda', label: 'Agenda', icon: 'clock' },
+    { key: 'tasks', label: 'Task', icon: 'check-square' },
+    { key: 'messages', label: 'Messaggi', icon: 'message' },
   ]},
   { group: 'Sistema', items: [
-    { key: 'settings', label: 'Impostazioni', icon: '⚙' },
+    { key: 'settings', label: 'Impostazioni', icon: 'sliders' },
   ]},
 ]
 
@@ -75,7 +76,7 @@ export default function Shell({ route, setRoute, right, children }: {
                 {items.map(i => (
                   <button key={i.key} className={`nav-item ${route === i.key ? 'active' : ''}`}
                     onClick={() => { setRoute(i.key); setOpen(false) }}>
-                    <span className="nav-ico">{i.icon}</span>{i.label}
+                    <span className="nav-ico"><Icon name={i.icon} size={17} /></span>{i.label}
                   </button>
                 ))}
               </React.Fragment>
@@ -89,8 +90,8 @@ export default function Shell({ route, setRoute, right, children }: {
               <div className="user-name">{profile?.full_name || profile?.email}</div>
               <div className="user-role">{role === 'admin' ? 'AUVI · Advisor' : role === 'creator' ? 'Team · Creator' : 'Giocatore'}</div>
             </div>
-            <button className="btn-ghost" style={{ marginLeft: 'auto', padding: 6 }} title="Imposta password" onClick={() => setPwOpen(true)}>🔑</button>
-            <button className="btn-ghost" style={{ padding: 6 }} title="Esci" onClick={signOut}>⎋</button>
+            <button className="btn-ghost" style={{ marginLeft: 'auto', padding: 6, color: 'var(--text-dim)' }} title="Imposta password" onClick={() => setPwOpen(true)}><Icon name="key" size={16} /></button>
+            <button className="btn-ghost" style={{ padding: 6, color: 'var(--text-dim)' }} title="Esci" onClick={signOut}><Icon name="logout" size={16} /></button>
           </div>
         </div>
       </aside>
@@ -98,7 +99,7 @@ export default function Shell({ route, setRoute, right, children }: {
       <div className="main">
         <div className="topbar">
           <div className="flex gap">
-            <button className="menu-btn" onClick={() => setOpen(true)}>☰</button>
+            <button className="menu-btn" onClick={() => setOpen(true)}><Icon name="menu" size={17} /></button>
             <div>
               <div className="page-title">{title.t}</div>
               <div className="page-sub">{title.s}</div>
@@ -112,19 +113,19 @@ export default function Shell({ route, setRoute, right, children }: {
       {/* Tab bar mobile (iOS): pollice, zero frizioni. "Altro" apre il drawer completo. */}
       <nav className="tabbar">
         {[
-          { key: 'dashboard', label: 'Home', icon: '◎' },
-          { key: 'editorial', label: 'Calendario', icon: '📆' },
-          { key: 'media', label: 'Media', icon: '📸' },
-          { key: 'messages', label: 'Chat', icon: '💬' },
+          { key: 'dashboard', label: 'Home', icon: 'home' },
+          { key: 'editorial', label: 'Calendario', icon: 'calendar' },
+          { key: 'media', label: 'Media', icon: 'image' },
+          { key: 'messages', label: 'Chat', icon: 'message' },
         ].map(t => (
           <button key={t.key} className={`tab-item ${route === t.key ? 'active' : ''}`}
             onClick={() => { setRoute(t.key); setOpen(false) }}>
-            <span className="tab-ico">{t.icon}</span>
+            <span className="tab-ico"><Icon name={t.icon} size={21} strokeWidth={1.7} /></span>
             <span className="tab-lbl">{t.label}</span>
           </button>
         ))}
         <button className={`tab-item ${open ? 'active' : ''}`} onClick={() => setOpen(true)}>
-          <span className="tab-ico">☰</span>
+          <span className="tab-ico"><Icon name="menu" size={21} strokeWidth={1.7} /></span>
           <span className="tab-lbl">Altro</span>
         </button>
       </nav>
@@ -152,7 +153,7 @@ function PasswordModal({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <Modal title="🔑 Imposta la tua password" onClose={onClose}
+    <Modal title="Imposta la tua password" onClose={onClose}
       footer={<><button className="btn" onClick={onClose}>Chiudi</button><button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? 'Salvo…' : 'Salva password'}</button></>}>
       <div className="grid" style={{ gap: 12 }}>
         <div className="faint" style={{ fontSize: 12.5 }}>

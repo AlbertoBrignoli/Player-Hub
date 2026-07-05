@@ -40,10 +40,10 @@ export function Badge({ children, tone }: { children: React.ReactNode; tone?: 'g
   return <span className={`badge${tone ? ' badge-' + tone : ''}`}>{children}</span>
 }
 
-export function Empty({ icon = '📭', title, hint }: { icon?: string; title: string; hint?: string }) {
+export function Empty({ icon, title, hint }: { icon?: React.ReactNode; title: string; hint?: string }) {
   return (
     <div className="empty">
-      <div className="empty-ico">{icon}</div>
+      {icon && <div className="empty-ico">{icon}</div>}
       <div style={{ fontWeight: 600, color: 'var(--text-dim)' }}>{title}</div>
       {hint && <div style={{ fontSize: 12.5, marginTop: 4 }}>{hint}</div>}
     </div>
@@ -54,7 +54,7 @@ export function Spinner() {
   return <div className="center"><div className="spinner" /></div>
 }
 
-export function Stat({ label, value, sub, icon, tone }: { label: string; value: React.ReactNode; sub?: React.ReactNode; icon?: string; tone?: string }) {
+export function Stat({ label, value, sub, icon, tone }: { label: string; value: React.ReactNode; sub?: React.ReactNode; icon?: React.ReactNode; tone?: string }) {
   return (
     <div className="card stat">
       <div className="stat-label">{icon && <span className="stat-ico">{icon}</span>}{label}</div>

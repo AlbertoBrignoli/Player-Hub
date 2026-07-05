@@ -104,7 +104,7 @@ function SecurityCard() {
 
   return (
     <div className="card">
-      <div className="card-head"><div className="card-title">🔑 Sicurezza · la tua password</div></div>
+      <div className="card-head"><div className="card-title">Sicurezza · la tua password</div></div>
       <div className="faint" style={{ fontSize: 12.5, marginBottom: 14 }}>
         Account: <b>{profile?.email || session?.user.email}</b> — imposta (o cambia) la password per entrare
         direttamente con email e password. Il link via email resta disponibile se la dimentichi.

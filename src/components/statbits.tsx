@@ -30,7 +30,7 @@ export function LastMatchGrid({ m }: { m: StatsMatch }) {
       <SFact k="Minuti" v={`${m.minutes ?? '—'}′`} />
       <SFact k="Gol / Assist" v={`${m.goal ?? 0} / ${m.assist ?? 0}`} />
       <SFact k="xG" v={m.xg != null ? Number(m.xg).toFixed(2) : '—'} />
-      <SFact k="Cartellini" v={`${m.cartellini_gialli ?? 0}🟨 ${m.cartellini_rossi ?? 0}🟥`} />
+      <SFact k="Gialli / Rossi" v={`${m.cartellini_gialli ?? 0} / ${m.cartellini_rossi ?? 0}`} />
       <SPct k="Precisione passaggi" pct={m.pass_pct} n={m.passaggi_accurati} d={m.passaggi} />
       <SPct k="Passaggi in avanti" pct={m.passaggi_avanti_pct} n={m.passaggi_avanti_accurati} d={m.passaggi_avanti} />
       <SPct k="Lanci lunghi" pct={m.lanci_lunghi_pct} n={m.lanci_lunghi_accurati} d={m.lanci_lunghi} />
@@ -77,7 +77,7 @@ export function SeasonBlock({ stats }: { stats: StatsMatch[] }) {
         <SFact k="Partite" v={tot.partite} big />
         <SFact k="Minuti" v={`${tot.minuti}′`} big />
         <SFact k="Gol / Assist" v={`${tot.gol} / ${tot.assist}`} big />
-        <SFact k="Cartellini" v={`${tot.gialli}🟨 ${tot.rossi}🟥`} big />
+        <SFact k="Gialli / Rossi" v={`${tot.gialli} / ${tot.rossi}`} big />
       </div>
       <div className="grid g3" style={{ gap: 10 }}>
         <SPct k="Precisione passaggi" pct={tot.pass} />

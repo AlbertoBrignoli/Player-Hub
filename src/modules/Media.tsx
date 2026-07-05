@@ -5,6 +5,7 @@ import { useCollection, insertRow, updateRow, deleteRow } from '../lib/useData'
 import { notify } from '../lib/notify'
 import { toast } from '../lib/toast'
 import Lightbox from '../components/Lightbox'
+import Icon from '../components/Icon'
 import { Badge, Empty, Spinner, ConfirmButton, Select } from '../components/ui'
 import { fmtDate, isImageFile, fileExt } from '../lib/format'
 import type { MediaItem, EditorialEntry } from '../lib/types'
@@ -18,17 +19,20 @@ export default function Media() {
   const [tab, setTab] = useState<'approvare' | 'approvate' | 'pubblicare' | 'pubblicati'>('approvare')
   const [urls, setUrls] = useState<Record<string, string>>({})
   const [uploading, setUploading] = useState(false)
-  const [err, setErr] = useState('')
   const [picked, setPicked] = useState<Set<string>>(new Set())
   const [targetEntry, setTargetEntry] = useState('')
   const [lightbox, setLightbox] = useState<number | null>(null)
+  const [activeFolder, setActiveFolder] = useState('')     // '' = tutte
+  const [uploadFolder, setUploadFolder] = useState('')
   const fotoRef = useRef<HTMLInputElement>(null)
   const graficaRef = useRef<HTMLInputElement>(null)
 
-  const daApprovare = rows.filter(m => m.status === 'da_approvare')
-  const approvate = rows.filter(m => m.status === 'approvata')
-  const daPubblicare = rows.filter(m => m.status === 'da_pubblicare')
-  const pubblicati = rows.filter(m => m.status === 'pubblicata')
+  const folders = [...new Set(rows.map(m => m.folder).filter(Boolean))] as string[]
+  const inFolder = (m: MediaItem) => !activeFolder || m.folder === activeFolder
+  const daApprovare = rows.filter(m => m.status === 'da_approvare' && inFolder(m))
+  const approvate = rows.filter(m => m.status === 'approvata' && inFolder(m))
+  const daPubblicare = rows.filter(m => m.status === 'da_pubblicare' && inFolder(m))
+  const pubblicati = rows.filter(m => m.status === 'pubblicata' && inFolder(m))
   const entryById = new Map(entries.map(e => [e.id, e]))
 
   // Anteprime firmate (bucket privato).
@@ -43,8 +47,16 @@ export default function Media() {
     })
   }, [rows]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  function newFolder() {
+    const name = window.prompt('Nome della nuova cartella (es. Pre Season):')?.trim()
+    if (name) { setUploadFolder(name); setActiveFolder(name) }
+    return name
+  }
+
   async function uploadFiles(files: File[], kind: 'foto' | 'grafica') {
-    setUploading(true); setErr('')
+    if (!files.length) return
+    setUploading(true)
+    const folder = uploadFolder || activeFolder || null
     let ok = 0
     for (const file of files) {
       const path = `${kind}/${Date.now()}-${file.name.replace(/[^\w.\-]/g, '_')}`
@@ -55,23 +67,25 @@ export default function Media() {
         file_name: file.name,
         kind,
         status: kind === 'foto' ? 'da_approvare' : 'da_pubblicare',
+        folder,
         uploaded_by: session?.user.id,
         uploaded_role: role,
       })
       if (!ins.error) ok++
     }
     if (ok > 0) {
+      const dove = folder ? ` nella cartella "${folder}"` : ''
       if (kind === 'foto') {
         if (isTeam) {
-          notify('player', '📸 Materiale pronto per essere approvato',
-            `Il team ha caricato ${ok} nuov${ok > 1 ? 'e foto' : 'a foto'}: scegli quali approvare e per quale contenuto.`, 'media')
+          notify('player', 'Materiale pronto per essere approvato',
+            `Il team ha caricato ${ok} nuov${ok > 1 ? 'e foto' : 'a foto'}${dove}: scegli quali approvare.`, 'media')
         } else {
-          notify('team', '📸 Nuove foto dal giocatore', `${profile?.full_name || 'Il giocatore'} ha caricato ${ok} foto.`, 'media')
+          notify('team', 'Nuove foto dal giocatore', `${profile?.full_name || 'Il giocatore'} ha caricato ${ok} foto${dove}.`, 'media')
         }
       } else {
-        notify('player', '🎨 Nuove grafiche da pubblicare', `${ok} grafic${ok > 1 ? 'he' : 'a'} nella sezione Media.`, 'media')
+        notify('player', 'Nuove grafiche da pubblicare', `${ok} grafic${ok > 1 ? 'he' : 'a'}${dove} nella sezione Media.`, 'media')
       }
-      toast(kind === 'foto' ? `📸 ${ok} foto caricat${ok > 1 ? 'e' : 'a'}` : `🎨 ${ok} grafic${ok > 1 ? 'he' : 'a'} caricat${ok > 1 ? 'e' : 'a'}`)
+      toast(kind === 'foto' ? `${ok} foto caricat${ok > 1 ? 'e' : 'a'}${dove}` : `${ok} grafic${ok > 1 ? 'he' : 'a'} caricat${ok > 1 ? 'e' : 'a'}${dove}`)
       reload()
     }
     setUploading(false)
@@ -94,13 +108,13 @@ export default function Media() {
     const entry = targetEntry ? entryById.get(targetEntry) : null
     await Promise.all(ids.map(id =>
       updateRow('crm_media', id, { status: 'approvata', editorial_id: targetEntry || null })))
-    notify('team', `⭐ ${ids.length} foto approvat${ids.length > 1 ? 'e' : 'a'} da ${profile?.full_name || 'Lorenzo'}`,
+    notify('team', `${ids.length} foto approvat${ids.length > 1 ? 'e' : 'a'} da ${profile?.full_name || 'Lorenzo'}`,
       entry
         ? `Per "${entry.title}" del ${fmtDate(entry.entry_date)}: il materiale è dentro la box, pronto per la grafica.`
-        : 'Le trovi in Media → Approvate, pronte da lavorare.',
+        : 'Le trovi in Media, sezione Approvate: pronte da lavorare.',
       entry ? 'editorial' : 'media')
     setPicked(new Set()); setTargetEntry('')
-    toast(`✓ ${ids.length} foto approvat${ids.length > 1 ? 'e' : 'a'}${entry ? ` per "${entry.title}"` : ''}`)
+    toast(`${ids.length} foto approvat${ids.length > 1 ? 'e' : 'a'}${entry ? ` per "${entry.title}"` : ''}`)
     setTab('approvate')
     setLightbox(null)
     reload()
@@ -115,7 +129,7 @@ export default function Media() {
 
   async function markPublished(m: MediaItem) {
     await updateRow('crm_media', m.id, { status: 'pubblicata' })
-    toast('✓ Segnata come pubblicata')
+    toast('Segnata come pubblicata')
     reload()
   }
 
@@ -142,41 +156,68 @@ export default function Media() {
           <div style={{ fontWeight: 650 }}>Libreria media</div>
           <div className="faint" style={{ fontSize: 12.5 }}>
             {role === 'player'
-              ? 'Approva le foto scegliendo per quale contenuto: il team le trova nella box e prepara la grafica.'
-              : 'Carica le foto da far approvare: quelle approvate compaiono dentro la box del calendario con il resto del materiale.'}
+              ? 'Approva le foto che ti piacciono: il team le trova già organizzate e prepara le grafiche.'
+              : 'Organizza gli upload in cartelle (es. Pre Season): il giocatore approva, le approvate sono pronte da lavorare.'}
           </div>
         </div>
-        <div className="flex gap">
+        <div className="flex gap wrap">
+          {isTeam && (
+            <Select value={uploadFolder} onChange={e => e.target.value === '__new__' ? newFolder() : setUploadFolder(e.target.value)} style={{ minWidth: 160 }}>
+              <option value="">Senza cartella</option>
+              {folders.map(f => <option key={f} value={f}>{f}</option>)}
+              <option value="__new__">Nuova cartella…</option>
+            </Select>
+          )}
           <button className="btn btn-primary" disabled={uploading} onClick={() => fotoRef.current?.click()}>
-            {uploading ? 'Carico…' : '⬆ Carica foto'}
+            <Icon name="upload" size={14} /> {uploading ? 'Carico…' : 'Carica foto'}
           </button>
           <input ref={fotoRef} type="file" accept="image/*" multiple hidden
             onChange={e => uploadFiles(Array.from(e.target.files || []), 'foto')} />
           {isTeam && (
             <>
-              <button className="btn" disabled={uploading} onClick={() => graficaRef.current?.click()}>🎨 Carica grafica</button>
+              <button className="btn" disabled={uploading} onClick={() => graficaRef.current?.click()}>
+                <Icon name="edit" size={14} /> Carica grafica
+              </button>
               <input ref={graficaRef} type="file" accept="image/*,video/*,.pdf" multiple hidden
                 onChange={e => uploadFiles(Array.from(e.target.files || []), 'grafica')} />
             </>
           )}
         </div>
       </div>
-      {err && <div className="msg-err">{err}</div>}
+
+      {folders.length > 0 && (
+        <div className="flex gap wrap" style={{ gap: 8 }}>
+          <button className={`chip-folder ${activeFolder === '' ? 'active' : ''}`} onClick={() => setActiveFolder('')}>
+            <Icon name="layers" size={13} /> Tutte
+          </button>
+          {folders.map(f => (
+            <button key={f} className={`chip-folder ${activeFolder === f ? 'active' : ''}`} onClick={() => setActiveFolder(activeFolder === f ? '' : f)}>
+              <Icon name="folder" size={13} /> {f}
+            </button>
+          ))}
+          {isTeam && (
+            <button className="chip-folder" onClick={newFolder}><Icon name="folder-plus" size={13} /> Nuova</button>
+          )}
+        </div>
+      )}
 
       <div className="pill-tabs wrap" style={{ alignSelf: 'start' }}>
-        <button className={`pill-tab ${tab === 'approvare' ? 'active' : ''}`} onClick={() => setTab('approvare')}>📥 Da approvare ({daApprovare.length})</button>
-        <button className={`pill-tab ${tab === 'approvate' ? 'active' : ''}`} onClick={() => setTab('approvate')}>⭐ Approvate ({approvate.length})</button>
-        <button className={`pill-tab ${tab === 'pubblicare' ? 'active' : ''}`} onClick={() => setTab('pubblicare')}>🛠 Da pubblicare ({daPubblicare.length})</button>
-        <button className={`pill-tab ${tab === 'pubblicati' ? 'active' : ''}`} onClick={() => setTab('pubblicati')}>✅ Pubblicati ({pubblicati.length})</button>
+        <button className={`pill-tab ${tab === 'approvare' ? 'active' : ''}`} onClick={() => setTab('approvare')}>Da approvare ({daApprovare.length})</button>
+        <button className={`pill-tab ${tab === 'approvate' ? 'active' : ''}`} onClick={() => setTab('approvate')}>Approvate ({approvate.length})</button>
+        <button className={`pill-tab ${tab === 'pubblicare' ? 'active' : ''}`} onClick={() => setTab('pubblicare')}>Da pubblicare ({daPubblicare.length})</button>
+        <button className={`pill-tab ${tab === 'pubblicati' ? 'active' : ''}`} onClick={() => setTab('pubblicati')}>Pubblicati ({pubblicati.length})</button>
       </div>
 
       {tab === 'approvare' && role === 'player' && daApprovare.length > 0 && (
-        <div className="card flex between wrap gap" style={{ alignItems: 'center', borderColor: picked.size ? 'var(--accent)' : undefined }}>
+        <div className="card flex between wrap gap" style={{ alignItems: 'center', borderColor: picked.size ? 'var(--text-dim)' : undefined }}>
           <div style={{ fontWeight: 650 }}>
-            {picked.size ? `${picked.size} foto selezionat${picked.size > 1 ? 'e' : 'a'}` : 'Swipe → per approvare, ← per scartare · oppure usa ✓ e la selezione multipla'}
+            {picked.size ? `${picked.size} foto selezionat${picked.size > 1 ? 'e' : 'a'}` : 'Scorri a destra per approvare, a sinistra per scartare — o seleziona più foto insieme'}
           </div>
           <div className="flex gap wrap" style={{ alignItems: 'center' }}>
-            <Select value={targetEntry} onChange={e => setTargetEntry(e.target.value)} style={{ minWidth: 220 }}>
+            <button className="btn btn-sm" onClick={() => setPicked(new Set(daApprovare.map(m => m.id)))}>
+              Seleziona tutte{activeFolder ? ` (${activeFolder})` : ''}
+            </button>
+            <Select value={targetEntry} onChange={e => setTargetEntry(e.target.value)} style={{ minWidth: 210 }}>
               <option value="">Collega a un post (opzionale)</option>
               {upcomingEntries.map(e => (
                 <option key={e.id} value={e.id}>{fmtDate(e.entry_date)} · {e.title}</option>
@@ -184,7 +225,7 @@ export default function Media() {
             </Select>
             {picked.size > 0 && (
               <button className="btn btn-primary" onClick={() => approve([...picked])}>
-                ✓ Approva {picked.size}
+                <Icon name="check" size={14} /> Approva {picked.size}
               </button>
             )}
           </div>
@@ -193,9 +234,10 @@ export default function Media() {
 
       {shown.length === 0 ? (
         <div className="card">
-          <Empty icon={tab === 'pubblicati' ? '✅' : tab === 'pubblicare' ? '🛠' : tab === 'approvate' ? '⭐' : '📥'}
+          <Empty icon={<Icon name={tab === 'pubblicati' ? 'check' : tab === 'pubblicare' ? 'edit' : tab === 'approvate' ? 'star' : 'inbox'} size={32} strokeWidth={1.4} />}
             title={tab === 'approvare' ? 'Niente da approvare' : tab === 'approvate' ? 'Nessuna foto approvata' : tab === 'pubblicare' ? 'Niente in lavorazione' : 'Nessun contenuto pubblicato'}
-            hint={tab === 'approvare' ? 'Le foto caricate dal team compaiono qui in attesa di approvazione.'
+            hint={activeFolder ? `Nella cartella "${activeFolder}" questa sezione è vuota.`
+              : tab === 'approvare' ? 'Le foto caricate dal team compaiono qui in attesa di approvazione.'
               : tab === 'approvate' ? 'Le foto approvate dal giocatore arrivano qui in automatico, pronte da lavorare.'
               : tab === 'pubblicare' ? 'Qui trovi le grafiche in preparazione.'
               : 'Le grafiche caricate nelle box del calendario finiscono qui.'} />
@@ -213,8 +255,8 @@ export default function Media() {
                       onClick={() => setLightbox(idx)} />
                   : <div className="media-thumb media-ph" onClick={() => download(m)} style={{ cursor: 'pointer' }}>
                       <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: 26 }}>{m.kind === 'foto' ? '📸' : '🎨'}</div>
-                        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '1px', marginTop: 4 }}>{fileExt(m.file_name)}</div>
+                        <Icon name={m.kind === 'foto' ? 'camera' : 'edit'} size={26} strokeWidth={1.4} />
+                        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '1px', marginTop: 6 }}>{fileExt(m.file_name)}</div>
                       </div>
                     </div>}
                 {tab === 'approvare' && role === 'player' && (
@@ -232,24 +274,29 @@ export default function Media() {
                   <div className="flex between" style={{ alignItems: 'center' }}>
                     <Badge tone={m.status === 'approvata' ? 'gold' : m.status === 'pubblicata' ? 'green' : m.status === 'da_pubblicare' ? 'blue' : undefined}>
                       {m.kind === 'foto'
-                        ? (m.status === 'da_approvare' ? 'Da approvare' : m.status === 'approvata' ? 'Approvata ⭐' : m.status === 'pubblicata' ? 'Pubblicata' : 'Da pubblicare')
-                        : (m.status === 'pubblicata' ? (m.kind === 'carosello' ? 'Carosello ✓' : 'Grafica ✓') : m.kind === 'carosello' ? 'Carosello' : 'Grafica')}
+                        ? (m.status === 'da_approvare' ? 'Da approvare' : m.status === 'approvata' ? 'Approvata' : m.status === 'pubblicata' ? 'Pubblicata' : 'Da pubblicare')
+                        : (m.status === 'pubblicata' ? (m.kind === 'carosello' ? 'Carosello · pubblicato' : 'Grafica · pubblicata') : m.kind === 'carosello' ? 'Carosello' : 'Grafica')}
                     </Badge>
                     <span className="faint" style={{ fontSize: 11 }}>{fmtDate(m.created_at)}</span>
                   </div>
-                  {entry && <div className="faint" style={{ fontSize: 11 }}>→ {entry.title} · {fmtDate(entry.entry_date)}</div>}
+                  {(m.folder || entry) && (
+                    <div className="faint flex gap" style={{ fontSize: 11, gap: 6 }}>
+                      {m.folder && <span className="flex" style={{ gap: 4 }}><Icon name="folder" size={11} /> {m.folder}</span>}
+                      {entry && <span>→ {entry.title} · {fmtDate(entry.entry_date)}</span>}
+                    </div>
+                  )}
                   {role === 'player' && tab === 'approvare' ? (
                     <div className="flex gap" style={{ marginTop: 8 }}>
-                      <button className="btn btn-primary btn-sm" style={{ flex: 1 }} onClick={() => approve([m.id])}>✓ Approva</button>
-                      <button className="btn btn-sm" onClick={() => discard(m)} title="Scarta">✕</button>
+                      <button className="btn btn-primary btn-sm" style={{ flex: 1 }} onClick={() => approve([m.id])}><Icon name="check" size={13} /> Approva</button>
+                      <button className="btn btn-sm" onClick={() => discard(m)} title="Scarta"><Icon name="x" size={13} /></button>
                     </div>
                   ) : (
                     <div className="flex gap" style={{ marginTop: 8 }}>
-                      <button className="btn btn-sm" style={{ flex: 1 }} onClick={() => download(m)}>Scarica</button>
+                      <button className="btn btn-sm" style={{ flex: 1 }} onClick={() => download(m)}><Icon name="download" size={13} /> Scarica</button>
                       {isTeam && tab === 'pubblicare' && (
-                        <button className="btn btn-sm" onClick={() => markPublished(m)} title="Segna come pubblicata">✓</button>
+                        <button className="btn btn-sm" onClick={() => markPublished(m)} title="Segna come pubblicata"><Icon name="check" size={13} /></button>
                       )}
-                      {(isTeam || m.uploaded_by === session?.user.id) && <ConfirmButton onConfirm={() => remove(m)}>🗑</ConfirmButton>}
+                      {(isTeam || m.uploaded_by === session?.user.id) && <ConfirmButton onConfirm={() => remove(m)}><Icon name="trash" size={13} /></ConfirmButton>}
                     </div>
                   )}
                 </div>
@@ -271,12 +318,12 @@ export default function Media() {
             if (role === 'player' && tab === 'approvare') {
               return (
                 <>
-                  <button className="btn btn-primary" onClick={() => approve([m.id])}>✓ Approva</button>
-                  <button className="btn" onClick={() => discard(m)}>✕ Scarta</button>
+                  <button className="btn btn-primary" onClick={() => approve([m.id])}><Icon name="check" size={14} /> Approva</button>
+                  <button className="btn" onClick={() => discard(m)}><Icon name="x" size={14} /> Scarta</button>
                 </>
               )
             }
-            return <button className="btn" onClick={() => download(m)}>⬇ Scarica</button>
+            return <button className="btn" onClick={() => download(m)}><Icon name="download" size={14} /> Scarica</button>
           }}
         />
       )}

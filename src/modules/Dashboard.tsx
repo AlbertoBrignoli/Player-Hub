@@ -3,6 +3,7 @@ import { supabase, PLAYER_NAME } from '../lib/supabase'
 import { useAuth } from '../auth/AuthContext'
 import { Stat, Spinner, Select } from '../components/ui'
 import { SeasonBlock, LastMatchGrid } from '../components/statbits'
+import Icon from '../components/Icon'
 import { fmtDate, fmtDateTime, daysUntil, seasonOf } from '../lib/format'
 import type { Player, Task, EventItem, Contract, Match, StatsMatch } from '../lib/types'
 
@@ -87,7 +88,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
       {/* Prossime partite */}
       <div className="card">
         <div className="card-head">
-          <div className="card-title">📅 Prossime partite</div>
+          <div className="card-title">Prossime partite</div>
           <button className="btn btn-ghost btn-sm" onClick={() => goto('editorial')}>Calendario →</button>
         </div>
         {upcoming.length === 0 ? (
@@ -114,7 +115,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
       {lastMatch && (
         <div className="card">
           <div className="card-head">
-            <div className="card-title">🔬 Ultima partita · {lastMatch.match_name}</div>
+            <div className="card-title">Ultima partita · {lastMatch.match_name}</div>
             <div className="card-hint">{fmtDate(lastMatch.match_date)} · {lastMatch.competition}</div>
           </div>
           <LastMatchGrid m={lastMatch} />
@@ -124,7 +125,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
       {/* Stagione con selettore */}
       <div className="card">
         <div className="card-head">
-          <div className="card-title">📊 Stagione {season}</div>
+          <div className="card-title">Stagione {season}</div>
           <Select value={season} onChange={e => setSeason(e.target.value)} style={{ width: 130 }}>
             {seasons.map(s => <option key={s} value={s}>{s}</option>)}
           </Select>
@@ -140,11 +141,11 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
 
       {/* Strip gestione compatta */}
       <div className="grid g3">
-        <Stat icon="✓" label="Task aperte" value={openTasks.length} tone={openTasks.length ? 'var(--accent)' : undefined}
+        <Stat icon={<Icon name="check-square" size={13} />} label="Task aperte" value={openTasks.length} tone={openTasks.length ? 'var(--accent)' : undefined}
           sub={openTasks[0]?.title || 'nessuna attività'} />
-        <Stat icon="📄" label="Contratti" value={contracts.filter(c => c.status === 'active').length}
+        <Stat icon={<Icon name="briefcase" size={13} />} label="Contratti" value={contracts.filter(c => c.status === 'active').length}
           sub={nextContractExpiry ? `scadenza tra ${nextContractExpiry.d} gg` : `${contracts.length} totali`} />
-        <Stat icon="🗓" label="Prossimo impegno" value={events[0] ? fmtDate(events[0].start_at) : '—'}
+        <Stat icon={<Icon name="clock" size={13} />} label="Prossimo impegno" value={events[0] ? fmtDate(events[0].start_at) : '—'}
           sub={events[0]?.title || 'agenda libera'} />
       </div>
     </div>

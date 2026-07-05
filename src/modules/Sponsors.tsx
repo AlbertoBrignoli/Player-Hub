@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import { useCollection, insertRow, updateRow, deleteRow } from '../lib/useData'
 import { Modal, Field, Input, Textarea, Select, Badge, Empty, Spinner, Stat, ConfirmButton } from '../components/ui'
+import Icon from '../components/Icon'
 import { fmtMoney, fmtDate } from '../lib/format'
 import type { Sponsor } from '../lib/types'
 
@@ -26,9 +27,9 @@ export default function Sponsors() {
   return (
     <div className="grid" style={{ gap: 16 }}>
       <div className="grid g3">
-        <Stat icon="🤝" label="Sponsor attivi" value={active.length} />
-        <Stat icon="💰" label="Valore complessivo" value={fmtMoney(totalValue)} tone="var(--accent)" />
-        <Stat icon="📌" label="In trattativa" value={rows.filter(r => r.status === 'negotiation').length} tone="var(--gold)" />
+        <Stat icon={<Icon name="award" size={13} />} label="Sponsor attivi" value={active.length} />
+        <Stat icon={<Icon name="briefcase" size={13} />} label="Valore complessivo" value={fmtMoney(totalValue)} tone="var(--accent)" />
+        <Stat icon={<Icon name="pin" size={13} />} label="In trattativa" value={rows.filter(r => r.status === 'negotiation').length} tone="var(--gold)" />
       </div>
 
       <div className="flex between">
@@ -36,7 +37,7 @@ export default function Sponsors() {
         {isAdmin && <button className="btn btn-primary" onClick={() => setEdit(empty())}>+ Nuovo sponsor</button>}
       </div>
 
-      {rows.length === 0 ? <Empty icon="🤝" title="Nessuno sponsor" hint={isAdmin ? 'Aggiungi il primo accordo commerciale.' : undefined} /> : (
+      {rows.length === 0 ? <Empty icon={<Icon name="award" size={30} strokeWidth={1.4} />} title="Nessuno sponsor" hint={isAdmin ? 'Aggiungi il primo accordo commerciale.' : undefined} /> : (
         <div className="grid g2">
           {rows.map(s => {
             const dl = s.deliverables || []

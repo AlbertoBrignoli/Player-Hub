@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../auth/AuthContext'
 import { Spinner, Empty } from '../components/ui'
+import Icon from '../components/Icon'
 import { fmtDateTime, initials } from '../lib/format'
 import type { Message } from '../lib/types'
 
@@ -47,7 +48,7 @@ export default function Messages() {
   return (
     <div className="card" style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 190px)', padding: 0 }}>
       <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
-        {rows.length === 0 ? <Empty icon="💬" title="Nessun messaggio" hint="Inizia la conversazione diretta con il tuo referente." /> : (
+        {rows.length === 0 ? <Empty icon={<Icon name="message" size={30} strokeWidth={1.4} />} title="Nessun messaggio" hint="Inizia la conversazione diretta con il tuo referente." /> : (
           <div className="chat">
             {rows.map(m => {
               const mine = m.sender_id === session?.user.id

@@ -5,6 +5,7 @@ import { useCollection, insertRow, updateRow, deleteRow } from '../lib/useData'
 import { notify } from '../lib/notify'
 import { toast } from '../lib/toast'
 import { Modal, Field, Input, Select, Textarea, Badge, Empty, Spinner, ConfirmButton } from '../components/ui'
+import Icon from '../components/Icon'
 import { fmtDate, fmtDateTime, isImageFile, fileExt } from '../lib/format'
 import type { EditorialEntry, MediaItem } from '../lib/types'
 
@@ -12,11 +13,11 @@ const BUCKET = 'crm-media'
 const PLAYER_FIRST = (PLAYER_NAME || 'giocatore').split(' ')[0]
 
 const TYPES: Record<string, { label: string; icon: string }> = {
-  partita: { label: 'Partita', icon: '⚽' },
-  post: { label: 'Post', icon: '📝' },
-  story: { label: 'Story', icon: '📱' },
-  carosello: { label: 'Carosello', icon: '🎠' },
-  altro: { label: 'Altro', icon: '📌' },
+  partita: { label: 'Partita', icon: 'ball' },
+  post: { label: 'Post', icon: 'file' },
+  story: { label: 'Story', icon: 'smartphone' },
+  carosello: { label: 'Carosello', icon: 'layers' },
+  altro: { label: 'Altro', icon: 'pin' },
 }
 
 const STATUSES: Record<string, { label: string; tone?: 'green' | 'red' | 'gold' | 'blue' | 'accent' }> = {
@@ -98,7 +99,7 @@ export default function Editorial() {
 
       <div className="card" style={{ padding: 14 }}>
         <div className="faint" style={{ fontSize: 12.5 }}>
-          ⚽ Le partite entrano da sole dal database: ogni fixture ha già la sua casella con tutte le info per le grafiche.
+          Le partite entrano da sole dal database: ogni fixture ha già la sua casella con tutte le info per le grafiche.
           Copy e grafiche si preparano dentro ogni contenuto.
         </div>
       </div>
@@ -143,8 +144,8 @@ export default function Editorial() {
         </div>
       ) : (
         <div className="grid g2">
-          <EntryList title="🔜 In arrivo" entries={upcoming} onOpen={setOpenEntry} empty="Niente in programma." />
-          <EntryList title="📁 Archivio" entries={past} onOpen={setOpenEntry} empty="Ancora nessun contenuto passato." />
+          <EntryList title="In arrivo" entries={upcoming} onOpen={setOpenEntry} empty="Niente in programma." />
+          <EntryList title="Archivio" entries={past} onOpen={setOpenEntry} empty="Ancora nessun contenuto passato." />
         </div>
       )}
 
@@ -172,8 +173,8 @@ function EntryChip({ e, onOpen, full }: { e: EditorialEntry; onOpen: (e: Editori
     return (
       <button className={`cal-match cal-${e.status} ${full ? 'cal-w-full' : ''}`} onClick={() => onOpen(e)} title={e.title}>
         <div className="cal-match-top">
-          <span className="cal-league">⚽ {shortLeague(mi.league)}</span>
-          <span>{home ? '🏠' : '✈️'} {score || time}</span>
+          <span className="cal-league">{shortLeague(mi.league)}</span>
+          <span>{home ? 'CASA' : 'TRASF'} · {score || time}</span>
         </div>
         <div className="cal-match-teams">{mi.home_team}<br />{mi.away_team}</div>
         <div className="cal-match-state">{STATUSES[e.status]?.label}</div>
@@ -182,7 +183,7 @@ function EntryChip({ e, onOpen, full }: { e: EditorialEntry; onOpen: (e: Editori
   }
   return (
     <button className={`cal-chip cal-${e.status} ${full ? 'cal-w-full' : ''}`} onClick={() => onOpen(e)} title={e.title}>
-      {TYPES[e.type]?.icon} {e.title}
+      <Icon name={TYPES[e.type]?.icon || 'file'} size={11} style={{ verticalAlign: '-1.5px', marginRight: 4 }} />{e.title}
     </button>
   )
 }
@@ -207,7 +208,7 @@ function EntryList({ title, entries, onOpen, empty }: {
         <div className="list">
           {entries.slice(0, 30).map(e => (
             <button className="row" key={e.id} onClick={() => onOpen(e)} style={{ textAlign: 'left', width: '100%' }}>
-              <span style={{ fontSize: 17 }}>{TYPES[e.type]?.icon}</span>
+              <span style={{ color: 'var(--text-dim)' }}><Icon name={TYPES[e.type]?.icon || 'file'} size={16} /></span>
               <div className="row-main">
                 <div className="row-title">{e.title}</div>
                 <div className="row-sub">{fmtDate(e.entry_date)}{e.match_info?.league ? ` · ${e.match_info.league}` : ''}</div>
@@ -261,8 +262,8 @@ function EntryModal({ entry, onClose, onChanged }: {
     const { error } = await updateRow('crm_editorial', entry.id, { copy_text: copy || null, status })
     if (error) toast(error.message, 'err')
     else {
-      if (copy.trim()) notify('player', `✍️ Copy pronto: ${entry.title}`, 'Il testo è pronto nel calendario editoriale.', 'editorial')
-      toast('✍️ Copy salvato')
+      if (copy.trim()) notify('player', `Copy pronto: ${entry.title}`, 'Il testo è pronto nel calendario editoriale.', 'editorial')
+      toast('Copy salvato')
       onChanged()
     }
     setSaving(false)
@@ -272,7 +273,7 @@ function EntryModal({ entry, onClose, onChanged }: {
     try {
       await navigator.clipboard.writeText(copy)
       setCopied(true); setTimeout(() => setCopied(false), 1800)
-      toast('📋 Copy copiato negli appunti')
+      toast('Copy copiato negli appunti')
     } catch { /* ignore */ }
   }
 
@@ -305,9 +306,9 @@ function EntryModal({ entry, onClose, onChanged }: {
     if (ok) {
       const status = ['da_preparare', 'copy_pronto'].includes(entry.status) ? 'grafica_caricata' : entry.status
       if (status !== entry.status) await updateRow('crm_editorial', entry.id, { status })
-      notify(isTeam ? 'player' : 'team', `🎨 Grafica caricata: ${entry.title}`,
+      notify(isTeam ? 'player' : 'team', `Grafica caricata: ${entry.title}`,
         `${ok} file pront${ok > 1 ? 'i' : 'o'} nel calendario editoriale.`, 'editorial')
-      toast(`🎨 ${ok} grafic${ok > 1 ? 'he' : 'a'} caricat${ok > 1 ? 'e' : 'a'} — anche in Media → Pubblicati`)
+      toast(`${ok} grafic${ok > 1 ? 'he' : 'a'} caricat${ok > 1 ? 'e' : 'a'} — anche in Media, Pubblicati`)
       loadMedia(); onChanged()
     }
     setUploading(false)
@@ -336,7 +337,7 @@ function EntryModal({ entry, onClose, onChanged }: {
   }
 
   return (
-    <Modal title={`${TYPES[entry.type]?.icon} ${entry.title}`} onClose={onClose} wide
+    <Modal title={entry.title} onClose={onClose} wide
       footer={
         <div className="flex between wrap gap" style={{ width: '100%' }}>
           <div className="flex gap" style={{ alignItems: 'center' }}>
@@ -356,7 +357,7 @@ function EntryModal({ entry, onClose, onChanged }: {
 
         {mi && (
           <div className="card" style={{ background: 'var(--bg-2)' }}>
-            <div className="card-head"><div className="card-title">⚽ Info partita per le grafiche</div></div>
+            <div className="card-head"><div className="card-title">Info partita per le grafiche</div></div>
             <div className="grid g3" style={{ gap: 10 }}>
               <Info k="Match" v={`${mi.home_team ?? '—'} vs ${mi.away_team ?? '—'}`} />
               <Info k="Competizione" v={mi.league} />
@@ -371,7 +372,7 @@ function EntryModal({ entry, onClose, onChanged }: {
 
         <div>
           <div className="flex between" style={{ marginBottom: 6 }}>
-            <div style={{ fontWeight: 650 }}>✍️ Copy</div>
+            <div style={{ fontWeight: 650 }}>Copy</div>
             <div className="flex gap">
               <button className="btn btn-sm" onClick={copyToClipboard} disabled={!copy}>{copied ? 'Copiato ✓' : 'Copia'}</button>
               <button className="btn btn-sm" onClick={downloadCopy} disabled={!copy}>Scarica .txt</button>
@@ -385,7 +386,7 @@ function EntryModal({ entry, onClose, onChanged }: {
         {approvate.length > 0 && (
           <div>
             <div style={{ fontWeight: 650, marginBottom: 6 }}>
-              📸 Materiale approvato da {PLAYER_FIRST}
+              Materiale approvato da {PLAYER_FIRST}
               <span className="faint" style={{ fontWeight: 400, fontSize: 12 }}> · {approvate.length} foto per questa grafica</span>
             </div>
             <div className="asset-grid">
@@ -393,7 +394,7 @@ function EntryModal({ entry, onClose, onChanged }: {
                 <div className="asset-card" key={m.id} onClick={() => openAsset(m)} title={m.file_name || ''}>
                   {isImageFile(m.file_name) && urls[m.storage_path]
                     ? <img src={urls[m.storage_path]} alt="" loading="lazy" />
-                    : <div className="asset-ph">📸</div>}
+                    : <div className="asset-ph"><Icon name="camera" size={20} strokeWidth={1.4} /></div>}
                 </div>
               ))}
             </div>
@@ -402,9 +403,9 @@ function EntryModal({ entry, onClose, onChanged }: {
 
         <div>
           <div className="flex between" style={{ marginBottom: 6 }}>
-            <div style={{ fontWeight: 650 }}>🎨 Grafiche</div>
+            <div style={{ fontWeight: 650 }}>Grafiche</div>
             <button className="btn btn-primary btn-sm" disabled={uploading} onClick={() => fileRef.current?.click()}>
-              {uploading ? 'Carico…' : '⬆ Carica grafica'}
+              {uploading ? 'Carico…' : 'Carica grafica'}
             </button>
             <input ref={fileRef} type="file" multiple accept="image/*,video/*,.pdf,.psd,.ai" hidden onChange={onUpload} />
           </div>
@@ -461,7 +462,7 @@ function NewEntryModal({ onClose, onCreated }: { onClose: () => void; onCreated:
           <Field label="Data"><Input type="date" value={date} onChange={e => setDate(e.target.value)} /></Field>
           <Field label="Tipo">
             <Select value={type} onChange={e => setType(e.target.value)}>
-              {Object.entries(TYPES).filter(([k]) => k !== 'partita').map(([k, v]) => <option key={k} value={k}>{v.icon} {v.label}</option>)}
+              {Object.entries(TYPES).filter(([k]) => k !== 'partita').map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
             </Select>
           </Field>
         </div>

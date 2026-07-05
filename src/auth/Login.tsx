@@ -45,8 +45,8 @@ export default function Login() {
 
         {sent ? (
           <div className="msg-ok">
-            ✉️ Link di accesso inviato a <b>{email}</b>.<br />
-            Apri l'email e clicca sul link per entrare. Una volta dentro potrai impostare la tua password dal menu 🔑.
+            Link di accesso inviato a <b>{email}</b>.<br />
+            Apri l'email e clicca sul link per entrare. Una volta dentro potrai impostare la tua password dalle Impostazioni.
           </div>
         ) : (
           <form onSubmit={submit}>
@@ -76,7 +76,7 @@ export default function Login() {
 
         <div className="login-note">
           Accesso consentito solo agli indirizzi autorizzati.<br />
-          Al primo accesso usa il link via email, poi imposta la tua password dal menu 🔑.
+          Al primo accesso usa il link via email, poi imposta la tua password dalle Impostazioni.
         </div>
       </div>
     </div>
