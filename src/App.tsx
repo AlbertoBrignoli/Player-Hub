@@ -31,7 +31,7 @@ export default function App() {
   const view = (() => {
     switch (route) {
       case 'dashboard': return <Dashboard goto={setRoute} />
-      case 'performance': return <Performance />
+      case 'performance': return <Performance goto={setRoute} />
       case 'contracts': return <Contracts />
       case 'documents': return <Documents />
       case 'editorial': return <Editorial />

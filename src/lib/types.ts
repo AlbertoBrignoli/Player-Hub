@@ -15,6 +15,7 @@ export interface Player {
   team_country: string | null
   stadium_name: string | null
   stadium_capacity: number | null
+  stadium_photo_url: string | null
   height: string | null
   weight: string | null
   preferred_foot: string | null

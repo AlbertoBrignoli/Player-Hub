@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase, PLAYER_NAME } from '../lib/supabase'
 import { useAuth } from '../auth/AuthContext'
-import { Stat, Spinner, Badge, Select } from '../components/ui'
+import { Stat, Spinner, Select } from '../components/ui'
+import { SeasonBlock, LastMatchGrid } from '../components/statbits'
 import { fmtDate, fmtDateTime, daysUntil, seasonOf } from '../lib/format'
 import type { Player, Task, EventItem, Contract, Match, StatsMatch } from '../lib/types'
 
@@ -116,24 +117,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
             <div className="card-title">🔬 Ultima partita · {lastMatch.match_name}</div>
             <div className="card-hint">{fmtDate(lastMatch.match_date)} · {lastMatch.competition}</div>
           </div>
-          <div className="grid g4" style={{ gap: 10 }}>
-            <SFact k="Minuti" v={`${lastMatch.minutes ?? '—'}′`} />
-            <SFact k="Gol / Assist" v={`${lastMatch.goal ?? 0} / ${lastMatch.assist ?? 0}`} />
-            <SFact k="xG" v={lastMatch.xg != null ? Number(lastMatch.xg).toFixed(2) : '—'} />
-            <SFact k="Cartellini" v={`${lastMatch.cartellini_gialli ?? 0}🟨 ${lastMatch.cartellini_rossi ?? 0}🟥`} />
-            <SPct k="Precisione passaggi" pct={lastMatch.pass_pct} n={lastMatch.passaggi_accurati} d={lastMatch.passaggi} />
-            <SPct k="Passaggi in avanti" pct={lastMatch.passaggi_avanti_pct} n={lastMatch.passaggi_avanti_accurati} d={lastMatch.passaggi_avanti} />
-            <SPct k="Lanci lunghi" pct={lastMatch.lanci_lunghi_pct} n={lastMatch.lanci_lunghi_accurati} d={lastMatch.lanci_lunghi} />
-            <SPct k="Azioni riuscite" pct={lastMatch.azioni_pct} n={lastMatch.azioni_riuscite} d={lastMatch.azioni_totali} />
-            <SPct k="Duelli vinti" pct={lastMatch.duelli_pct} n={lastMatch.duelli_vinti} d={lastMatch.duelli} />
-            <SPct k="Duelli aerei" pct={lastMatch.duelli_aerei_pct} n={lastMatch.duelli_aerei_vinti} d={lastMatch.duelli_aerei} />
-            <SPct k="Duelli difensivi" pct={lastMatch.duelli_dif_pct} n={lastMatch.duelli_dif_vinti} d={lastMatch.duelli_difensivi} />
-            <SFact k="Intercetti · Spazzate" v={`${lastMatch.intercetti ?? 0} · ${lastMatch.spazzate ?? 0}`} />
-            <SFact k="Palle recuperate" v={lastMatch.palle_recuperate ?? '—'} />
-            <SFact k="Palle perse" v={lastMatch.palle_perse ?? '—'} />
-            <SFact k="Falli" v={lastMatch.falli ?? 0} />
-            <SFact k="Tiri (in porta)" v={`${lastMatch.tiri ?? 0} (${lastMatch.tiri_porta ?? 0})`} />
-          </div>
+          <LastMatchGrid m={lastMatch} />
         </div>
       )}
 
@@ -167,92 +151,3 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
   )
 }
 
-function SeasonBlock({ stats }: { stats: StatsMatch[] }) {
-  const comps = [...new Set(stats.map(s => s.competition))]
-  const sum = (f: (s: StatsMatch) => number | null) => stats.reduce((a, s) => a + Number(f(s) || 0), 0)
-  const agg = (rows: StatsMatch[]) => {
-    const s = (f: (x: StatsMatch) => number | null) => rows.reduce((a, x) => a + Number(f(x) || 0), 0)
-    const pct = (n: number, d: number) => d ? Math.round(n * 1000 / d) / 10 : null
-    return {
-      partite: rows.length,
-      minuti: s(x => x.minutes),
-      gol: s(x => x.goal),
-      assist: s(x => x.assist),
-      pass: pct(s(x => x.passaggi_accurati), s(x => x.passaggi)),
-      avanti: pct(s(x => x.passaggi_avanti_accurati), s(x => x.passaggi_avanti)),
-      lanci: pct(s(x => x.lanci_lunghi_accurati), s(x => x.lanci_lunghi)),
-      duelli: pct(s(x => x.duelli_vinti), s(x => x.duelli)),
-      aerei: pct(s(x => x.duelli_aerei_vinti), s(x => x.duelli_aerei)),
-      azioni: pct(s(x => x.azioni_riuscite), s(x => x.azioni_totali)),
-      intercetti: rows.length ? Math.round(s(x => x.intercetti) * 10 / rows.length) / 10 : 0,
-      recuperi: rows.length ? Math.round(s(x => x.palle_recuperate) * 10 / rows.length) / 10 : 0,
-      gialli: s(x => x.cartellini_gialli),
-      rossi: s(x => x.cartellini_rossi),
-    }
-  }
-  const tot = agg(stats)
-  return (
-    <div className="grid" style={{ gap: 14 }}>
-      <div className="grid g4" style={{ gap: 10 }}>
-        <SFact k="Partite" v={tot.partite} big />
-        <SFact k="Minuti" v={`${tot.minuti}′`} big />
-        <SFact k="Gol / Assist" v={`${tot.gol} / ${tot.assist}`} big />
-        <SFact k="Cartellini" v={`${tot.gialli}🟨 ${tot.rossi}🟥`} big />
-      </div>
-      <div className="grid g3" style={{ gap: 10 }}>
-        <SPct k="Precisione passaggi" pct={tot.pass} />
-        <SPct k="Passaggi in avanti" pct={tot.avanti} />
-        <SPct k="Lanci lunghi" pct={tot.lanci} />
-        <SPct k="Duelli vinti" pct={tot.duelli} />
-        <SPct k="Duelli aerei" pct={tot.aerei} />
-        <SPct k="Azioni riuscite" pct={tot.azioni} />
-        <SFact k="Intercetti / partita" v={tot.intercetti} />
-        <SFact k="Recuperi / partita" v={tot.recuperi} />
-        <SFact k="Minuti / partita" v={tot.partite ? Math.round(tot.minuti / tot.partite) + '′' : '—'} />
-      </div>
-      {comps.length > 1 && (
-        <div className="grid g2" style={{ gap: 10 }}>
-          {comps.map(c => {
-            const a = agg(stats.filter(s => s.competition === c))
-            return (
-              <div className="card" key={c} style={{ background: 'var(--bg-2)' }}>
-                <div style={{ fontWeight: 700, marginBottom: 8, fontSize: 13.5 }}>
-                  {c} <Badge>{a.partite} partite</Badge>
-                </div>
-                <div className="grid g3" style={{ gap: 8 }}>
-                  <SFact k="Minuti" v={`${a.minuti}′`} />
-                  <SFact k="Gol / Assist" v={`${a.gol} / ${a.assist}`} />
-                  <SPct k="Passaggi" pct={a.pass} />
-                  <SPct k="Duelli" pct={a.duelli} />
-                  <SPct k="Aerei" pct={a.aerei} />
-                  <SPct k="Azioni" pct={a.azioni} />
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
-    </div>
-  )
-}
-
-function SFact({ k, v, big }: { k: string; v: any; big?: boolean }) {
-  return (
-    <div>
-      <div className="faint" style={{ fontSize: 11 }}>{k}</div>
-      <div style={{ fontWeight: 750, fontSize: big ? 20 : 15 }}>{v ?? '—'}</div>
-    </div>
-  )
-}
-
-function SPct({ k, pct, n, d }: { k: string; pct: number | null; n?: number | null; d?: number | null }) {
-  const val = pct == null ? null : Number(pct)
-  const color = val == null ? undefined : val >= 70 ? 'var(--green)' : val >= 50 ? 'var(--accent)' : 'var(--gold)'
-  return (
-    <div title={n != null && d != null ? `${n}/${d}` : undefined}>
-      <div className="faint" style={{ fontSize: 11 }}>{k}</div>
-      <div style={{ fontWeight: 750, fontSize: 17, color }}>{val == null ? '—' : `${val}%`}</div>
-      {n != null && d != null && <div className="faint" style={{ fontSize: 10.5 }}>{n}/{d}</div>}
-    </div>
-  )
-}
