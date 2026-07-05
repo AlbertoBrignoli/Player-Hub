@@ -7,7 +7,7 @@ import Toaster from './Toaster'
 import Icon from './Icon'
 import { Modal, Field, Input } from './ui'
 
-export const APP_VERSION = 'v3.6'
+export const APP_VERSION = 'v3.7'
 
 export interface NavDef { key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[] }
 
@@ -15,15 +15,15 @@ export const NAV: { group: string; items: NavDef[] }[] = [
   { group: 'Panoramica', items: [
     { key: 'dashboard', label: 'Dashboard', icon: 'grid' },
     { key: 'performance', label: 'Performance', icon: 'activity' },
+  ]},
+  { group: 'Contenuti', items: [
     { key: 'editorial', label: 'Cal. Editoriale', icon: 'calendar' },
+    { key: 'media', label: 'Media', icon: 'image' },
   ]},
   { group: 'Gestione', items: [
     { key: 'contracts', label: 'Contratti', icon: 'briefcase' },
     { key: 'documents', label: 'Documenti', icon: 'archive' },
     { key: 'sponsors', label: 'Sponsor', icon: 'award' },
-  ]},
-  { group: 'Contenuti', items: [
-    { key: 'media', label: 'Media', icon: 'image' },
   ]},
   { group: 'Operatività', items: [
     { key: 'agenda', label: 'Agenda', icon: 'clock' },
