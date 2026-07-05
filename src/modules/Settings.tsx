@@ -16,7 +16,14 @@ export default function Settings() {
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
 
-  if (!isAdmin) return <Empty icon="🔒" title="Area riservata" hint="Solo gli amministratori AUVI possono accedere alle impostazioni." />
+  // La sezione Sicurezza è per tutti; whitelist e replica solo per gli admin.
+  if (!isAdmin) {
+    return (
+      <div className="grid" style={{ gap: 16 }}>
+        <SecurityCard />
+      </div>
+    )
+  }
   if (loading) return <Spinner />
 
   async function add() {
@@ -32,6 +39,8 @@ export default function Settings() {
 
   return (
     <div className="grid" style={{ gap: 16 }}>
+      <SecurityCard />
+
       <div className="card">
         <div className="card-head"><div className="card-title">Chi può accedere a questo spazio</div></div>
         <div className="faint" style={{ fontSize: 12.5, marginBottom: 14 }}>
@@ -72,6 +81,46 @@ export default function Settings() {
           <li>Fai il deploy su Vercel e autorizza qui l'email dell'atleta e di AUVI.</li>
         </ol>
       </div>
+    </div>
+  )
+}
+
+function SecurityCard() {
+  const { session, profile } = useAuth()
+  const [pw, setPw] = useState('')
+  const [pw2, setPw2] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
+
+  async function save() {
+    if (pw.length < 8) { setMsg({ ok: false, text: 'La password deve avere almeno 8 caratteri.' }); return }
+    if (pw !== pw2) { setMsg({ ok: false, text: 'Le due password non coincidono.' }); return }
+    setSaving(true); setMsg(null)
+    const { error } = await supabase.auth.updateUser({ password: pw })
+    setSaving(false)
+    if (error) setMsg({ ok: false, text: error.message })
+    else { setPw(''); setPw2(''); setMsg({ ok: true, text: 'Password salvata! Dal prossimo accesso entri con email e password, senza link via email.' }) }
+  }
+
+  return (
+    <div className="card">
+      <div className="card-head"><div className="card-title">🔑 Sicurezza · la tua password</div></div>
+      <div className="faint" style={{ fontSize: 12.5, marginBottom: 14 }}>
+        Account: <b>{profile?.email || session?.user.email}</b> — imposta (o cambia) la password per entrare
+        direttamente con email e password. Il link via email resta disponibile se la dimentichi.
+      </div>
+      <div className="flex gap wrap" style={{ alignItems: 'flex-end' }}>
+        <div style={{ flex: 1, minWidth: 180 }}>
+          <Field label="Nuova password"><Input type="password" value={pw} onChange={e => setPw(e.target.value)} placeholder="Minimo 8 caratteri" autoComplete="new-password" /></Field>
+        </div>
+        <div style={{ flex: 1, minWidth: 180 }}>
+          <Field label="Ripeti password"><Input type="password" value={pw2} onChange={e => setPw2(e.target.value)} autoComplete="new-password" /></Field>
+        </div>
+        <button className="btn btn-primary" style={{ marginBottom: 14 }} disabled={saving || !pw} onClick={save}>
+          {saving ? 'Salvo…' : 'Salva password'}
+        </button>
+      </div>
+      {msg && <div className={msg.ok ? 'msg-ok' : 'msg-err'}>{msg.text}</div>}
     </div>
   )
 }

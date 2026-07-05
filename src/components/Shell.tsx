@@ -27,7 +27,7 @@ export const NAV: { group: string; items: NavDef[] }[] = [
     { key: 'messages', label: 'Messaggi', icon: '💬' },
   ]},
   { group: 'Sistema', items: [
-    { key: 'settings', label: 'Impostazioni', icon: '⚙', adminOnly: true },
+    { key: 'settings', label: 'Impostazioni', icon: '⚙' },
   ]},
 ]
 
@@ -42,7 +42,7 @@ const TITLES: Record<string, { t: string; s: string }> = {
   agenda: { t: 'Agenda', s: 'Impegni e appuntamenti' },
   tasks: { t: 'Task', s: 'Attività condivise' },
   messages: { t: 'Messaggi', s: 'Comunicazione diretta' },
-  settings: { t: 'Impostazioni', s: 'Accessi e configurazione' },
+  settings: { t: 'Impostazioni', s: 'Password, accessi e configurazione' },
 }
 
 export default function Shell({ route, setRoute, right, children }: {
