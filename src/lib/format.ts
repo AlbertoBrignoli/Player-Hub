@@ -40,3 +40,13 @@ export function initials(name: string | null | undefined) {
   if (!name) return '?'
   return name.split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase()
 }
+
+// Solo questi formati si possono mostrare come <img> nel browser.
+export function isImageFile(name: string | null | undefined) {
+  return /\.(jpe?g|png|webp|gif|avif|heic|heif|bmp|svg)$/i.test(name || '')
+}
+
+export function fileExt(name: string | null | undefined) {
+  const m = (name || '').match(/\.([a-z0-9]+)$/i)
+  return m ? m[1].toUpperCase() : 'FILE'
+}

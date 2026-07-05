@@ -305,3 +305,4 @@ button { cursor: pointer; border: none; background: none; }
 /* Checkbox di selezione sulle foto da approvare */
 .media-pick { position: absolute; top: 8px; left: 8px; width: 26px; height: 26px; border-radius: 8px; border: 2px solid rgba(255,255,255,.75); background: rgba(0,0,0,.35); color: #000; font-weight: 900; display: grid; place-items: center; cursor: pointer; }
 .media-pick.on { background: var(--accent); border-color: var(--accent); }
+.file-badge { display: grid; place-items: center; background: var(--surface-2); border: 1px solid var(--border-2); font-size: 10px; font-weight: 800; letter-spacing: .5px; color: var(--text-dim); cursor: pointer; }

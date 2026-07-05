@@ -4,7 +4,7 @@ import { useAuth } from '../auth/AuthContext'
 import { useCollection, insertRow, updateRow, deleteRow } from '../lib/useData'
 import { notify } from '../lib/notify'
 import { Badge, Empty, Spinner, ConfirmButton, Select } from '../components/ui'
-import { fmtDate } from '../lib/format'
+import { fmtDate, isImageFile, fileExt } from '../lib/format'
 import type { MediaItem, EditorialEntry } from '../lib/types'
 
 const BUCKET = 'crm-media'
@@ -189,10 +189,15 @@ export default function Media() {
             return (
               <div className={`media-card ${isPicked ? 'media-selected' : ''}`} key={m.id}>
                 <div style={{ position: 'relative' }}>
-                  {urls[m.storage_path]
+                  {isImageFile(m.file_name) && urls[m.storage_path]
                     ? <img className="media-thumb" src={urls[m.storage_path]} alt={m.file_name || ''} loading="lazy"
                         onClick={() => tab === 'approvare' && role === 'player' ? togglePick(m.id) : download(m)} />
-                    : <div className="media-thumb media-ph">{m.kind === 'foto' ? '📸' : '🎨'}</div>}
+                    : <div className="media-thumb media-ph" onClick={() => download(m)} style={{ cursor: 'pointer' }}>
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{ fontSize: 26 }}>{m.kind === 'foto' ? '📸' : '🎨'}</div>
+                          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '1px', marginTop: 4 }}>{fileExt(m.file_name)}</div>
+                        </div>
+                      </div>}
                   {tab === 'approvare' && role === 'player' && (
                     <div className={`media-pick ${isPicked ? 'on' : ''}`} onClick={() => togglePick(m.id)}>{isPicked ? '✓' : ''}</div>
                   )}

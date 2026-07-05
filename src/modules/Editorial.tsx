@@ -4,7 +4,7 @@ import { useAuth } from '../auth/AuthContext'
 import { useCollection, insertRow, updateRow, deleteRow } from '../lib/useData'
 import { notify } from '../lib/notify'
 import { Modal, Field, Input, Select, Textarea, Badge, Empty, Spinner, ConfirmButton } from '../components/ui'
-import { fmtDate, fmtDateTime } from '../lib/format'
+import { fmtDate, fmtDateTime, isImageFile, fileExt } from '../lib/format'
 import type { EditorialEntry, MediaItem } from '../lib/types'
 
 const BUCKET = 'crm-media'
@@ -322,7 +322,7 @@ function EntryModal({ entry, onClose, onChanged }: {
             <div className="asset-grid">
               {approvate.map(m => (
                 <div className="asset-card" key={m.id} onClick={() => openAsset(m)} title={m.file_name || ''}>
-                  {urls[m.storage_path]
+                  {isImageFile(m.file_name) && urls[m.storage_path]
                     ? <img src={urls[m.storage_path]} alt="" loading="lazy" />
                     : <div className="asset-ph">📸</div>}
                 </div>
@@ -345,9 +345,9 @@ function EntryModal({ entry, onClose, onChanged }: {
               <div className="list">
                 {grafiche.map(m => (
                   <div className="row" key={m.id}>
-                    {urls[m.storage_path]
+                    {isImageFile(m.file_name) && urls[m.storage_path]
                       ? <img className="row-thumb" src={urls[m.storage_path]} alt="" loading="lazy" onClick={() => openAsset(m)} />
-                      : <span style={{ fontSize: 17 }}>🖼</span>}
+                      : <span className="row-thumb file-badge" onClick={() => openAsset(m)}>{fileExt(m.file_name)}</span>}
                     <div className="row-main">
                       <div className="row-title">{m.file_name}</div>
                       <div className="row-sub">{fmtDateTime(m.created_at)}</div>
