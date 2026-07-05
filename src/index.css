@@ -436,3 +436,9 @@ button { cursor: pointer; border: none; background: none; -webkit-tap-highlight-
 /* ===== Drop zone (drag & drop upload) ===== */
 .dropzone-overlay { position: fixed; inset: 0; z-index: 200; background: rgba(10,10,11,.82); backdrop-filter: blur(4px); display: grid; place-items: center; pointer-events: none; }
 .dropzone-inner { border: 2px dashed var(--text-dim); border-radius: 24px; padding: 44px 60px; text-align: center; color: var(--text); background: var(--surface); }
+
+.folder-card { position: relative; }
+.folder-rename { position: absolute; top: 8px; right: 8px; z-index: 2; width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; background: rgba(10,10,11,.6); backdrop-filter: blur(6px); color: var(--text); border: 1px solid var(--border-2); opacity: 0; transition: opacity .15s; }
+.folder-card:hover .folder-rename { opacity: 1; }
+@media (hover: none) { .folder-rename { opacity: 1; } }
+.folder-rename:hover { background: var(--surface-2); }

@@ -29,21 +29,25 @@ export default function Media() {
   const fotoRef = useRef<HTMLInputElement>(null)
   const graficaRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
-  const dragDepth = useRef(0)
 
-  // Drag & drop: trascina i file ovunque nella pagina Media e partono verso
-  // la cartella aperta (o quella scelta nel menu upload).
-  function onDragEnter(e: React.DragEvent) {
-    e.preventDefault()
-    if (e.dataTransfer.types.includes('Files')) { dragDepth.current++; setDragging(true) }
-  }
-  function onDragLeave(e: React.DragEvent) {
-    e.preventDefault()
-    if (--dragDepth.current <= 0) { dragDepth.current = 0; setDragging(false) }
-  }
+  // Overlay drag&drop a prova di bug: 'dragover' si ripete di continuo mentre
+  // trascini; quando smette (drop o uscita dalla finestra) un timer lo nasconde.
+  // Niente conteggio enter/leave che rimane incastrato.
+  useEffect(() => {
+    let t: ReturnType<typeof setTimeout>
+    const onOver = (e: DragEvent) => {
+      if (!e.dataTransfer || !Array.from(e.dataTransfer.types).includes('Files')) return
+      e.preventDefault()
+      setDragging(true)
+      clearTimeout(t); t = setTimeout(() => setDragging(false), 200)
+    }
+    window.addEventListener('dragover', onOver)
+    return () => { window.removeEventListener('dragover', onOver); clearTimeout(t) }
+  }, [])
+
   function onDrop(e: React.DragEvent) {
     e.preventDefault()
-    dragDepth.current = 0; setDragging(false)
+    setDragging(false)
     const files = Array.from(e.dataTransfer.files)
     if (!files.length) return
     const imgs = files.filter(f => f.type.startsWith('image/'))
@@ -88,15 +92,17 @@ export default function Media() {
     }
   }
 
-  async function renameFolder() {
-    if (!openFolder || openFolder === NO_FOLDER) return
-    const name = window.prompt('Nuovo nome della cartella:', openFolder)?.trim()
-    if (!name || name === openFolder) return
-    const { error } = await supabase.from('crm_media').update({ folder: name }).eq('folder', openFolder)
+  // Rinomina una cartella (dal dettaglio o direttamente da una card della griglia).
+  async function renameFolder(target?: string) {
+    const current = target ?? openFolder
+    if (!current || current === NO_FOLDER) return
+    const name = window.prompt('Nuovo nome della cartella:', current)?.trim()
+    if (!name || name === current) return
+    const { error } = await supabase.from('crm_media').update({ folder: name }).eq('folder', current)
     if (error) { toast(error.message, 'err'); return }
     toast(`Cartella rinominata in "${name}"`)
-    setOpenFolder(name)
-    if (uploadFolder === openFolder) setUploadFolder(name)
+    if (openFolder === current) setOpenFolder(name)
+    if (uploadFolder === current) setUploadFolder(name)
     reload()
   }
 
@@ -106,39 +112,48 @@ export default function Media() {
     // Se sto navigando dentro una cartella, si carica lì.
     const folder = (openFolder && openFolder !== NO_FOLDER) ? openFolder : (uploadFolder || null)
     let ok = 0
-    for (const file of files) {
-      const path = `${kind}/${Date.now()}-${file.name.replace(/[^\w.\-]/g, '_')}`
-      const up = await supabase.storage.from(BUCKET).upload(path, file, { upsert: false })
-      if (up.error) { toast(up.error.message, 'err'); continue }
-      const ins = await insertRow('crm_media', {
-        storage_path: path,
-        file_name: file.name,
-        kind,
-        status: kind === 'foto' ? 'da_approvare' : 'da_pubblicare',
-        folder,
-        uploaded_by: session?.user.id,
-        uploaded_role: role,
-      })
-      if (!ins.error) ok++
-    }
-    if (ok > 0) {
-      const dove = folder ? ` nella cartella "${folder}"` : ''
-      if (kind === 'foto') {
-        if (isTeam) {
-          notify('player', 'Materiale pronto per essere approvato',
-            `Il team ha caricato ${ok} nuov${ok > 1 ? 'e foto' : 'a foto'}${dove}: scegli quali approvare.`, 'media')
-        } else {
-          notify('team', 'Nuove foto dal giocatore', `${profile?.full_name || 'Il giocatore'} ha caricato ${ok} foto${dove}.`, 'media')
-        }
-      } else {
-        notify('player', 'Nuove grafiche da pubblicare', `${ok} grafic${ok > 1 ? 'he' : 'a'}${dove} nella sezione Media.`, 'media')
+    try {
+      for (const file of files) {
+        const path = `${kind}/${Date.now()}-${file.name.replace(/[^\w.\-]/g, '_')}`
+        const up = await supabase.storage.from(BUCKET).upload(path, file, { upsert: false })
+        if (up.error) { toast(up.error.message, 'err'); continue }
+        const ins = await insertRow('crm_media', {
+          storage_path: path,
+          file_name: file.name,
+          kind,
+          status: kind === 'foto' ? 'da_approvare' : 'da_pubblicare',
+          folder,
+          uploaded_by: session?.user.id,
+          uploaded_role: role,
+        })
+        if (!ins.error) ok++
       }
-      toast(`${ok} file caricat${ok > 1 ? 'i' : 'o'}${dove}`)
-      reload()
+      if (ok > 0) {
+        const dove = folder ? ` nella cartella "${folder}"` : ''
+        if (kind === 'foto') {
+          if (isTeam) {
+            notify('player', 'Materiale pronto per essere approvato',
+              `Il team ha caricato ${ok} nuov${ok > 1 ? 'e foto' : 'a foto'}${dove}: scegli quali approvare.`, 'media')
+          } else {
+            notify('team', 'Nuove foto dal giocatore', `${profile?.full_name || 'Il giocatore'} ha caricato ${ok} foto${dove}.`, 'media')
+          }
+        } else {
+          notify('player', 'Nuove grafiche da pubblicare', `${ok} grafic${ok > 1 ? 'he' : 'a'}${dove} nella sezione Media.`, 'media')
+        }
+        toast(`${ok} file caricat${ok > 1 ? 'i' : 'o'}${dove}`)
+        reload()
+      } else {
+        toast('Caricamento non riuscito.', 'err')
+      }
+    } catch (e: any) {
+      toast(e?.message || 'Caricamento non riuscito.', 'err')
+    } finally {
+      // Qualunque cosa succeda i bottoni tornano attivi: niente più "Carico…" bloccato.
+      setUploading(false)
+      setDragging(false)
+      if (fotoRef.current) fotoRef.current.value = ''
+      if (graficaRef.current) graficaRef.current.value = ''
     }
-    setUploading(false)
-    if (fotoRef.current) fotoRef.current.value = ''
-    if (graficaRef.current) graficaRef.current.value = ''
   }
 
   function togglePick(id: string) {
@@ -270,14 +285,15 @@ export default function Media() {
 
   return (
     <div className="grid" style={{ gap: 16, position: 'relative' }}
-      onDragEnter={onDragEnter} onDragOver={e => e.preventDefault()} onDragLeave={onDragLeave} onDrop={onDrop}>
+      onDragOver={e => e.preventDefault()} onDrop={onDrop}>
       {dragging && (
-        <div className="dropzone-overlay">
+        <div className="dropzone-overlay" onClick={() => setDragging(false)} onDrop={onDrop} onDragOver={e => e.preventDefault()}>
           <div className="dropzone-inner">
             <Icon name="upload" size={34} strokeWidth={1.4} />
             <div style={{ fontWeight: 750, marginTop: 10 }}>
               Rilascia per caricare{openFolder && openFolder !== NO_FOLDER ? ` in "${openFolder}"` : uploadFolder ? ` in "${uploadFolder}"` : ''}
             </div>
+            <div className="faint" style={{ fontSize: 12, marginTop: 6 }}>tocca qui per annullare</div>
           </div>
         </div>
       )}
@@ -334,7 +350,7 @@ export default function Media() {
           <div className="flex gap">
             <button className="btn btn-sm" onClick={() => setOpenFolder(null)}>‹ Tutte le cartelle</button>
             {isTeam && openFolder !== NO_FOLDER && (
-              <button className="btn btn-sm" onClick={renameFolder}><Icon name="edit" size={13} /> Rinomina</button>
+              <button className="btn btn-sm" onClick={() => renameFolder()}><Icon name="edit" size={13} /> Rinomina</button>
             )}
           </div>
         )}
@@ -366,7 +382,12 @@ export default function Media() {
               const items = rows.filter(m => m.folder === f && m.status !== 'scartata')
               const cover = folderCover(f)
               return (
-                <button className="folder-card" key={f} onClick={() => setOpenFolder(f)}>
+                <div className="folder-card" key={f} onClick={() => setOpenFolder(f)} role="button" tabIndex={0}>
+                  {isTeam && (
+                    <button className="folder-rename" title="Rinomina cartella" onClick={e => { e.stopPropagation(); renameFolder(f) }}>
+                      <Icon name="edit" size={14} />
+                    </button>
+                  )}
                   {cover ? <img className="folder-cover" src={cover} alt="" loading="lazy" /> : <div className="folder-cover folder-cover-ph"><Icon name="folder" size={30} strokeWidth={1.3} /></div>}
                   <div className="folder-meta">
                     <div className="folder-name"><Icon name="folder" size={13} /> {f}</div>
@@ -374,11 +395,11 @@ export default function Media() {
                       {items.length} elementi{items.some(m => m.status === 'da_approvare') ? ` · ${items.filter(m => m.status === 'da_approvare').length} da approvare` : ''}
                     </div>
                   </div>
-                </button>
+                </div>
               )
             })}
             {senzaCartella.length > 0 && (
-              <button className="folder-card" onClick={() => setOpenFolder(NO_FOLDER)}>
+              <button className="folder-card" onClick={() => setOpenFolder(NO_FOLDER)} type="button">
                 {folderCover(null) ? <img className="folder-cover" src={folderCover(null)!} alt="" loading="lazy" /> : <div className="folder-cover folder-cover-ph"><Icon name="image" size={30} strokeWidth={1.3} /></div>}
                 <div className="folder-meta">
                   <div className="folder-name"><Icon name="image" size={13} /> Senza cartella</div>
