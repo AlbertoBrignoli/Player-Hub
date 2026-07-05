@@ -107,6 +107,27 @@ export default function Shell({ route, setRoute, right, children }: {
         </div>
         <div className="content">{children}</div>
       </div>
+
+      {/* Tab bar mobile (iOS): pollice, zero frizioni. "Altro" apre il drawer completo. */}
+      <nav className="tabbar">
+        {[
+          { key: 'dashboard', label: 'Home', icon: '◎' },
+          { key: 'editorial', label: 'Calendario', icon: '📆' },
+          { key: 'media', label: 'Media', icon: '📸' },
+          { key: 'messages', label: 'Chat', icon: '💬' },
+        ].map(t => (
+          <button key={t.key} className={`tab-item ${route === t.key ? 'active' : ''}`}
+            onClick={() => { setRoute(t.key); setOpen(false) }}>
+            <span className="tab-ico">{t.icon}</span>
+            <span className="tab-lbl">{t.label}</span>
+          </button>
+        ))}
+        <button className={`tab-item ${open ? 'active' : ''}`} onClick={() => setOpen(true)}>
+          <span className="tab-ico">☰</span>
+          <span className="tab-lbl">Altro</span>
+        </button>
+      </nav>
+
       {pwOpen && <PasswordModal onClose={() => setPwOpen(false)} />}
     </div>
   )
