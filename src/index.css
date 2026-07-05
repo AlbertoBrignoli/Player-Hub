@@ -432,3 +432,7 @@ button { cursor: pointer; border: none; background: none; -webkit-tap-highlight-
 /* Logo reale (icona app) al posto della lettera */
 .brand-logo-img { width: 40px; height: 40px; border-radius: 11px; object-fit: cover; flex-shrink: 0; border: 1px solid var(--border-2); }
 .login-logo-img { width: 60px; height: 60px; border-radius: 16px; object-fit: cover; margin-bottom: 22px; border: 1px solid var(--border-2); display: block; }
+
+/* ===== Drop zone (drag & drop upload) ===== */
+.dropzone-overlay { position: fixed; inset: 0; z-index: 200; background: rgba(10,10,11,.82); backdrop-filter: blur(4px); display: grid; place-items: center; pointer-events: none; }
+.dropzone-inner { border: 2px dashed var(--text-dim); border-radius: 24px; padding: 44px 60px; text-align: center; color: var(--text); background: var(--surface); }

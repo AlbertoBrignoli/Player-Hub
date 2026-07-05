@@ -28,6 +28,32 @@ export default function Media() {
   const [uploadFolder, setUploadFolder] = useState('')
   const fotoRef = useRef<HTMLInputElement>(null)
   const graficaRef = useRef<HTMLInputElement>(null)
+  const [dragging, setDragging] = useState(false)
+  const dragDepth = useRef(0)
+
+  // Drag & drop: trascina i file ovunque nella pagina Media e partono verso
+  // la cartella aperta (o quella scelta nel menu upload).
+  function onDragEnter(e: React.DragEvent) {
+    e.preventDefault()
+    if (e.dataTransfer.types.includes('Files')) { dragDepth.current++; setDragging(true) }
+  }
+  function onDragLeave(e: React.DragEvent) {
+    e.preventDefault()
+    if (--dragDepth.current <= 0) { dragDepth.current = 0; setDragging(false) }
+  }
+  function onDrop(e: React.DragEvent) {
+    e.preventDefault()
+    dragDepth.current = 0; setDragging(false)
+    const files = Array.from(e.dataTransfer.files)
+    if (!files.length) return
+    const imgs = files.filter(f => f.type.startsWith('image/'))
+    const altri = files.filter(f => !f.type.startsWith('image/'))
+    if (imgs.length) uploadFiles(imgs, 'foto')
+    if (altri.length) {
+      if (isTeam) uploadFiles(altri, 'grafica')
+      else toast('Puoi trascinare solo immagini.', 'err')
+    }
+  }
 
   const folders = [...new Set(rows.map(m => m.folder).filter(Boolean))] as string[]
   const senzaCartella = rows.filter(m => m.folder == null && m.status !== 'scartata')
@@ -60,6 +86,18 @@ export default function Media() {
       setView('cartelle'); setOpenFolder(name)
       toast(`Cartella "${name}" pronta: carica il primo contenuto`)
     }
+  }
+
+  async function renameFolder() {
+    if (!openFolder || openFolder === NO_FOLDER) return
+    const name = window.prompt('Nuovo nome della cartella:', openFolder)?.trim()
+    if (!name || name === openFolder) return
+    const { error } = await supabase.from('crm_media').update({ folder: name }).eq('folder', openFolder)
+    if (error) { toast(error.message, 'err'); return }
+    toast(`Cartella rinominata in "${name}"`)
+    setOpenFolder(name)
+    if (uploadFolder === openFolder) setUploadFolder(name)
+    reload()
   }
 
   async function uploadFiles(files: File[], kind: 'foto' | 'grafica') {
@@ -231,7 +269,18 @@ export default function Media() {
   }
 
   return (
-    <div className="grid" style={{ gap: 16 }}>
+    <div className="grid" style={{ gap: 16, position: 'relative' }}
+      onDragEnter={onDragEnter} onDragOver={e => e.preventDefault()} onDragLeave={onDragLeave} onDrop={onDrop}>
+      {dragging && (
+        <div className="dropzone-overlay">
+          <div className="dropzone-inner">
+            <Icon name="upload" size={34} strokeWidth={1.4} />
+            <div style={{ fontWeight: 750, marginTop: 10 }}>
+              Rilascia per caricare{openFolder && openFolder !== NO_FOLDER ? ` in "${openFolder}"` : uploadFolder ? ` in "${uploadFolder}"` : ''}
+            </div>
+          </div>
+        </div>
+      )}
       {/* Testata: upload + navigazione viste */}
       <div className="card flex between wrap gap">
         <div>
@@ -282,7 +331,12 @@ export default function Media() {
           </button>
         </div>
         {view === 'cartelle' && openFolder && (
-          <button className="btn btn-sm" onClick={() => setOpenFolder(null)}>‹ Tutte le cartelle</button>
+          <div className="flex gap">
+            <button className="btn btn-sm" onClick={() => setOpenFolder(null)}>‹ Tutte le cartelle</button>
+            {isTeam && openFolder !== NO_FOLDER && (
+              <button className="btn btn-sm" onClick={renameFolder}><Icon name="edit" size={13} /> Rinomina</button>
+            )}
+          </div>
         )}
         {isTeam && view === 'cartelle' && !openFolder && (
           <button className="btn btn-sm" onClick={newFolder}><Icon name="folder-plus" size={13} /> Nuova cartella</button>

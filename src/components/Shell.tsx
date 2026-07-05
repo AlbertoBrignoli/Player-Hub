@@ -7,6 +7,8 @@ import Toaster from './Toaster'
 import Icon from './Icon'
 import { Modal, Field, Input } from './ui'
 
+export const APP_VERSION = 'v3.1'
+
 export interface NavDef { key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[] }
 
 export const NAV: { group: string; items: NavDef[] }[] = [
@@ -63,7 +65,7 @@ export default function Shell({ route, setRoute, right, children }: {
           <img className="brand-logo-img" src="/icons/icon-192.png" alt="AUVI" />
           <div>
             <div className="brand-name">Player Hub</div>
-            <div className="brand-sub">{PLAYER_NAME}</div>
+            <div className="brand-sub">{PLAYER_NAME} · {APP_VERSION}</div>
           </div>
         </div>
         <nav className="nav">
