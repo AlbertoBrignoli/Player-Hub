@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../auth/AuthContext'
 import { useCollection, insertRow, deleteRow } from '../lib/useData'
+import { toast } from '../lib/toast'
 import { Empty, Spinner, Badge, Select, ConfirmButton } from '../components/ui'
 import Icon from '../components/Icon'
 import { fmtDate } from '../lib/format'
@@ -11,7 +12,7 @@ const CATS: Record<string, string> = { contratto: 'Contratto', identita: 'Identi
 const BUCKET = 'crm-documents'
 
 export default function Documents() {
-  const { session } = useAuth()
+  const { session, isAdmin } = useAuth()
   const { rows, loading, reload } = useCollection<Doc>('crm_documents', { orderBy: 'created_at' })
   const [uploading, setUploading] = useState(false)
   const [cat, setCat] = useState('altro')
@@ -41,9 +42,18 @@ export default function Documents() {
     if (data?.signedUrl) window.open(data.signedUrl, '_blank')
   }
 
+  // Possono eliminare: gli admin, oppure chi ha caricato il file.
+  function canDelete(d: Doc) {
+    return isAdmin || (d.uploaded_by != null && d.uploaded_by === session?.user.id)
+  }
+
   async function remove(d: Doc) {
+    const { error, count } = await supabase.from('crm_documents')
+      .delete({ count: 'exact' }).eq('id', d.id)
+    if (error) { toast(error.message, 'err'); return }
+    if (!count) { toast('Non hai i permessi per eliminare questo documento.', 'err'); return }
     if (d.file_path) await supabase.storage.from(BUCKET).remove([d.file_path])
-    await deleteRow('crm_documents', d.id)
+    toast(`"${d.name}" eliminato`)
     reload()
   }
 
@@ -80,7 +90,7 @@ export default function Documents() {
                 </div>
                 <Badge>{CATS[d.category] || d.category}</Badge>
                 <button className="btn btn-sm" onClick={() => open(d)}>Apri</button>
-                <ConfirmButton onConfirm={() => remove(d)}>Elimina</ConfirmButton>
+                {canDelete(d) && <ConfirmButton onConfirm={() => remove(d)}>Elimina</ConfirmButton>}
               </div>
             ))}
           </div>

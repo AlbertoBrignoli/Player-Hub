@@ -428,3 +428,7 @@ button { cursor: pointer; border: none; background: none; -webkit-tap-highlight-
 .folder-meta { padding: 12px 14px; }
 .folder-name { font-weight: 700; font-size: 13.5px; display: flex; align-items: center; gap: 7px; }
 .folder-new { border-style: dashed; border-color: var(--border-2); }
+
+/* Logo reale (icona app) al posto della lettera */
+.brand-logo-img { width: 40px; height: 40px; border-radius: 11px; object-fit: cover; flex-shrink: 0; border: 1px solid var(--border-2); }
+.login-logo-img { width: 60px; height: 60px; border-radius: 16px; object-fit: cover; margin-bottom: 22px; border: 1px solid var(--border-2); display: block; }

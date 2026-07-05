@@ -60,7 +60,7 @@ export default function Shell({ route, setRoute, right, children }: {
       <div className={`scrim ${open ? 'show' : ''}`} onClick={() => setOpen(false)} />
       <aside className={`sidebar ${open ? 'open' : ''}`}>
         <div className="brand">
-          <div className="brand-logo">A</div>
+          <img className="brand-logo-img" src="/icons/icon-192.png" alt="AUVI" />
           <div>
             <div className="brand-name">Player Hub</div>
             <div className="brand-sub">{PLAYER_NAME}</div>
