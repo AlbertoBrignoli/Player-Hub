@@ -14,10 +14,22 @@ const PLAYER_FIRST = (PLAYER_NAME || 'giocatore').split(' ')[0]
 
 const TYPES: Record<string, { label: string; icon: string }> = {
   partita: { label: 'Partita', icon: 'ball' },
-  post: { label: 'Post', icon: 'file' },
-  story: { label: 'Story', icon: 'smartphone' },
+  post: { label: 'Post feed', icon: 'file' },
   carosello: { label: 'Carosello', icon: 'layers' },
+  story: { label: 'Story', icon: 'smartphone' },
+  reel: { label: 'Reel', icon: 'activity' },
   altro: { label: 'Altro', icon: 'pin' },
+}
+
+// Ambiente / mood del contenuto (per i contenuti non-partita).
+const THEMES: Record<string, string> = {
+  '': 'Nessun tema',
+  family: 'Famiglia',
+  lifestyle: 'Lifestyle',
+  sponsor: 'Sponsor / Brand',
+  allenamento: 'Allenamento',
+  citta: 'Città / Viaggio',
+  altro: 'Altro',
 }
 
 const STATUSES: Record<string, { label: string; tone?: 'green' | 'red' | 'gold' | 'blue' | 'accent' }> = {
@@ -93,7 +105,9 @@ export default function Editorial() {
             <button className={`pill-tab ${view === 'cal' ? 'active' : ''}`} onClick={() => setView('cal')}>Calendario</button>
             <button className={`pill-tab ${view === 'lista' ? 'active' : ''}`} onClick={() => setView('lista')}>Lista</button>
           </div>
-          {isTeam && <button className="btn btn-primary" onClick={() => setCreating(true)}>＋ Contenuto</button>}
+          <button className="btn btn-primary" onClick={() => setCreating(true)}>
+            <Icon name="plus" size={14} /> {isTeam ? 'Contenuto' : 'Proponi contenuto'}
+          </button>
         </div>
       </div>
 
@@ -234,6 +248,7 @@ function EntryModal({ entry, onClose, onChanged }: {
   const [media, setMedia] = useState<MediaItem[]>([])
   const [urls, setUrls] = useState<Record<string, string>>({})
   const fileRef = useRef<HTMLInputElement>(null)
+  const materialRef = useRef<HTMLInputElement>(null)
   const mi = entry.match_info
 
   const grafiche = media.filter(m => m.kind !== 'foto')
@@ -315,6 +330,36 @@ function EntryModal({ entry, onClose, onChanged }: {
     if (fileRef.current) fileRef.current.value = ''
   }
 
+  // Materiale sorgente (foto) caricato dal giocatore o dal team dentro il contenuto:
+  // entra già "approvato" e collegato al contenuto, pronto per la grafica.
+  async function onUploadMaterial(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || [])
+    if (!files.length) return
+    setUploading(true); setErr('')
+    let ok = 0
+    try {
+      for (const file of files) {
+        const path = `editorial/${entry.id}/mat-${Date.now()}-${file.name.replace(/[^\w.\-]/g, '_')}`
+        const up = await supabase.storage.from(BUCKET).upload(path, file, { upsert: false })
+        if (up.error) { toast(up.error.message, 'err'); continue }
+        const ins = await insertRow('crm_media', {
+          storage_path: path, file_name: file.name, kind: 'foto', status: 'approvata',
+          editorial_id: entry.id, uploaded_by: session?.user.id, uploaded_role: profile?.role, note: entry.title,
+        })
+        if (!ins.error) ok++
+      }
+      if (ok) {
+        notify(isTeam ? 'player' : 'team', `Materiale per "${entry.title}"`,
+          `${ok} file caricat${ok > 1 ? 'i' : 'o'} nel contenuto, pronto per la grafica.`, 'editorial')
+        toast(`${ok} file aggiunt${ok > 1 ? 'i' : 'o'} al materiale`)
+        loadMedia(); onChanged()
+      }
+    } finally {
+      setUploading(false)
+      if (materialRef.current) materialRef.current.value = ''
+    }
+  }
+
   async function openAsset(m: MediaItem) {
     const { data } = await supabase.storage.from(BUCKET).createSignedUrl(m.storage_path, 300, { download: m.file_name || undefined })
     if (data?.signedUrl) window.open(data.signedUrl, '_blank')
@@ -352,8 +397,18 @@ function EntryModal({ entry, onClose, onChanged }: {
       <div className="grid" style={{ gap: 14 }}>
         <div className="flex gap wrap" style={{ alignItems: 'center' }}>
           <Badge tone={STATUSES[entry.status]?.tone}>{STATUSES[entry.status]?.label}</Badge>
+          <Badge>{TYPES[entry.type]?.label || entry.type}</Badge>
+          {entry.theme && <Badge>{THEMES[entry.theme] || entry.theme}</Badge>}
+          {entry.requested_by && <Badge tone="accent">Proposto da {PLAYER_FIRST}</Badge>}
           <span className="faint" style={{ fontSize: 12.5 }}>{fmtDate(entry.entry_date)}</span>
         </div>
+
+        {entry.brief && (
+          <div className="card" style={{ background: 'var(--bg-2)' }}>
+            <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.8px', fontWeight: 700, marginBottom: 4 }}>Brief</div>
+            <div style={{ fontSize: 13.5 }}>{entry.brief}</div>
+          </div>
+        )}
 
         {mi && (
           <div className="card" style={{ background: 'var(--bg-2)' }}>
@@ -376,41 +431,59 @@ function EntryModal({ entry, onClose, onChanged }: {
             <div className="flex gap">
               <button className="btn btn-sm" onClick={copyToClipboard} disabled={!copy}>{copied ? 'Copiato ✓' : 'Copia'}</button>
               <button className="btn btn-sm" onClick={downloadCopy} disabled={!copy}>Scarica .txt</button>
-              {isTeam && <button className="btn btn-primary btn-sm" disabled={saving} onClick={saveCopy}>{saving ? 'Salvo…' : 'Salva copy'}</button>}
+              <button className="btn btn-primary btn-sm" disabled={saving} onClick={saveCopy}>{saving ? 'Salvo…' : 'Salva copy'}</button>
             </div>
           </div>
-          <Textarea rows={5} value={copy} onChange={e => setCopy(e.target.value)} readOnly={!isTeam}
-            placeholder={isTeam ? 'Scrivi qui il copy del post: didascalia, hashtag, tag…' : 'Il copy non è ancora pronto.'} />
+          <Textarea rows={5} value={copy} onChange={e => setCopy(e.target.value)}
+            placeholder="Scrivi qui il copy del post: didascalia, hashtag, tag…" />
+          <div className="faint" style={{ fontSize: 11.5, marginTop: 4 }}>Copy modificabile da entrambi: il team lo prepara, tu lo approvi o lo ritocchi.</div>
         </div>
-
-        {approvate.length > 0 && (
-          <div>
-            <div style={{ fontWeight: 650, marginBottom: 6 }}>
-              Materiale approvato da {PLAYER_FIRST}
-              <span className="faint" style={{ fontWeight: 400, fontSize: 12 }}> · {approvate.length} foto per questa grafica</span>
-            </div>
-            <div className="asset-grid">
-              {approvate.map(m => (
-                <div className="asset-card" key={m.id} onClick={() => openAsset(m)} title={m.file_name || ''}>
-                  {isImageFile(m.file_name) && urls[m.storage_path]
-                    ? <img src={urls[m.storage_path]} alt="" loading="lazy" />
-                    : <div className="asset-ph"><Icon name="camera" size={20} strokeWidth={1.4} /></div>}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         <div>
           <div className="flex between" style={{ marginBottom: 6 }}>
-            <div style={{ fontWeight: 650 }}>Grafiche</div>
-            <button className="btn btn-primary btn-sm" disabled={uploading} onClick={() => fileRef.current?.click()}>
-              {uploading ? 'Carico…' : 'Carica grafica'}
+            <div style={{ fontWeight: 650 }}>
+              Materiale{approvate.length ? '' : ' per la grafica'}
+              {approvate.length > 0 && <span className="faint" style={{ fontWeight: 400, fontSize: 12 }}> · {approvate.length} file pronti</span>}
+            </div>
+            <button className="btn btn-sm" disabled={uploading} onClick={() => materialRef.current?.click()}>
+              <Icon name="upload" size={13} /> {uploading ? 'Carico…' : 'Carica materiale'}
             </button>
-            <input ref={fileRef} type="file" multiple accept="image/*,video/*,.pdf,.psd,.ai" hidden onChange={onUpload} />
+            <input ref={materialRef} type="file" multiple accept="image/*,video/*" hidden onChange={onUploadMaterial} />
+          </div>
+          {approvate.length === 0
+            ? <div className="faint" style={{ fontSize: 12.5, padding: '6px 0' }}>Carica qui le foto/video da cui il team preparerà la grafica.</div>
+            : (
+              <div className="asset-grid">
+                {approvate.map(m => (
+                  <div className="asset-card" key={m.id} title={m.file_name || ''} style={{ position: 'relative' }}>
+                    <div onClick={() => openAsset(m)}>
+                      {isImageFile(m.file_name) && urls[m.storage_path]
+                        ? <img src={urls[m.storage_path]} alt="" loading="lazy" />
+                        : <div className="asset-ph"><Icon name="camera" size={20} strokeWidth={1.4} /></div>}
+                    </div>
+                    {(isAdmin || m.uploaded_by === session?.user.id) && (
+                      <button className="asset-del" title="Rimuovi" onClick={() => removeAsset(m)}><Icon name="x" size={12} /></button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+        </div>
+
+        <div>
+          <div className="flex between" style={{ marginBottom: 6 }}>
+            <div style={{ fontWeight: 650 }}>Grafiche pronte</div>
+            {isTeam && (
+              <>
+                <button className="btn btn-primary btn-sm" disabled={uploading} onClick={() => fileRef.current?.click()}>
+                  {uploading ? 'Carico…' : 'Carica grafica'}
+                </button>
+                <input ref={fileRef} type="file" multiple accept="image/*,video/*,.pdf,.psd,.ai" hidden onChange={onUpload} />
+              </>
+            )}
           </div>
           {grafiche.length === 0
-            ? <div className="faint" style={{ fontSize: 12.5, padding: '6px 0' }}>Nessuna grafica ancora. Carica qui i file pronti da pubblicare: finiscono anche in Media → Pubblicati.</div>
+            ? <div className="faint" style={{ fontSize: 12.5, padding: '6px 0' }}>{isTeam ? 'Carica qui i file pronti da pubblicare: finiscono anche in Media → Pubblicati.' : 'Il team caricherà qui la grafica finale, pronta da pubblicare.'}</div>
             : (
               <div className="list">
                 {grafiche.map(m => (
@@ -441,31 +514,72 @@ function Info({ k, v }: { k: string; v: any }) {
 }
 
 function NewEntryModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+  const { session, isTeam, profile } = useAuth()
   const [title, setTitle] = useState('')
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10))
   const [type, setType] = useState('post')
+  const [theme, setTheme] = useState('')
+  const [brief, setBrief] = useState('')
+  const [copy, setCopy] = useState('')
+  const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
 
   async function create() {
     if (!title.trim()) { setErr('Serve un titolo.'); return }
-    const { error } = await insertRow('crm_editorial', { title: title.trim(), entry_date: date, type })
+    setBusy(true); setErr('')
+    const isRequest = !isTeam
+    const { error } = await insertRow('crm_editorial', {
+      title: title.trim(), entry_date: date, type,
+      theme: theme || null,
+      brief: brief.trim() || null,
+      copy_text: copy.trim() || null,
+      status: copy.trim() ? 'copy_pronto' : 'da_preparare',
+      requested_by: isRequest ? session?.user.id : null,
+    })
+    setBusy(false)
     if (error) { setErr(error.message); return }
+    if (isRequest) {
+      notify('team', `Nuova proposta da ${profile?.full_name || 'Lorenzo'}`,
+        `${TYPES[type]?.label || 'Contenuto'}${theme ? ` · ${THEMES[theme]}` : ''} per il ${fmtDate(date)}: "${title.trim()}". Apri per vedere brief e materiale.`,
+        'editorial')
+    }
+    toast(isRequest ? 'Proposta inviata al team' : 'Contenuto creato')
     onCreated()
   }
 
   return (
-    <Modal title="＋ Nuovo contenuto" onClose={onClose}
-      footer={<><button className="btn" onClick={onClose}>Annulla</button><button className="btn btn-primary" onClick={create}>Crea</button></>}>
-      <div className="grid" style={{ gap: 12 }}>
-        <Field label="Titolo"><Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Es. Post pre-partita, Carosello Champions…" autoFocus /></Field>
-        <div className="grid g2" style={{ gap: 12 }}>
+    <Modal title={isTeam ? 'Nuovo contenuto' : 'Proponi un contenuto'} onClose={onClose} wide
+      footer={<><button className="btn" onClick={onClose}>Annulla</button>
+        <button className="btn btn-primary" disabled={busy || !title.trim()} onClick={create}>{busy ? 'Invio…' : isTeam ? 'Crea' : 'Invia al team'}</button></>}>
+      <div className="grid" style={{ gap: 14 }}>
+        {!isTeam && (
+          <div className="faint" style={{ fontSize: 12.5 }}>
+            Segna qui l'idea: scegli tipo e ambiente, descrivi cosa hai in mente, aggiungi il copy se vuoi.
+            Il team riceve la notifica e prepara tutto. Il materiale lo carichi dentro il contenuto una volta creato.
+          </div>
+        )}
+        <Field label="Titolo"><Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Es. Post con la famiglia, Reel allenamento…" autoFocus /></Field>
+        <div className="grid g3" style={{ gap: 12 }}>
           <Field label="Data"><Input type="date" value={date} onChange={e => setDate(e.target.value)} /></Field>
-          <Field label="Tipo">
+          <Field label="Formato">
             <Select value={type} onChange={e => setType(e.target.value)}>
               {Object.entries(TYPES).filter(([k]) => k !== 'partita').map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
             </Select>
           </Field>
+          <Field label="Ambiente">
+            <Select value={theme} onChange={e => setTheme(e.target.value)}>
+              {Object.entries(THEMES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+            </Select>
+          </Field>
         </div>
+        <Field label="Cosa hai in mente (brief)">
+          <Textarea rows={3} value={brief} onChange={e => setBrief(e.target.value)}
+            placeholder="Es. Post con mia moglie in formato carosello, foto al tramonto dopo la partita…" />
+        </Field>
+        <Field label="Copy (facoltativo — il team lo rifinisce, poi tu approvi)">
+          <Textarea rows={3} value={copy} onChange={e => setCopy(e.target.value)}
+            placeholder="Se hai già in testa la didascalia, scrivila qui." />
+        </Field>
         {err && <div className="msg-err">{err}</div>}
       </div>
     </Modal>

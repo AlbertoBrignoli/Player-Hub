@@ -171,8 +171,11 @@ export interface EditorialAsset {
 export interface EditorialEntry {
   id: string
   entry_date: string
-  type: 'partita' | 'post' | 'story' | 'carosello' | 'altro'
+  type: 'partita' | 'post' | 'story' | 'carosello' | 'reel' | 'altro'
   title: string
+  theme: string | null
+  brief: string | null
+  requested_by: string | null
   match_id: string | null
   match_info: {
     fixture_id?: number | string | null

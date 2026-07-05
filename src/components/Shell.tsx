@@ -7,7 +7,7 @@ import Toaster from './Toaster'
 import Icon from './Icon'
 import { Modal, Field, Input } from './ui'
 
-export const APP_VERSION = 'v3.2'
+export const APP_VERSION = 'v3.3'
 
 export interface NavDef { key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[] }
 
@@ -93,8 +93,10 @@ export default function Shell({ route, setRoute, right, children }: {
               <div className="user-role">{role === 'admin' ? 'AUVI · Advisor' : role === 'creator' ? 'Team · Creator' : 'Giocatore'}</div>
             </div>
             <button className="btn-ghost" style={{ marginLeft: 'auto', padding: 6, color: 'var(--text-dim)' }} title="Imposta password" onClick={() => setPwOpen(true)}><Icon name="key" size={16} /></button>
-            <button className="btn-ghost" style={{ padding: 6, color: 'var(--text-dim)' }} title="Esci" onClick={signOut}><Icon name="logout" size={16} /></button>
           </div>
+          <button className="btn" style={{ width: '100%', marginTop: 8, justifyContent: 'center' }} onClick={signOut}>
+            <Icon name="logout" size={15} /> Esci
+          </button>
         </div>
       </aside>
 

@@ -442,3 +442,6 @@ button { cursor: pointer; border: none; background: none; -webkit-tap-highlight-
 .folder-card:hover .folder-rename { opacity: 1; }
 @media (hover: none) { .folder-rename { opacity: 1; } }
 .folder-rename:hover { background: var(--surface-2); }
+
+.asset-del { position: absolute; top: 5px; right: 5px; width: 22px; height: 22px; border-radius: 7px; display: grid; place-items: center; background: rgba(10,10,11,.7); color: var(--text); border: 1px solid var(--border-2); }
+.asset-del:hover { background: var(--red); border-color: transparent; }
