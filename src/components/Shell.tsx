@@ -7,7 +7,7 @@ import Toaster from './Toaster'
 import Icon from './Icon'
 import { Modal, Field, Input } from './ui'
 
-export const APP_VERSION = 'v3.3'
+export const APP_VERSION = 'v3.4'
 
 export interface NavDef { key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[] }
 

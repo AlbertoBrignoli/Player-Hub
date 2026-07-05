@@ -313,7 +313,7 @@ function EntryModal({ entry, onClose, onChanged }: {
       // La grafica caricata nella box entra anche nei Media, sezione Pubblicati.
       const ins = await insertRow('crm_media', {
         storage_path: path, file_name: file.name, kind: 'grafica', status: 'pubblicata',
-        editorial_id: entry.id, uploaded_by: session?.user.id,
+        editorial_id: entry.id, folder: 'Pubblicati', uploaded_by: session?.user.id,
         uploaded_role: profile?.role, note: entry.title,
       })
       if (!ins.error) ok++
@@ -373,6 +373,13 @@ function EntryModal({ entry, onClose, onChanged }: {
 
   async function setStatus(s: string) {
     await updateRow('crm_editorial', entry.id, { status: s })
+    // Alla pubblicazione: le grafiche del contenuto confluiscono nell'archivio "Pubblicati".
+    if (s === 'pubblicato') {
+      await supabase.from('crm_media')
+        .update({ folder: 'Pubblicati', status: 'pubblicata' })
+        .eq('editorial_id', entry.id).eq('kind', 'grafica')
+      toast('Contenuto pubblicato — grafiche archiviate in Media → Pubblicati')
+    }
     onChanged()
   }
 
