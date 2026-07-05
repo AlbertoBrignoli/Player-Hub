@@ -11,28 +11,34 @@ import { fmtDate, isImageFile, fileExt } from '../lib/format'
 import type { MediaItem, EditorialEntry } from '../lib/types'
 
 const BUCKET = 'crm-media'
+const NO_FOLDER = '__none__'
 
 export default function Media() {
   const { session, profile, isTeam, role } = useAuth()
   const { rows, loading, reload } = useCollection<MediaItem>('crm_media', { orderBy: 'created_at' })
   const { rows: entries } = useCollection<EditorialEntry>('crm_editorial', { orderBy: 'entry_date', ascending: true })
+  const [view, setView] = useState<'flusso' | 'cartelle'>('flusso')
   const [tab, setTab] = useState<'approvare' | 'approvate' | 'pubblicare' | 'pubblicati'>('approvare')
+  const [openFolder, setOpenFolder] = useState<string | null>(null) // NO_FOLDER = senza cartella
   const [urls, setUrls] = useState<Record<string, string>>({})
   const [uploading, setUploading] = useState(false)
   const [picked, setPicked] = useState<Set<string>>(new Set())
   const [targetEntry, setTargetEntry] = useState('')
   const [lightbox, setLightbox] = useState<number | null>(null)
-  const [activeFolder, setActiveFolder] = useState('')     // '' = tutte
   const [uploadFolder, setUploadFolder] = useState('')
   const fotoRef = useRef<HTMLInputElement>(null)
   const graficaRef = useRef<HTMLInputElement>(null)
 
   const folders = [...new Set(rows.map(m => m.folder).filter(Boolean))] as string[]
-  const inFolder = (m: MediaItem) => !activeFolder || m.folder === activeFolder
-  const daApprovare = rows.filter(m => m.status === 'da_approvare' && inFolder(m))
-  const approvate = rows.filter(m => m.status === 'approvata' && inFolder(m))
-  const daPubblicare = rows.filter(m => m.status === 'da_pubblicare' && inFolder(m))
-  const pubblicati = rows.filter(m => m.status === 'pubblicata' && inFolder(m))
+  const senzaCartella = rows.filter(m => m.folder == null && m.status !== 'scartata')
+  const folderItems = openFolder
+    ? rows.filter(m => (openFolder === NO_FOLDER ? m.folder == null : m.folder === openFolder) && m.status !== 'scartata')
+    : []
+
+  const daApprovare = rows.filter(m => m.status === 'da_approvare')
+  const approvate = rows.filter(m => m.status === 'approvata')
+  const daPubblicare = rows.filter(m => m.status === 'da_pubblicare')
+  const pubblicati = rows.filter(m => m.status === 'pubblicata')
   const entryById = new Map(entries.map(e => [e.id, e]))
 
   // Anteprime firmate (bucket privato).
@@ -49,14 +55,18 @@ export default function Media() {
 
   function newFolder() {
     const name = window.prompt('Nome della nuova cartella (es. Pre Season):')?.trim()
-    if (name) { setUploadFolder(name); setActiveFolder(name) }
-    return name
+    if (name) {
+      setUploadFolder(name)
+      setView('cartelle'); setOpenFolder(name)
+      toast(`Cartella "${name}" pronta: carica il primo contenuto`)
+    }
   }
 
   async function uploadFiles(files: File[], kind: 'foto' | 'grafica') {
     if (!files.length) return
     setUploading(true)
-    const folder = uploadFolder || activeFolder || null
+    // Se sto navigando dentro una cartella, si carica lì.
+    const folder = (openFolder && openFolder !== NO_FOLDER) ? openFolder : (uploadFolder || null)
     let ok = 0
     for (const file of files) {
       const path = `${kind}/${Date.now()}-${file.name.replace(/[^\w.\-]/g, '_')}`
@@ -85,7 +95,7 @@ export default function Media() {
       } else {
         notify('player', 'Nuove grafiche da pubblicare', `${ok} grafic${ok > 1 ? 'he' : 'a'}${dove} nella sezione Media.`, 'media')
       }
-      toast(kind === 'foto' ? `${ok} foto caricat${ok > 1 ? 'e' : 'a'}${dove}` : `${ok} grafic${ok > 1 ? 'he' : 'a'} caricat${ok > 1 ? 'e' : 'a'}${dove}`)
+      toast(`${ok} file caricat${ok > 1 ? 'i' : 'o'}${dove}`)
       reload()
     }
     setUploading(false)
@@ -101,8 +111,6 @@ export default function Media() {
     })
   }
 
-  // Approva una o più foto. La box è opzionale: se scelta, il materiale si
-  // aggancia al contenuto; altrimenti finisce comunque tra le Approvate.
   async function approve(ids: string[]) {
     if (!ids.length) return
     const entry = targetEntry ? entryById.get(targetEntry) : null
@@ -115,7 +123,6 @@ export default function Media() {
       entry ? 'editorial' : 'media')
     setPicked(new Set()); setTargetEntry('')
     toast(`${ids.length} foto approvat${ids.length > 1 ? 'e' : 'a'}${entry ? ` per "${entry.title}"` : ''}`)
-    setTab('approvate')
     setLightbox(null)
     reload()
   }
@@ -146,23 +153,104 @@ export default function Media() {
 
   if (loading) return <Spinner />
 
-  const shown = tab === 'approvare' ? daApprovare : tab === 'approvate' ? approvate : tab === 'pubblicare' ? daPubblicare : pubblicati
+  // Cosa è visibile ora (per griglia e lightbox)
+  const visible = view === 'cartelle' && openFolder
+    ? folderItems
+    : tab === 'approvare' ? daApprovare : tab === 'approvate' ? approvate : tab === 'pubblicare' ? daPubblicare : pubblicati
+  const visibleApprovabili = visible.filter(m => m.status === 'da_approvare')
   const upcomingEntries = entries.filter(e => e.entry_date >= new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10))
+
+  const STATUS_LABEL: Record<string, { l: string; tone?: 'green' | 'gold' | 'blue' }> = {
+    da_approvare: { l: 'Da approvare' },
+    approvata: { l: 'Approvata', tone: 'gold' },
+    da_pubblicare: { l: 'Da pubblicare', tone: 'blue' },
+    pubblicata: { l: 'Pubblicata', tone: 'green' },
+  }
+
+  function folderCover(f: string | null) {
+    const item = rows.find(m => (f == null ? m.folder == null : m.folder === f) && isImageFile(m.file_name) && urls[m.storage_path])
+    return item ? urls[item.storage_path] : null
+  }
+
+  function renderCard(m: MediaItem, idx: number) {
+    const entry = m.editorial_id ? entryById.get(m.editorial_id) : null
+    const isPicked = picked.has(m.id)
+    const approvable = role === 'player' && m.status === 'da_approvare'
+    const canSwipe = approvable && isImageFile(m.file_name)
+    const st = STATUS_LABEL[m.status]
+    const thumb = (
+      <div style={{ position: 'relative' }}>
+        {isImageFile(m.file_name) && urls[m.storage_path]
+          ? <img className="media-thumb" src={urls[m.storage_path]} alt={m.file_name || ''} loading="lazy"
+              onClick={() => setLightbox(idx)} />
+          : <div className="media-thumb media-ph" onClick={() => download(m)} style={{ cursor: 'pointer' }}>
+              <div style={{ textAlign: 'center' }}>
+                <Icon name={m.kind === 'foto' ? 'camera' : 'edit'} size={26} strokeWidth={1.4} />
+                <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '1px', marginTop: 6 }}>{fileExt(m.file_name)}</div>
+              </div>
+            </div>}
+        {approvable && (
+          <div className={`media-pick ${isPicked ? 'on' : ''}`} onClick={e => { e.stopPropagation(); togglePick(m.id) }}>{isPicked ? '✓' : ''}</div>
+        )}
+      </div>
+    )
+    return (
+      <div className={`media-card ${isPicked ? 'media-selected' : ''}`} key={m.id}>
+        {canSwipe
+          ? <SwipePhoto onApprove={() => approve([m.id])} onDiscard={() => discard(m)}>{thumb}</SwipePhoto>
+          : thumb}
+        <div className="media-meta">
+          <div className="media-name" title={m.file_name || ''}>{m.file_name}</div>
+          <div className="flex between" style={{ alignItems: 'center' }}>
+            <Badge tone={st?.tone}>{m.kind !== 'foto' ? (m.kind === 'carosello' ? 'Carosello' : 'Grafica') + (m.status === 'pubblicata' ? ' · pubblicata' : '') : st?.l}</Badge>
+            <span className="faint" style={{ fontSize: 11 }}>{fmtDate(m.created_at)}</span>
+          </div>
+          {(m.folder || entry) && (
+            <div className="faint flex gap wrap" style={{ fontSize: 11, gap: 6 }}>
+              {m.folder && view !== 'cartelle' && <span className="flex" style={{ gap: 4 }}><Icon name="folder" size={11} /> {m.folder}</span>}
+              {entry && <span>→ {entry.title} · {fmtDate(entry.entry_date)}</span>}
+            </div>
+          )}
+          {approvable ? (
+            <div className="flex gap" style={{ marginTop: 8 }}>
+              <button className="btn btn-primary btn-sm" style={{ flex: 1 }} onClick={() => approve([m.id])}><Icon name="check" size={13} /> Approva</button>
+              <button className="btn btn-sm" onClick={() => discard(m)} title="Scarta"><Icon name="x" size={13} /></button>
+            </div>
+          ) : (
+            <div className="flex gap" style={{ marginTop: 8 }}>
+              <button className="btn btn-sm" style={{ flex: 1 }} onClick={() => download(m)}><Icon name="download" size={13} /> Scarica</button>
+              {isTeam && m.status === 'da_pubblicare' && (
+                <button className="btn btn-sm" onClick={() => markPublished(m)} title="Segna come pubblicata"><Icon name="check" size={13} /></button>
+              )}
+              {(isTeam || m.uploaded_by === session?.user.id) && <ConfirmButton onConfirm={() => remove(m)}><Icon name="trash" size={13} /></ConfirmButton>}
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="grid" style={{ gap: 16 }}>
+      {/* Testata: upload + navigazione viste */}
       <div className="card flex between wrap gap">
         <div>
-          <div style={{ fontWeight: 650 }}>Libreria media</div>
+          <div style={{ fontWeight: 650 }}>
+            {view === 'cartelle' && openFolder
+              ? (openFolder === NO_FOLDER ? 'Senza cartella' : openFolder)
+              : 'Libreria media'}
+          </div>
           <div className="faint" style={{ fontSize: 12.5 }}>
-            {role === 'player'
-              ? 'Approva le foto che ti piacciono: il team le trova già organizzate e prepara le grafiche.'
-              : 'Organizza gli upload in cartelle (es. Pre Season): il giocatore approva, le approvate sono pronte da lavorare.'}
+            {view === 'cartelle' && openFolder
+              ? `${folderItems.length} elementi — quello che carichi qui finisce in questa cartella.`
+              : role === 'player'
+                ? 'Approva le foto che ti piacciono: il team le trova già organizzate e prepara le grafiche.'
+                : 'Flusso di lavoro per stato, oppure Cartelle per navigare gli album (es. Pre Season).'}
           </div>
         </div>
         <div className="flex gap wrap">
-          {isTeam && (
-            <Select value={uploadFolder} onChange={e => e.target.value === '__new__' ? newFolder() : setUploadFolder(e.target.value)} style={{ minWidth: 160 }}>
+          {isTeam && view === 'flusso' && (
+            <Select value={uploadFolder} onChange={e => e.target.value === '__new__' ? newFolder() : setUploadFolder(e.target.value)} style={{ minWidth: 150 }}>
               <option value="">Senza cartella</option>
               {folders.map(f => <option key={f} value={f}>{f}</option>)}
               <option value="__new__">Nuova cartella…</option>
@@ -185,39 +273,87 @@ export default function Media() {
         </div>
       </div>
 
-      {folders.length > 0 && (
-        <div className="flex gap wrap" style={{ gap: 8 }}>
-          <button className={`chip-folder ${activeFolder === '' ? 'active' : ''}`} onClick={() => setActiveFolder('')}>
-            <Icon name="layers" size={13} /> Tutte
+      {/* Selettore vista principale */}
+      <div className="flex between wrap gap">
+        <div className="pill-tabs">
+          <button className={`pill-tab ${view === 'flusso' ? 'active' : ''}`} onClick={() => { setView('flusso'); setOpenFolder(null) }}>Flusso</button>
+          <button className={`pill-tab ${view === 'cartelle' ? 'active' : ''}`} onClick={() => { setView('cartelle'); setOpenFolder(null) }}>
+            Cartelle ({folders.length})
           </button>
-          {folders.map(f => (
-            <button key={f} className={`chip-folder ${activeFolder === f ? 'active' : ''}`} onClick={() => setActiveFolder(activeFolder === f ? '' : f)}>
-              <Icon name="folder" size={13} /> {f}
-            </button>
-          ))}
-          {isTeam && (
-            <button className="chip-folder" onClick={newFolder}><Icon name="folder-plus" size={13} /> Nuova</button>
-          )}
+        </div>
+        {view === 'cartelle' && openFolder && (
+          <button className="btn btn-sm" onClick={() => setOpenFolder(null)}>‹ Tutte le cartelle</button>
+        )}
+        {isTeam && view === 'cartelle' && !openFolder && (
+          <button className="btn btn-sm" onClick={newFolder}><Icon name="folder-plus" size={13} /> Nuova cartella</button>
+        )}
+      </div>
+
+      {/* Vista FLUSSO: i 4 stati */}
+      {view === 'flusso' && (
+        <div className="pill-tabs wrap" style={{ alignSelf: 'start' }}>
+          <button className={`pill-tab ${tab === 'approvare' ? 'active' : ''}`} onClick={() => setTab('approvare')}>Da approvare ({daApprovare.length})</button>
+          <button className={`pill-tab ${tab === 'approvate' ? 'active' : ''}`} onClick={() => setTab('approvate')}>Approvate ({approvate.length})</button>
+          <button className={`pill-tab ${tab === 'pubblicare' ? 'active' : ''}`} onClick={() => setTab('pubblicare')}>Da pubblicare ({daPubblicare.length})</button>
+          <button className={`pill-tab ${tab === 'pubblicati' ? 'active' : ''}`} onClick={() => setTab('pubblicati')}>Pubblicati ({pubblicati.length})</button>
         </div>
       )}
 
-      <div className="pill-tabs wrap" style={{ alignSelf: 'start' }}>
-        <button className={`pill-tab ${tab === 'approvare' ? 'active' : ''}`} onClick={() => setTab('approvare')}>Da approvare ({daApprovare.length})</button>
-        <button className={`pill-tab ${tab === 'approvate' ? 'active' : ''}`} onClick={() => setTab('approvate')}>Approvate ({approvate.length})</button>
-        <button className={`pill-tab ${tab === 'pubblicare' ? 'active' : ''}`} onClick={() => setTab('pubblicare')}>Da pubblicare ({daPubblicare.length})</button>
-        <button className={`pill-tab ${tab === 'pubblicati' ? 'active' : ''}`} onClick={() => setTab('pubblicati')}>Pubblicati ({pubblicati.length})</button>
-      </div>
+      {/* Vista CARTELLE: griglia album */}
+      {view === 'cartelle' && !openFolder && (
+        folders.length === 0 && senzaCartella.length === 0 ? (
+          <div className="card">
+            <Empty icon={<Icon name="folder" size={32} strokeWidth={1.4} />} title="Nessuna cartella ancora"
+              hint={isTeam ? 'Crea la prima con "Nuova cartella" qui sopra, poi carica i contenuti al suo interno.' : 'Il team non ha ancora creato cartelle.'} />
+          </div>
+        ) : (
+          <div className="folder-grid">
+            {folders.map(f => {
+              const items = rows.filter(m => m.folder === f && m.status !== 'scartata')
+              const cover = folderCover(f)
+              return (
+                <button className="folder-card" key={f} onClick={() => setOpenFolder(f)}>
+                  {cover ? <img className="folder-cover" src={cover} alt="" loading="lazy" /> : <div className="folder-cover folder-cover-ph"><Icon name="folder" size={30} strokeWidth={1.3} /></div>}
+                  <div className="folder-meta">
+                    <div className="folder-name"><Icon name="folder" size={13} /> {f}</div>
+                    <div className="faint" style={{ fontSize: 11.5 }}>
+                      {items.length} elementi{items.some(m => m.status === 'da_approvare') ? ` · ${items.filter(m => m.status === 'da_approvare').length} da approvare` : ''}
+                    </div>
+                  </div>
+                </button>
+              )
+            })}
+            {senzaCartella.length > 0 && (
+              <button className="folder-card" onClick={() => setOpenFolder(NO_FOLDER)}>
+                {folderCover(null) ? <img className="folder-cover" src={folderCover(null)!} alt="" loading="lazy" /> : <div className="folder-cover folder-cover-ph"><Icon name="image" size={30} strokeWidth={1.3} /></div>}
+                <div className="folder-meta">
+                  <div className="folder-name"><Icon name="image" size={13} /> Senza cartella</div>
+                  <div className="faint" style={{ fontSize: 11.5 }}>{senzaCartella.length} elementi</div>
+                </div>
+              </button>
+            )}
+            {isTeam && (
+              <button className="folder-card folder-new" onClick={newFolder}>
+                <div className="folder-cover folder-cover-ph"><Icon name="folder-plus" size={30} strokeWidth={1.3} /></div>
+                <div className="folder-meta"><div className="folder-name">Nuova cartella</div>
+                  <div className="faint" style={{ fontSize: 11.5 }}>crea e carica</div></div>
+              </button>
+            )}
+          </div>
+        )
+      )}
 
-      {tab === 'approvare' && role === 'player' && daApprovare.length > 0 && (
+      {/* Barra approvazione (player) — vale sia nel flusso che dentro una cartella */}
+      {role === 'player' && visibleApprovabili.length > 0 && (view === 'cartelle' ? !!openFolder : tab === 'approvare') && (
         <div className="card flex between wrap gap" style={{ alignItems: 'center', borderColor: picked.size ? 'var(--text-dim)' : undefined }}>
           <div style={{ fontWeight: 650 }}>
             {picked.size ? `${picked.size} foto selezionat${picked.size > 1 ? 'e' : 'a'}` : 'Scorri a destra per approvare, a sinistra per scartare — o seleziona più foto insieme'}
           </div>
           <div className="flex gap wrap" style={{ alignItems: 'center' }}>
-            <button className="btn btn-sm" onClick={() => setPicked(new Set(daApprovare.map(m => m.id)))}>
-              Seleziona tutte{activeFolder ? ` (${activeFolder})` : ''}
+            <button className="btn btn-sm" onClick={() => setPicked(new Set(visibleApprovabili.map(m => m.id)))}>
+              Seleziona tutte ({visibleApprovabili.length})
             </button>
-            <Select value={targetEntry} onChange={e => setTargetEntry(e.target.value)} style={{ minWidth: 210 }}>
+            <Select value={targetEntry} onChange={e => setTargetEntry(e.target.value)} style={{ minWidth: 200 }}>
               <option value="">Collega a un post (opzionale)</option>
               {upcomingEntries.map(e => (
                 <option key={e.id} value={e.id}>{fmtDate(e.entry_date)} · {e.title}</option>
@@ -232,90 +368,36 @@ export default function Media() {
         </div>
       )}
 
-      {shown.length === 0 ? (
-        <div className="card">
-          <Empty icon={<Icon name={tab === 'pubblicati' ? 'check' : tab === 'pubblicare' ? 'edit' : tab === 'approvate' ? 'star' : 'inbox'} size={32} strokeWidth={1.4} />}
-            title={tab === 'approvare' ? 'Niente da approvare' : tab === 'approvate' ? 'Nessuna foto approvata' : tab === 'pubblicare' ? 'Niente in lavorazione' : 'Nessun contenuto pubblicato'}
-            hint={activeFolder ? `Nella cartella "${activeFolder}" questa sezione è vuota.`
-              : tab === 'approvare' ? 'Le foto caricate dal team compaiono qui in attesa di approvazione.'
-              : tab === 'approvate' ? 'Le foto approvate dal giocatore arrivano qui in automatico, pronte da lavorare.'
-              : tab === 'pubblicare' ? 'Qui trovi le grafiche in preparazione.'
-              : 'Le grafiche caricate nelle box del calendario finiscono qui.'} />
-        </div>
-      ) : (
-        <div className="media-grid">
-          {shown.map((m, idx) => {
-            const entry = m.editorial_id ? entryById.get(m.editorial_id) : null
-            const isPicked = picked.has(m.id)
-            const canSwipe = tab === 'approvare' && role === 'player' && isImageFile(m.file_name)
-            const thumb = (
-              <div style={{ position: 'relative' }}>
-                {isImageFile(m.file_name) && urls[m.storage_path]
-                  ? <img className="media-thumb" src={urls[m.storage_path]} alt={m.file_name || ''} loading="lazy"
-                      onClick={() => setLightbox(idx)} />
-                  : <div className="media-thumb media-ph" onClick={() => download(m)} style={{ cursor: 'pointer' }}>
-                      <div style={{ textAlign: 'center' }}>
-                        <Icon name={m.kind === 'foto' ? 'camera' : 'edit'} size={26} strokeWidth={1.4} />
-                        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '1px', marginTop: 6 }}>{fileExt(m.file_name)}</div>
-                      </div>
-                    </div>}
-                {tab === 'approvare' && role === 'player' && (
-                  <div className={`media-pick ${isPicked ? 'on' : ''}`} onClick={e => { e.stopPropagation(); togglePick(m.id) }}>{isPicked ? '✓' : ''}</div>
-                )}
-              </div>
-            )
-            return (
-              <div className={`media-card ${isPicked ? 'media-selected' : ''}`} key={m.id}>
-                {canSwipe
-                  ? <SwipePhoto onApprove={() => approve([m.id])} onDiscard={() => discard(m)}>{thumb}</SwipePhoto>
-                  : thumb}
-                <div className="media-meta">
-                  <div className="media-name" title={m.file_name || ''}>{m.file_name}</div>
-                  <div className="flex between" style={{ alignItems: 'center' }}>
-                    <Badge tone={m.status === 'approvata' ? 'gold' : m.status === 'pubblicata' ? 'green' : m.status === 'da_pubblicare' ? 'blue' : undefined}>
-                      {m.kind === 'foto'
-                        ? (m.status === 'da_approvare' ? 'Da approvare' : m.status === 'approvata' ? 'Approvata' : m.status === 'pubblicata' ? 'Pubblicata' : 'Da pubblicare')
-                        : (m.status === 'pubblicata' ? (m.kind === 'carosello' ? 'Carosello · pubblicato' : 'Grafica · pubblicata') : m.kind === 'carosello' ? 'Carosello' : 'Grafica')}
-                    </Badge>
-                    <span className="faint" style={{ fontSize: 11 }}>{fmtDate(m.created_at)}</span>
-                  </div>
-                  {(m.folder || entry) && (
-                    <div className="faint flex gap" style={{ fontSize: 11, gap: 6 }}>
-                      {m.folder && <span className="flex" style={{ gap: 4 }}><Icon name="folder" size={11} /> {m.folder}</span>}
-                      {entry && <span>→ {entry.title} · {fmtDate(entry.entry_date)}</span>}
-                    </div>
-                  )}
-                  {role === 'player' && tab === 'approvare' ? (
-                    <div className="flex gap" style={{ marginTop: 8 }}>
-                      <button className="btn btn-primary btn-sm" style={{ flex: 1 }} onClick={() => approve([m.id])}><Icon name="check" size={13} /> Approva</button>
-                      <button className="btn btn-sm" onClick={() => discard(m)} title="Scarta"><Icon name="x" size={13} /></button>
-                    </div>
-                  ) : (
-                    <div className="flex gap" style={{ marginTop: 8 }}>
-                      <button className="btn btn-sm" style={{ flex: 1 }} onClick={() => download(m)}><Icon name="download" size={13} /> Scarica</button>
-                      {isTeam && tab === 'pubblicare' && (
-                        <button className="btn btn-sm" onClick={() => markPublished(m)} title="Segna come pubblicata"><Icon name="check" size={13} /></button>
-                      )}
-                      {(isTeam || m.uploaded_by === session?.user.id) && <ConfirmButton onConfirm={() => remove(m)}><Icon name="trash" size={13} /></ConfirmButton>}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )
-          })}
-        </div>
+      {/* Griglia contenuti (flusso o dentro cartella) */}
+      {(view === 'flusso' || openFolder) && (
+        visible.length === 0 ? (
+          <div className="card">
+            <Empty icon={<Icon name={view === 'cartelle' ? 'folder' : tab === 'pubblicati' ? 'check' : tab === 'pubblicare' ? 'edit' : tab === 'approvate' ? 'star' : 'inbox'} size={32} strokeWidth={1.4} />}
+              title={view === 'cartelle' ? 'Cartella vuota'
+                : tab === 'approvare' ? 'Niente da approvare' : tab === 'approvate' ? 'Nessuna foto approvata' : tab === 'pubblicare' ? 'Niente in lavorazione' : 'Nessun contenuto pubblicato'}
+              hint={view === 'cartelle' ? 'Carica qui il primo contenuto con i bottoni in alto.'
+                : tab === 'approvare' ? 'Le foto caricate dal team compaiono qui in attesa di approvazione.'
+                : tab === 'approvate' ? 'Le foto approvate dal giocatore arrivano qui in automatico, pronte da lavorare.'
+                : tab === 'pubblicare' ? 'Qui trovi le grafiche in preparazione.'
+                : 'Le grafiche caricate nelle box del calendario finiscono qui.'} />
+          </div>
+        ) : (
+          <div className="media-grid">
+            {visible.map((m, idx) => renderCard(m, idx))}
+          </div>
+        )
       )}
 
-      {lightbox != null && shown[lightbox] && (
+      {lightbox != null && visible[lightbox] && (
         <Lightbox
-          items={shown.map(m => ({ id: m.id, url: isImageFile(m.file_name) ? urls[m.storage_path] || null : null, name: m.file_name }))}
+          items={visible.map(m => ({ id: m.id, url: isImageFile(m.file_name) ? urls[m.storage_path] || null : null, name: m.file_name }))}
           index={lightbox}
           onIndex={setLightbox}
           onClose={() => setLightbox(null)}
           actions={item => {
-            const m = shown.find(x => x.id === item.id)
+            const m = visible.find(x => x.id === item.id)
             if (!m) return null
-            if (role === 'player' && tab === 'approvare') {
+            if (role === 'player' && m.status === 'da_approvare') {
               return (
                 <>
                   <button className="btn btn-primary" onClick={() => approve([m.id])}><Icon name="check" size={14} /> Approva</button>
