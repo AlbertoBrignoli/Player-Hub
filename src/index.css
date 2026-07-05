@@ -445,3 +445,10 @@ button { cursor: pointer; border: none; background: none; -webkit-tap-highlight-
 
 .asset-del { position: absolute; top: 5px; right: 5px; width: 22px; height: 22px; border-radius: 7px; display: grid; place-items: center; background: rgba(10,10,11,.7); color: var(--text); border: 1px solid var(--border-2); }
 .asset-del:hover { background: var(--red); border-color: transparent; }
+
+/* ===== Anagrafica in Dashboard ===== */
+.anag { display: flex; align-items: center; gap: 9px; }
+.anag-ic { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; background: var(--surface-2); border: 1px solid var(--border); color: var(--text-dim); flex-shrink: 0; }
+.anag-link { display: inline-flex; }
+.anag-link:hover .anag-ic { color: var(--text); border-color: var(--text-dim); }
+.anag-link:hover .anag div div:last-child { text-decoration: underline; }

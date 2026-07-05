@@ -314,7 +314,7 @@ export default function Media() {
           </div>
         </div>
         <div className="flex gap wrap">
-          {isTeam && view === 'flusso' && (
+          {view === 'flusso' && (
             <Select value={uploadFolder} onChange={e => e.target.value === '__new__' ? newFolder() : setUploadFolder(e.target.value)} style={{ minWidth: 150 }}>
               <option value="">Senza cartella</option>
               {folders.map(f => <option key={f} value={f}>{f}</option>)}
@@ -349,12 +349,12 @@ export default function Media() {
         {view === 'cartelle' && openFolder && (
           <div className="flex gap">
             <button className="btn btn-sm" onClick={() => setOpenFolder(null)}>‹ Tutte le cartelle</button>
-            {isTeam && openFolder !== NO_FOLDER && (
+            {openFolder !== NO_FOLDER && (
               <button className="btn btn-sm" onClick={() => renameFolder()}><Icon name="edit" size={13} /> Rinomina</button>
             )}
           </div>
         )}
-        {isTeam && view === 'cartelle' && !openFolder && (
+        {view === 'cartelle' && !openFolder && (
           <button className="btn btn-sm" onClick={newFolder}><Icon name="folder-plus" size={13} /> Nuova cartella</button>
         )}
       </div>
@@ -383,7 +383,7 @@ export default function Media() {
               const cover = folderCover(f)
               return (
                 <div className="folder-card" key={f} onClick={() => setOpenFolder(f)} role="button" tabIndex={0}>
-                  {isTeam && (
+                  {(
                     <button className="folder-rename" title="Rinomina cartella" onClick={e => { e.stopPropagation(); renameFolder(f) }}>
                       <Icon name="edit" size={14} />
                     </button>
@@ -407,7 +407,7 @@ export default function Media() {
                 </div>
               </button>
             )}
-            {isTeam && (
+            {(
               <button className="folder-card folder-new" onClick={newFolder}>
                 <div className="folder-cover folder-cover-ph"><Icon name="folder-plus" size={30} strokeWidth={1.3} /></div>
                 <div className="folder-meta"><div className="folder-name">Nuova cartella</div>

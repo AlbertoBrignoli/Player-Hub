@@ -4,44 +4,35 @@ import { Spinner, Stat, Badge, Empty, Select } from '../components/ui'
 import { SeasonBlock, LastMatchGrid } from '../components/statbits'
 import Icon from '../components/Icon'
 import { fmtDate, fmtDateTime, seasonOf } from '../lib/format'
-import type { Player, Match, SeasonStat, StatsMatch, EditorialEntry } from '../lib/types'
+import type { Player, Match, SeasonStat, StatsMatch } from '../lib/types'
 
 interface News { id: string; title: string; source: string | null; url: string | null; published_at: string | null }
 
-const STATUS_LABEL: Record<string, string> = {
-  da_preparare: 'Da preparare', copy_pronto: 'Copy pronto', grafica_caricata: 'Grafica caricata',
-  pronto: 'Pronto ✓', pubblicato: 'Pubblicato',
-}
-
 export default function Performance({ goto }: { goto?: (r: string) => void }) {
+  void goto
   const [loading, setLoading] = useState(true)
   const [player, setPlayer] = useState<Player | null>(null)
   const [matches, setMatches] = useState<Match[]>([])
   const [stats, setStats] = useState<SeasonStat[]>([])
   const [news, setNews] = useState<News[]>([])
   const [tech, setTech] = useState<StatsMatch[]>([])
-  const [nextContent, setNextContent] = useState<EditorialEntry | null>(null)
   const currentSeason = seasonOf(new Date())
   const [season, setSeason] = useState(currentSeason)
 
   useEffect(() => {
     (async () => {
-      const todayKey = new Date().toISOString().slice(0, 10)
-      const [p, m, s, n, t, ed] = await Promise.all([
+      const [p, m, s, n, t] = await Promise.all([
         supabase.from('player').select('*').limit(1).maybeSingle(),
         supabase.from('matches').select('*').order('match_date', { ascending: false }),
         supabase.from('player_stats_api').select('*').order('season', { ascending: false }),
         supabase.from('news').select('id,title,source,url,published_at').order('published_at', { ascending: false }).limit(6),
         supabase.from('player_stats_match').select('*').order('match_date', { ascending: false }),
-        supabase.from('crm_editorial').select('*').gte('entry_date', todayKey)
-          .neq('status', 'pubblicato').order('entry_date').limit(1).maybeSingle(),
       ])
       setPlayer(p.data as Player)
       setMatches((m.data as Match[]) || [])
       setStats((s.data as SeasonStat[]) || [])
       setNews((n.data as News[]) || [])
       setTech((t.data as StatsMatch[]) || [])
-      setNextContent(ed.data as EditorialEntry | null)
       setLoading(false)
     })()
   }, [])
@@ -102,42 +93,19 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
         </div>
       )}
 
-      {/* Focus: prossima partita + prossimo contenuto */}
-      <div className="grid g2">
-        <div className="card">
-          <div className="card-head"><div className="card-title">Prossima partita</div></div>
-          {nextMatch ? (
-            <div>
-              <div style={{ fontSize: 17, fontWeight: 750 }}>{nextMatch.home_team} vs {nextMatch.away_team}</div>
-              <div className="muted" style={{ marginTop: 4 }}>
-                {nextMatch.league}{nextMatch.round ? ` · ${nextMatch.round}` : ''}
-              </div>
-              <div className="flex gap wrap" style={{ marginTop: 10, gap: 8 }}>
-                <Badge tone="accent">{fmtDateTime(nextMatch.match_date)}</Badge>
-                <Badge>{nextMatch.venue === 'Home' ? 'In casa' : 'Trasferta'}</Badge>
-              </div>
+      {/* Prossima partita (contesto calcistico) */}
+      <div className="card">
+        <div className="card-head"><div className="card-title">Prossima partita</div></div>
+        {nextMatch ? (
+          <div>
+            <div style={{ fontSize: 17, fontWeight: 750 }}>{nextMatch.home_team} vs {nextMatch.away_team}</div>
+            <div className="muted" style={{ marginTop: 4 }}>{nextMatch.league}{nextMatch.round ? ` · ${nextMatch.round}` : ''}</div>
+            <div className="flex gap wrap" style={{ marginTop: 10, gap: 8 }}>
+              <Badge tone="accent">{fmtDateTime(nextMatch.match_date)}</Badge>
+              <Badge>{nextMatch.venue === 'Home' ? 'In casa' : 'Trasferta'}</Badge>
             </div>
-          ) : <div className="faint" style={{ padding: '8px 0' }}>Nessuna partita in programma al momento.</div>}
-        </div>
-
-        <div className="card">
-          <div className="card-head">
-            <div className="card-title">Prossimo contenuto da pubblicare</div>
-            {goto && <button className="btn btn-ghost btn-sm" onClick={() => goto('editorial')}>Apri →</button>}
           </div>
-          {nextContent ? (
-            <div>
-              <div style={{ fontSize: 16, fontWeight: 750 }}>{nextContent.title}</div>
-              <div className="muted" style={{ marginTop: 4 }}>{fmtDate(nextContent.entry_date)}</div>
-              <div className="flex gap wrap" style={{ marginTop: 10, gap: 8 }}>
-                <Badge tone={nextContent.status === 'pronto' || nextContent.status === 'grafica_caricata' ? 'green' : 'gold'}>
-                  {STATUS_LABEL[nextContent.status] || nextContent.status}
-                </Badge>
-                {nextContent.copy_text && <Badge tone="blue">Copy ✓</Badge>}
-              </div>
-            </div>
-          ) : <div className="faint" style={{ padding: '8px 0' }}>Niente in coda: calendario editoriale pulito.</div>}
-        </div>
+        ) : <div className="faint" style={{ padding: '8px 0' }}>Nessuna partita in programma al momento.</div>}
       </div>
 
       {/* Ultima partita: tutte le stats */}

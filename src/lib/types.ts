@@ -24,6 +24,9 @@ export interface Player {
   photo_url: string | null
   nationality: string | null
   age: number | null
+  birth_date: string | null
+  instagram_url: string | null
+  contact_email: string | null
 }
 
 export interface Match {
