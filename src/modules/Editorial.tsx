@@ -1,13 +1,14 @@
-import { useMemo, useRef, useState } from 'react'
-import { supabase } from '../lib/supabase'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { supabase, PLAYER_NAME } from '../lib/supabase'
 import { useAuth } from '../auth/AuthContext'
 import { useCollection, insertRow, updateRow, deleteRow } from '../lib/useData'
 import { notify } from '../lib/notify'
 import { Modal, Field, Input, Select, Textarea, Badge, Empty, Spinner, ConfirmButton } from '../components/ui'
 import { fmtDate, fmtDateTime } from '../lib/format'
-import type { EditorialEntry, EditorialAsset } from '../lib/types'
+import type { EditorialEntry, MediaItem } from '../lib/types'
 
 const BUCKET = 'crm-media'
+const PLAYER_FIRST = (PLAYER_NAME || 'giocatore').split(' ')[0]
 
 const TYPES: Record<string, { label: string; icon: string }> = {
   partita: { label: 'Partita', icon: '⚽' },
@@ -160,14 +161,36 @@ function EntryList({ title, entries, onOpen, empty }: {
 function EntryModal({ entry, onClose, onChanged }: {
   entry: EditorialEntry; onClose: () => void; onChanged: () => void
 }) {
-  const { profile, isAdmin, isTeam } = useAuth()
+  const { profile, isAdmin, isTeam, session } = useAuth()
   const [copy, setCopy] = useState(entry.copy_text || '')
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [copied, setCopied] = useState(false)
   const [err, setErr] = useState('')
+  const [media, setMedia] = useState<MediaItem[]>([])
+  const [urls, setUrls] = useState<Record<string, string>>({})
   const fileRef = useRef<HTMLInputElement>(null)
   const mi = entry.match_info
+
+  const grafiche = media.filter(m => m.kind !== 'foto')
+  const approvate = media.filter(m => m.kind === 'foto' && m.status === 'approvata')
+
+  async function loadMedia() {
+    const { data } = await supabase.from('crm_media').select('*')
+      .eq('editorial_id', entry.id).order('created_at')
+    const items = (data as MediaItem[]) || []
+    setMedia(items)
+    const paths = items.map(m => m.storage_path)
+    if (paths.length) {
+      const { data: signed } = await supabase.storage.from(BUCKET).createSignedUrls(paths, 3600)
+      if (signed) {
+        const next: Record<string, string> = {}
+        signed.forEach(d => { if (d.signedUrl && d.path) next[d.path] = d.signedUrl })
+        setUrls(u => ({ ...u, ...next }))
+      }
+    }
+  }
+  useEffect(() => { loadMedia() }, [entry.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function saveCopy() {
     setSaving(true)
@@ -198,34 +221,39 @@ function EntryModal({ entry, onClose, onChanged }: {
     const files = Array.from(e.target.files || [])
     if (!files.length) return
     setUploading(true); setErr('')
-    const added: EditorialAsset[] = []
+    let ok = 0
     for (const file of files) {
       const path = `editorial/${entry.id}/${Date.now()}-${file.name.replace(/[^\w.\-]/g, '_')}`
       const up = await supabase.storage.from(BUCKET).upload(path, file, { upsert: false })
       if (up.error) { setErr(up.error.message); continue }
-      added.push({ path, name: file.name, uploaded_at: new Date().toISOString(), by: profile?.full_name || null })
+      // La grafica caricata nella box entra anche nei Media, sezione Pubblicati.
+      const ins = await insertRow('crm_media', {
+        storage_path: path, file_name: file.name, kind: 'grafica', status: 'pubblicata',
+        editorial_id: entry.id, uploaded_by: session?.user.id,
+        uploaded_role: profile?.role, note: entry.title,
+      })
+      if (!ins.error) ok++
     }
-    if (added.length) {
-      const assets = [...(entry.assets || []), ...added]
+    if (ok) {
       const status = ['da_preparare', 'copy_pronto'].includes(entry.status) ? 'grafica_caricata' : entry.status
-      await updateRow('crm_editorial', entry.id, { assets, status })
+      if (status !== entry.status) await updateRow('crm_editorial', entry.id, { status })
       notify(isTeam ? 'player' : 'team', `🎨 Grafica caricata: ${entry.title}`,
-        `${added.length} file pront${added.length > 1 ? 'i' : 'o'} nel calendario editoriale.`, 'editorial')
-      onChanged()
+        `${ok} file pront${ok > 1 ? 'i' : 'o'} nel calendario editoriale.`, 'editorial')
+      loadMedia(); onChanged()
     }
     setUploading(false)
     if (fileRef.current) fileRef.current.value = ''
   }
 
-  async function openAsset(a: EditorialAsset) {
-    const { data } = await supabase.storage.from(BUCKET).createSignedUrl(a.path, 300, { download: a.name })
+  async function openAsset(m: MediaItem) {
+    const { data } = await supabase.storage.from(BUCKET).createSignedUrl(m.storage_path, 300, { download: m.file_name || undefined })
     if (data?.signedUrl) window.open(data.signedUrl, '_blank')
   }
 
-  async function removeAsset(a: EditorialAsset) {
-    await supabase.storage.from(BUCKET).remove([a.path])
-    await updateRow('crm_editorial', entry.id, { assets: (entry.assets || []).filter(x => x.path !== a.path) })
-    onChanged()
+  async function removeAsset(m: MediaItem) {
+    await supabase.storage.from(BUCKET).remove([m.storage_path])
+    await deleteRow('crm_media', m.id)
+    loadMedia()
   }
 
   async function setStatus(s: string) {
@@ -285,6 +313,24 @@ function EntryModal({ entry, onClose, onChanged }: {
             placeholder={isTeam ? 'Scrivi qui il copy del post: didascalia, hashtag, tag…' : 'Il copy non è ancora pronto.'} />
         </div>
 
+        {approvate.length > 0 && (
+          <div>
+            <div style={{ fontWeight: 650, marginBottom: 6 }}>
+              📸 Materiale approvato da {PLAYER_FIRST}
+              <span className="faint" style={{ fontWeight: 400, fontSize: 12 }}> · {approvate.length} foto per questa grafica</span>
+            </div>
+            <div className="asset-grid">
+              {approvate.map(m => (
+                <div className="asset-card" key={m.id} onClick={() => openAsset(m)} title={m.file_name || ''}>
+                  {urls[m.storage_path]
+                    ? <img src={urls[m.storage_path]} alt="" loading="lazy" />
+                    : <div className="asset-ph">📸</div>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div>
           <div className="flex between" style={{ marginBottom: 6 }}>
             <div style={{ fontWeight: 650 }}>🎨 Grafiche</div>
@@ -293,19 +339,21 @@ function EntryModal({ entry, onClose, onChanged }: {
             </button>
             <input ref={fileRef} type="file" multiple accept="image/*,video/*,.pdf,.psd,.ai" hidden onChange={onUpload} />
           </div>
-          {(entry.assets || []).length === 0
-            ? <div className="faint" style={{ fontSize: 12.5, padding: '6px 0' }}>Nessuna grafica ancora. Carica qui i file pronti da pubblicare.</div>
+          {grafiche.length === 0
+            ? <div className="faint" style={{ fontSize: 12.5, padding: '6px 0' }}>Nessuna grafica ancora. Carica qui i file pronti da pubblicare: finiscono anche in Media → Pubblicati.</div>
             : (
               <div className="list">
-                {entry.assets.map(a => (
-                  <div className="row" key={a.path}>
-                    <span style={{ fontSize: 17 }}>🖼</span>
+                {grafiche.map(m => (
+                  <div className="row" key={m.id}>
+                    {urls[m.storage_path]
+                      ? <img className="row-thumb" src={urls[m.storage_path]} alt="" loading="lazy" onClick={() => openAsset(m)} />
+                      : <span style={{ fontSize: 17 }}>🖼</span>}
                     <div className="row-main">
-                      <div className="row-title">{a.name}</div>
-                      <div className="row-sub">{a.by ? `di ${a.by} · ` : ''}{fmtDateTime(a.uploaded_at)}</div>
+                      <div className="row-title">{m.file_name}</div>
+                      <div className="row-sub">{fmtDateTime(m.created_at)}</div>
                     </div>
-                    <button className="btn btn-sm" onClick={() => openAsset(a)}>Scarica</button>
-                    {isAdmin && <ConfirmButton onConfirm={() => removeAsset(a)}>×</ConfirmButton>}
+                    <button className="btn btn-sm" onClick={() => openAsset(m)}>Scarica</button>
+                    {isAdmin && <ConfirmButton onConfirm={() => removeAsset(m)}>×</ConfirmButton>}
                   </div>
                 ))}
               </div>

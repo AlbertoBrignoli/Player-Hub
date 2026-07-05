@@ -200,7 +200,7 @@ export interface MediaItem {
   storage_path: string
   file_name: string | null
   kind: 'foto' | 'grafica' | 'carosello'
-  status: 'nuova' | 'selezionata' | 'scartata' | 'lavorata'
+  status: 'da_approvare' | 'approvata' | 'da_pubblicare' | 'pubblicata' | 'scartata'
   source_ids: string[] | null
   editorial_id: string | null
   uploaded_by: string | null

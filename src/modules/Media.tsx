@@ -3,34 +3,31 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../auth/AuthContext'
 import { useCollection, insertRow, updateRow, deleteRow } from '../lib/useData'
 import { notify } from '../lib/notify'
-import { Badge, Empty, Spinner, ConfirmButton } from '../components/ui'
+import { Badge, Empty, Spinner, ConfirmButton, Select } from '../components/ui'
 import { fmtDate } from '../lib/format'
-import type { MediaItem } from '../lib/types'
+import type { MediaItem, EditorialEntry } from '../lib/types'
 
 const BUCKET = 'crm-media'
 
-const MEDIA_STATUS: Record<string, { label: string; tone?: 'green' | 'red' | 'gold' | 'blue' | 'accent' }> = {
-  nuova: { label: 'Nuova' },
-  selezionata: { label: 'Selezionata ⭐', tone: 'gold' },
-  scartata: { label: 'Scartata' },
-  lavorata: { label: 'Lavorata ✓', tone: 'green' },
-}
-
 export default function Media() {
-  const { session, profile, isAdmin, isTeam, role } = useAuth()
+  const { session, profile, isTeam, role } = useAuth()
   const { rows, loading, reload } = useCollection<MediaItem>('crm_media', { orderBy: 'created_at' })
-  const [tab, setTab] = useState<'foto' | 'selezionate' | 'grafiche'>('foto')
+  const { rows: entries } = useCollection<EditorialEntry>('crm_editorial', { orderBy: 'entry_date', ascending: true })
+  const [tab, setTab] = useState<'approvare' | 'pubblicare' | 'pubblicati'>('approvare')
   const [urls, setUrls] = useState<Record<string, string>>({})
   const [uploading, setUploading] = useState(false)
   const [err, setErr] = useState('')
+  const [picked, setPicked] = useState<Set<string>>(new Set())
+  const [targetEntry, setTargetEntry] = useState('')
   const fotoRef = useRef<HTMLInputElement>(null)
   const graficaRef = useRef<HTMLInputElement>(null)
 
-  const foto = rows.filter(m => m.kind === 'foto' && m.status !== 'scartata')
-  const selezionate = foto.filter(m => m.status === 'selezionata')
-  const grafiche = rows.filter(m => m.kind !== 'foto')
+  const daApprovare = rows.filter(m => m.status === 'da_approvare')
+  const daPubblicare = rows.filter(m => m.status === 'approvata' || m.status === 'da_pubblicare')
+  const pubblicati = rows.filter(m => m.status === 'pubblicata')
+  const entryById = new Map(entries.map(e => [e.id, e]))
 
-  // Anteprime firmate (bucket privato) per tutti gli elementi visibili.
+  // Anteprime firmate (bucket privato).
   useEffect(() => {
     const paths = rows.map(m => m.storage_path).filter(p => !urls[p])
     if (!paths.length) return
@@ -53,8 +50,7 @@ export default function Media() {
         storage_path: path,
         file_name: file.name,
         kind,
-        status: kind === 'foto' ? 'nuova' : 'lavorata',
-        source_ids: kind === 'grafica' && selezionate.length ? selezionate.map(s => s.id) : null,
+        status: kind === 'foto' ? 'da_approvare' : 'da_pubblicare',
         uploaded_by: session?.user.id,
         uploaded_role: role,
       })
@@ -63,17 +59,13 @@ export default function Media() {
     if (ok > 0) {
       if (kind === 'foto') {
         if (isTeam) {
-          notify('player', '📸 Materiale pronto per essere selezionato',
-            `Il team ha caricato ${ok} nuov${ok > 1 ? 'e foto' : 'a foto'}: scegli quelle che ti piacciono.`, 'media')
+          notify('player', '📸 Materiale pronto per essere approvato',
+            `Il team ha caricato ${ok} nuov${ok > 1 ? 'e foto' : 'a foto'}: scegli quali approvare e per quale contenuto.`, 'media')
         } else {
           notify('team', '📸 Nuove foto dal giocatore', `${profile?.full_name || 'Il giocatore'} ha caricato ${ok} foto.`, 'media')
         }
       } else {
-        // Grafica pronta: le foto selezionate usate come sorgente diventano "lavorate".
-        if (selezionate.length) {
-          await Promise.all(selezionate.map(s => updateRow('crm_media', s.id, { status: 'lavorata' })))
-        }
-        notify('player', '🎨 Grafiche pronte', `${ok} grafic${ok > 1 ? 'he' : 'a'} da vedere nella sezione Media.`, 'media')
+        notify('player', '🎨 Nuove grafiche da pubblicare', `${ok} grafic${ok > 1 ? 'he' : 'a'} nella sezione Media.`, 'media')
       }
       reload()
     }
@@ -82,12 +74,33 @@ export default function Media() {
     if (graficaRef.current) graficaRef.current.value = ''
   }
 
-  async function toggleSelect(m: MediaItem) {
-    const next = m.status === 'selezionata' ? 'nuova' : 'selezionata'
-    await updateRow('crm_media', m.id, { status: next })
-    if (next === 'selezionata') {
-      notify('team', '⭐ Foto selezionata', `${profile?.full_name || 'Il giocatore'} ha scelto "${m.file_name}": pronta per la grafica.`, 'media')
-    }
+  function togglePick(id: string) {
+    setPicked(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id); else next.add(id)
+      return next
+    })
+  }
+
+  async function approvePicked() {
+    if (!picked.size || !targetEntry) return
+    const entry = entryById.get(targetEntry)
+    await Promise.all([...picked].map(id =>
+      updateRow('crm_media', id, { status: 'approvata', editorial_id: targetEntry })))
+    notify('team', `⭐ ${picked.size} foto approvat${picked.size > 1 ? 'e' : 'a'} da ${profile?.full_name || 'Lorenzo'}`,
+      entry ? `Per "${entry.title}" del ${fmtDate(entry.entry_date)}: il materiale è dentro la box, pronto per la grafica.` : undefined,
+      'editorial')
+    setPicked(new Set()); setTargetEntry('')
+    reload()
+  }
+
+  async function discard(m: MediaItem) {
+    await updateRow('crm_media', m.id, { status: 'scartata' })
+    reload()
+  }
+
+  async function markPublished(m: MediaItem) {
+    await updateRow('crm_media', m.id, { status: 'pubblicata' })
     reload()
   }
 
@@ -104,7 +117,8 @@ export default function Media() {
 
   if (loading) return <Spinner />
 
-  const shown = tab === 'foto' ? foto : tab === 'selezionate' ? selezionate : grafiche
+  const shown = tab === 'approvare' ? daApprovare : tab === 'pubblicare' ? daPubblicare : pubblicati
+  const upcomingEntries = entries.filter(e => e.entry_date >= new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10))
 
   return (
     <div className="grid" style={{ gap: 16 }}>
@@ -112,9 +126,9 @@ export default function Media() {
         <div>
           <div style={{ fontWeight: 650 }}>Libreria media</div>
           <div className="faint" style={{ fontSize: 12.5 }}>
-            {isTeam
-              ? 'Carica le foto: il giocatore riceve la notifica e seleziona. Sulle selezionate carichi grafiche e caroselli.'
-              : 'Il team carica il materiale: seleziona le foto che ti piacciono e riceverai le grafiche pronte.'}
+            {role === 'player'
+              ? 'Approva le foto scegliendo per quale contenuto: il team le trova nella box e prepara la grafica.'
+              : 'Carica le foto da far approvare: quelle approvate compaiono dentro la box del calendario con il resto del materiale.'}
           </div>
         </div>
         <div className="flex gap">
@@ -125,10 +139,7 @@ export default function Media() {
             onChange={e => uploadFiles(Array.from(e.target.files || []), 'foto')} />
           {isTeam && (
             <>
-              <button className="btn" disabled={uploading} onClick={() => graficaRef.current?.click()}
-                title={selezionate.length ? `Collegata alle ${selezionate.length} foto selezionate` : undefined}>
-                🎨 Carica grafica{selezionate.length ? ` (${selezionate.length} sel.)` : ''}
-              </button>
+              <button className="btn" disabled={uploading} onClick={() => graficaRef.current?.click()}>🎨 Carica grafica</button>
               <input ref={graficaRef} type="file" accept="image/*,video/*,.pdf" multiple hidden
                 onChange={e => uploadFiles(Array.from(e.target.files || []), 'grafica')} />
             </>
@@ -138,42 +149,79 @@ export default function Media() {
       {err && <div className="msg-err">{err}</div>}
 
       <div className="pill-tabs" style={{ alignSelf: 'start' }}>
-        <button className={`pill-tab ${tab === 'foto' ? 'active' : ''}`} onClick={() => setTab('foto')}>📸 Foto ({foto.length})</button>
-        <button className={`pill-tab ${tab === 'selezionate' ? 'active' : ''}`} onClick={() => setTab('selezionate')}>⭐ Selezionate ({selezionate.length})</button>
-        <button className={`pill-tab ${tab === 'grafiche' ? 'active' : ''}`} onClick={() => setTab('grafiche')}>🎨 Grafiche ({grafiche.length})</button>
+        <button className={`pill-tab ${tab === 'approvare' ? 'active' : ''}`} onClick={() => setTab('approvare')}>📥 Da approvare ({daApprovare.length})</button>
+        <button className={`pill-tab ${tab === 'pubblicare' ? 'active' : ''}`} onClick={() => setTab('pubblicare')}>🛠 Da pubblicare ({daPubblicare.length})</button>
+        <button className={`pill-tab ${tab === 'pubblicati' ? 'active' : ''}`} onClick={() => setTab('pubblicati')}>✅ Pubblicati ({pubblicati.length})</button>
       </div>
+
+      {tab === 'approvare' && role === 'player' && daApprovare.length > 0 && (
+        <div className="card flex between wrap gap" style={{ alignItems: 'center', borderColor: picked.size ? 'var(--accent)' : undefined }}>
+          <div style={{ fontWeight: 650 }}>
+            {picked.size ? `${picked.size} foto selezionat${picked.size > 1 ? 'e' : 'a'}` : 'Tocca le foto per selezionarle, poi scegli il contenuto'}
+          </div>
+          <div className="flex gap" style={{ alignItems: 'center' }}>
+            <Select value={targetEntry} onChange={e => setTargetEntry(e.target.value)} style={{ minWidth: 230 }}>
+              <option value="">Approva per…</option>
+              {upcomingEntries.map(e => (
+                <option key={e.id} value={e.id}>{fmtDate(e.entry_date)} · {e.title}</option>
+              ))}
+            </Select>
+            <button className="btn btn-primary" disabled={!picked.size || !targetEntry} onClick={approvePicked}>
+              ✓ Approva {picked.size || ''}
+            </button>
+          </div>
+        </div>
+      )}
 
       {shown.length === 0 ? (
         <div className="card">
-          <Empty icon={tab === 'grafiche' ? '🎨' : '📸'}
-            title={tab === 'foto' ? 'Nessuna foto ancora' : tab === 'selezionate' ? 'Nessuna foto selezionata' : 'Nessuna grafica ancora'}
-            hint={tab === 'foto' ? 'Carica il primo set di foto.' : tab === 'selezionate' ? 'Le foto scelte dal giocatore compaiono qui.' : 'Le grafiche e i caroselli pronti compaiono qui.'} />
+          <Empty icon={tab === 'pubblicati' ? '✅' : tab === 'pubblicare' ? '🛠' : '📥'}
+            title={tab === 'approvare' ? 'Niente da approvare' : tab === 'pubblicare' ? 'Niente in lavorazione' : 'Nessun contenuto pubblicato'}
+            hint={tab === 'approvare' ? 'Le foto caricate dal team compaiono qui in attesa di approvazione.'
+              : tab === 'pubblicare' ? 'Qui trovi foto approvate e grafiche in preparazione.'
+              : 'Le grafiche caricate nelle box del calendario finiscono qui.'} />
         </div>
       ) : (
         <div className="media-grid">
-          {shown.map(m => (
-            <div className={`media-card ${m.status === 'selezionata' ? 'media-selected' : ''}`} key={m.id}>
-              {urls[m.storage_path]
-                ? <img className="media-thumb" src={urls[m.storage_path]} alt={m.file_name || ''} loading="lazy" onClick={() => download(m)} />
-                : <div className="media-thumb media-ph">🖼</div>}
-              <div className="media-meta">
-                <div className="media-name" title={m.file_name || ''}>{m.file_name}</div>
-                <div className="flex between" style={{ alignItems: 'center' }}>
-                  <Badge tone={MEDIA_STATUS[m.status]?.tone}>{m.kind === 'foto' ? MEDIA_STATUS[m.status]?.label : (m.kind === 'carosello' ? 'Carosello' : 'Grafica')}</Badge>
-                  <span className="faint" style={{ fontSize: 11 }}>{fmtDate(m.created_at)}</span>
-                </div>
-                <div className="flex gap" style={{ marginTop: 8 }}>
-                  {m.kind === 'foto' && role === 'player' && m.status !== 'lavorata' && (
-                    <button className={`btn btn-sm ${m.status === 'selezionata' ? '' : 'btn-primary'}`} style={{ flex: 1 }} onClick={() => toggleSelect(m)}>
-                      {m.status === 'selezionata' ? '★ Tolgo' : '☆ Seleziona'}
-                    </button>
+          {shown.map(m => {
+            const entry = m.editorial_id ? entryById.get(m.editorial_id) : null
+            const isPicked = picked.has(m.id)
+            return (
+              <div className={`media-card ${isPicked ? 'media-selected' : ''}`} key={m.id}>
+                <div style={{ position: 'relative' }}>
+                  {urls[m.storage_path]
+                    ? <img className="media-thumb" src={urls[m.storage_path]} alt={m.file_name || ''} loading="lazy"
+                        onClick={() => tab === 'approvare' && role === 'player' ? togglePick(m.id) : download(m)} />
+                    : <div className="media-thumb media-ph">{m.kind === 'foto' ? '📸' : '🎨'}</div>}
+                  {tab === 'approvare' && role === 'player' && (
+                    <div className={`media-pick ${isPicked ? 'on' : ''}`} onClick={() => togglePick(m.id)}>{isPicked ? '✓' : ''}</div>
                   )}
-                  <button className="btn btn-sm" style={{ flex: 1 }} onClick={() => download(m)}>Scarica</button>
-                  {(isAdmin || m.uploaded_by === session?.user.id) && <ConfirmButton onConfirm={() => remove(m)}>×</ConfirmButton>}
+                </div>
+                <div className="media-meta">
+                  <div className="media-name" title={m.file_name || ''}>{m.file_name}</div>
+                  <div className="flex between" style={{ alignItems: 'center' }}>
+                    <Badge tone={m.status === 'approvata' ? 'gold' : m.status === 'pubblicata' ? 'green' : m.status === 'da_pubblicare' ? 'blue' : undefined}>
+                      {m.kind === 'foto'
+                        ? (m.status === 'da_approvare' ? 'Da approvare' : m.status === 'approvata' ? 'Approvata ⭐' : m.status === 'pubblicata' ? 'Pubblicata' : 'Da pubblicare')
+                        : (m.status === 'pubblicata' ? (m.kind === 'carosello' ? 'Carosello ✓' : 'Grafica ✓') : m.kind === 'carosello' ? 'Carosello' : 'Grafica')}
+                    </Badge>
+                    <span className="faint" style={{ fontSize: 11 }}>{fmtDate(m.created_at)}</span>
+                  </div>
+                  {entry && <div className="faint" style={{ fontSize: 11 }}>→ {entry.title} · {fmtDate(entry.entry_date)}</div>}
+                  <div className="flex gap" style={{ marginTop: 8 }}>
+                    <button className="btn btn-sm" style={{ flex: 1 }} onClick={() => download(m)}>Scarica</button>
+                    {isTeam && tab === 'pubblicare' && (
+                      <button className="btn btn-sm" onClick={() => markPublished(m)} title="Segna come pubblicata">✓</button>
+                    )}
+                    {role === 'player' && tab === 'approvare' && (
+                      <button className="btn btn-sm" onClick={() => discard(m)} title="Scarta">✕</button>
+                    )}
+                    {(isTeam || m.uploaded_by === session?.user.id) && <ConfirmButton onConfirm={() => remove(m)}>🗑</ConfirmButton>}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>
