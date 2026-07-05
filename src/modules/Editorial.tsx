@@ -3,6 +3,7 @@ import { supabase, PLAYER_NAME } from '../lib/supabase'
 import { useAuth } from '../auth/AuthContext'
 import { useCollection, insertRow, updateRow, deleteRow } from '../lib/useData'
 import { notify } from '../lib/notify'
+import { toast } from '../lib/toast'
 import { Modal, Field, Input, Select, Textarea, Badge, Empty, Spinner, ConfirmButton } from '../components/ui'
 import { fmtDate, fmtDateTime, isImageFile, fileExt } from '../lib/format'
 import type { EditorialEntry, MediaItem } from '../lib/types'
@@ -258,16 +259,21 @@ function EntryModal({ entry, onClose, onChanged }: {
     setSaving(true)
     const status = entry.status === 'da_preparare' && copy.trim() ? 'copy_pronto' : entry.status
     const { error } = await updateRow('crm_editorial', entry.id, { copy_text: copy || null, status })
-    if (error) setErr(error.message)
+    if (error) toast(error.message, 'err')
     else {
       if (copy.trim()) notify('player', `✍️ Copy pronto: ${entry.title}`, 'Il testo è pronto nel calendario editoriale.', 'editorial')
+      toast('✍️ Copy salvato')
       onChanged()
     }
     setSaving(false)
   }
 
   async function copyToClipboard() {
-    try { await navigator.clipboard.writeText(copy); setCopied(true); setTimeout(() => setCopied(false), 1800) } catch { /* ignore */ }
+    try {
+      await navigator.clipboard.writeText(copy)
+      setCopied(true); setTimeout(() => setCopied(false), 1800)
+      toast('📋 Copy copiato negli appunti')
+    } catch { /* ignore */ }
   }
 
   function downloadCopy() {
@@ -301,6 +307,7 @@ function EntryModal({ entry, onClose, onChanged }: {
       if (status !== entry.status) await updateRow('crm_editorial', entry.id, { status })
       notify(isTeam ? 'player' : 'team', `🎨 Grafica caricata: ${entry.title}`,
         `${ok} file pront${ok > 1 ? 'i' : 'o'} nel calendario editoriale.`, 'editorial')
+      toast(`🎨 ${ok} grafic${ok > 1 ? 'he' : 'a'} caricat${ok > 1 ? 'e' : 'a'} — anche in Media → Pubblicati`)
       loadMedia(); onChanged()
     }
     setUploading(false)

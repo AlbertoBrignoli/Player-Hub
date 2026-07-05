@@ -1,8 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../auth/AuthContext'
 import { useCollection, insertRow, updateRow, deleteRow } from '../lib/useData'
 import { notify } from '../lib/notify'
+import { toast } from '../lib/toast'
+import Lightbox from '../components/Lightbox'
 import { Badge, Empty, Spinner, ConfirmButton, Select } from '../components/ui'
 import { fmtDate, isImageFile, fileExt } from '../lib/format'
 import type { MediaItem, EditorialEntry } from '../lib/types'
@@ -19,6 +21,7 @@ export default function Media() {
   const [err, setErr] = useState('')
   const [picked, setPicked] = useState<Set<string>>(new Set())
   const [targetEntry, setTargetEntry] = useState('')
+  const [lightbox, setLightbox] = useState<number | null>(null)
   const fotoRef = useRef<HTMLInputElement>(null)
   const graficaRef = useRef<HTMLInputElement>(null)
 
@@ -46,7 +49,7 @@ export default function Media() {
     for (const file of files) {
       const path = `${kind}/${Date.now()}-${file.name.replace(/[^\w.\-]/g, '_')}`
       const up = await supabase.storage.from(BUCKET).upload(path, file, { upsert: false })
-      if (up.error) { setErr(up.error.message); continue }
+      if (up.error) { toast(up.error.message, 'err'); continue }
       const ins = await insertRow('crm_media', {
         storage_path: path,
         file_name: file.name,
@@ -68,6 +71,7 @@ export default function Media() {
       } else {
         notify('player', '🎨 Nuove grafiche da pubblicare', `${ok} grafic${ok > 1 ? 'he' : 'a'} nella sezione Media.`, 'media')
       }
+      toast(kind === 'foto' ? `📸 ${ok} foto caricat${ok > 1 ? 'e' : 'a'}` : `🎨 ${ok} grafic${ok > 1 ? 'he' : 'a'} caricat${ok > 1 ? 'e' : 'a'}`)
       reload()
     }
     setUploading(false)
@@ -96,17 +100,22 @@ export default function Media() {
         : 'Le trovi in Media → Approvate, pronte da lavorare.',
       entry ? 'editorial' : 'media')
     setPicked(new Set()); setTargetEntry('')
+    toast(`✓ ${ids.length} foto approvat${ids.length > 1 ? 'e' : 'a'}${entry ? ` per "${entry.title}"` : ''}`)
     setTab('approvate')
+    setLightbox(null)
     reload()
   }
 
   async function discard(m: MediaItem) {
     await updateRow('crm_media', m.id, { status: 'scartata' })
+    toast('Foto scartata')
+    setLightbox(null)
     reload()
   }
 
   async function markPublished(m: MediaItem) {
     await updateRow('crm_media', m.id, { status: 'pubblicata' })
+    toast('✓ Segnata come pubblicata')
     reload()
   }
 
@@ -164,7 +173,7 @@ export default function Media() {
       {tab === 'approvare' && role === 'player' && daApprovare.length > 0 && (
         <div className="card flex between wrap gap" style={{ alignItems: 'center', borderColor: picked.size ? 'var(--accent)' : undefined }}>
           <div style={{ fontWeight: 650 }}>
-            {picked.size ? `${picked.size} foto selezionat${picked.size > 1 ? 'e' : 'a'}` : 'Approva le singole foto col tasto ✓, o toccale per approvarne tante insieme'}
+            {picked.size ? `${picked.size} foto selezionat${picked.size > 1 ? 'e' : 'a'}` : 'Swipe → per approvare, ← per scartare · oppure usa ✓ e la selezione multipla'}
           </div>
           <div className="flex gap wrap" style={{ alignItems: 'center' }}>
             <Select value={targetEntry} onChange={e => setTargetEntry(e.target.value)} style={{ minWidth: 220 }}>
@@ -193,25 +202,31 @@ export default function Media() {
         </div>
       ) : (
         <div className="media-grid">
-          {shown.map(m => {
+          {shown.map((m, idx) => {
             const entry = m.editorial_id ? entryById.get(m.editorial_id) : null
             const isPicked = picked.has(m.id)
+            const canSwipe = tab === 'approvare' && role === 'player' && isImageFile(m.file_name)
+            const thumb = (
+              <div style={{ position: 'relative' }}>
+                {isImageFile(m.file_name) && urls[m.storage_path]
+                  ? <img className="media-thumb" src={urls[m.storage_path]} alt={m.file_name || ''} loading="lazy"
+                      onClick={() => setLightbox(idx)} />
+                  : <div className="media-thumb media-ph" onClick={() => download(m)} style={{ cursor: 'pointer' }}>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: 26 }}>{m.kind === 'foto' ? '📸' : '🎨'}</div>
+                        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '1px', marginTop: 4 }}>{fileExt(m.file_name)}</div>
+                      </div>
+                    </div>}
+                {tab === 'approvare' && role === 'player' && (
+                  <div className={`media-pick ${isPicked ? 'on' : ''}`} onClick={e => { e.stopPropagation(); togglePick(m.id) }}>{isPicked ? '✓' : ''}</div>
+                )}
+              </div>
+            )
             return (
               <div className={`media-card ${isPicked ? 'media-selected' : ''}`} key={m.id}>
-                <div style={{ position: 'relative' }}>
-                  {isImageFile(m.file_name) && urls[m.storage_path]
-                    ? <img className="media-thumb" src={urls[m.storage_path]} alt={m.file_name || ''} loading="lazy"
-                        onClick={() => tab === 'approvare' && role === 'player' ? togglePick(m.id) : download(m)} />
-                    : <div className="media-thumb media-ph" onClick={() => download(m)} style={{ cursor: 'pointer' }}>
-                        <div style={{ textAlign: 'center' }}>
-                          <div style={{ fontSize: 26 }}>{m.kind === 'foto' ? '📸' : '🎨'}</div>
-                          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '1px', marginTop: 4 }}>{fileExt(m.file_name)}</div>
-                        </div>
-                      </div>}
-                  {tab === 'approvare' && role === 'player' && (
-                    <div className={`media-pick ${isPicked ? 'on' : ''}`} onClick={() => togglePick(m.id)}>{isPicked ? '✓' : ''}</div>
-                  )}
-                </div>
+                {canSwipe
+                  ? <SwipePhoto onApprove={() => approve([m.id])} onDiscard={() => discard(m)}>{thumb}</SwipePhoto>
+                  : thumb}
                 <div className="media-meta">
                   <div className="media-name" title={m.file_name || ''}>{m.file_name}</div>
                   <div className="flex between" style={{ alignItems: 'center' }}>
@@ -243,6 +258,66 @@ export default function Media() {
           })}
         </div>
       )}
+
+      {lightbox != null && shown[lightbox] && (
+        <Lightbox
+          items={shown.map(m => ({ id: m.id, url: isImageFile(m.file_name) ? urls[m.storage_path] || null : null, name: m.file_name }))}
+          index={lightbox}
+          onIndex={setLightbox}
+          onClose={() => setLightbox(null)}
+          actions={item => {
+            const m = shown.find(x => x.id === item.id)
+            if (!m) return null
+            if (role === 'player' && tab === 'approvare') {
+              return (
+                <>
+                  <button className="btn btn-primary" onClick={() => approve([m.id])}>✓ Approva</button>
+                  <button className="btn" onClick={() => discard(m)}>✕ Scarta</button>
+                </>
+              )
+            }
+            return <button className="btn" onClick={() => download(m)}>⬇ Scarica</button>
+          }}
+        />
+      )}
+    </div>
+  )
+}
+
+// Swipe stile "storie": destra = approva, sinistra = scarta.
+// Si attiva solo con gesto orizzontale, per non litigare con lo scroll.
+function SwipePhoto({ children, onApprove, onDiscard }: {
+  children: React.ReactNode; onApprove: () => void; onDiscard: () => void
+}) {
+  const [dx, setDx] = useState(0)
+  const start = useRef<{ x: number; y: number } | null>(null)
+  const active = useRef(false)
+
+  function ts(e: React.TouchEvent) {
+    start.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
+    active.current = false
+  }
+  function tm(e: React.TouchEvent) {
+    if (!start.current) return
+    const ddx = e.touches[0].clientX - start.current.x
+    const ddy = e.touches[0].clientY - start.current.y
+    if (!active.current && Math.abs(ddx) > 14 && Math.abs(ddx) > Math.abs(ddy) * 1.4) active.current = true
+    if (active.current) setDx(ddx)
+  }
+  function te() {
+    if (active.current) {
+      if (dx > 80) onApprove()
+      else if (dx < -80) onDiscard()
+    }
+    setDx(0); start.current = null; active.current = false
+  }
+
+  return (
+    <div className="swipe-wrap" onTouchStart={ts} onTouchMove={tm} onTouchEnd={te}
+      style={{ transform: dx ? `translateX(${dx}px) rotate(${dx / 60}deg)` : undefined, transition: dx ? 'none' : 'transform .18s ease' }}>
+      <div className="swipe-hint swipe-ok" style={{ opacity: dx > 40 ? Math.min(1, (dx - 40) / 60) : 0 }}>✓</div>
+      <div className="swipe-hint swipe-no" style={{ opacity: dx < -40 ? Math.min(1, (-dx - 40) / 60) : 0 }}>✕</div>
+      {children}
     </div>
   )
 }

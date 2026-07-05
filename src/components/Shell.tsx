@@ -3,6 +3,7 @@ import { useAuth } from '../auth/AuthContext'
 import { supabase, PLAYER_NAME } from '../lib/supabase'
 import { initials } from '../lib/format'
 import NotificationBell from './NotificationBell'
+import Toaster from './Toaster'
 import { Modal, Field, Input } from './ui'
 
 export interface NavDef { key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[] }
@@ -129,6 +130,7 @@ export default function Shell({ route, setRoute, right, children }: {
       </nav>
 
       {pwOpen && <PasswordModal onClose={() => setPwOpen(false)} />}
+      <Toaster />
     </div>
   )
 }
