@@ -26,7 +26,11 @@
   --radius: 18px;
   --radius-sm: 12px;
   --shadow: 0 12px 40px rgba(0,0,0,.45);
-  --font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', 'Segoe UI', Roboto, sans-serif;
+  /* Sistema tipografico editoriale (handoff Editorial) */
+  --font: 'Archivo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Barlow Condensed', 'Archivo', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --club-soft: #ff6b73;
   --tabbar-h: 62px;
 }
 
@@ -461,3 +465,65 @@ button { cursor: pointer; border: none; background: none; -webkit-tap-highlight-
 .dash-approve-cell { aspect-ratio: 1; border-radius: 9px; overflow: hidden; background: var(--bg-2); border: 1px solid var(--border); }
 .dash-approve-cell img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .dash-approve-ph { width: 100%; height: 100%; display: grid; place-items: center; color: var(--text-faint); }
+
+/* ============================================================
+   Sistema editoriale — pattern "rivista sportiva" (handoff)
+   ============================================================ */
+.ed-kicker { font-family: var(--font-mono); font-weight: 700; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-faint); }
+.ed-display { font-family: var(--font-display); font-weight: 800; text-transform: uppercase; letter-spacing: -.5px; line-height: 1; }
+.ed-num { font-family: var(--font-display); font-weight: 800; letter-spacing: -.5px; line-height: .9; }
+
+/* Masthead di sezione: titolo condensed + filetto */
+.ed-masthead { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.ed-masthead-t { font-family: var(--font-display); font-weight: 800; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--text); }
+.ed-masthead-t.quiet { color: var(--text-faint); }
+.ed-rule { flex: 1; height: 1px; background: var(--border); }
+.ed-more { background: none; border: none; cursor: pointer; font-size: 11px; font-weight: 600; color: var(--text-faint); }
+.ed-more:hover { color: var(--text); }
+
+/* Card identità */
+.ed-id-card { background: #141416; border: 1px solid var(--border); border-radius: 22px; padding: 20px; }
+.ed-id-name { font-family: var(--font-display); font-weight: 800; font-size: 27px; line-height: .94; text-transform: uppercase; margin-top: 3px; }
+.ed-anag { display: flex; align-items: center; gap: 11px; }
+.ed-anag-ic { width: 30px; height: 30px; border-radius: 9px; background: var(--surface-2); border: 1px solid var(--border-2); display: grid; place-items: center; color: var(--text-dim); flex-shrink: 0; }
+.ed-anag-l { font-family: var(--font-mono); font-weight: 600; font-size: 9px; letter-spacing: .8px; text-transform: uppercase; color: var(--text-faint); }
+.ed-anag-v { font-weight: 600; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ed-anag-link:hover .ed-anag-ic { color: var(--text); border-color: var(--text-dim); }
+
+/* Strip tappabile (ultima partita) */
+.ed-strip { width: 100%; text-align: left; cursor: pointer; background: #18181b; border: 1px solid var(--border); border-radius: 16px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; transition: border-color .15s; }
+.ed-strip:hover { border-color: var(--border-2); }
+.ed-chev { color: #5f5f68; font-size: 20px; flex-shrink: 0; }
+
+/* Hero prossima partita */
+.ed-hero { border-radius: 20px; overflow: hidden; position: relative; height: 212px; background: var(--bg-2); }
+.ed-hero-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.ed-hero-scrim { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10,10,11,.15) 0%, transparent 30%, rgba(10,10,11,.94) 100%); }
+.ed-hero-body { position: absolute; left: 0; right: 0; bottom: 0; padding: 20px 22px; }
+.ed-hero-title { font-family: var(--font-display); font-weight: 800; font-size: 30px; line-height: .98; text-transform: uppercase; }
+.ed-hero-meta { display: flex; gap: 16px; margin-top: 12px; font-weight: 600; font-size: 12px; }
+.ed-hero-meta .sep { color: var(--text-faint); }
+.ed-livepill { display: inline-flex; align-items: center; gap: 7px; background: rgba(225,11,23,.16); border: 1px solid rgba(225,11,23,.4); padding: 4px 10px; border-radius: 999px; margin-bottom: 10px; }
+.ed-livepill span:last-child { font-family: var(--font-mono); font-weight: 700; font-size: 9px; letter-spacing: 1.5px; color: var(--club-soft); text-transform: uppercase; }
+.ed-livedot { width: 6px; height: 6px; border-radius: 50%; background: var(--club); animation: ringpulse 1.6s infinite; }
+@keyframes ringpulse { 0%,100% { opacity: 1; } 50% { opacity: .5; } }
+
+/* Card azione "Da fare ora" */
+.ed-action { width: 100%; text-align: left; cursor: pointer; background: #18181b; border: 1px solid var(--border); border-radius: 16px; padding: 14px 16px; display: flex; align-items: center; gap: 14px; transition: border-color .15s; }
+.ed-action:hover { border-color: var(--border-2); }
+.ed-action.prio { border-color: var(--border-2); border-left: 3px solid var(--club); }
+.ed-action-num { width: 46px; height: 46px; border-radius: 12px; background: var(--club); display: grid; place-items: center; flex-shrink: 0; font-family: var(--font-display); font-weight: 800; font-size: 19px; color: #fff; }
+.ed-action-thumb { width: 46px; height: 46px; border-radius: 12px; flex-shrink: 0; object-fit: cover; background: var(--bg-2); }
+.ed-action-t { font-weight: 700; font-size: 15px; }
+.ed-action-s { font-weight: 500; font-size: 12px; color: var(--text-dim); margin-top: 1px; }
+.ed-chip { font-weight: 600; font-size: 10px; padding: 3px 9px; border-radius: 999px; }
+.ed-chip-gold { color: var(--gold); background: rgba(255,214,10,.12); }
+.ed-chip-blue { color: var(--blue); background: rgba(100,210,255,.12); }
+.ed-chip-green { color: var(--green); background: rgba(48,209,88,.12); }
+
+/* Stat a colonne (In stagione) */
+.ed-statcols { display: flex; margin-top: 14px; }
+.ed-statcol { flex: 1; text-align: center; }
+.ed-statcol .v { font-family: var(--font-display); font-weight: 800; font-size: 30px; }
+.ed-statcol .l { font-weight: 600; font-size: 10px; color: var(--text-faint); text-transform: uppercase; letter-spacing: .6px; margin-top: 2px; }
+.ed-statdiv { width: 1px; background: var(--border); }
