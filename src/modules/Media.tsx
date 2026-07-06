@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../auth/AuthContext'
+import { useAthlete } from '../lib/athlete'
 import { useCollection, insertRow, updateRow, deleteRow } from '../lib/useData'
 import { notify } from '../lib/notify'
 import { toast } from '../lib/toast'
@@ -14,9 +15,10 @@ const BUCKET = 'crm-media'
 const NO_FOLDER = '__none__'
 
 export default function Media() {
+  const { athleteId } = useAthlete()
   const { session, profile, isTeam, role } = useAuth()
-  const { rows, loading, reload } = useCollection<MediaItem>('crm_media', { orderBy: 'created_at' })
-  const { rows: entries } = useCollection<EditorialEntry>('crm_editorial', { orderBy: 'entry_date', ascending: true })
+  const { rows, loading, reload } = useCollection<MediaItem>('crm_media', { orderBy: 'created_at', match: { player_id: athleteId } })
+  const { rows: entries } = useCollection<EditorialEntry>('crm_editorial', { orderBy: 'entry_date', ascending: true, match: { player_id: athleteId } })
   const [view, setView] = useState<'flusso' | 'cartelle'>('flusso')
   const [tab, setTab] = useState<'approvare' | 'approvate' | 'pubblicare' | 'pubblicati'>('approvare')
   const [openFolder, setOpenFolder] = useState<string | null>(null) // NO_FOLDER = senza cartella
@@ -98,7 +100,7 @@ export default function Media() {
     if (!current || current === NO_FOLDER) return
     const name = window.prompt('Nuovo nome della cartella:', current)?.trim()
     if (!name || name === current) return
-    const { error } = await supabase.from('crm_media').update({ folder: name }).eq('folder', current)
+    const { error } = await supabase.from('crm_media').update({ folder: name }).eq('folder', current).eq('player_id', athleteId)
     if (error) { toast(error.message, 'err'); return }
     toast(`Cartella rinominata in "${name}"`)
     if (openFolder === current) setOpenFolder(name)
@@ -125,6 +127,7 @@ export default function Media() {
           folder,
           uploaded_by: session?.user.id,
           uploaded_role: role,
+          player_id: athleteId,
         })
         if (!ins.error) ok++
       }
@@ -133,12 +136,12 @@ export default function Media() {
         if (kind === 'foto') {
           if (isTeam) {
             notify('player', 'Materiale pronto per essere approvato',
-              `Il team ha caricato ${ok} nuov${ok > 1 ? 'e foto' : 'a foto'}${dove}: scegli quali approvare.`, 'media')
+              `Il team ha caricato ${ok} nuov${ok > 1 ? 'e foto' : 'a foto'}${dove}: scegli quali approvare.`, 'media', athleteId)
           } else {
-            notify('team', 'Nuove foto dal giocatore', `${profile?.full_name || 'Il giocatore'} ha caricato ${ok} foto${dove}.`, 'media')
+            notify('team', 'Nuove foto dal giocatore', `${profile?.full_name || 'Il giocatore'} ha caricato ${ok} foto${dove}.`, 'media', athleteId)
           }
         } else {
-          notify('player', 'Nuove grafiche da pubblicare', `${ok} grafic${ok > 1 ? 'he' : 'a'}${dove} nella sezione Media.`, 'media')
+          notify('player', 'Nuove grafiche da pubblicare', `${ok} grafic${ok > 1 ? 'he' : 'a'}${dove} nella sezione Media.`, 'media', athleteId)
         }
         toast(`${ok} file caricat${ok > 1 ? 'i' : 'o'}${dove}`)
         reload()
@@ -173,7 +176,7 @@ export default function Media() {
       entry
         ? `Per "${entry.title}" del ${fmtDate(entry.entry_date)}: il materiale è dentro la box, pronto per la grafica.`
         : 'Le trovi in Media, sezione Approvate: pronte da lavorare.',
-      entry ? 'editorial' : 'media')
+      entry ? 'editorial' : 'media', athleteId)
     setPicked(new Set()); setTargetEntry('')
     toast(`${ids.length} foto approvat${ids.length > 1 ? 'e' : 'a'}${entry ? ` per "${entry.title}"` : ''}`)
     setLightbox(null)

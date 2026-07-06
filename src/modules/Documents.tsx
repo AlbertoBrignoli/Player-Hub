@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../auth/AuthContext'
+import { useAthlete } from '../lib/athlete'
 import { useCollection, insertRow, deleteRow } from '../lib/useData'
 import { toast } from '../lib/toast'
 import { Empty, Spinner, Badge, Select, ConfirmButton } from '../components/ui'
@@ -12,8 +13,9 @@ const CATS: Record<string, string> = { contratto: 'Contratto', identita: 'Identi
 const BUCKET = 'crm-documents'
 
 export default function Documents() {
+  const { athleteId } = useAthlete()
   const { session, isAdmin } = useAuth()
-  const { rows, loading, reload } = useCollection<Doc>('crm_documents', { orderBy: 'created_at' })
+  const { rows, loading, reload } = useCollection<Doc>('crm_documents', { orderBy: 'created_at', match: { player_id: athleteId } })
   const [uploading, setUploading] = useState(false)
   const [cat, setCat] = useState('altro')
   const [err, setErr] = useState('')
@@ -28,7 +30,7 @@ export default function Documents() {
     if (up.error) { setErr(up.error.message); setUploading(false); return }
     const ins = await insertRow('crm_documents', {
       name: file.name, category: cat, file_path: path, size: file.size, mime: file.type,
-      uploaded_by: session?.user.id,
+      uploaded_by: session?.user.id, player_id: athleteId,
     })
     if (ins.error) setErr(ins.error.message)
     setUploading(false)

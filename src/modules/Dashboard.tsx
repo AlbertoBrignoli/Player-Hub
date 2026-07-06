@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { supabase, PLAYER_NAME } from '../lib/supabase'
 import { useAuth } from '../auth/AuthContext'
+import { useAthlete } from '../lib/athlete'
 import { Spinner, Badge } from '../components/ui'
 import Icon from '../components/Icon'
 import { useIsMobile } from '../lib/useIsMobile'
@@ -18,6 +19,7 @@ const MESI = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'lug
 
 export default function Dashboard({ goto }: { goto: (r: string) => void }) {
   const { profile } = useAuth()
+  const { athleteId } = useAthlete()
   const isMobile = useIsMobile()
   const [loading, setLoading] = useState(true)
   const [player, setPlayer] = useState<Player | null>(null)
@@ -31,17 +33,19 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
   const [approveUrls, setApproveUrls] = useState<Record<string, string>>({})
 
   useEffect(() => {
+    if (!athleteId) return
     (async () => {
       const todayKey = new Date().toISOString().slice(0, 10)
+      const pid = athleteId
       const [p, m, t, ev, ct, ed, ph] = await Promise.all([
-        supabase.from('player').select('*').limit(1).maybeSingle(),
-        supabase.from('matches').select('*').order('match_date', { ascending: true }),
-        supabase.from('player_stats_match').select('*').order('match_date', { ascending: false }).limit(1),
-        supabase.from('crm_events').select('*').gte('start_at', new Date().toISOString()).order('start_at').limit(5),
-        supabase.from('crm_contracts').select('*'),
-        supabase.from('crm_editorial').select('*').gte('entry_date', todayKey)
+        supabase.from('player').select('*').eq('api_player_id', pid).maybeSingle(),
+        supabase.from('matches').select('*').eq('player_id', pid).order('match_date', { ascending: true }),
+        supabase.from('player_stats_match').select('*').eq('player_id', pid).order('match_date', { ascending: false }).limit(1),
+        supabase.from('crm_events').select('*').eq('player_id', pid).gte('start_at', new Date().toISOString()).order('start_at').limit(5),
+        supabase.from('crm_contracts').select('*').eq('player_id', pid),
+        supabase.from('crm_editorial').select('*').eq('player_id', pid).gte('entry_date', todayKey)
           .neq('status', 'pubblicato').order('entry_date').limit(1).maybeSingle(),
-        supabase.from('crm_media').select('*').eq('status', 'da_approvare').order('created_at', { ascending: false }),
+        supabase.from('crm_media').select('*').eq('player_id', pid).eq('status', 'da_approvare').order('created_at', { ascending: false }),
       ])
       setPlayer(p.data as Player)
       setMatches((m.data as Match[]) || [])
@@ -73,7 +77,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
       }
       setLoading(false)
     })()
-  }, [])
+  }, [athleteId])
 
   if (loading) return <Spinner />
 

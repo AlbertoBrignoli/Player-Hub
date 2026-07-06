@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { supabase, PLAYER_NAME } from '../lib/supabase'
 import { useAuth } from '../auth/AuthContext'
+import { useAthlete } from '../lib/athlete'
 import { useCollection, insertRow, updateRow, deleteRow } from '../lib/useData'
 import { notify } from '../lib/notify'
 import { toast } from '../lib/toast'
@@ -45,7 +46,8 @@ const DOW = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom']
 
 export default function Editorial() {
   const { isTeam } = useAuth()
-  const { rows, loading, reload } = useCollection<EditorialEntry>('crm_editorial', { orderBy: 'entry_date', ascending: true })
+  const { athleteId } = useAthlete()
+  const { rows, loading, reload } = useCollection<EditorialEntry>('crm_editorial', { orderBy: 'entry_date', ascending: true, match: { player_id: athleteId } })
   const today = new Date()
   const [ym, setYm] = useState<[number, number]>([today.getFullYear(), today.getMonth()])
   const [view, setView] = useState<'cal' | 'lista'>('cal')
@@ -240,6 +242,7 @@ function EntryModal({ entry, onClose, onChanged }: {
   entry: EditorialEntry; onClose: () => void; onChanged: () => void
 }) {
   const { profile, isAdmin, isTeam, session } = useAuth()
+  const { athleteId } = useAthlete()
   const [copy, setCopy] = useState(entry.copy_text || '')
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -277,7 +280,7 @@ function EntryModal({ entry, onClose, onChanged }: {
     const { error } = await updateRow('crm_editorial', entry.id, { copy_text: copy || null, status })
     if (error) toast(error.message, 'err')
     else {
-      if (copy.trim()) notify('player', `Copy pronto: ${entry.title}`, 'Il testo è pronto nel calendario editoriale.', 'editorial')
+      if (copy.trim()) notify('player', `Copy pronto: ${entry.title}`, 'Il testo è pronto nel calendario editoriale.', 'editorial', athleteId)
       toast('Copy salvato')
       onChanged()
     }
@@ -314,7 +317,7 @@ function EntryModal({ entry, onClose, onChanged }: {
       const ins = await insertRow('crm_media', {
         storage_path: path, file_name: file.name, kind: 'grafica', status: 'pubblicata',
         editorial_id: entry.id, folder: 'Pubblicati', uploaded_by: session?.user.id,
-        uploaded_role: profile?.role, note: entry.title,
+        uploaded_role: profile?.role, note: entry.title, player_id: athleteId,
       })
       if (!ins.error) ok++
     }
@@ -322,7 +325,7 @@ function EntryModal({ entry, onClose, onChanged }: {
       const status = ['da_preparare', 'copy_pronto'].includes(entry.status) ? 'grafica_caricata' : entry.status
       if (status !== entry.status) await updateRow('crm_editorial', entry.id, { status })
       notify(isTeam ? 'player' : 'team', `Grafica caricata: ${entry.title}`,
-        `${ok} file pront${ok > 1 ? 'i' : 'o'} nel calendario editoriale.`, 'editorial')
+        `${ok} file pront${ok > 1 ? 'i' : 'o'} nel calendario editoriale.`, 'editorial', athleteId)
       toast(`${ok} grafic${ok > 1 ? 'he' : 'a'} caricat${ok > 1 ? 'e' : 'a'} — anche in Media, Pubblicati`)
       loadMedia(); onChanged()
     }
@@ -344,13 +347,13 @@ function EntryModal({ entry, onClose, onChanged }: {
         if (up.error) { toast(up.error.message, 'err'); continue }
         const ins = await insertRow('crm_media', {
           storage_path: path, file_name: file.name, kind: 'foto', status: 'approvata',
-          editorial_id: entry.id, uploaded_by: session?.user.id, uploaded_role: profile?.role, note: entry.title,
+          editorial_id: entry.id, uploaded_by: session?.user.id, uploaded_role: profile?.role, note: entry.title, player_id: athleteId,
         })
         if (!ins.error) ok++
       }
       if (ok) {
         notify(isTeam ? 'player' : 'team', `Materiale per "${entry.title}"`,
-          `${ok} file caricat${ok > 1 ? 'i' : 'o'} nel contenuto, pronto per la grafica.`, 'editorial')
+          `${ok} file caricat${ok > 1 ? 'i' : 'o'} nel contenuto, pronto per la grafica.`, 'editorial', athleteId)
         toast(`${ok} file aggiunt${ok > 1 ? 'i' : 'o'} al materiale`)
         loadMedia(); onChanged()
       }
@@ -522,6 +525,7 @@ function Info({ k, v }: { k: string; v: any }) {
 
 function NewEntryModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
   const { session, isTeam, profile } = useAuth()
+  const { athleteId } = useAthlete()
   const [title, setTitle] = useState('')
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10))
   const [type, setType] = useState('post')
@@ -541,7 +545,7 @@ function NewEntryModal({ onClose, onCreated }: { onClose: () => void; onCreated:
       brief: brief.trim() || null,
       copy_text: copy.trim() || null,
       status: copy.trim() ? 'copy_pronto' : 'da_preparare',
-      requested_by: isRequest ? session?.user.id : null,
+      requested_by: isRequest ? session?.user.id : null, player_id: athleteId,
     })
     setBusy(false)
     if (error) { setErr(error.message); return }

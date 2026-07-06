@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
+import { useAthlete } from '../lib/athlete'
 import { useCollection, insertRow, updateRow, deleteRow } from '../lib/useData'
 import { Modal, Field, Input, Textarea, Select, Badge, Empty, Spinner, ConfirmButton } from '../components/ui'
 import Icon from '../components/Icon'
@@ -9,8 +10,9 @@ import type { Contract } from '../lib/types'
 const empty = (): Partial<Contract> => ({ title: '', counterpart: '', type: 'sportivo', currency: 'EUR', status: 'active', clauses: [] })
 
 export default function Contracts() {
+  const { athleteId } = useAthlete()
   const { isAdmin } = useAuth()
-  const { rows, loading, reload } = useCollection<Contract>('crm_contracts', { orderBy: 'created_at' })
+  const { rows, loading, reload } = useCollection<Contract>('crm_contracts', { orderBy: 'created_at', match: { player_id: athleteId } })
   const [edit, setEdit] = useState<Partial<Contract> | null>(null)
 
   if (loading) return <Spinner />
@@ -74,6 +76,7 @@ export default function Contracts() {
 }
 
 function ContractForm({ value, onClose, onSaved }: { value: Partial<Contract>; onClose: () => void; onSaved: () => void }) {
+  const { athleteId } = useAthlete()
   const [f, setF] = useState<Partial<Contract>>({ ...value, clauses: value.clauses || [] })
   const [busy, setBusy] = useState(false)
   const set = (k: keyof Contract, v: any) => setF(p => ({ ...p, [k]: v }))
@@ -88,7 +91,7 @@ function ContractForm({ value, onClose, onSaved }: { value: Partial<Contract>; o
       clauses: clauses.filter(c => c.label), notes: f.notes || null, updated_at: new Date().toISOString(),
     }
     if (f.id) await updateRow('crm_contracts', f.id, payload)
-    else await insertRow('crm_contracts', payload)
+    else await insertRow('crm_contracts', { ...payload, player_id: athleteId })
     setBusy(false); onSaved()
   }
 

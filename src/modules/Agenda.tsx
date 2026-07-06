@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
+import { useAthlete } from '../lib/athlete'
 import { useCollection, insertRow, updateRow, deleteRow } from '../lib/useData'
 import { Modal, Field, Input, Textarea, Select, Badge, Empty, Spinner, ConfirmButton } from '../components/ui'
 import Icon from '../components/Icon'
@@ -13,8 +14,9 @@ const TYPES: Record<string, { l: string; c: string }> = {
 const empty = (): Partial<EventItem> => ({ title: '', type: 'personale', start_at: '' })
 
 export default function Agenda() {
+  const { athleteId } = useAthlete()
   const { isAdmin } = useAuth()
-  const { rows, loading, reload } = useCollection<EventItem>('crm_events', { orderBy: 'start_at', ascending: true })
+  const { rows, loading, reload } = useCollection<EventItem>('crm_events', { orderBy: 'start_at', ascending: true, match: { player_id: athleteId } })
   const [edit, setEdit] = useState<Partial<EventItem> | null>(null)
 
   if (loading) return <Spinner />
@@ -67,6 +69,7 @@ function Ev({ e, isAdmin, onEdit, onDel }: { e: EventItem; isAdmin: boolean; onE
 }
 
 function EventForm({ value, onClose, onSaved }: { value: Partial<EventItem>; onClose: () => void; onSaved: () => void }) {
+  const { athleteId } = useAthlete()
   const [f, setF] = useState<Partial<EventItem>>({ ...value, start_at: value.start_at ? toLocal(value.start_at) : '' })
   const [busy, setBusy] = useState(false)
   const set = (k: keyof EventItem, v: any) => setF(p => ({ ...p, [k]: v }))
@@ -79,7 +82,7 @@ function EventForm({ value, onClose, onSaved }: { value: Partial<EventItem>; onC
       end_at: f.end_at ? new Date(f.end_at as string).toISOString() : null, location: f.location || null, notes: f.notes || null,
     }
     if (f.id) await updateRow('crm_events', f.id, payload)
-    else await insertRow('crm_events', payload)
+    else await insertRow('crm_events', { ...payload, player_id: athleteId })
     setBusy(false); onSaved()
   }
 

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
+import { useAthlete } from '../lib/athlete'
 import { useCollection, insertRow, updateRow, deleteRow } from '../lib/useData'
 import { Modal, Field, Input, Textarea, Select, Badge, Empty, Spinner, Stat, ConfirmButton } from '../components/ui'
 import Icon from '../components/Icon'
@@ -9,8 +10,9 @@ import type { Sponsor } from '../lib/types'
 const empty = (): Partial<Sponsor> => ({ brand: '', type: 'sponsor', currency: 'EUR', status: 'active', deliverables: [] })
 
 export default function Sponsors() {
+  const { athleteId } = useAthlete()
   const { isAdmin } = useAuth()
-  const { rows, loading, reload } = useCollection<Sponsor>('crm_sponsors', { orderBy: 'created_at' })
+  const { rows, loading, reload } = useCollection<Sponsor>('crm_sponsors', { orderBy: 'created_at', match: { player_id: athleteId } })
   const [edit, setEdit] = useState<Partial<Sponsor> | null>(null)
 
   if (loading) return <Spinner />
@@ -90,6 +92,7 @@ export default function Sponsors() {
 }
 
 function SponsorForm({ value, onClose, onSaved }: { value: Partial<Sponsor>; onClose: () => void; onSaved: () => void }) {
+  const { athleteId } = useAthlete()
   const [f, setF] = useState<Partial<Sponsor>>({ ...value, deliverables: value.deliverables || [] })
   const [busy, setBusy] = useState(false)
   const set = (k: keyof Sponsor, v: any) => setF(p => ({ ...p, [k]: v }))
@@ -103,7 +106,7 @@ function SponsorForm({ value, onClose, onSaved }: { value: Partial<Sponsor>; onC
       deliverables: dl.filter(d => d.title), contact: f.contact || null, notes: f.notes || null,
     }
     if (f.id) await updateRow('crm_sponsors', f.id, payload)
-    else await insertRow('crm_sponsors', payload)
+    else await insertRow('crm_sponsors', { ...payload, player_id: athleteId })
     setBusy(false); onSaved()
   }
 

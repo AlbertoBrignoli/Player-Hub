@@ -5,6 +5,7 @@ export interface Profile {
   email: string | null
   full_name: string | null
   role: Role
+  player_api_id?: number | null
 }
 
 export interface Player {

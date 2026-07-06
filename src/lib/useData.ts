@@ -3,21 +3,28 @@ import { supabase } from './supabase'
 
 export function useCollection<T = any>(
   table: string,
-  opts: { orderBy?: string; ascending?: boolean; select?: string } = {}
+  opts: { orderBy?: string; ascending?: boolean; select?: string; match?: Record<string, any> } = {}
 ) {
   const [rows, setRows] = useState<T[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  const matchKey = opts.match ? JSON.stringify(opts.match) : ''
+
   const reload = useCallback(async () => {
+    // Se un filtro non è ancora noto (es. atleta non caricato), aspetta senza caricare tutto.
+    if (opts.match && Object.values(opts.match).some(v => v === null || v === undefined)) {
+      setRows([]); setLoading(true); return
+    }
     setLoading(true)
     let q = supabase.from(table).select(opts.select || '*')
+    if (opts.match) q = q.match(opts.match)
     if (opts.orderBy) q = q.order(opts.orderBy, { ascending: opts.ascending ?? false })
     const { data, error } = await q
     if (error) setError(error.message)
     else { setRows((data as T[]) || []); setError(null) }
     setLoading(false)
-  }, [table, opts.orderBy, opts.ascending, opts.select])
+  }, [table, opts.orderBy, opts.ascending, opts.select, matchKey])
 
   useEffect(() => { reload() }, [reload])
   return { rows, loading, error, reload, setRows }

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../auth/AuthContext'
+import { useAthlete } from '../lib/athlete'
 import { Spinner, Empty } from '../components/ui'
 import Icon from '../components/Icon'
 import { fmtDateTime, initials } from '../lib/format'
@@ -8,6 +9,7 @@ import type { Message } from '../lib/types'
 
 export default function Messages() {
   const { session, profile, isAdmin } = useAuth()
+  const { athleteId } = useAthlete()
   const [rows, setRows] = useState<Message[]>([])
   const [loading, setLoading] = useState(true)
   const [text, setText] = useState('')
@@ -15,7 +17,8 @@ export default function Messages() {
   const endRef = useRef<HTMLDivElement>(null)
 
   async function load() {
-    const { data } = await supabase.from('crm_messages').select('*').order('created_at', { ascending: true })
+    if (!athleteId) { setRows([]); setLoading(false); return }
+    const { data } = await supabase.from('crm_messages').select('*').eq('player_id', athleteId).order('created_at', { ascending: true })
     setRows((data as Message[]) || [])
     setLoading(false)
   }
@@ -26,7 +29,7 @@ export default function Messages() {
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'crm_messages' }, () => load())
       .subscribe()
     return () => { supabase.removeChannel(ch) }
-  }, [])
+  }, [athleteId])
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [rows.length])
 
@@ -38,6 +41,7 @@ export default function Messages() {
       sender_name: profile?.full_name || profile?.email,
       sender_role: profile?.role,
       body: text.trim(),
+      player_id: athleteId,
     })
     setBusy(false)
     if (!error) { setText(''); load() }

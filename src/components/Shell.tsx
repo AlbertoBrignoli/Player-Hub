@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
+import { useAthlete } from '../lib/athlete'
 import { supabase, PLAYER_NAME } from '../lib/supabase'
 import { initials } from '../lib/format'
 import NotificationBell from './NotificationBell'
@@ -53,6 +54,7 @@ export default function Shell({ route, setRoute, right, children }: {
   route: string; setRoute: (r: string) => void; right?: React.ReactNode; children: React.ReactNode
 }) {
   const { profile, isAdmin, role, signOut } = useAuth()
+  const { athletes, athleteId, setAthleteId, canSwitch } = useAthlete()
   const [open, setOpen] = useState(false)
   const [pwOpen, setPwOpen] = useState(false)
   const title = TITLES[route] || { t: '', s: '' }
@@ -109,7 +111,22 @@ export default function Shell({ route, setRoute, right, children }: {
               <div className="page-sub">{title.s}</div>
             </div>
           </div>
-          <div className="flex gap" style={{ alignItems: 'center' }}>{right}<NotificationBell goto={setRoute} /></div>
+          <div className="flex gap" style={{ alignItems: 'center' }}>
+            {canSwitch && (
+              <select
+                aria-label="Atleta gestito"
+                title="Atleta gestito"
+                value={athleteId ?? ''}
+                onChange={e => setAthleteId(Number(e.target.value))}
+                style={{ background: 'var(--card, #141416)', color: 'var(--text, #fff)', border: '1px solid var(--border, #2a2a2e)', borderRadius: 8, padding: '6px 10px', fontSize: 13, maxWidth: 190 }}
+              >
+                {athletes.map(a => (
+                  <option key={a.api_player_id} value={a.api_player_id}>{a.name || `#${a.api_player_id}`}</option>
+                ))}
+              </select>
+            )}
+            {right}<NotificationBell goto={setRoute} />
+          </div>
         </div>
         <div className="content">{children}</div>
       </div>

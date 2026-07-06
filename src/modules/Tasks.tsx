@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
+import { useAthlete } from '../lib/athlete'
 import { useCollection, insertRow, updateRow, deleteRow } from '../lib/useData'
 import { Modal, Field, Input, Textarea, Select, Badge, Spinner, ConfirmButton } from '../components/ui'
 import { fmtDate, daysUntil } from '../lib/format'
@@ -11,8 +12,9 @@ const COLS: { key: Task['status']; label: string }[] = [
 const empty = (): Partial<Task> => ({ title: '', status: 'todo', priority: 'medium', assignee: 'auvi' })
 
 export default function Tasks() {
+  const { athleteId } = useAthlete()
   const { isAdmin, session } = useAuth()
-  const { rows, loading, reload } = useCollection<Task>('crm_tasks', { orderBy: 'created_at' })
+  const { rows, loading, reload } = useCollection<Task>('crm_tasks', { orderBy: 'created_at', match: { player_id: athleteId } })
   const [edit, setEdit] = useState<Partial<Task> | null>(null)
 
   if (loading) return <Spinner />
@@ -76,6 +78,7 @@ export default function Tasks() {
 }
 
 function TaskForm({ value, uid, onClose, onSaved }: { value: Partial<Task>; uid?: string; onClose: () => void; onSaved: () => void }) {
+  const { athleteId } = useAthlete()
   const [f, setF] = useState<Partial<Task>>(value)
   const [busy, setBusy] = useState(false)
   const set = (k: keyof Task, v: any) => setF(p => ({ ...p, [k]: v }))
@@ -87,7 +90,7 @@ function TaskForm({ value, uid, onClose, onSaved }: { value: Partial<Task>; uid?
       assignee: f.assignee, due_date: f.due_date || null, updated_at: new Date().toISOString(),
     }
     if (f.id) await updateRow('crm_tasks', f.id, payload)
-    else await insertRow('crm_tasks', { ...payload, created_by: uid })
+    else await insertRow('crm_tasks', { ...payload, created_by: uid, player_id: athleteId })
     setBusy(false); onSaved()
   }
 

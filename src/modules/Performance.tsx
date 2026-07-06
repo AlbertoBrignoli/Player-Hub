@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { useAthlete } from '../lib/athlete'
 import { Spinner, Stat, Badge, Empty, Select } from '../components/ui'
 import { SeasonBlock, LastMatchGrid } from '../components/statbits'
 import Icon from '../components/Icon'
@@ -10,6 +11,7 @@ interface News { id: string; title: string; source: string | null; url: string |
 
 export default function Performance({ goto }: { goto?: (r: string) => void }) {
   void goto
+  const { athleteId } = useAthlete()
   const [loading, setLoading] = useState(true)
   const [player, setPlayer] = useState<Player | null>(null)
   const [matches, setMatches] = useState<Match[]>([])
@@ -20,13 +22,15 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
   const [season, setSeason] = useState(currentSeason)
 
   useEffect(() => {
+    if (!athleteId) return
     (async () => {
+      const pid = athleteId
       const [p, m, s, n, t] = await Promise.all([
-        supabase.from('player').select('*').limit(1).maybeSingle(),
-        supabase.from('matches').select('*').order('match_date', { ascending: false }),
-        supabase.from('player_stats_api').select('*').order('season', { ascending: false }),
-        supabase.from('news').select('id,title,source,url,published_at').order('published_at', { ascending: false }).limit(6),
-        supabase.from('player_stats_match').select('*').order('match_date', { ascending: false }),
+        supabase.from('player').select('*').eq('api_player_id', pid).maybeSingle(),
+        supabase.from('matches').select('*').eq('player_id', pid).order('match_date', { ascending: false }),
+        supabase.from('player_stats_api').select('*').eq('player_id', pid).order('season', { ascending: false }),
+        supabase.from('news').select('id,title,source,url,published_at').eq('player_id', pid).order('published_at', { ascending: false }).limit(6),
+        supabase.from('player_stats_match').select('*').eq('player_id', pid).order('match_date', { ascending: false }),
       ])
       setPlayer(p.data as Player)
       setMatches((m.data as Match[]) || [])
@@ -35,7 +39,7 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
       setTech((t.data as StatsMatch[]) || [])
       setLoading(false)
     })()
-  }, [])
+  }, [athleteId])
 
   const seasons = useMemo(() => {
     const s = new Set<string>([
