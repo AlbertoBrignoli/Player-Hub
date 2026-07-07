@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import { useAthlete } from '../lib/athlete'
-import { supabase, PLAYER_NAME } from '../lib/supabase'
+import { supabase } from '../lib/supabase'
 import { initials } from '../lib/format'
 import NotificationBell from './NotificationBell'
 import Toaster from './Toaster'
@@ -67,7 +67,7 @@ export default function Shell({ route, setRoute, right, children }: {
           <img className="brand-logo-img" src="/icons/icon-192.png" alt="AUVI" />
           <div>
             <div className="brand-name">Player Hub</div>
-            <div className="brand-sub">{PLAYER_NAME} · {APP_VERSION}</div>
+            <div className="brand-sub">{athletes.find(a => a.api_player_id === athleteId)?.name || 'AUVI Agency'} · {APP_VERSION}</div>
           </div>
         </div>
         <nav className="nav">
