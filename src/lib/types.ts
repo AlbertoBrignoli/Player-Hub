@@ -28,6 +28,25 @@ export interface Player {
   birth_date: string | null
   instagram_url: string | null
   contact_email: string | null
+  shipping?: ShippingInfo | null
+  equipment?: EquipmentInfo | null
+  club_contacts?: ClubContacts | null
+}
+
+export interface ShippingInfo {
+  country?: string; city?: string; cap?: string; address?: string; phone?: string; email?: string
+  ref_name?: string; ref_relation?: string; ref_phone?: string; ref_email?: string
+}
+export interface EquipmentInfo {
+  shoe_brand?: string; shoe_size?: string; shoe_model?: string; shoe_sponsor?: string
+  glove_brand?: string; glove_size?: string; glove_model?: string; glove_sponsor?: string
+}
+export interface ClubContacts {
+  manager_name?: string; manager_phone?: string; manager_email?: string
+  press_name?: string; press_phone?: string; press_email?: string
+  media_name?: string; media_phone?: string; media_email?: string
+  secretary_phone?: string; secretary_email?: string
+  materials_link?: string; materials_username?: string; materials_password?: string
 }
 
 export interface Match {

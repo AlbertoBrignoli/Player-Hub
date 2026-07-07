@@ -6,6 +6,7 @@ import { Spinner } from './components/ui'
 
 import Dashboard from './modules/Dashboard'
 import Performance from './modules/Performance'
+import Profile from './modules/Profile'
 import Contracts from './modules/Contracts'
 import Documents from './modules/Documents'
 import Editorial from './modules/Editorial'
@@ -32,6 +33,7 @@ export default function App() {
     switch (route) {
       case 'dashboard': return <Dashboard goto={setRoute} />
       case 'performance': return <Performance goto={setRoute} />
+      case 'profile': return <Profile />
       case 'contracts': return <Contracts />
       case 'documents': return <Documents />
       case 'editorial': return <Editorial />

@@ -16,6 +16,7 @@ export const NAV: { group: string; items: NavDef[] }[] = [
   { group: 'Panoramica', items: [
     { key: 'dashboard', label: 'Dashboard', icon: 'grid' },
     { key: 'performance', label: 'Performance', icon: 'activity' },
+    { key: 'profile', label: 'Profilo', icon: 'user' },
   ]},
   { group: 'Contenuti', items: [
     { key: 'editorial', label: 'Cal. Editoriale', icon: 'calendar' },
@@ -38,6 +39,7 @@ export const NAV: { group: string; items: NavDef[] }[] = [
 
 const TITLES: Record<string, { t: string; s: string }> = {
   dashboard: { t: 'Dashboard', s: 'Quadro generale della gestione' },
+  profile: { t: 'Profilo', s: 'Spedizioni, equipaggiamento e contatti club' },
   performance: { t: 'Performance', s: 'Statistiche, partite e rendimento' },
   contracts: { t: 'Contratti', s: 'Accordi sportivi e scadenze' },
   documents: { t: 'Documenti', s: 'Archivio file riservato' },
