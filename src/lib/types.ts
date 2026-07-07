@@ -226,6 +226,7 @@ export interface NotificationItem {
   route: string | null
   read_at: string | null
   created_at: string
+  player_id?: number | null
 }
 
 export interface StatsMatch {

@@ -364,8 +364,23 @@ function EntryModal({ entry, onClose, onChanged }: {
   }
 
   async function openAsset(m: MediaItem) {
-    const { data } = await supabase.storage.from(BUCKET).createSignedUrl(m.storage_path, 300, { download: m.file_name || undefined })
-    if (data?.signedUrl) window.open(data.signedUrl, '_blank')
+    try {
+      const { data } = await supabase.storage.from(BUCKET).createSignedUrl(m.storage_path, 300)
+      if (!data?.signedUrl) return
+      const res = await fetch(data.signedUrl)
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = m.file_name || 'grafica'
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      setTimeout(() => URL.revokeObjectURL(url), 1000)
+    } catch {
+      const { data } = await supabase.storage.from(BUCKET).createSignedUrl(m.storage_path, 300, { download: m.file_name || undefined })
+      if (data?.signedUrl) window.open(data.signedUrl, '_blank')
+    }
   }
 
   async function removeAsset(m: MediaItem) {

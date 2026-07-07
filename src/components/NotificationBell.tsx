@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../auth/AuthContext'
+import { useAthlete } from '../lib/athlete'
 import { timeAgo } from '../lib/format'
 import { enablePush, getPushState, isIosBrowser } from '../lib/push'
 import Icon from './Icon'
@@ -8,6 +9,7 @@ import type { NotificationItem } from '../lib/types'
 
 export default function NotificationBell({ goto }: { goto: (route: string) => void }) {
   const { role, session } = useAuth()
+  const { athleteId } = useAthlete()
   const [items, setItems] = useState<NotificationItem[]>([])
   const [open, setOpen] = useState(false)
   const [pushState, setPushState] = useState<'on' | 'off' | 'unsupported'>('unsupported')
@@ -35,8 +37,9 @@ export default function NotificationBell({ goto }: { goto: (route: string) => vo
   }
 
   async function load() {
+    if (!athleteId) { setItems([]); return }
     const { data } = await supabase.from('crm_notifications')
-      .select('*').order('created_at', { ascending: false }).limit(25)
+      .select('*').eq('player_id', athleteId).order('created_at', { ascending: false }).limit(25)
     setItems((data as NotificationItem[]) || [])
   }
 
@@ -45,12 +48,13 @@ export default function NotificationBell({ goto }: { goto: (route: string) => vo
     const ch = supabase.channel('crm_notifications_rt')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'crm_notifications' }, payload => {
         const n = payload.new as NotificationItem
-        const mine = n.recipient_role === role || (n.recipient_role === 'team' && (role === 'admin' || role === 'creator'))
+        const forThisAthlete = n.player_id === athleteId
+        const mine = forThisAthlete && (n.recipient_role === role || (n.recipient_role === 'team' && (role === 'admin' || role === 'creator')))
         if (mine) setItems(prev => [n, ...prev].slice(0, 25))
       })
       .subscribe()
     return () => { supabase.removeChannel(ch) }
-  }, [role]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [role, athleteId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!open) return
@@ -62,10 +66,10 @@ export default function NotificationBell({ goto }: { goto: (route: string) => vo
   const unread = items.filter(n => !n.read_at).length
 
   async function markAllRead() {
-    if (!unread) return
+    if (!unread || !athleteId) return
     const now = new Date().toISOString()
     setItems(prev => prev.map(n => n.read_at ? n : { ...n, read_at: now }))
-    await supabase.from('crm_notifications').update({ read_at: now }).is('read_at', null)
+    await supabase.from('crm_notifications').update({ read_at: now }).eq('player_id', athleteId).is('read_at', null)
   }
 
   function onItem(n: NotificationItem) {
