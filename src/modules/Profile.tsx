@@ -20,6 +20,7 @@ export default function Profile() {
   const [contacts, setContacts] = useState<ClubContacts>({})
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [showPw, setShowPw] = useState(false)
 
   useEffect(() => {
     if (!athleteId) return
@@ -163,7 +164,12 @@ export default function Profile() {
             <div style={grid}>
               <Field label="Link accesso materiali"><Input value={c('materials_link')} onChange={ev => setC('materials_link', ev.target.value)} placeholder="https://drive.google.com/…" /></Field>
               <Field label="Username"><Input value={c('materials_username')} onChange={ev => setC('materials_username', ev.target.value)} /></Field>
-              <Field label="Password"><Input value={c('materials_password')} onChange={ev => setC('materials_password', ev.target.value)} /></Field>
+              <Field label="Password">
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <Input type={showPw ? 'text' : 'password'} value={c('materials_password')} onChange={ev => setC('materials_password', ev.target.value)} autoComplete="off" style={{ flex: 1 }} />
+                  <button type="button" className="btn btn-sm" onClick={() => setShowPw(v => !v)}>{showPw ? 'Nascondi' : 'Mostra'}</button>
+                </div>
+              </Field>
             </div>
           </>
         )}

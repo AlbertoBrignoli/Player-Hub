@@ -16,6 +16,7 @@ import Agenda from './modules/Agenda'
 import Tasks from './modules/Tasks'
 import Messages from './modules/Messages'
 import Settings from './modules/Settings'
+import PasswordSetup from './components/PasswordSetup'
 
 export default function App() {
   const { session, profile, loading } = useAuth()
@@ -47,7 +48,12 @@ export default function App() {
     }
   })()
 
-  return <Shell route={route} setRoute={setRoute}>{view}</Shell>
+  return (
+    <>
+      <Shell route={route} setRoute={setRoute}>{view}</Shell>
+      <PasswordSetup />
+    </>
+  )
 }
 
 function NoAccess() {

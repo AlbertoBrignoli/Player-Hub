@@ -2,6 +2,21 @@ import React, { useState } from 'react'
 import { supabase, AGENCY_NAME, PLAYER_NAME } from '../lib/supabase'
 import { Input } from '../components/ui'
 
+function friendlyError(error: any): string {
+  const m = (error?.message || '').toLowerCase()
+  const secs = (error?.message || '').match(/(\d+)\s*second/i)?.[1]
+  if (error?.status === 429 || m.includes('rate limit') || m.includes('too many') || (m.includes('after') && m.includes('second'))) {
+    return secs ? `Troppi tentativi. Riprova tra ${secs} secondi.` : 'Troppi tentativi ravvicinati. Attendi un minuto e riprova.'
+  }
+  if (m.includes('invalid login credentials')) {
+    return 'Email o password non corretti. Se è il tuo primo accesso o hai dimenticato la password, usa il link via email qui sotto.'
+  }
+  if (m.includes('email not confirmed')) {
+    return 'Email non ancora confermata: usa il link via email qui sotto per completare il primo accesso.'
+  }
+  return error?.message || 'Si è verificato un errore. Riprova.'
+}
+
 export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -17,11 +32,7 @@ export default function Login() {
       password,
     })
     setBusy(false)
-    if (error) {
-      setErr(error.message === 'Invalid login credentials'
-        ? 'Email o password non corretti. Se è il tuo primo accesso o hai dimenticato la password, usa il link via email qui sotto.'
-        : error.message)
-    }
+    if (error) setErr(friendlyError(error))
   }
 
   async function magicLink() {
@@ -32,7 +43,7 @@ export default function Login() {
       options: { emailRedirectTo: window.location.origin },
     })
     setBusy(false)
-    if (error) setErr(error.message)
+    if (error) setErr(friendlyError(error))
     else setSent(true)
   }
 
