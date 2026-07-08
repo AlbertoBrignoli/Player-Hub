@@ -30,6 +30,7 @@ export interface Player {
   contact_email: string | null
   transfermarkt_url?: string | null
   contract_expiry?: string | null
+  sofascore_url?: string | null
   shipping?: ShippingInfo | null
   equipment?: EquipmentInfo | null
   club_contacts?: ClubContacts | null

@@ -81,23 +81,23 @@ export default function Profile() {
       </div>
 
       {/* Contratto + link esterni */}
-      {(player.contract_expiry || player.transfermarkt_url || player.instagram_url) && (
+      {(player.contract_expiry || player.transfermarkt_url || player.sofascore_url) && (
         <div className="card" style={{ padding: 18, marginBottom: 18 }}>
           {player.contract_expiry && (
-            <div style={{ marginBottom: (player.transfermarkt_url || player.instagram_url) ? 14 : 0 }}>
+            <div style={{ marginBottom: (player.transfermarkt_url || player.sofascore_url) ? 14 : 0 }}>
               <div style={section}>Scadenza contratto</div>
               <div style={{ fontSize: 16, fontWeight: 700 }}>{fmtDate(player.contract_expiry)}</div>
             </div>
           )}
-          {(player.transfermarkt_url || player.instagram_url) && (
+          {(player.transfermarkt_url || player.sofascore_url) && (
             <>
               <div style={section}>Link esterni</div>
               <div className="flex gap" style={{ flexWrap: 'wrap' }}>
                 {player.transfermarkt_url && (
                   <a className="btn btn-sm" href={player.transfermarkt_url} target="_blank" rel="noreferrer">Transfermarkt ↗</a>
                 )}
-                {player.instagram_url && (
-                  <a className="btn btn-sm" href={player.instagram_url} target="_blank" rel="noreferrer">Instagram ↗</a>
+                {player.sofascore_url && (
+                  <a className="btn btn-sm" href={player.sofascore_url} target="_blank" rel="noreferrer">Sofascore ↗</a>
                 )}
               </div>
             </>
