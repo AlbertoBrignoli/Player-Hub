@@ -36,11 +36,14 @@ export default function Profile() {
   }, [athleteId])
 
   async function save() {
-    if (!player) return
+    if (!player || !athleteId) return
     setSaving(true)
-    const { error } = await supabase.from('player')
-      .update({ shipping, equipment, club_contacts: contacts })
-      .eq('id', player.id)
+    const { error } = await supabase.rpc('update_player_profile', {
+      p_api: athleteId,
+      p_shipping: shipping,
+      p_equipment: equipment,
+      p_club_contacts: contacts,
+    })
     setSaving(false)
     if (!error) { setSaved(true); setTimeout(() => setSaved(false), 2200) }
   }
