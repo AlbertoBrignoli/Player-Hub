@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAthlete } from '../lib/athlete'
 import { Spinner, Field, Input, Select, Empty } from '../components/ui'
 import Icon from '../components/Icon'
+import { fmtDate } from '../lib/format'
 import type { Player, ShippingInfo, EquipmentInfo, ClubContacts } from '../lib/types'
 
 type Tab = 'spedizioni' | 'equipment' | 'contatti'
@@ -78,6 +79,31 @@ export default function Profile() {
           </div>
         </div>
       </div>
+
+      {/* Contratto + link esterni */}
+      {(player.contract_expiry || player.transfermarkt_url || player.instagram_url) && (
+        <div className="card" style={{ padding: 18, marginBottom: 18 }}>
+          {player.contract_expiry && (
+            <div style={{ marginBottom: (player.transfermarkt_url || player.instagram_url) ? 14 : 0 }}>
+              <div style={section}>Scadenza contratto</div>
+              <div style={{ fontSize: 16, fontWeight: 700 }}>{fmtDate(player.contract_expiry)}</div>
+            </div>
+          )}
+          {(player.transfermarkt_url || player.instagram_url) && (
+            <>
+              <div style={section}>Link esterni</div>
+              <div className="flex gap" style={{ flexWrap: 'wrap' }}>
+                {player.transfermarkt_url && (
+                  <a className="btn btn-sm" href={player.transfermarkt_url} target="_blank" rel="noreferrer">Transfermarkt ↗</a>
+                )}
+                {player.instagram_url && (
+                  <a className="btn btn-sm" href={player.instagram_url} target="_blank" rel="noreferrer">Instagram ↗</a>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex gap" style={{ marginBottom: 6, flexWrap: 'wrap' }}>

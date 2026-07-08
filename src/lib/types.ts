@@ -28,6 +28,8 @@ export interface Player {
   birth_date: string | null
   instagram_url: string | null
   contact_email: string | null
+  transfermarkt_url?: string | null
+  contract_expiry?: string | null
   shipping?: ShippingInfo | null
   equipment?: EquipmentInfo | null
   club_contacts?: ClubContacts | null
