@@ -38,6 +38,7 @@ const P: Record<string, React.ReactNode> = {
   pin: <><path d="M20 10.5c0 6-8 11-8 11s-8-5-8-11a8 8 0 1 1 16 0" /><circle cx="12" cy="10.5" r="2.8" /></>,
   inbox: <><path d="M22 12.5h-6l-2 3h-4l-2-3H2" /><path d="M5 4.5h14a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-13a2 2 0 0 1 2-2" /></>,
   send: <path d="M22 2.5 11 13.5M22 2.5l-7 19-4-8-8.5-4z" />,
+  dumbbell: <><path d="M6.5 6.5 17.5 17.5M4 7l3-3 3 3-3 3zM14 17l3-3 3 3-3 3z"/><path d="M3 8l1-1M20 16l1-1"/></>,
   user: <><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7" /></>,
   users: <><path d="M17 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9.5" cy="7.5" r="3.5" /><path d="M22 21v-2a4 4 0 0 0-3-3.9M15.5 4.1a3.5 3.5 0 0 1 0 6.8" /></>,
   copy: <><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></>,

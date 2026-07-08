@@ -1,4 +1,4 @@
-export type Role = 'admin' | 'player' | 'creator'
+export type Role = 'admin' | 'player' | 'creator' | 'preparatore'
 
 export interface Profile {
   id: string
@@ -317,4 +317,61 @@ export interface StatsSeason {
   palle_perse_media: number | null
   cartellini_gialli: number
   cartellini_rossi: number
+}
+
+
+export interface FitnessProgram {
+  id: string
+  player_id: number
+  trainer_id: string | null
+  name: string
+  program_date: string | null
+  start_time: string | null
+  duration_min: number | null
+  focus: string | null
+  objective: string | null
+  intensity: string | null
+  warmup: string | null
+  recovery_between_sets: string | null
+  recovery_between_exercises: string | null
+  cooldown: string | null
+  general_notes: string | null
+  note_staff: string | null
+  note_athlete: string | null
+  status: 'draft' | 'published'
+  recurring: boolean
+  recurrence: string | null
+  created_at?: string
+  updated_at?: string
+}
+
+export interface FitnessExercise {
+  id?: string
+  program_id?: string
+  name: string
+  image_url?: string | null
+  video_url?: string | null
+  muscle_group?: string | null
+  sets?: number | null
+  reps?: string | null
+  load?: string | null
+  isometry_time?: string | null
+  recovery?: string | null
+  side?: string | null
+  alternative?: string | null
+  technical_notes?: string | null
+  mistakes?: string | null
+  priority?: string | null
+  order_index?: number
+}
+
+export interface FitnessFeedback {
+  id?: string
+  program_id: string
+  player_id: number
+  status: 'programmato' | 'completato' | 'saltato'
+  completed: boolean
+  difficulty?: number | null
+  pain?: string | null
+  athlete_notes?: string | null
 }

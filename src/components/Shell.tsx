@@ -27,6 +27,9 @@ export const NAV: { group: string; items: NavDef[] }[] = [
     { key: 'documents', label: 'Documenti', icon: 'archive' },
     { key: 'sponsors', label: 'Sponsor', icon: 'award' },
   ]},
+  { group: 'Fitness', items: [
+    { key: 'fitness', label: 'Area Fitness', icon: 'dumbbell' },
+  ]},
   { group: 'Operatività', items: [
     { key: 'agenda', label: 'Agenda', icon: 'clock' },
     { key: 'tasks', label: 'Task', icon: 'check-square' },
@@ -39,6 +42,7 @@ export const NAV: { group: string; items: NavDef[] }[] = [
 
 const TITLES: Record<string, { t: string; s: string }> = {
   dashboard: { t: 'Dashboard', s: 'Quadro generale della gestione' },
+  fitness: { t: 'Area Fitness', s: 'Programmi, allenamenti e feedback' },
   profile: { t: 'Profilo', s: 'Spedizioni, equipaggiamento e contatti club' },
   performance: { t: 'Performance', s: 'Statistiche, partite e rendimento' },
   contracts: { t: 'Contratti', s: 'Accordi sportivi e scadenze' },
@@ -94,7 +98,7 @@ export default function Shell({ route, setRoute, right, children }: {
             <div className="avatar">{initials(profile?.full_name || profile?.email)}</div>
             <div className="user-meta">
               <div className="user-name">{profile?.full_name || profile?.email}</div>
-              <div className="user-role">{role === 'admin' ? 'AUVI · Advisor' : role === 'creator' ? 'Team · Creator' : 'Giocatore'}</div>
+              <div className="user-role">{role === 'admin' ? 'AUVI · Advisor' : role === 'creator' ? 'Team · Creator' : role === 'preparatore' ? 'Preparatore Atletico' : 'Giocatore'}</div>
             </div>
             <button className="btn-ghost" style={{ marginLeft: 'auto', padding: 6, color: 'var(--text-dim)' }} title="Imposta password" onClick={() => setPwOpen(true)}><Icon name="key" size={16} /></button>
           </div>
