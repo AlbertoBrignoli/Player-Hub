@@ -56,6 +56,8 @@ function TrainerFitness() {
         </button>
       </div>
 
+      <TrainerSummary athletes={athletes} />
+
       <ProgramList title="Schede pubblicate" tone="published" items={pubblicate} onOpen={setEditing} />
       <ProgramList title="Schede in bozza" tone="draft" items={bozze} onOpen={setEditing} />
 
@@ -350,16 +352,16 @@ function ProgramDetail({ program, athleteId, onClose, onSaved }: {
 }) {
   const exercises = (program.fitness_exercises || []).slice().sort((a, b) => (a.order_index || 0) - (b.order_index || 0))
   const existing = program.fitness_feedback?.[0]
-  const [fb, setFb] = useState<FitnessFeedback>(existing || { program_id: program.id, player_id: athleteId, status: 'programmato', completed: false, difficulty: null, pain: '', athlete_notes: '' })
+  const [fb, setFb] = useState<FitnessFeedback>(existing || { program_id: program.id, player_id: athleteId, status: 'programmato', completed: false, feeling: '', discomfort: '', athlete_notes: '' })
   const [busy, setBusy] = useState(false)
   const [saved, setSaved] = useState(false)
 
-  async function saveFeedback(status?: 'completato' | 'saltato') {
+  async function send() {
     setBusy(true)
-    const payload = { ...fb, program_id: program.id, player_id: athleteId, status: status || fb.status, completed: status === 'completato' ? true : fb.completed }
+    const payload = { ...fb, program_id: program.id, player_id: athleteId, completed: fb.status === 'completato' }
     const { error } = await supabase.from('fitness_feedback').upsert(payload, { onConflict: 'program_id' })
     setBusy(false)
-    if (!error) { setSaved(true); setTimeout(() => { setSaved(false); onSaved() }, 900) }
+    if (!error) { setSaved(true); setTimeout(() => { setSaved(false); onSaved() }, 1000) }
   }
 
   return (
@@ -368,7 +370,6 @@ function ProgramDetail({ program, athleteId, onClose, onSaved }: {
         {program.pdf_path
           ? <button className="btn" onClick={async () => { const { data } = await supabase.storage.from('crm-media').createSignedUrl(program.pdf_path!, 300); if (data?.signedUrl) window.open(data.signedUrl, '_blank') }}><Icon name="download" size={14} /> Apri scheda PDF</button>
           : <button className="btn" onClick={() => downloadPdf(program, exercises)}><Icon name="download" size={14} /> Scarica PDF</button>}
-        <button className="btn btn-primary" onClick={() => saveFeedback('completato')} disabled={busy}>Segna completato</button>
       </>}>
       <div className="faint" style={{ fontSize: 13 }}>
         {program.program_date ? fmtDate(program.program_date) : ''}{program.start_time ? ` · ${program.start_time.slice(0, 5)}` : ''}{program.duration_min ? ` · ${program.duration_min} min` : ''}{program.intensity ? ` · intensità ${program.intensity}` : ''}
@@ -419,18 +420,30 @@ function ProgramDetail({ program, athleteId, onClose, onSaved }: {
         </div>
       )}
 
-      {/* Feedback */}
-      <div style={label}>Il tuo feedback</div>
+      {/* Feedback rapido (<20s) */}
+      <div style={label}>Come è andata?</div>
       <div className="card" style={{ padding: 16 }}>
-        <div style={grid(160)}>
-          <Field label="Difficoltà percepita (1-10)"><Input type="number" min={1} max={10} value={fb.difficulty ?? ''} onChange={e => setFb({ ...fb, difficulty: e.target.value ? Number(e.target.value) : null })} /></Field>
-          <Field label="Dolore / fastidio"><Input value={fb.pain || ''} onChange={e => setFb({ ...fb, pain: e.target.value })} placeholder="Es. nessuno / ginocchio dx" /></Field>
-        </div>
-        <Field label="Note personali"><Textarea rows={2} value={fb.athlete_notes || ''} onChange={e => setFb({ ...fb, athlete_notes: e.target.value })} /></Field>
-        <div className="flex gap" style={{ marginTop: 10 }}>
-          <button className="btn btn-sm" onClick={() => saveFeedback('saltato')} disabled={busy}>Allenamento saltato</button>
-          <button className="btn btn-sm" onClick={() => saveFeedback()} disabled={busy}>Salva feedback</button>
-          {saved && <span style={{ color: '#35c26b', fontSize: 13, alignSelf: 'center' }}>Salvato ✓</span>}
+        <FbQ title="Allenamento completato?">
+          {([['completato', '✅ Completato'], ['parziale', '⭕ Parziale'], ['non_completato', '❌ Non completato']] as const).map(([v, l]) => (
+            <TapBtn key={v} on={fb.status === v} onClick={() => setFb({ ...fb, status: v })}>{l}</TapBtn>
+          ))}
+        </FbQ>
+        <FbQ title="Come ti sei sentito?">
+          {([['ottimo', '😀'], ['bene', '🙂'], ['normale', '😐'], ['affaticato', '😕'], ['pesante', '😣']] as const).map(([v, em]) => (
+            <TapBtn key={v} on={fb.feeling === v} onClick={() => setFb({ ...fb, feeling: v })}><span style={{ fontSize: 20 }}>{em}</span></TapBtn>
+          ))}
+        </FbQ>
+        <FbQ title="Hai avuto fastidi?">
+          {['nessuno', 'ginocchio', 'caviglia', 'schiena', 'adduttori', 'flessori', 'altro'].map(v => (
+            <TapBtn key={v} small on={fb.discomfort === v} onClick={() => setFb({ ...fb, discomfort: v })}>{cap(v)}</TapBtn>
+          ))}
+        </FbQ>
+        <Field label={fb.discomfort === 'altro' ? 'Specifica il fastidio (facoltativo)' : 'Nota (facoltativa, max 150)'}>
+          <Input maxLength={150} value={fb.athlete_notes || ''} onChange={e => setFb({ ...fb, athlete_notes: e.target.value })} placeholder="Opzionale" />
+        </Field>
+        <div className="flex gap" style={{ marginTop: 12, alignItems: 'center' }}>
+          <button className="btn btn-primary" onClick={send} disabled={busy || !fb.status || fb.status === 'programmato'}>{busy ? 'Invio…' : 'Invia'}</button>
+          {saved && <span style={{ color: '#35c26b', fontSize: 13 }}>Inviato ✓</span>}
         </div>
       </div>
     </Modal>
@@ -442,6 +455,72 @@ function Info({ k, v }: { k: string; v: string }) {
 }
 function Chip({ children }: { children: React.ReactNode }) {
   return <span style={{ background: 'var(--card, #1a1a1e)', border: '1px solid var(--border)', borderRadius: 8, padding: '3px 9px', fontSize: 12.5 }}>{children}</span>
+}
+
+function FbQ({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>{title}</div>
+      <div className="flex gap" style={{ flexWrap: 'wrap' }}>{children}</div>
+    </div>
+  )
+}
+function TapBtn({ on, onClick, children, small }: { on: boolean; onClick: () => void; children: React.ReactNode; small?: boolean }) {
+  return (
+    <button onClick={onClick} style={{
+      padding: small ? '7px 12px' : '9px 15px', borderRadius: 10, cursor: 'pointer',
+      border: on ? `1.5px solid ${ACCENT}` : '1px solid var(--border)',
+      background: on ? ACCENT + '26' : 'transparent', color: 'inherit',
+      fontSize: 13.5, fontWeight: on ? 700 : 500,
+    }}>{children}</button>
+  )
+}
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
+const FEELING: Record<string, string> = { ottimo: '😀', bene: '🙂', normale: '😐', affaticato: '😕', pesante: '😣' }
+const STATUS_LABEL: Record<string, string> = { completato: 'Completato', parziale: 'Completato parzialmente', non_completato: 'Non completato', saltato: 'Saltato', programmato: 'Programmato' }
+
+function TrainerSummary({ athletes }: { athletes: { api_player_id: number; name: string | null }[] }) {
+  const [rows, setRows] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  useEffect(() => {
+    supabase.from('fitness_feedback').select('*, fitness_programs(name, program_date, player_id)').then(({ data }) => {
+      const byPlayer: Record<number, any> = {}
+      ;(data as any[] || []).forEach(f => {
+        const pid = f.fitness_programs?.player_id
+        if (!pid) return
+        const d = f.fitness_programs?.program_date || ''
+        if (!byPlayer[pid] || (byPlayer[pid].fitness_programs?.program_date || '') < d) byPlayer[pid] = f
+      })
+      setRows(Object.values(byPlayer))
+      setLoading(false)
+    })
+  }, [])
+  if (loading || rows.length === 0) return null
+  return (
+    <div style={{ marginBottom: 22 }}>
+      <div style={label}>Riepilogo atleti</div>
+      <div className="card" style={{ padding: 6 }}>
+        <div className="list">
+          {rows.map(f => {
+            const name = athletes.find(a => a.api_player_id === f.fitness_programs?.player_id)?.name || '—'
+            const disc = f.discomfort && f.discomfort !== 'nessuno' ? f.discomfort : ''
+            const issue = f.status !== 'completato' || !!disc
+            return (
+              <div key={f.id} className="row" style={{ alignItems: 'center', borderLeft: issue ? '2px solid #d98236' : '2px solid transparent', paddingLeft: 10 }}>
+                <div className="row-main">
+                  <div className="row-title">{name}</div>
+                  <div className="row-sub">
+                    {STATUS_LABEL[f.status] || f.status}{disc ? ` · fastidio: ${cap(disc)}` : ''}{f.fitness_programs?.program_date ? ` · ${fmtDate(f.fitness_programs.program_date)}` : ''}
+                  </div>
+                </div>
+                {f.feeling && <span style={{ fontSize: 20 }}>{FEELING[f.feeling] || ''}</span>}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
 }
 
 /* ========================= PDF (stampa) ========================= */

@@ -373,9 +373,11 @@ export interface FitnessFeedback {
   id?: string
   program_id: string
   player_id: number
-  status: 'programmato' | 'completato' | 'saltato'
+  status: 'programmato' | 'completato' | 'parziale' | 'non_completato' | 'saltato'
   completed: boolean
   difficulty?: number | null
   pain?: string | null
+  feeling?: string | null
+  discomfort?: string | null
   athlete_notes?: string | null
 }
