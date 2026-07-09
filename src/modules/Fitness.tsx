@@ -5,7 +5,7 @@ import { useAthlete } from '../lib/athlete'
 import { Modal, Field, Input, Textarea, Select, Spinner, Empty, Badge } from '../components/ui'
 import Icon from '../components/Icon'
 import { fmtDate } from '../lib/format'
-import type { FitnessProgram, FitnessExercise, FitnessFeedback } from '../lib/types'
+import type { FitnessProgram, FitnessExercise, FitnessFeedback, FitnessLibraryItem } from '../lib/types'
 
 const ACCENT = '#8b93a1' // neutro (indipendente dai colori squadra)
 const label: React.CSSProperties = { fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: 'var(--text-dim)', fontWeight: 700, margin: '18px 0 10px' }
@@ -65,6 +65,7 @@ function TrainerFitness() {
         <ProgramEditor
           program={editing}
           athleteId={athleteId}
+          athleteName={athleteName}
           trainerId={session?.user.id || null}
           onClose={() => setEditing(null)}
           onSaved={() => { setEditing(null); load() }}
@@ -105,8 +106,8 @@ const emptyExercise = (): FitnessExercise => ({
   image_url: '', video_url: '',
 })
 
-function ProgramEditor({ program, athleteId, trainerId, onClose, onSaved }: {
-  program: FitnessProgram | 'new'; athleteId: number; trainerId: string | null; onClose: () => void; onSaved: () => void
+function ProgramEditor({ program, athleteId, athleteName, trainerId, onClose, onSaved }: {
+  program: FitnessProgram | 'new'; athleteId: number; athleteName: string; trainerId: string | null; onClose: () => void; onSaved: () => void
 }) {
   const isNew = program === 'new'
   const [form, setForm] = useState<Partial<FitnessProgram>>(
@@ -116,6 +117,8 @@ function ProgramEditor({ program, athleteId, trainerId, onClose, onSaved }: {
   const [loading, setLoading] = useState(!isNew)
   const [busy, setBusy] = useState<'' | 'draft' | 'published'>('')
   const [uploading, setUploading] = useState(false)
+  const [showLib, setShowLib] = useState(false)
+  const [dragIdx, setDragIdx] = useState<number | null>(null)
 
   useEffect(() => {
     if (isNew) return
@@ -129,6 +132,13 @@ function ProgramEditor({ program, athleteId, trainerId, onClose, onSaved }: {
     const j = i + dir
     if (j < 0 || j >= exercises.length) return
     const copy = [...exercises];[copy[i], copy[j]] = [copy[j], copy[i]]; setExercises(copy)
+  }
+  const addFromLibrary = (item: FitnessLibraryItem) =>
+    setExercises(prev => [...prev, { ...emptyExercise(), name: item.name, muscle_group: item.muscle_group || '', image_url: item.image_url || '' }])
+  const onDrop = (target: number) => {
+    if (dragIdx === null || dragIdx === target) return
+    const copy = [...exercises]; const [m] = copy.splice(dragIdx, 1); copy.splice(target, 0, m)
+    setExercises(copy); setDragIdx(null)
   }
 
   async function save(status: 'draft' | 'published') {
@@ -178,7 +188,8 @@ function ProgramEditor({ program, athleteId, trainerId, onClose, onSaved }: {
       }
     >
       {loading ? <Spinner /> : (
-        <>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20, alignItems: 'start' }}>
+          <div>
           {/* Dati programma */}
           <div style={grid(200)}>
             <Field label="Nome programma"><Input value={form.name || ''} onChange={e => set('name', e.target.value)} placeholder="Es. Forza arti inferiori" /></Field>
@@ -204,11 +215,15 @@ function ProgramEditor({ program, athleteId, trainerId, onClose, onSaved }: {
           {/* Esercizi */}
           <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'center', ...label }}>
             <span>Esercizi ({exercises.length})</span>
+            <button className="btn btn-sm" onClick={() => setShowLib(true)}><Icon name="plus" size={12} /> Da libreria</button>
           </div>
           {exercises.map((ex, i) => (
-            <div key={i} className="card" style={{ padding: 14, marginBottom: 12, borderLeft: `3px solid ${ACCENT}` }}>
+            <div key={i} className="card"
+              draggable onDragStart={() => setDragIdx(i)} onDragOver={e => e.preventDefault()} onDrop={() => onDrop(i)}
+              style={{ padding: 14, marginBottom: 12, borderLeft: `3px solid ${ACCENT}`, opacity: dragIdx === i ? 0.4 : 1 }}>
+              {ex.image_url && <img src={ex.image_url} alt="" style={{ width: 64, height: 64, borderRadius: 10, objectFit: 'cover', background: '#fff', marginBottom: 10 }} />}
               <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                <span style={{ fontWeight: 700, color: ACCENT }}>#{i + 1}</span>
+                <span style={{ fontWeight: 700, color: ACCENT, cursor: 'grab' }}>⠿ #{i + 1}</span>
                 <div className="flex gap">
                   <button className="btn btn-sm" onClick={() => move(i, -1)} disabled={i === 0}>↑</button>
                   <button className="btn btn-sm" onClick={() => move(i, 1)} disabled={i === exercises.length - 1}>↓</button>
@@ -244,6 +259,7 @@ function ProgramEditor({ program, athleteId, trainerId, onClose, onSaved }: {
             </div>
           ))}
           <button className="btn" onClick={() => setExercises([...exercises, emptyExercise()])}><Icon name="plus" size={14} /> Aggiungi esercizio</button>
+          {showLib && <LibraryPicker onClose={() => setShowLib(false)} onPick={addFromLibrary} />}
 
           {/* Scheda PDF */}
           <div style={label}>Scheda PDF</div>
@@ -271,7 +287,9 @@ function ProgramEditor({ program, athleteId, trainerId, onClose, onSaved }: {
           <label className="flex gap" style={{ alignItems: 'center', marginTop: 10, fontSize: 13 }}>
             <input type="checkbox" checked={!!form.recurring} onChange={e => set('recurring', e.target.checked)} /> Programma ricorrente settimanale
           </label>
-        </>
+          </div>
+          <div><SchedaPreview form={form} exercises={exercises} athleteName={athleteName} /></div>
+        </div>
       )}
     </Modal>
   )
@@ -519,6 +537,78 @@ function TrainerSummary({ athletes }: { athletes: { api_player_id: number; name:
           })}
         </div>
       </div>
+    </div>
+  )
+}
+
+function LibraryPicker({ onClose, onPick }: { onClose: () => void; onPick: (i: FitnessLibraryItem) => void }) {
+  const [items, setItems] = useState<FitnessLibraryItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [q, setQ] = useState(''); const [cat, setCat] = useState(''); const [eq, setEq] = useState(''); const [diff, setDiff] = useState('')
+  const [cats, setCats] = useState<string[]>([]); const [eqs, setEqs] = useState<string[]>([])
+  useEffect(() => {
+    supabase.from('fitness_exercise_library').select('*').order('name').then(({ data }) => {
+      const d = (data as FitnessLibraryItem[]) || []
+      setItems(d)
+      setCats([...new Set(d.map(x => x.category).filter(Boolean) as string[])].sort())
+      setEqs([...new Set(d.map(x => x.equipment).filter(Boolean) as string[])].sort())
+      setLoading(false)
+    })
+  }, [])
+  const filtered = items.filter(x =>
+    (!q || x.name.toLowerCase().includes(q.toLowerCase()) || (x.muscle_group || '').toLowerCase().includes(q.toLowerCase())) &&
+    (!cat || x.category === cat) && (!eq || x.equipment === eq) && (!diff || x.difficulty === diff)
+  ).slice(0, 60)
+  return (
+    <Modal wide title="Libreria esercizi" onClose={onClose} footer={<button className="btn" onClick={onClose}>Chiudi</button>}>
+      <div style={grid(150)}>
+        <Input placeholder="Cerca esercizio o muscolo…" value={q} onChange={e => setQ(e.target.value)} />
+        <Select value={cat} onChange={e => setCat(e.target.value)}><option value="">Tutte le categorie</option>{cats.map(c => <option key={c}>{c}</option>)}</Select>
+        <Select value={eq} onChange={e => setEq(e.target.value)}><option value="">Tutti gli attrezzi</option>{eqs.map(c => <option key={c}>{c}</option>)}</Select>
+        <Select value={diff} onChange={e => setDiff(e.target.value)}><option value="">Ogni livello</option><option>Principiante</option><option>Intermedio</option><option>Avanzato</option></Select>
+      </div>
+      {loading ? <Spinner /> : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(148px, 1fr))', gap: 10, marginTop: 14 }}>
+          {filtered.map(x => (
+            <button key={x.id} className="card" style={{ padding: 8, textAlign: 'left', cursor: 'pointer' }} onClick={() => onPick(x)}>
+              {x.image_url && <img src={x.image_url} alt="" loading="lazy" style={{ width: '100%', height: 92, objectFit: 'cover', borderRadius: 8, background: '#fff' }} />}
+              <div style={{ fontSize: 12.5, fontWeight: 700, marginTop: 6, lineHeight: 1.2 }}>{x.name}</div>
+              <div className="faint" style={{ fontSize: 11 }}>{x.muscle_group || ''}</div>
+            </button>
+          ))}
+          {filtered.length === 0 && <div className="faint">Nessun esercizio trovato.</div>}
+        </div>
+      )}
+    </Modal>
+  )
+}
+
+function SchedaPreview({ form, exercises, athleteName }: { form: Partial<FitnessProgram>; exercises: FitnessExercise[]; athleteName: string }) {
+  const list = exercises.filter(e => e.name?.trim())
+  return (
+    <div className="card" style={{ padding: 18, position: 'sticky', top: 8 }}>
+      <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1 }}>Anteprima scheda atleta</div>
+      <div style={{ fontSize: 12.5, marginTop: 8 }}>{athleteName}</div>
+      <div style={{ fontSize: 18, fontWeight: 800, marginTop: 2 }}>{form.name || 'Nuovo programma'}</div>
+      {form.focus && <div style={{ color: ACCENT, fontWeight: 700, fontSize: 13, marginTop: 2 }}>{form.focus}</div>}
+      <div className="faint" style={{ fontSize: 12, marginTop: 4 }}>
+        {[form.program_date ? fmtDate(form.program_date) : '', form.start_time ? form.start_time.slice(0, 5) : '', form.duration_min ? `${form.duration_min} min` : '', form.intensity].filter(Boolean).join(' · ')}
+      </div>
+      <div style={{ marginTop: 12 }}>
+        {list.map((e, i) => (
+          <div key={i} className="flex" style={{ gap: 10, alignItems: 'center', padding: '8px 0', borderTop: '1px solid var(--border)' }}>
+            {e.image_url
+              ? <img src={e.image_url} alt="" style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover', background: '#fff', flex: '0 0 auto' }} />
+              : <span style={{ width: 44, height: 44, borderRadius: 8, background: 'var(--border)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: '0 0 auto', fontWeight: 700 }}>{i + 1}</span>}
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 700 }}>{e.name}</div>
+              <div className="faint" style={{ fontSize: 11.5 }}>{[e.sets != null ? `${e.sets}×${e.reps || ''}` : (e.reps || ''), e.load, e.recovery ? `rec ${e.recovery}` : ''].filter(Boolean).join(' · ')}</div>
+            </div>
+          </div>
+        ))}
+        {list.length === 0 && <div className="faint" style={{ fontSize: 12.5, marginTop: 4 }}>Aggiungi esercizi per vedere l'anteprima.</div>}
+      </div>
+      {form.note_athlete && <div style={{ marginTop: 12, fontSize: 12.5 }}><b>Nota:</b> {form.note_athlete}</div>}
     </div>
   )
 }

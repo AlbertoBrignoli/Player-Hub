@@ -381,3 +381,14 @@ export interface FitnessFeedback {
   discomfort?: string | null
   athlete_notes?: string | null
 }
+
+export interface FitnessLibraryItem {
+  id: string
+  name: string
+  category?: string | null
+  muscle_group?: string | null
+  equipment?: string | null
+  difficulty?: string | null
+  image_url?: string | null
+  description?: string | null
+}
