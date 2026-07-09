@@ -7,7 +7,7 @@ import Icon from '../components/Icon'
 import { fmtDate } from '../lib/format'
 import type { FitnessProgram, FitnessExercise, FitnessFeedback } from '../lib/types'
 
-const ACCENT = '#F4C430' // giallo AEK
+const ACCENT = '#8b93a1' // neutro (indipendente dai colori squadra)
 const label: React.CSSProperties = { fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: 'var(--text-dim)', fontWeight: 700, margin: '18px 0 10px' }
 const grid = (min = 150): React.CSSProperties => ({ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(${min}px, 1fr))`, gap: 12 })
 const todayKey = () => new Date().toISOString().slice(0, 10)
@@ -51,7 +51,7 @@ function TrainerFitness() {
           <div style={{ fontSize: 18, fontWeight: 800 }}>Programmi di {athleteName}</div>
           <div className="faint" style={{ fontSize: 13 }}>{programs.length} totali · {bozze.length} bozze · {pubblicate.length} pubblicati</div>
         </div>
-        <button className="btn" style={{ background: ACCENT, color: '#111', fontWeight: 700 }} onClick={() => setEditing('new')}>
+        <button className="btn btn-primary" onClick={() => setEditing('new')}>
           <Icon name="plus" size={14} /> Nuovo programma
         </button>
       </div>
@@ -113,6 +113,7 @@ function ProgramEditor({ program, athleteId, trainerId, onClose, onSaved }: {
   const [exercises, setExercises] = useState<FitnessExercise[]>([])
   const [loading, setLoading] = useState(!isNew)
   const [busy, setBusy] = useState<'' | 'draft' | 'published'>('')
+  const [uploading, setUploading] = useState(false)
 
   useEffect(() => {
     if (isNew) return
@@ -139,6 +140,7 @@ function ProgramEditor({ program, athleteId, trainerId, onClose, onSaved }: {
       recovery_between_sets: form.recovery_between_sets || null, recovery_between_exercises: form.recovery_between_exercises || null,
       cooldown: form.cooldown || null, general_notes: form.general_notes || null,
       note_staff: form.note_staff || null, note_athlete: form.note_athlete || null,
+      pdf_path: form.pdf_path || null,
       recurring: !!form.recurring, recurrence: form.recurring ? 'weekly' : null,
     }
     let pid = isNew ? undefined : (program as FitnessProgram).id
@@ -167,7 +169,7 @@ function ProgramEditor({ program, athleteId, trainerId, onClose, onSaved }: {
       footer={
         <>
           <button className="btn" onClick={() => save('draft')} disabled={!!busy}>{busy === 'draft' ? 'Salvo…' : 'Salva bozza'}</button>
-          <button className="btn" style={{ background: ACCENT, color: '#111', fontWeight: 700 }} onClick={() => save('published')} disabled={!!busy}>
+          <button className="btn btn-primary" onClick={() => save('published')} disabled={!!busy}>
             {busy === 'published' ? 'Pubblico…' : 'Pubblica in agenda'}
           </button>
         </>
@@ -240,6 +242,25 @@ function ProgramEditor({ program, athleteId, trainerId, onClose, onSaved }: {
             </div>
           ))}
           <button className="btn" onClick={() => setExercises([...exercises, emptyExercise()])}><Icon name="plus" size={14} /> Aggiungi esercizio</button>
+
+          {/* Scheda PDF */}
+          <div style={label}>Scheda PDF</div>
+          <div className="flex gap" style={{ alignItems: 'center' }}>
+            {form.pdf_path
+              ? <><span className="faint" style={{ fontSize: 13 }}>PDF caricato ✓</span><button className="btn btn-sm" onClick={() => set('pdf_path', null)}>Rimuovi</button></>
+              : <label className="btn btn-sm" style={{ cursor: 'pointer' }}>
+                  {uploading ? 'Carico…' : 'Carica PDF'}
+                  <input type="file" accept="application/pdf" hidden onChange={async ev => {
+                    const file = ev.target.files?.[0]; if (!file) return
+                    setUploading(true)
+                    const path = `fitness/${athleteId}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`
+                    const { error } = await supabase.storage.from('crm-media').upload(path, file, { upsert: false, contentType: 'application/pdf' })
+                    setUploading(false)
+                    if (!error) set('pdf_path', path)
+                  }} />
+                </label>}
+          </div>
+          <div className="faint" style={{ fontSize: 12, marginTop: 6 }}>Se carichi un PDF, l'atleta lo apre direttamente come sua scheda.</div>
 
           {/* Note */}
           <div style={label}>Note</div>
@@ -344,8 +365,10 @@ function ProgramDetail({ program, athleteId, onClose, onSaved }: {
   return (
     <Modal wide title={program.name} onClose={onClose}
       footer={<>
-        <button className="btn" onClick={() => downloadPdf(program, exercises)}><Icon name="download" size={14} /> Scarica PDF</button>
-        <button className="btn" style={{ background: ACCENT, color: '#111', fontWeight: 700 }} onClick={() => saveFeedback('completato')} disabled={busy}>Segna completato</button>
+        {program.pdf_path
+          ? <button className="btn" onClick={async () => { const { data } = await supabase.storage.from('crm-media').createSignedUrl(program.pdf_path!, 300); if (data?.signedUrl) window.open(data.signedUrl, '_blank') }}><Icon name="download" size={14} /> Apri scheda PDF</button>
+          : <button className="btn" onClick={() => downloadPdf(program, exercises)}><Icon name="download" size={14} /> Scarica PDF</button>}
+        <button className="btn btn-primary" onClick={() => saveFeedback('completato')} disabled={busy}>Segna completato</button>
       </>}>
       <div className="faint" style={{ fontSize: 13 }}>
         {program.program_date ? fmtDate(program.program_date) : ''}{program.start_time ? ` · ${program.start_time.slice(0, 5)}` : ''}{program.duration_min ? ` · ${program.duration_min} min` : ''}{program.intensity ? ` · intensità ${program.intensity}` : ''}

@@ -342,6 +342,7 @@ export interface FitnessProgram {
   note_staff: string | null
   note_athlete: string | null
   status: 'draft' | 'published'
+  pdf_path?: string | null
   recurring: boolean
   recurrence: string | null
   created_at?: string
