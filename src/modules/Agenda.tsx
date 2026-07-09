@@ -4,7 +4,6 @@ import { useAthlete } from '../lib/athlete'
 import { useCollection, insertRow, updateRow, deleteRow } from '../lib/useData'
 import { Modal, Field, Input, Textarea, Select, Empty, Spinner, ConfirmButton } from '../components/ui'
 import Icon from '../components/Icon'
-import { fmtDateTime } from '../lib/format'
 import type { EventItem } from '../lib/types'
 
 type TypeDef = { l: string; icon: string; c: string }
@@ -28,7 +27,7 @@ const WD = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom']
 
 function dayKey(d: Date) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` }
 function localKey(iso: string) { return dayKey(new Date(iso)) }
-const sectionLabel: React.CSSProperties = { fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: 'var(--text-dim)', fontWeight: 700, margin: '16px 4px 8px' }
+const sectionLabel: React.CSSProperties = { fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: 'var(--text-dim)', fontWeight: 700, margin: '18px 4px 10px' }
 const emptyEv = (type: string): Partial<EventItem> => ({ title: '', type, start_at: '' })
 
 export default function Agenda({ goto }: { goto?: (r: string) => void }) {
@@ -47,7 +46,7 @@ export default function Agenda({ goto }: { goto?: (r: string) => void }) {
   const shared = { canEdit, onEdit: setEdit, onDel, goto }
 
   return (
-    <div className="grid" style={{ gap: 16 }}>
+    <div className="grid" style={{ gap: 8 }}>
       <div className="flex between" style={{ alignItems: 'center' }}>
         <div className="flex gap">
           <button className={view === 'lista' ? 'btn btn-primary btn-sm' : 'btn btn-sm'} onClick={() => setView('lista')}>Lista</button>
@@ -92,22 +91,20 @@ function ListView({ rows, canEdit, onEdit, onDel, goto }: SharedProps) {
     else groups[3].items.push(e)
   })
 
+  const card = (e: EventItem) => <EvCard key={e.id} e={e} canEdit={canEdit(e)} onEdit={() => onEdit(e)} onDel={() => onDel(e)} goto={goto} />
+
   return (
     <>
       {groups.filter(g => g.items.length).map(g => (
         <div key={g.label}>
           <div style={sectionLabel}>{g.label}</div>
-          <div className="card" style={{ padding: 6 }}><div className="list">
-            {g.items.map(e => <Ev key={e.id} e={e} canEdit={canEdit(e)} onEdit={() => onEdit(e)} onDel={() => onDel(e)} goto={goto} />)}
-          </div></div>
+          {g.items.map(card)}
         </div>
       ))}
       {past.length > 0 && (
-        <div>
+        <div style={{ opacity: .55 }}>
           <div style={sectionLabel}>Passati</div>
-          <div className="card" style={{ padding: 6, opacity: .6 }}><div className="list">
-            {past.slice(0, 10).map(e => <Ev key={e.id} e={e} canEdit={canEdit(e)} onEdit={() => onEdit(e)} onDel={() => onDel(e)} goto={goto} />)}
-          </div></div>
+          {past.slice(0, 5).map(card)}
         </div>
       )}
     </>
@@ -116,7 +113,6 @@ function ListView({ rows, canEdit, onEdit, onDel, goto }: SharedProps) {
 
 function CalendarView({ rows, canEdit, onEdit, onDel, goto }: SharedProps) {
   const [cur, setCur] = useState(() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() } })
-  const [sel, setSel] = useState<string>(dayKey(new Date()))
 
   const byDay: Record<string, EventItem[]> = {}
   rows.forEach(e => { const k = localKey(e.start_at); (byDay[k] = byDay[k] || []).push(e) })
@@ -132,62 +128,79 @@ function CalendarView({ rows, canEdit, onEdit, onDel, goto }: SharedProps) {
   const prev = () => setCur(c => c.m === 0 ? { y: c.y - 1, m: 11 } : { y: c.y, m: c.m - 1 })
   const next = () => setCur(c => c.m === 11 ? { y: c.y + 1, m: 0 } : { y: c.y, m: c.m + 1 })
   const todayK = dayKey(new Date())
-  const selEvents = (byDay[sel] || []).slice().sort((a, b) => a.start_at.localeCompare(b.start_at))
+
+  const now = Date.now()
+  const next3 = rows.filter(e => new Date(e.start_at).getTime() >= now - 3600000).slice(0, 3)
 
   return (
-    <div className="card" style={{ padding: 16 }}>
-      <div className="flex between" style={{ alignItems: 'center', marginBottom: 12 }}>
-        <button className="btn btn-sm" onClick={prev}>‹</button>
-        <div style={{ fontWeight: 700 }}>{MONTHS[cur.m]} {cur.y}</div>
-        <button className="btn btn-sm" onClick={next}>›</button>
-      </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 4 }}>
-        {WD.map(w => <div key={w} style={{ textAlign: 'center', fontSize: 11, color: 'var(--text-dim)', padding: '4px 0' }}>{w}</div>)}
-        {cells.map((d, i) => {
-          if (!d) return <div key={i} />
-          const k = dayKey(d)
-          const evs = byDay[k] || []
-          const isSel = k === sel, isToday = k === todayK
-          return (
-            <button key={i} onClick={() => setSel(k)}
-              style={{ minHeight: 46, borderRadius: 10, border: isSel ? '1px solid var(--accent, #F4C430)' : '1px solid var(--border)', background: isToday ? 'rgba(255,255,255,.05)' : 'transparent', color: 'inherit', cursor: 'pointer', padding: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-              <span style={{ fontSize: 12.5, fontWeight: isToday ? 800 : 500 }}>{d.getDate()}</span>
-              <span className="flex" style={{ gap: 2 }}>
-                {evs.slice(0, 4).map((e, j) => <span key={j} style={{ width: 5, height: 5, borderRadius: '50%', background: typeOf(e.type).c }} />)}
-              </span>
-            </button>
-          )
-        })}
+    <>
+      <div className="card" style={{ padding: 16 }}>
+        <div className="flex between" style={{ alignItems: 'center', marginBottom: 12 }}>
+          <button className="btn btn-sm" onClick={prev}>‹</button>
+          <div style={{ fontWeight: 700 }}>{MONTHS[cur.m]} {cur.y}</div>
+          <button className="btn btn-sm" onClick={next}>›</button>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 4 }}>
+          {WD.map(w => <div key={w} style={{ textAlign: 'center', fontSize: 11, color: 'var(--text-dim)', padding: '4px 0' }}>{w}</div>)}
+          {cells.map((d, i) => {
+            if (!d) return <div key={i} />
+            const k = dayKey(d)
+            const evs = byDay[k] || []
+            const isToday = k === todayK
+            return (
+              <div key={i}
+                style={{ minHeight: 48, borderRadius: 10, border: isToday ? '1px solid var(--accent, #F4C430)' : '1px solid var(--border)', background: isToday ? 'rgba(244,196,48,.08)' : 'transparent', padding: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                <span style={{ fontSize: 12.5, fontWeight: isToday ? 800 : 500 }}>{d.getDate()}</span>
+                <span className="flex" style={{ gap: 2 }}>
+                  {evs.slice(0, 4).map((e, j) => <span key={j} style={{ width: 5, height: 5, borderRadius: '50%', background: typeOf(e.type).c }} />)}
+                </span>
+              </div>
+            )
+          })}
+        </div>
       </div>
 
-      <div style={sectionLabel}>{fmtDayLabel(sel)}</div>
-      {selEvents.length === 0
-        ? <div className="faint" style={{ padding: '4px 6px' }}>Nessun impegno in questo giorno.</div>
-        : <div className="list">{selEvents.map(e => <Ev key={e.id} e={e} canEdit={canEdit(e)} onEdit={() => onEdit(e)} onDel={() => onDel(e)} goto={goto} />)}</div>}
-    </div>
+      <div style={sectionLabel}>Prossimi impegni</div>
+      {next3.length === 0
+        ? <div className="faint" style={{ padding: '4px 6px' }}>Nessun impegno in programma.</div>
+        : next3.map(e => <EvCard key={e.id} e={e} canEdit={canEdit(e)} onEdit={() => onEdit(e)} onDel={() => onDel(e)} goto={goto} />)}
+    </>
   )
 }
 
-function fmtDayLabel(k: string) {
-  const [y, m, d] = k.split('-').map(Number)
-  return new Date(y, m - 1, d).toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })
-}
-
-function Ev({ e, canEdit, onEdit, onDel, goto }: { e: EventItem; canEdit: boolean; onEdit: () => void; onDel: () => void; goto?: (r: string) => void }) {
+function EvCard({ e, canEdit, onEdit, onDel, goto }: { e: EventItem; canEdit: boolean; onEdit: () => void; onDel: () => void; goto?: (r: string) => void }) {
   const t = typeOf(e.type)
   const isTraining = e.type === 'allenamento' && !!e.fitness_program_id
+  const d = new Date(e.start_at)
+  const day = d.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' })
+  const time = d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
   return (
-    <div className="row" style={{ alignItems: 'center' }}>
-      <span style={{ width: 30, height: 30, borderRadius: 9, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: t.c + '22', color: t.c, flex: '0 0 auto' }}>
-        <Icon name={t.icon} size={15} />
+    <div className="card" style={{ padding: 16, marginBottom: 10, display: 'flex', gap: 14, alignItems: 'flex-start', borderLeft: `3px solid ${t.c}` }}>
+      <span style={{ width: 42, height: 42, borderRadius: 12, background: t.c + '22', color: t.c, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: '0 0 auto' }}>
+        <Icon name={t.icon} size={20} />
       </span>
-      <div className="row-main">
-        <div className="row-title">{e.title}</div>
-        <div className="row-sub">{fmtDateTime(e.start_at)}{e.location ? ` · ${e.location}` : ''}</div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div className="flex between" style={{ alignItems: 'flex-start', gap: 10 }}>
+          <div style={{ fontSize: 16.5, fontWeight: 800, lineHeight: 1.25 }}>{e.title}</div>
+          <span style={{ fontSize: 10.5, color: t.c, fontWeight: 700, whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: .6 }}>{t.l}</span>
+        </div>
+        <div className="flex gap" style={{ alignItems: 'center', marginTop: 9, flexWrap: 'wrap' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13.5, fontWeight: 600 }}>
+            <Icon name="calendar" size={14} /> {day}
+          </span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 16, fontWeight: 800, color: t.c }}>
+            <Icon name="clock" size={15} /> {time}
+          </span>
+        </div>
+        {e.location && <div className="faint" style={{ fontSize: 13, marginTop: 7, display: 'inline-flex', alignItems: 'center', gap: 6 }}><Icon name="pin" size={13} /> {e.location}</div>}
+        {(isTraining || canEdit) && (
+          <div className="flex gap" style={{ marginTop: 12, flexWrap: 'wrap' }}>
+            {isTraining && goto && <button className="btn btn-sm" style={{ background: t.c, color: '#111', fontWeight: 700 }} onClick={() => goto('fitness')}>Apri scheda →</button>}
+            {canEdit && <button className="btn btn-ghost btn-sm" onClick={onEdit}>Modifica</button>}
+            {canEdit && <ConfirmButton onConfirm={onDel}>Elimina</ConfirmButton>}
+          </div>
+        )}
       </div>
-      <span style={{ fontSize: 11.5, color: t.c, fontWeight: 600, whiteSpace: 'nowrap' }}>{t.l}</span>
-      {isTraining && goto && <button className="btn btn-sm" onClick={() => goto('fitness')}>Apri scheda</button>}
-      {canEdit && <><button className="btn btn-ghost btn-sm" onClick={onEdit}>✎</button><ConfirmButton onConfirm={onDel}>×</ConfirmButton></>}
     </div>
   )
 }
@@ -218,7 +231,7 @@ function EventForm({ value, isAdmin, uid, athleteId, onClose, onSaved }: {
         <button className="btn btn-ghost" onClick={onClose}>Annulla</button>
         <button className="btn btn-primary" disabled={busy || !f.title || !f.start_at} onClick={save}>{busy ? 'Salvo…' : 'Salva'}</button>
       </>}>
-      <Field label="Titolo"><Input value={f.title || ''} onChange={e => set('title', e.target.value)} placeholder="es. Visita medica" /></Field>
+      <Field label="Titolo"><Input value={f.title || ''} onChange={e => set('title', e.target.value)} placeholder="es. Transfer aeroporto" /></Field>
       <div className="row2">
         <Field label="Tipo"><Select value={f.type} onChange={e => set('type', e.target.value)}>{types.map(k => <option key={k} value={k}>{typeOf(k).l}</option>)}</Select></Field>
         <Field label="Luogo"><Input value={f.location || ''} onChange={e => set('location', e.target.value)} /></Field>
