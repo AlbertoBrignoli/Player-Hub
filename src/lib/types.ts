@@ -157,6 +157,9 @@ export interface EventItem {
   location: string | null
   notes: string | null
   created_at: string
+  player_id?: number | null
+  created_by?: string | null
+  fitness_program_id?: string | null
 }
 
 export interface Task {

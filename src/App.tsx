@@ -42,7 +42,7 @@ export default function App() {
       case 'editorial': return <Editorial />
       case 'media': return <Media />
       case 'sponsors': return <Sponsors />
-      case 'agenda': return <Agenda />
+      case 'agenda': return <Agenda goto={setRoute} />
       case 'tasks': return <Tasks />
       case 'messages': return <Messages />
       case 'settings': return <Settings />
