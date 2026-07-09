@@ -12,10 +12,10 @@ const label: React.CSSProperties = { fontSize: 11, letterSpacing: 1.2, textTrans
 const grid = (min = 150): React.CSSProperties => ({ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(${min}px, 1fr))`, gap: 12 })
 const todayKey = () => new Date().toISOString().slice(0, 10)
 
-export default function Fitness() {
+export default function Fitness({ goto }: { goto?: (r: string) => void }) {
   const { role } = useAuth()
   const isTrainer = role === 'admin' || role === 'creator' || role === 'preparatore'
-  return isTrainer ? <TrainerFitness /> : <AthleteFitness />
+  return isTrainer ? <TrainerFitness /> : <AthleteFitness goto={goto} />
 }
 
 /* ========================= VISTA PREPARATORE ========================= */
@@ -299,7 +299,36 @@ function ProgramEditor({ program, athleteId, athleteName, trainerId, onClose, on
 
 type ProgramFull = FitnessProgram & { fitness_exercises: FitnessExercise[]; fitness_feedback: FitnessFeedback[] }
 
-function AthleteFitness() {
+function CoachCard({ goto, athleteId }: { goto?: (r: string) => void; athleteId: number | null }) {
+  const [coach, setCoach] = useState<any | null>(null)
+  useEffect(() => {
+    if (!athleteId) return
+    ;(async () => {
+      const { data: a } = await supabase.from('fitness_trainer_athletes').select('trainer_id').eq('player_id', athleteId).limit(1).maybeSingle()
+      const tid = (a as any)?.trainer_id
+      if (!tid) return
+      const { data: c } = await supabase.from('fitness_coach_profile').select('*').eq('trainer_id', tid).maybeSingle()
+      if (c) setCoach(c)
+    })()
+  }, [athleteId])
+  if (!coach) return null
+  return (
+    <div className="card" style={{ padding: 16, marginBottom: 18, display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
+      {coach.photo_url
+        ? <img src={coach.photo_url} alt="" style={{ width: 52, height: 52, borderRadius: 13, objectFit: 'cover' }} />
+        : <div style={{ width: 52, height: 52, borderRadius: 13, background: 'var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>{(coach.name || 'C').slice(0, 1)}</div>}
+      <div style={{ flex: 1, minWidth: 140 }}>
+        <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1 }}>Il tuo preparatore</div>
+        <div style={{ fontSize: 16, fontWeight: 800 }}>{coach.name || 'Preparatore'}</div>
+        <div className="faint" style={{ fontSize: 12.5 }}>{coach.headline || ''}{coach.experience ? ` · ${coach.experience}` : ''}</div>
+        {(coach.specializations || []).length > 0 && <div className="faint" style={{ fontSize: 12, marginTop: 3 }}>{(coach.specializations || []).slice(0, 3).join(' · ')}</div>}
+      </div>
+      {goto && <button className="btn btn-sm" onClick={() => goto('coach-profile')}>Visualizza profilo</button>}
+    </div>
+  )
+}
+
+function AthleteFitness({ goto }: { goto?: (r: string) => void }) {
   const { athleteId } = useAthlete()
   const [programs, setPrograms] = useState<ProgramFull[]>([])
   const [loading, setLoading] = useState(true)
@@ -317,7 +346,7 @@ function AthleteFitness() {
   useEffect(() => { load() }, [athleteId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) return <Spinner />
-  if (programs.length === 0) return <Empty icon={<Icon name="dumbbell" size={22} />} title="Nessun programma ancora" hint="Quando il preparatore pubblica una scheda, la trovi qui." />
+  if (programs.length === 0) return <div style={{ maxWidth: 900 }}><CoachCard goto={goto} athleteId={athleteId} /><Empty icon={<Icon name="dumbbell" size={22} />} title="Nessun programma ancora" hint="Quando il preparatore pubblica una scheda, la trovi qui." /></div>
 
   const today = todayKey()
   const oggi = programs.filter(p => p.program_date === today)
@@ -326,6 +355,7 @@ function AthleteFitness() {
 
   return (
     <div style={{ maxWidth: 900 }}>
+      <CoachCard goto={goto} athleteId={athleteId} />
       {oggi.length > 0 && <>
         <div style={label}>Programma di oggi</div>
         {oggi.map(p => <BigProgramCard key={p.id} p={p} onOpen={() => setOpen(p)} highlight />)}

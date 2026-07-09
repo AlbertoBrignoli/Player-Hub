@@ -9,6 +9,7 @@ import Performance from './modules/Performance'
 import Profile from './modules/Profile'
 import Fitness from './modules/Fitness'
 import FitnessCoachHome from './modules/FitnessCoachHome'
+import FitnessCoachProfile from './modules/FitnessCoachProfile'
 import Contracts from './modules/Contracts'
 import Documents from './modules/Documents'
 import Editorial from './modules/Editorial'
@@ -37,7 +38,8 @@ export default function App() {
       case 'dashboard': return profile.role === 'preparatore' ? <FitnessCoachHome goto={setRoute} /> : <Dashboard goto={setRoute} />
       case 'performance': return <Performance goto={setRoute} />
       case 'profile': return <Profile />
-      case 'fitness': return <Fitness />
+      case 'fitness': return <Fitness goto={setRoute} />
+      case 'coach-profile': return <FitnessCoachProfile goto={setRoute} />
       case 'contracts': return <Contracts />
       case 'documents': return <Documents />
       case 'editorial': return <Editorial />

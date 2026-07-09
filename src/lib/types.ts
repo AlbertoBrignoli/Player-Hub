@@ -392,3 +392,31 @@ export interface FitnessLibraryItem {
   image_url?: string | null
   description?: string | null
 }
+
+export interface CoachProfile {
+  trainer_id: string
+  name?: string | null
+  photo_url?: string | null
+  headline?: string | null
+  experience?: string | null
+  verified?: boolean
+  bio_method?: string | null
+  bio_philosophy?: string | null
+  education?: string | null
+  certifications?: string | null
+  teams?: string | null
+  specializations?: string[]
+  services?: string[]
+  availability?: string | null
+  contacts?: { email?: string; phone?: string; whatsapp?: string; instagram?: string; linkedin?: string; website?: string }
+}
+
+export interface FitnessRequest {
+  id?: string
+  player_id: number
+  trainer_id?: string | null
+  type: 'programma' | 'allenamento' | 'messaggio'
+  note?: string | null
+  status?: 'aperta' | 'gestita'
+  created_at?: string
+}

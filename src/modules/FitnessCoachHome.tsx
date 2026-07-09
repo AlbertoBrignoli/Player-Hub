@@ -15,15 +15,18 @@ export default function FitnessCoachHome({ goto }: { goto?: (r: string) => void 
   const { athletes } = useAthlete()
   const [programs, setPrograms] = useState<FitnessProgram[]>([])
   const [feedback, setFeedback] = useState<any[]>([])
+  const [requests, setRequests] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     Promise.all([
       supabase.from('fitness_programs').select('*').order('created_at', { ascending: false }),
       supabase.from('fitness_feedback').select('*, fitness_programs(player_id, program_date)'),
-    ]).then(([p, f]) => {
+      supabase.from('fitness_requests').select('*').eq('status', 'aperta').order('created_at', { ascending: false }),
+    ]).then(([p, f, r]) => {
       setPrograms((p.data as FitnessProgram[]) || [])
       setFeedback((f.data as any[]) || [])
+      setRequests((r.data as any[]) || [])
       setLoading(false)
     })
   }, [])
@@ -54,6 +57,7 @@ export default function FitnessCoachHome({ goto }: { goto?: (r: string) => void 
     { icon: 'check-square', k: 'Programmi attivi', v: published.length },
     { icon: 'edit', k: 'Bozze da completare', v: drafts.length },
     { icon: 'bell', k: 'Da rivedere', v: daRivedere },
+    { icon: 'inbox', k: 'Richieste', v: requests.length },
   ]
   const quick = [
     { icon: 'plus', l: 'Nuovo programma', r: 'fitness' },
@@ -100,6 +104,22 @@ export default function FitnessCoachHome({ goto }: { goto?: (r: string) => void 
             </div>
           ))}
         </div></div>}
+
+      {/* Richieste ricevute */}
+      {requests.length > 0 && <>
+        <div style={label}>Richieste ricevute</div>
+        <div className="card" style={{ padding: 6 }}><div className="list">
+          {requests.map(r => (
+            <div key={r.id} className="row" style={{ alignItems: 'center' }}>
+              <span style={{ width: 30, height: 30, borderRadius: 9, background: 'var(--border)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="inbox" size={14} /></span>
+              <div className="row-main">
+                <div className="row-title">{nameOf(r.player_id)} — {r.type === 'programma' ? 'Nuovo programma' : r.type === 'allenamento' ? 'Prenota allenamento' : 'Messaggio'}</div>
+                <div className="row-sub">{r.created_at ? fmtDate(r.created_at.slice(0, 10)) : ''}</div>
+              </div>
+            </div>
+          ))}
+        </div></div>
+      </>}
 
       {/* Azioni rapide */}
       <div style={label}>Azioni rapide</div>

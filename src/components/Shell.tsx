@@ -29,6 +29,7 @@ export const NAV: { group: string; items: NavDef[] }[] = [
   ]},
   { group: 'Fitness', items: [
     { key: 'fitness', label: 'Area Fitness', icon: 'dumbbell' },
+    { key: 'coach-profile', label: 'Il mio profilo', icon: 'user', roles: ['preparatore'] },
   ]},
   { group: 'Operatività', items: [
     { key: 'agenda', label: 'Agenda', icon: 'clock' },
@@ -43,6 +44,7 @@ export const NAV: { group: string; items: NavDef[] }[] = [
 const TITLES: Record<string, { t: string; s: string }> = {
   dashboard: { t: 'Dashboard', s: 'Quadro generale della gestione' },
   fitness: { t: 'Area Fitness', s: 'Programmi, allenamenti e feedback' },
+  'coach-profile': { t: 'Profilo Preparatore', s: 'Il tuo profilo professionale' },
   profile: { t: 'Profilo', s: 'Spedizioni, equipaggiamento e contatti club' },
   performance: { t: 'Performance', s: 'Statistiche, partite e rendimento' },
   contracts: { t: 'Contratti', s: 'Accordi sportivi e scadenze' },
