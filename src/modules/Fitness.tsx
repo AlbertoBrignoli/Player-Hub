@@ -173,6 +173,14 @@ function ProgramEditor({ program, athleteId, athleteName, trainerId, onClose, on
     setBusy(''); onSaved()
   }
 
+  async function del() {
+    if (isNew) return
+    if (!confirm('Eliminare definitivamente questo programma? L\'operazione non è reversibile.')) return
+    setBusy('draft')
+    await supabase.from('fitness_programs').delete().eq('id', (program as FitnessProgram).id)
+    setBusy(''); onSaved()
+  }
+
   return (
     <Modal
       wide
@@ -180,6 +188,7 @@ function ProgramEditor({ program, athleteId, athleteName, trainerId, onClose, on
       onClose={onClose}
       footer={
         <>
+          {!isNew && <button className="btn" style={{ color: '#e0574a' }} onClick={del} disabled={!!busy}>Elimina</button>}
           <button className="btn" onClick={() => save('draft')} disabled={!!busy}>{busy === 'draft' ? 'Salvo…' : 'Salva bozza'}</button>
           <button className="btn btn-primary" onClick={() => save('published')} disabled={!!busy}>
             {busy === 'published' ? 'Pubblico…' : 'Pubblica in agenda'}
@@ -649,21 +658,26 @@ function downloadPdf(p: ProgramFull, exercises: FitnessExercise[]) {
   const esc = (s: any) => String(s ?? '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' } as any)[c])
   const rows = exercises.map((e, i) => `
     <div class="ex">
-      <div class="exh">${i + 1}. ${esc(e.name)} ${e.muscle_group ? `<span class="mg">${esc(e.muscle_group)}</span>` : ''}</div>
-      <div class="chips">
-        ${e.sets != null ? `<span>${e.sets} serie</span>` : ''}${e.reps ? `<span>${esc(e.reps)} rip</span>` : ''}
-        ${e.load ? `<span>carico ${esc(e.load)}</span>` : ''}${e.isometry_time ? `<span>iso ${esc(e.isometry_time)}</span>` : ''}
-        ${e.recovery ? `<span>rec ${esc(e.recovery)}</span>` : ''}${e.side ? `<span>${esc(e.side)}</span>` : ''}
+      ${e.image_url ? `<img class="eximg" src="${esc(e.image_url)}">` : ''}
+      <div class="exbody">
+        <div class="exh">${i + 1}. ${esc(e.name)} ${e.muscle_group ? `<span class="mg">${esc(e.muscle_group)}</span>` : ''}</div>
+        <div class="chips">
+          ${e.sets != null ? `<span>${e.sets} serie</span>` : ''}${e.reps ? `<span>${esc(e.reps)} rip</span>` : ''}
+          ${e.load ? `<span>carico ${esc(e.load)}</span>` : ''}${e.isometry_time ? `<span>iso ${esc(e.isometry_time)}</span>` : ''}
+          ${e.recovery ? `<span>rec ${esc(e.recovery)}</span>` : ''}${e.side ? `<span>${esc(e.side)}</span>` : ''}
+        </div>
+        ${e.technical_notes ? `<div class="note"><b>Note:</b> ${esc(e.technical_notes)}</div>` : ''}
+        ${e.mistakes ? `<div class="note"><b>Da evitare:</b> ${esc(e.mistakes)}</div>` : ''}
       </div>
-      ${e.technical_notes ? `<div class="note"><b>Note:</b> ${esc(e.technical_notes)}</div>` : ''}
-      ${e.mistakes ? `<div class="note"><b>Da evitare:</b> ${esc(e.mistakes)}</div>` : ''}
     </div>`).join('')
   const html = `<!doctype html><html><head><meta charset="utf-8"><title>${esc(p.name)}</title>
     <style>
-      body{font-family:-apple-system,Arial,sans-serif;color:#111;max-width:720px;margin:24px auto;padding:0 20px}
+      body{font-family:-apple-system,Arial,sans-serif;color:#111;max-width:720px;margin:24px auto;padding:0 20px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
       h1{font-size:22px;margin:0 0 4px} .sub{color:#666;font-size:13px;margin-bottom:16px}
-      .focus{color:#a07c00;font-weight:700;margin:8px 0}
-      .ex{border-left:3px solid #F4C430;padding:8px 12px;margin:10px 0;background:#faf8f2;border-radius:6px}
+      .focus{color:#555;font-weight:700;margin:8px 0}
+      .ex{border-left:3px solid #8b93a1;padding:8px 12px;margin:10px 0;background:#f6f7f8;border-radius:6px;display:flex;gap:12px;align-items:flex-start}
+      .eximg{width:84px;height:84px;object-fit:cover;border-radius:8px;background:#fff;flex:0 0 auto}
+      .exbody{flex:1;min-width:0}
       .exh{font-weight:700} .mg{background:#eee;border-radius:6px;padding:1px 7px;font-size:11px;margin-left:6px}
       .chips span{display:inline-block;background:#fff;border:1px solid #ddd;border-radius:6px;padding:2px 8px;font-size:12px;margin:4px 4px 0 0}
       .note{font-size:12.5px;margin-top:5px} .block{margin:6px 0;font-size:13px}
@@ -676,9 +690,15 @@ function downloadPdf(p: ProgramFull, exercises: FitnessExercise[]) {
     ${p.recovery_between_sets ? `<div class="block"><b>Recupero tra serie:</b> ${esc(p.recovery_between_sets)}</div>` : ''}
     ${p.cooldown ? `<div class="block"><b>Defaticamento:</b> ${esc(p.cooldown)}</div>` : ''}
     ${p.note_athlete ? `<div class="block"><b>Nota preparatore:</b> ${esc(p.note_athlete)}</div>` : ''}
+    <script>
+      (function(){ var imgs=document.images,n=imgs.length,c=0;
+        function go(){ if(++c>=n) setTimeout(function(){window.print()},150); }
+        if(n===0){ setTimeout(function(){window.print()},150); }
+        else for(var i=0;i<n;i++){ if(imgs[i].complete) go(); else { imgs[i].onload=go; imgs[i].onerror=go; } }
+      })();
+    </script>
     </body></html>`
   const w = window.open('', '_blank')
   if (!w) return
   w.document.write(html); w.document.close(); w.focus()
-  setTimeout(() => w.print(), 400)
 }
