@@ -148,6 +148,13 @@ export interface Sponsor {
   created_at: string
 }
 
+export interface EventAttachment {
+  name: string
+  path: string
+  size?: number | null
+  mime?: string | null
+}
+
 export interface EventItem {
   id: string
   title: string
@@ -160,6 +167,7 @@ export interface EventItem {
   player_id?: number | null
   created_by?: string | null
   fitness_program_id?: string | null
+  attachments?: EventAttachment[] | null
 }
 
 export interface Task {
