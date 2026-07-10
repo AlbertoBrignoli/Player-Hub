@@ -1,10 +1,25 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import { supabase } from '../lib/supabase'
+import { toast } from '../lib/toast'
 import { useAuth } from '../auth/AuthContext'
 import { useAthlete } from '../lib/athlete'
 import { useCollection, insertRow, updateRow, deleteRow } from '../lib/useData'
 import { Modal, Field, Input, Textarea, Select, Empty, Spinner, ConfirmButton } from '../components/ui'
 import Icon from '../components/Icon'
-import type { EventItem } from '../lib/types'
+import type { EventItem, EventAttachment } from '../lib/types'
+
+const DOC_BUCKET = 'crm-documents'
+function attSize(n?: number | null) {
+  if (!n) return ''
+  if (n < 1024) return n + ' B'
+  if (n < 1048576) return (n / 1024).toFixed(0) + ' KB'
+  return (n / 1048576).toFixed(1) + ' MB'
+}
+async function openAttachment(a: EventAttachment) {
+  const { data, error } = await supabase.storage.from(DOC_BUCKET).createSignedUrl(a.path, 120)
+  if (error || !data?.signedUrl) { toast('Impossibile aprire il file', 'err'); return }
+  window.open(data.signedUrl, '_blank')
+}
 
 type TypeDef = { l: string; icon: string; c: string }
 // Palette contenuta e coerente: l'ICONA e' il segnale principale, il colore un accento.
@@ -193,6 +208,18 @@ function EvCard({ e, canEdit, onEdit, onDel, goto }: { e: EventItem; canEdit: bo
           </span>
         </div>
         {e.location && <div className="faint" style={{ fontSize: 13, marginTop: 7, display: 'inline-flex', alignItems: 'center', gap: 6 }}><Icon name="pin" size={13} /> {e.location}</div>}
+        {e.attachments && e.attachments.length > 0 && (
+          <div className="flex gap" style={{ marginTop: 11, flexWrap: 'wrap' }}>
+            {e.attachments.map(a => (
+              <button key={a.path} className="btn btn-sm" title={a.name}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, maxWidth: 240 }}
+                onClick={() => openAttachment(a)}>
+                <Icon name="download" size={13} />
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</span>
+              </button>
+            ))}
+          </div>
+        )}
         {(isTraining || canEdit) && (
           <div className="flex gap" style={{ marginTop: 12, flexWrap: 'wrap' }}>
             {isTraining && goto && <button className="btn btn-sm" style={{ background: t.c, color: '#111', fontWeight: 700 }} onClick={() => goto('fitness')}>Apri scheda →</button>}
@@ -210,8 +237,31 @@ function EventForm({ value, isAdmin, uid, athleteId, onClose, onSaved }: {
 }) {
   const [f, setF] = useState<Partial<EventItem>>({ ...value, start_at: value.start_at ? toLocal(value.start_at) : '' })
   const [busy, setBusy] = useState(false)
+  const [atts, setAtts] = useState<EventAttachment[]>(value.attachments || [])
+  const [uploading, setUploading] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
   const set = (k: keyof EventItem, v: any) => setF(p => ({ ...p, [k]: v }))
   const types = isAdmin ? ADMIN_TYPES : PLAYER_TYPES
+
+  async function onFiles(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || [])
+    if (!files.length) return
+    setUploading(true)
+    for (const file of files) {
+      const path = `event/${Date.now()}-${file.name.replace(/[^\w.\-]/g, '_')}`
+      const up = await supabase.storage.from(DOC_BUCKET).upload(path, file, { upsert: false })
+      if (up.error) { toast(up.error.message, 'err'); continue }
+      setAtts(prev => [...prev, { name: file.name, path, size: file.size, mime: file.type }])
+    }
+    setUploading(false)
+    if (fileRef.current) fileRef.current.value = ''
+  }
+
+  async function removeAtt(a: EventAttachment) {
+    setAtts(prev => prev.filter(x => x.path !== a.path))
+    // rimozione fisica: consentita solo agli admin dalle policy storage, quindi best-effort
+    await supabase.storage.from(DOC_BUCKET).remove([a.path])
+  }
 
   async function save() {
     if (!f.title || !f.start_at) return
@@ -219,6 +269,7 @@ function EventForm({ value, isAdmin, uid, athleteId, onClose, onSaved }: {
     const payload = {
       title: f.title, type: f.type || 'personale', start_at: new Date(f.start_at as string).toISOString(),
       end_at: f.end_at ? new Date(f.end_at as string).toISOString() : null, location: f.location || null, notes: f.notes || null,
+      attachments: atts,
     }
     if (f.id) await updateRow('crm_events', f.id, payload)
     else await insertRow('crm_events', { ...payload, player_id: athleteId, created_by: uid })
@@ -241,6 +292,29 @@ function EventForm({ value, isAdmin, uid, athleteId, onClose, onSaved }: {
         <Field label="Fine (facolt.)"><Input type="datetime-local" value={f.end_at as string || ''} onChange={e => set('end_at', e.target.value)} /></Field>
       </div>
       <Field label="Note"><Textarea value={f.notes || ''} onChange={e => set('notes', e.target.value)} /></Field>
+
+      <div style={{ marginTop: 4 }}>
+        <div style={{ fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: 'var(--text-dim)', fontWeight: 700, margin: '2px 0 8px' }}>Documenti allegati</div>
+        {atts.length > 0 && (
+          <div className="grid" style={{ gap: 6, marginBottom: 8 }}>
+            {atts.map(a => (
+              <div key={a.path} className="flex between" style={{ alignItems: 'center', gap: 8, border: '1px solid var(--border)', borderRadius: 10, padding: '8px 10px' }}>
+                <span className="flex gap" style={{ alignItems: 'center', minWidth: 0 }}>
+                  <Icon name="file" size={15} />
+                  <span style={{ fontSize: 13.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</span>
+                  {a.size ? <span className="faint" style={{ fontSize: 12, whiteSpace: 'nowrap' }}>· {attSize(a.size)}</span> : null}
+                </span>
+                <button className="btn btn-ghost btn-sm" onClick={() => removeAtt(a)}>Rimuovi</button>
+              </div>
+            ))}
+          </div>
+        )}
+        <button className="btn btn-sm" disabled={uploading} onClick={() => fileRef.current?.click()}>
+          <Icon name="upload" size={14} /> {uploading ? 'Carico…' : 'Aggiungi file'}
+        </button>
+        <input ref={fileRef} type="file" multiple hidden onChange={onFiles} />
+        <div className="faint" style={{ fontSize: 11.5, marginTop: 6 }}>Hotel, voli, biglietti, prenotazioni: l'atleta li apre e li scarica sul telefono.</div>
+      </div>
     </Modal>
   )
 }
