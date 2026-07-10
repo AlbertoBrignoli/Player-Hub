@@ -70,15 +70,17 @@ export default function Shell({ route, setRoute, right, children }: {
   return (
     <div className="app">
       <div className={`scrim ${open ? 'show' : ''}`} onClick={() => setOpen(false)} />
-      <aside className={`sidebar ${open ? 'open' : ''}`}>
-        <div className="brand">
+      <aside className={`sidebar ${open ? 'open' : ''}`}
+        style={{ paddingBottom: 'calc(26px + env(safe-area-inset-bottom))' }}>
+        <div className="brand" style={{ flexShrink: 0 }}>
           <img className="brand-logo-img" src="/icons/icon-192.png" alt="AUVI" />
           <div>
             <div className="brand-name">Player Hub</div>
             <div className="brand-sub">{athletes.find(a => a.api_player_id === athleteId)?.name || 'AUVI Agency'} · {APP_VERSION}</div>
           </div>
         </div>
-        <nav className="nav">
+        <nav className="nav"
+          style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}>
           {NAV.map(g => {
             const items = g.items.filter(i => (!i.adminOnly || isAdmin) && (!i.roles || (role && i.roles.includes(role))))
             if (!items.length) return null
@@ -95,7 +97,7 @@ export default function Shell({ route, setRoute, right, children }: {
             )
           })}
         </nav>
-        <div className="sidebar-foot">
+        <div className="sidebar-foot" style={{ flexShrink: 0 }}>
           <div className="user-chip">
             <div className="avatar">{initials(profile?.full_name || profile?.email)}</div>
             <div className="user-meta">
