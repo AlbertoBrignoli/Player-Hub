@@ -8,7 +8,7 @@ import Toaster from './Toaster'
 import Icon from './Icon'
 import { Modal, Field, Input } from './ui'
 
-export const APP_VERSION = 'v4.1'
+export const APP_VERSION = 'v4.2'
 
 export interface NavDef { key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[] }
 
@@ -41,6 +41,15 @@ export const NAV: { group: string; items: NavDef[] }[] = [
   ]},
 ]
 
+// Menu dedicato ai brand: solo media kit, scheda e chat.
+export const BRAND_NAV: { group: string; items: NavDef[] }[] = [
+  { group: 'Partnership', items: [
+    { key: 'mediakit', label: 'Media Kit', icon: 'activity' },
+    { key: 'brandcard', label: 'La mia scheda', icon: 'award' },
+    { key: 'messages', label: 'Messaggi', icon: 'message' },
+  ]},
+]
+
 const TITLES: Record<string, { t: string; s: string }> = {
   dashboard: { t: 'Dashboard', s: 'Quadro generale della gestione' },
   fitness: { t: 'Area Fitness', s: 'Programmi, allenamenti e feedback' },
@@ -56,16 +65,19 @@ const TITLES: Record<string, { t: string; s: string }> = {
   tasks: { t: 'Task', s: 'Attività condivise' },
   messages: { t: 'Messaggi', s: 'Comunicazione diretta' },
   settings: { t: 'Impostazioni', s: 'Password, accessi e configurazione' },
+  mediakit: { t: 'Media Kit', s: 'I numeri di Lorenzo Pirola' },
+  brandcard: { t: 'La mia scheda', s: 'Dati e referente del brand' },
 }
 
 export default function Shell({ route, setRoute, right, children }: {
   route: string; setRoute: (r: string) => void; right?: React.ReactNode; children: React.ReactNode
 }) {
-  const { profile, isAdmin, role, signOut } = useAuth()
+  const { profile, isAdmin, isBrand, role, signOut } = useAuth()
   const { athletes, athleteId, setAthleteId, canSwitch } = useAthlete()
   const [open, setOpen] = useState(false)
   const [pwOpen, setPwOpen] = useState(false)
   const title = TITLES[route] || { t: '', s: '' }
+  const nav = isBrand ? BRAND_NAV : NAV
 
   return (
     <div className="app">
@@ -81,7 +93,7 @@ export default function Shell({ route, setRoute, right, children }: {
         </div>
         <nav className="nav"
           style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}>
-          {NAV.map(g => {
+          {nav.map(g => {
             const items = g.items.filter(i => (!i.adminOnly || isAdmin) && (!i.roles || (role && i.roles.includes(role))))
             if (!items.length) return null
             return (
@@ -102,7 +114,7 @@ export default function Shell({ route, setRoute, right, children }: {
             <div className="avatar">{initials(profile?.full_name || profile?.email)}</div>
             <div className="user-meta">
               <div className="user-name">{profile?.full_name || profile?.email}</div>
-              <div className="user-role">{role === 'admin' ? 'AUVI · Advisor' : role === 'creator' ? 'Team · Creator' : role === 'preparatore' ? 'Preparatore Atletico' : 'Giocatore'}</div>
+              <div className="user-role">{role === 'admin' ? 'AUVI · Advisor' : role === 'creator' ? 'Team · Creator' : role === 'preparatore' ? 'Preparatore Atletico' : role === 'brand' ? 'Brand · Partner' : 'Giocatore'}</div>
             </div>
             <button className="btn-ghost" style={{ marginLeft: 'auto', padding: 6, color: 'var(--text-dim)' }} title="Imposta password" onClick={() => setPwOpen(true)}><Icon name="key" size={16} /></button>
           </div>
@@ -143,22 +155,30 @@ export default function Shell({ route, setRoute, right, children }: {
 
       {/* Tab bar mobile (iOS): pollice, zero frizioni. "Altro" apre il drawer completo. */}
       <nav className="tabbar">
-        {[
-          { key: 'dashboard', label: 'Home', icon: 'home' },
-          { key: 'editorial', label: 'Calendario', icon: 'calendar' },
-          { key: 'media', label: 'Media', icon: 'image' },
-          { key: 'messages', label: 'Chat', icon: 'message' },
-        ].map(t => (
+        {(isBrand
+          ? [
+              { key: 'mediakit', label: 'Numeri', icon: 'activity' },
+              { key: 'brandcard', label: 'Scheda', icon: 'award' },
+              { key: 'messages', label: 'Chat', icon: 'message' },
+            ]
+          : [
+              { key: 'dashboard', label: 'Home', icon: 'home' },
+              { key: 'editorial', label: 'Calendario', icon: 'calendar' },
+              { key: 'media', label: 'Media', icon: 'image' },
+              { key: 'messages', label: 'Chat', icon: 'message' },
+            ]).map(t => (
           <button key={t.key} className={`tab-item ${route === t.key ? 'active' : ''}`}
             onClick={() => { setRoute(t.key); setOpen(false) }}>
             <span className="tab-ico"><Icon name={t.icon} size={21} strokeWidth={1.7} /></span>
             <span className="tab-lbl">{t.label}</span>
           </button>
         ))}
-        <button className={`tab-item ${open ? 'active' : ''}`} onClick={() => setOpen(true)}>
-          <span className="tab-ico"><Icon name="menu" size={21} strokeWidth={1.7} /></span>
-          <span className="tab-lbl">Altro</span>
-        </button>
+        {!isBrand && (
+          <button className={`tab-item ${open ? 'active' : ''}`} onClick={() => setOpen(true)}>
+            <span className="tab-ico"><Icon name="menu" size={21} strokeWidth={1.7} /></span>
+            <span className="tab-lbl">Altro</span>
+          </button>
+        )}
       </nav>
 
       {pwOpen && <PasswordModal onClose={() => setPwOpen(false)} />}

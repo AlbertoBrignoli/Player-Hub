@@ -9,6 +9,7 @@ interface AuthState {
   loading: boolean
   isAdmin: boolean
   isTeam: boolean // admin o creator: chi prepara contenuti
+  isBrand: boolean
   role: Role | null
   playerApiId: number | null // atleta collegato a questo login (null per admin/creator)
   signOut: () => Promise<void>
@@ -51,6 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loading,
     isAdmin: profile?.role === 'admin',
     isTeam: profile?.role === 'admin' || profile?.role === 'creator',
+    isBrand: profile?.role === 'brand',
     role: profile?.role ?? null,
     playerApiId: profile?.player_api_id ?? null,
     signOut: async () => { await supabase.auth.signOut() },

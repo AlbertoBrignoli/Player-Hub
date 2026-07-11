@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { supabase, PLAYER_NAME } from '../lib/supabase'
 import { useAuth } from '../auth/AuthContext'
 import { useCollection, insertRow, deleteRow } from '../lib/useData'
@@ -11,7 +11,7 @@ export default function Settings() {
   const { rows, loading, reload } = useCollection<AllowedEmail>('crm_allowed_emails', { orderBy: 'created_at', ascending: true })
   const { rows: profiles } = useCollection<Profile>('crm_profiles', { orderBy: 'created_at', ascending: true })
   const [email, setEmail] = useState('')
-  const [role, setRole] = useState<'player' | 'admin' | 'creator'>('player')
+  const [role, setRole] = useState<'player' | 'admin' | 'creator' | 'brand'>('player')
   const [note, setNote] = useState('')
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
@@ -40,6 +40,7 @@ export default function Settings() {
   return (
     <div className="grid" style={{ gap: 16 }}>
       <SecurityCard />
+      <SocialCard />
 
       <div className="card">
         <div className="card-head"><div className="card-title">Chi può accedere a questo spazio</div></div>
@@ -48,7 +49,7 @@ export default function Settings() {
         </div>
         <div className="flex gap wrap" style={{ alignItems: 'flex-end' }}>
           <div style={{ flex: 2, minWidth: 200 }}><Field label="Email"><Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="giocatore@email.com" /></Field></div>
-          <div style={{ flex: 1, minWidth: 130 }}><Field label="Ruolo"><Select value={role} onChange={e => setRole(e.target.value as any)}><option value="player">Giocatore</option><option value="admin">AUVI · Advisor</option><option value="creator">Team · Creator</option></Select></Field></div>
+          <div style={{ flex: 1, minWidth: 130 }}><Field label="Ruolo"><Select value={role} onChange={e => setRole(e.target.value as any)}><option value="player">Giocatore</option><option value="admin">AUVI · Advisor</option><option value="creator">Team · Creator</option><option value="brand">Brand</option></Select></Field></div>
           <div style={{ flex: 1, minWidth: 130 }}><Field label="Nota"><Input value={note} onChange={e => setNote(e.target.value)} placeholder="es. Lorenzo" /></Field></div>
           <button className="btn btn-primary" style={{ marginBottom: 14 }} disabled={busy || !email} onClick={add}>+ Autorizza</button>
         </div>
@@ -61,7 +62,7 @@ export default function Settings() {
               {rows.map(r => (
                 <tr key={r.email}>
                   <td><b>{r.email}</b></td>
-                  <td><Badge tone={r.role === 'admin' ? 'blue' : r.role === 'creator' ? 'gold' : 'accent'}>{r.role === 'admin' ? 'AUVI · Advisor' : r.role === 'creator' ? 'Team · Creator' : 'Giocatore'}</Badge></td>
+                  <td><Badge tone={r.role === 'admin' ? 'blue' : r.role === 'creator' ? 'gold' : r.role === 'brand' ? 'green' : 'accent'}>{r.role === 'admin' ? 'AUVI · Advisor' : r.role === 'creator' ? 'Team · Creator' : r.role === 'brand' ? 'Brand' : 'Giocatore'}</Badge></td>
                   <td className="muted">{r.note || '—'}</td>
                   <td>{connected(r.email) ? <Badge tone="green">Attivo</Badge> : <Badge tone="gold">In attesa 1° login</Badge>}</td>
                   <td className="faint">{fmtDate(r.created_at)}</td>
@@ -81,6 +82,71 @@ export default function Settings() {
           <li>Fai il deploy su Vercel e autorizza qui l'email dell'atleta e di AUVI.</li>
         </ol>
       </div>
+    </div>
+  )
+}
+
+function SocialCard() {
+  const [followers, setFollowers] = useState('')
+  const [engagement, setEngagement] = useState('')
+  const [reach, setReach] = useState('')
+  const [ig, setIg] = useState('')
+  const [audience, setAudience] = useState('')
+  const [connected, setConnected] = useState(false)
+  const [loaded, setLoaded] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState('')
+
+  useEffect(() => {
+    supabase.from('player').select('*').limit(1).maybeSingle().then(({ data }) => {
+      const p = data as any
+      if (p) {
+        setFollowers(p.instagram_followers ?? ''); setEngagement(p.instagram_engagement ?? '')
+        setReach(p.instagram_reach ?? ''); setIg(p.instagram_url ?? ''); setAudience(p.audience_note ?? '')
+        setConnected(!!p.instagram_connected)
+      }
+      setLoaded(true)
+    })
+  }, [])
+
+  async function save() {
+    setBusy(true); setMsg('')
+    const { data: p } = await supabase.from('player').select('id').limit(1).maybeSingle()
+    const { error } = await supabase.from('player').update({
+      instagram_url: ig || null,
+      instagram_followers: followers ? Number(followers) : null,
+      instagram_engagement: engagement ? Number(engagement) : null,
+      instagram_reach: reach ? Number(reach) : null,
+      audience_note: audience || null,
+      instagram_connected: connected,
+    }).eq('id', (p as any)?.id)
+    setBusy(false)
+    setMsg(error ? error.message : 'Numeri social salvati — visibili ai brand nel Media Kit.')
+  }
+
+  if (!loaded) return null
+  return (
+    <div className="card">
+      <div className="card-head"><div className="card-title">Instagram &amp; numeri social</div></div>
+      <div className="faint" style={{ fontSize: 12.5, marginBottom: 14 }}>
+        Questi numeri compaiono nel Media Kit che vedono i brand. Inseriscili a mano (aggiornali ogni tanto).
+        La sincronizzazione automatica da Instagram richiede un collegamento con un account Business e l'app Meta:
+        posso attivarla in un secondo momento se vuoi.
+      </div>
+      <div className="flex gap wrap" style={{ alignItems: 'flex-end' }}>
+        <div style={{ flex: 2, minWidth: 220 }}><Field label="Profilo Instagram (URL)"><Input value={ig} onChange={e => setIg(e.target.value)} placeholder="https://www.instagram.com/…" /></Field></div>
+        <div style={{ flex: 1, minWidth: 120 }}><Field label="Follower"><Input type="number" value={followers} onChange={e => setFollowers(e.target.value)} placeholder="es. 85000" /></Field></div>
+        <div style={{ flex: 1, minWidth: 120 }}><Field label="Engagement %"><Input type="number" value={engagement} onChange={e => setEngagement(e.target.value)} placeholder="es. 4.2" /></Field></div>
+        <div style={{ flex: 1, minWidth: 120 }}><Field label="Reach medio/post"><Input type="number" value={reach} onChange={e => setReach(e.target.value)} placeholder="es. 42000" /></Field></div>
+      </div>
+      <Field label="Nota pubblico (demografia, mercati…)"><Input value={audience} onChange={e => setAudience(e.target.value)} placeholder="Es. 68% Italia · 22% Grecia · 18-34 anni" /></Field>
+      <div className="flex between wrap gap" style={{ alignItems: 'center' }}>
+        <label className="flex gap" style={{ gap: 8, fontSize: 12.5, color: 'var(--text-dim)', cursor: 'pointer' }}>
+          <input type="checkbox" checked={connected} onChange={e => setConnected(e.target.checked)} /> Segna come “profilo collegato”
+        </label>
+        <button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? 'Salvo…' : 'Salva numeri social'}</button>
+      </div>
+      {msg && <div className="msg-ok" style={{ marginTop: 12 }}>{msg}</div>}
     </div>
   )
 }

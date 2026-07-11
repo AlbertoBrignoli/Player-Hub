@@ -1,4 +1,19 @@
-export type Role = 'admin' | 'player' | 'creator' | 'preparatore'
+export type Role = 'admin' | 'player' | 'creator' | 'brand' | 'preparatore'
+
+export interface Brand {
+  id: string
+  owner_id: string | null
+  name: string
+  contact_name: string | null
+  contact_role: string | null
+  email: string | null
+  phone: string | null
+  website: string | null
+  logo_url: string | null
+  notes: string | null
+  created_at: string
+  updated_at: string
+}
 
 export interface Profile {
   id: string
@@ -28,6 +43,11 @@ export interface Player {
   birth_date: string | null
   instagram_url: string | null
   contact_email: string | null
+  instagram_followers: number | null
+  instagram_engagement: number | null
+  instagram_reach: number | null
+  audience_note: string | null
+  instagram_connected: boolean | null
   transfermarkt_url?: string | null
   contract_expiry?: string | null
   sofascore_url?: string | null
