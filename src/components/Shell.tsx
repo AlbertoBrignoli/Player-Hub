@@ -45,6 +45,7 @@ export const NAV: { group: string; items: NavDef[] }[] = [
 export const BRAND_NAV: { group: string; items: NavDef[] }[] = [
   { group: 'Partnership', items: [
     { key: 'mediakit', label: 'Media Kit', icon: 'activity' },
+    { key: 'campaigns', label: 'Campagne', icon: 'image' },
     { key: 'brandcard', label: 'La mia scheda', icon: 'award' },
     { key: 'messages', label: 'Messaggi', icon: 'message' },
   ]},
@@ -66,6 +67,7 @@ const TITLES: Record<string, { t: string; s: string }> = {
   messages: { t: 'Messaggi', s: 'Comunicazione diretta' },
   settings: { t: 'Impostazioni', s: 'Password, accessi e configurazione' },
   mediakit: { t: 'Media Kit', s: "I numeri dell'atleta" },
+  campaigns: { t: 'Campagne', s: 'Proponi contenuti e carica lo shooting' },
   brandcard: { t: 'La mia scheda', s: 'Dati e referente del brand' },
 }
 
@@ -162,6 +164,7 @@ export default function Shell({ route, setRoute, right, children }: {
         {(isBrand
           ? [
               { key: 'mediakit', label: 'Numeri', icon: 'activity' },
+              { key: 'campaigns', label: 'Campagne', icon: 'image' },
               { key: 'brandcard', label: 'Scheda', icon: 'award' },
               { key: 'messages', label: 'Chat', icon: 'message' },
             ]

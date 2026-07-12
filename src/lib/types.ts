@@ -249,6 +249,9 @@ export interface EditorialEntry {
     opponent_score?: number | null
   } | null
   copy_text: string | null
+  hashtags: string | null
+  brand_id: string | null
+  player_id?: number | null
   assets: EditorialAsset[]
   status: 'da_preparare' | 'copy_pronto' | 'grafica_caricata' | 'pronto' | 'pubblicato'
   notes: string | null

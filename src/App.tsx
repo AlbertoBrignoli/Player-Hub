@@ -22,6 +22,7 @@ import Settings from './modules/Settings'
 import PasswordSetup from './components/PasswordSetup'
 import MediaKit from './modules/MediaKit'
 import BrandCard from './modules/BrandCard'
+import BrandCampaigns from './modules/BrandCampaigns'
 
 export default function App() {
   const { session, profile, loading } = useAuth()
@@ -35,7 +36,7 @@ export default function App() {
 
   // Il brand ha un set di schermate dedicato e non accede alle aree interne.
   const isBrand = profile.role === 'brand'
-  const brandAllowed = ['mediakit', 'brandcard', 'messages']
+  const brandAllowed = ['mediakit', 'campaigns', 'brandcard', 'messages']
   const home = isBrand ? 'mediakit' : 'dashboard'
   let route = routeState ?? home
   if (isBrand && !brandAllowed.includes(route)) route = 'mediakit'
@@ -43,6 +44,7 @@ export default function App() {
   const view = (() => {
     switch (route) {
       case 'mediakit': return <MediaKit />
+      case 'campaigns': return <BrandCampaigns />
       case 'brandcard': return <BrandCard goto={setRoute} />
       case 'dashboard': return profile.role === 'preparatore' ? <FitnessCoachHome goto={setRoute} /> : <Dashboard goto={setRoute} />
       case 'performance': return <Performance goto={setRoute} />

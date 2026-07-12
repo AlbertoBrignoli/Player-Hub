@@ -250,9 +250,25 @@ function EntryModal({ entry, onClose, onChanged }: {
   const [err, setErr] = useState('')
   const [media, setMedia] = useState<MediaItem[]>([])
   const [urls, setUrls] = useState<Record<string, string>>({})
+  const [brandName, setBrandName] = useState<string | null>(null)
+  const [hCopied, setHCopied] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const materialRef = useRef<HTMLInputElement>(null)
   const mi = entry.match_info
+
+  useEffect(() => {
+    if (!entry.brand_id) { setBrandName(null); return }
+    supabase.from('crm_brands').select('name').eq('id', entry.brand_id).maybeSingle()
+      .then(({ data }) => setBrandName((data as any)?.name || 'Brand'))
+  }, [entry.brand_id])
+
+  async function copyHashtags() {
+    try {
+      await navigator.clipboard.writeText(entry.hashtags || '')
+      setHCopied(true); setTimeout(() => setHCopied(false), 1800)
+      toast('Hashtag copiati negli appunti')
+    } catch { /* ignore */ }
+  }
 
   const grafiche = media.filter(m => m.kind !== 'foto')
   const approvate = media.filter(m => m.kind === 'foto' && m.status === 'approvata')
@@ -424,6 +440,7 @@ function EntryModal({ entry, onClose, onChanged }: {
           <Badge tone={STATUSES[entry.status]?.tone}>{STATUSES[entry.status]?.label}</Badge>
           <Badge>{TYPES[entry.type]?.label || entry.type}</Badge>
           {entry.theme && <Badge>{THEMES[entry.theme] || entry.theme}</Badge>}
+          {brandName && <Badge tone="red">Contenuto {brandName}</Badge>}
           {entry.requested_by && <Badge tone="accent">Proposto da {PLAYER_FIRST}</Badge>}
           <span className="faint" style={{ fontSize: 12.5 }}>{fmtDate(entry.entry_date)}</span>
         </div>
@@ -463,6 +480,16 @@ function EntryModal({ entry, onClose, onChanged }: {
             placeholder="Scrivi qui il copy del post: didascalia, hashtag, tag…" />
           <div className="faint" style={{ fontSize: 11.5, marginTop: 4 }}>Copy modificabile da entrambi: il team lo prepara, tu lo approvi o lo ritocchi.</div>
         </div>
+
+        {entry.hashtags && (
+          <div>
+            <div className="flex between" style={{ marginBottom: 6 }}>
+              <div style={{ fontWeight: 650 }}>Hashtag {brandName ? `· da ${brandName}` : ''}</div>
+              <button className="btn btn-sm" onClick={copyHashtags}>{hCopied ? 'Copiati ✓' : 'Copia hashtag'}</button>
+            </div>
+            <div className="card" style={{ background: 'var(--bg-2)', fontSize: 13, color: 'var(--text-dim)', whiteSpace: 'pre-wrap' }}>{entry.hashtags}</div>
+          </div>
+        )}
 
         <div>
           <div className="flex between" style={{ marginBottom: 6 }}>
