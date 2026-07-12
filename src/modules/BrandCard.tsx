@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../auth/AuthContext'
 import { toast } from '../lib/toast'
@@ -47,7 +47,10 @@ export default function BrandCard({ goto }: { goto?: (r: string) => void }) {
       ) : brands.map(b => (
         <div className="card" key={b.id}>
           <div className="card-head">
-            <div className="card-title">{b.name}</div>
+            <div className="flex gap" style={{ alignItems: 'center', gap: 12 }}>
+              <BrandLogo url={b.logo_url} name={b.name} size={40} />
+              <div className="card-title">{b.name}</div>
+            </div>
             {goto && <button className="btn btn-sm" onClick={() => goto('messages')}><Icon name="message" size={13} /> Chat</button>}
           </div>
           <div className="grid g3" style={{ gap: 10 }}>
@@ -74,6 +77,26 @@ function BrandForm({ brand, ownerId, onSaved, goto }: { brand: Brand | null; own
   const [website, setWebsite] = useState(brand?.website || '')
   const [notes, setNotes] = useState(brand?.notes || '')
   const [busy, setBusy] = useState(false)
+  const [logoUrl, setLogoUrl] = useState(brand?.logo_url || '')
+  const [logoBusy, setLogoBusy] = useState(false)
+  const logoRef = useRef<HTMLInputElement>(null)
+
+  async function onLogo(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!brand) { toast('Salva prima la scheda, poi carica il logo.', 'err'); return }
+    setLogoBusy(true)
+    const ext = (file.name.split('.').pop() || 'png').toLowerCase()
+    const path = `${brand.id}/logo-${Date.now()}.${ext}`
+    const up = await supabase.storage.from('brand-logos').upload(path, file, { upsert: true })
+    if (up.error) { toast(up.error.message, 'err'); setLogoBusy(false); return }
+    const url = supabase.storage.from('brand-logos').getPublicUrl(path).data.publicUrl
+    const res = await supabase.from('crm_brands').update({ logo_url: url }).eq('id', brand.id)
+    setLogoBusy(false)
+    if (res.error) { toast(res.error.message, 'err'); return }
+    setLogoUrl(url); toast('Logo aggiornato')
+    if (logoRef.current) logoRef.current.value = ''
+  }
 
   async function save() {
     if (!name.trim()) { toast('Inserisci il nome del brand.', 'err'); return }
@@ -90,11 +113,20 @@ function BrandForm({ brand, ownerId, onSaved, goto }: { brand: Brand | null; own
 
   return (
     <div className="grid" style={{ gap: 16 }}>
-      <div className="card">
-        <div className="ed-kicker">La tua scheda</div>
-        <div className="ed-display" style={{ fontSize: 24, marginTop: 4 }}>Referente brand</div>
-        <div className="faint" style={{ fontSize: 12.5, marginTop: 6 }}>
-          Compila i dati: così l'atleta e AUVI sanno chi contattare. Per parlare direttamente, usa la chat.
+      <div className="card flex gap" style={{ alignItems: 'center', gap: 16 }}>
+        <BrandLogo url={logoUrl} name={name} size={72} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="ed-kicker">La tua scheda</div>
+          <div className="ed-display" style={{ fontSize: 24, marginTop: 4 }}>{name || 'Referente brand'}</div>
+          <div className="faint" style={{ fontSize: 12.5, marginTop: 4 }}>
+            Carica il tuo logo ufficiale: comparirà nella scheda e sui contenuti che proponi.
+          </div>
+        </div>
+        <div>
+          <button className="btn btn-sm" disabled={logoBusy || !brand} onClick={() => logoRef.current?.click()}>
+            <Icon name="upload" size={13} /> {logoBusy ? 'Carico…' : logoUrl ? 'Cambia logo' : 'Carica logo'}
+          </button>
+          <input ref={logoRef} type="file" accept="image/png,image/jpeg,image/svg+xml,image/webp" hidden onChange={onLogo} />
         </div>
       </div>
 
@@ -121,4 +153,25 @@ function BrandForm({ brand, ownerId, onSaved, goto }: { brand: Brand | null; own
 
 function Info({ k, v }: { k: string; v: any }) {
   return <div><div className="faint" style={{ fontSize: 11 }}>{k}</div><div style={{ fontWeight: 650, fontSize: 13.5 }}>{v || '—'}</div></div>
+}
+
+// Logo del brand: mostra l'immagine se caricata, altrimenti un monogramma pulito.
+export function BrandLogo({ url, name, size = 56 }: { url?: string | null; name?: string; size?: number }) {
+  const initials = (name || 'Brand').split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase() || 'B'
+  const radius = Math.round(size * 0.24)
+  if (url) {
+    return (
+      <div style={{ width: size, height: size, borderRadius: radius, overflow: 'hidden', flexShrink: 0, background: '#fff', border: '1px solid var(--border)', display: 'grid', placeItems: 'center' }}>
+        <img src={url} alt={name || 'logo'} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+      </div>
+    )
+  }
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: radius, flexShrink: 0,
+      display: 'grid', placeItems: 'center', color: '#fff',
+      background: 'linear-gradient(135deg,#1a1a1d,#0b0b0d)', border: '1px solid var(--border-2, var(--border))',
+      fontFamily: 'var(--font-display, inherit)', fontWeight: 800, fontSize: size * 0.4, letterSpacing: '.5px',
+    }}>{initials}</div>
+  )
 }
