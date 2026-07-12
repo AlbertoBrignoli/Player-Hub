@@ -481,6 +481,43 @@ button { cursor: pointer; border: none; background: none; -webkit-tap-highlight-
 .ed-more { background: none; border: none; cursor: pointer; font-size: 11px; font-weight: 600; color: var(--text-faint); }
 .ed-more:hover { color: var(--text); }
 
+/* ===== Media Kit brand · profilo atleta ===== */
+.mk-hero {
+  display: flex; align-items: center; gap: 20px; width: 100%; text-align: left;
+  padding: 22px 24px; border-radius: 22px; cursor: pointer;
+  border: 1px solid var(--border-2, var(--border));
+  background:
+    radial-gradient(120% 140% at 100% 0%, color-mix(in srgb, var(--club, #e10b17) 16%, transparent) 0%, transparent 55%),
+    linear-gradient(180deg, var(--card, #141416), var(--bg-2, #0e0e10));
+  transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+.mk-hero:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--club, #e10b17) 55%, var(--border)); box-shadow: 0 12px 40px -18px rgba(0,0,0,.7); }
+.mk-hero:active { transform: translateY(0); }
+.mk-hero-photo { width: 96px; height: 96px; border-radius: 18px; object-fit: cover; object-position: top; border: 1px solid var(--border-2, var(--border)); flex-shrink: 0; }
+.mk-hero-body { flex: 1; min-width: 0; }
+.mk-hero-name { font-family: var(--font-display, inherit); font-weight: 800; font-size: 30px; line-height: 1.05; margin: 4px 0 4px; letter-spacing: -.5px; }
+.mk-hero-meta { color: var(--text-dim); font-size: 13.5px; }
+.mk-hero-facts { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 14px; }
+.mk-hero-cta { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; align-self: flex-end;
+  font-size: 12px; font-weight: 700; letter-spacing: .3px; color: var(--club, #e10b17); }
+@media (max-width: 640px) {
+  .mk-hero { flex-wrap: wrap; padding: 18px; gap: 14px; }
+  .mk-hero-photo { width: 72px; height: 72px; }
+  .mk-hero-name { font-size: 24px; }
+  .mk-hero-cta { align-self: center; }
+}
+
+.mk-tabs { display: inline-flex; gap: 4px; padding: 4px; border-radius: 14px; background: var(--bg-2, #0e0e10); border: 1px solid var(--border); align-self: flex-start; }
+.mk-tab { display: inline-flex; align-items: center; gap: 6px; border: none; cursor: pointer; background: none;
+  padding: 8px 14px; border-radius: 10px; font-size: 13px; font-weight: 650; color: var(--text-dim); transition: background .12s ease, color .12s ease; }
+.mk-tab:hover { color: var(--text); }
+.mk-tab.active { background: var(--card, #1a1a1d); color: var(--text); box-shadow: 0 1px 0 rgba(255,255,255,.04) inset; }
+
+.mk-ig:hover { border-color: color-mix(in srgb, var(--club, #e10b17) 45%, var(--border)); }
+.mk-social-head { display: flex; align-items: center; gap: 16px; }
+.mk-ig-badge { width: 52px; height: 52px; border-radius: 15px; display: grid; place-items: center; flex-shrink: 0;
+  color: #fff; background: linear-gradient(135deg, #f9ce34 0%, #ee2a7b 45%, #6228d7 100%); }
+
 /* Card identità */
 .ed-id-card { background: #141416; border: 1px solid var(--border); border-radius: 22px; padding: 20px; }
 .ed-id-name { font-family: var(--font-display); font-weight: 800; font-size: 27px; line-height: .94; text-transform: uppercase; margin-top: 3px; }

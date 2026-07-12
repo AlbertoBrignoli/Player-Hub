@@ -13,14 +13,17 @@ export default function BrandCard({ goto }: { goto?: (r: string) => void }) {
   const [loading, setLoading] = useState(true)
   const [brands, setBrands] = useState<Brand[]>([])
 
+  const uid = session?.user.id
   async function load() {
+    // Attende che la sessione sia pronta: senza uid la query brand tornerebbe vuota.
+    if (isBrand && !uid) return
     let q = supabase.from('crm_brands').select('*').order('created_at')
-    if (isBrand) q = q.eq('owner_id', session?.user.id)
+    if (isBrand) q = q.eq('owner_id', uid)
     const { data } = await q
     setBrands((data as Brand[]) || [])
     setLoading(false)
   }
-  useEffect(() => { load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { load() }, [uid, isBrand]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) return <Spinner />
 

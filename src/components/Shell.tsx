@@ -65,7 +65,7 @@ const TITLES: Record<string, { t: string; s: string }> = {
   tasks: { t: 'Task', s: 'Attività condivise' },
   messages: { t: 'Messaggi', s: 'Comunicazione diretta' },
   settings: { t: 'Impostazioni', s: 'Password, accessi e configurazione' },
-  mediakit: { t: 'Media Kit', s: 'I numeri di Lorenzo Pirola' },
+  mediakit: { t: 'Media Kit', s: "I numeri dell'atleta" },
   brandcard: { t: 'La mia scheda', s: 'Dati e referente del brand' },
 }
 
@@ -76,7 +76,11 @@ export default function Shell({ route, setRoute, right, children }: {
   const { athletes, athleteId, setAthleteId, canSwitch } = useAthlete()
   const [open, setOpen] = useState(false)
   const [pwOpen, setPwOpen] = useState(false)
-  const title = TITLES[route] || { t: '', s: '' }
+  const baseTitle = TITLES[route] || { t: '', s: '' }
+  const athleteName = athletes.find(a => a.api_player_id === athleteId)?.name
+  const title = route === 'mediakit' && athleteName
+    ? { t: baseTitle.t, s: `I numeri di ${athleteName}` }
+    : baseTitle
   const nav = isBrand ? BRAND_NAV : NAV
 
   return (
