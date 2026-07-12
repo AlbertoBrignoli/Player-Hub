@@ -5,6 +5,7 @@ import { useAthlete } from '../lib/athlete'
 import { Modal, Field, Input, Textarea, Select, Spinner, Empty, Badge } from '../components/ui'
 import Icon from '../components/Icon'
 import { fmtDate } from '../lib/format'
+import { toast } from '../lib/toast'
 import type { FitnessProgram, FitnessExercise, FitnessFeedback, FitnessLibraryItem } from '../lib/types'
 
 const ACCENT = '#8b93a1' // neutro (indipendente dai colori squadra)
@@ -426,7 +427,11 @@ function ProgramDetail({ program, athleteId, onClose, onSaved }: {
       footer={<>
         {program.pdf_path
           ? <button className="btn" onClick={async () => { const { data } = await supabase.storage.from('crm-media').createSignedUrl(program.pdf_path!, 300); if (data?.signedUrl) window.open(data.signedUrl, '_blank') }}><Icon name="download" size={14} /> Apri scheda PDF</button>
-          : <button className="btn" onClick={() => downloadPdf(program, exercises)}><Icon name="download" size={14} /> Scarica PDF</button>}
+          : <button className="btn" onClick={async () => {
+              toast('Preparo il PDF…')
+              try { await downloadPdf(program, exercises); toast('PDF pronto — salvalo dove vuoi') }
+              catch { toast('Non riesco a generare il PDF', 'err') }
+            }}><Icon name="download" size={14} /> Scarica PDF</button>}
       </>}>
       <div className="faint" style={{ fontSize: 13 }}>
         {program.program_date ? fmtDate(program.program_date) : ''}{program.start_time ? ` · ${program.start_time.slice(0, 5)}` : ''}{program.duration_min ? ` · ${program.duration_min} min` : ''}{program.intensity ? ` · intensità ${program.intensity}` : ''}
@@ -652,53 +657,75 @@ function SchedaPreview({ form, exercises, athleteName }: { form: Partial<Fitness
   )
 }
 
-/* ========================= PDF (stampa) ========================= */
+/* ========================= PDF (download reale, jsPDF) ========================= */
 
-function downloadPdf(p: ProgramFull, exercises: FitnessExercise[]) {
-  const esc = (s: any) => String(s ?? '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' } as any)[c])
-  const rows = exercises.map((e, i) => `
-    <div class="ex">
-      ${e.image_url ? `<img class="eximg" src="${esc(e.image_url)}">` : ''}
-      <div class="exbody">
-        <div class="exh">${i + 1}. ${esc(e.name)} ${e.muscle_group ? `<span class="mg">${esc(e.muscle_group)}</span>` : ''}</div>
-        <div class="chips">
-          ${e.sets != null ? `<span>${e.sets} serie</span>` : ''}${e.reps ? `<span>${esc(e.reps)} rip</span>` : ''}
-          ${e.load ? `<span>carico ${esc(e.load)}</span>` : ''}${e.isometry_time ? `<span>iso ${esc(e.isometry_time)}</span>` : ''}
-          ${e.recovery ? `<span>rec ${esc(e.recovery)}</span>` : ''}${e.side ? `<span>${esc(e.side)}</span>` : ''}
-        </div>
-        ${e.technical_notes ? `<div class="note"><b>Note:</b> ${esc(e.technical_notes)}</div>` : ''}
-        ${e.mistakes ? `<div class="note"><b>Da evitare:</b> ${esc(e.mistakes)}</div>` : ''}
-      </div>
-    </div>`).join('')
-  const html = `<!doctype html><html><head><meta charset="utf-8"><title>${esc(p.name)}</title>
-    <style>
-      body{font-family:-apple-system,Arial,sans-serif;color:#111;max-width:720px;margin:24px auto;padding:0 20px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-      h1{font-size:22px;margin:0 0 4px} .sub{color:#666;font-size:13px;margin-bottom:16px}
-      .focus{color:#555;font-weight:700;margin:8px 0}
-      .ex{border-left:3px solid #8b93a1;padding:8px 12px;margin:10px 0;background:#f6f7f8;border-radius:6px;display:flex;gap:12px;align-items:flex-start}
-      .eximg{width:84px;height:84px;object-fit:cover;border-radius:8px;background:#fff;flex:0 0 auto}
-      .exbody{flex:1;min-width:0}
-      .exh{font-weight:700} .mg{background:#eee;border-radius:6px;padding:1px 7px;font-size:11px;margin-left:6px}
-      .chips span{display:inline-block;background:#fff;border:1px solid #ddd;border-radius:6px;padding:2px 8px;font-size:12px;margin:4px 4px 0 0}
-      .note{font-size:12.5px;margin-top:5px} .block{margin:6px 0;font-size:13px}
-    </style></head><body>
-    <h1>${esc(p.name)}</h1>
-    <div class="sub">${p.program_date ? esc(fmtDate(p.program_date)) : ''}${p.start_time ? ' · ' + esc(p.start_time.slice(0, 5)) : ''}${p.duration_min ? ' · ' + p.duration_min + ' min' : ''}${p.intensity ? ' · intensità ' + esc(p.intensity) : ''}</div>
-    ${p.focus ? `<div class="focus">${esc(p.focus)}</div>` : ''}${p.objective ? `<div class="block">${esc(p.objective)}</div>` : ''}
-    ${p.warmup ? `<div class="block"><b>Riscaldamento:</b> ${esc(p.warmup)}</div>` : ''}
-    <h3>Esercizi</h3>${rows}
-    ${p.recovery_between_sets ? `<div class="block"><b>Recupero tra serie:</b> ${esc(p.recovery_between_sets)}</div>` : ''}
-    ${p.cooldown ? `<div class="block"><b>Defaticamento:</b> ${esc(p.cooldown)}</div>` : ''}
-    ${p.note_athlete ? `<div class="block"><b>Nota preparatore:</b> ${esc(p.note_athlete)}</div>` : ''}
-    <script>
-      (function(){ var imgs=document.images,n=imgs.length,c=0;
-        function go(){ if(++c>=n) setTimeout(function(){window.print()},150); }
-        if(n===0){ setTimeout(function(){window.print()},150); }
-        else for(var i=0;i<n;i++){ if(imgs[i].complete) go(); else { imgs[i].onload=go; imgs[i].onerror=go; } }
-      })();
-    </script>
-    </body></html>`
-  const w = window.open('', '_blank')
-  if (!w) return
-  w.document.write(html); w.document.close(); w.focus()
+// Carica un'immagine come dataURL (per inserirla nel PDF). Ritorna null se non riesce.
+async function imgToData(url: string): Promise<{ data: string; w: number; h: number } | null> {
+  try {
+    const res = await fetch(url)
+    const blob = await res.blob()
+    const data = await new Promise<string>((ok, no) => { const r = new FileReader(); r.onload = () => ok(r.result as string); r.onerror = no; r.readAsDataURL(blob) })
+    const dim = await new Promise<{ w: number; h: number }>((ok) => { const im = new Image(); im.onload = () => ok({ w: im.width, h: im.height }); im.onerror = () => ok({ w: 1, h: 1 }); im.src = data })
+    return { data, ...dim }
+  } catch { return null }
+}
+
+async function downloadPdf(p: ProgramFull, exercises: FitnessExercise[]) {
+  const { jsPDF } = await import('jspdf')
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' })
+  const W = 210, M = 16
+  const maxW = W - M * 2
+  let y = M
+
+  const ink = (r: number, g: number, b: number) => doc.setTextColor(r, g, b)
+  function ensure(h: number) { if (y + h > 297 - M) { doc.addPage(); y = M } }
+  function text(str: string, size: number, style: 'normal' | 'bold' = 'normal', color: [number, number, number] = [17, 17, 17], indent = 0) {
+    if (!str) return
+    doc.setFont('helvetica', style); doc.setFontSize(size); ink(...color)
+    const lines = doc.splitTextToSize(str, maxW - indent)
+    for (const ln of lines) { ensure(size * 0.42 + 1.5); doc.text(ln, M + indent, y); y += size * 0.42 + 1.5 }
+  }
+
+  // Testata
+  text(p.name || 'Programma', 18, 'bold')
+  const sub = [p.program_date ? fmtDate(p.program_date) : '', p.start_time ? p.start_time.slice(0, 5) : '', p.duration_min ? p.duration_min + ' min' : '', p.intensity ? 'intensità ' + p.intensity : ''].filter(Boolean).join('  ·  ')
+  text(sub, 10, 'normal', [110, 110, 110]); y += 1
+  if (p.focus) text(p.focus, 11, 'bold', [70, 70, 70])
+  if (p.objective) text(p.objective, 10.5)
+  if (p.warmup) { y += 1; text('Riscaldamento', 10, 'bold', [90, 90, 90]); text(p.warmup, 10.5) }
+  y += 3
+
+  // Esercizi
+  ensure(8); doc.setFont('helvetica', 'bold'); doc.setFontSize(13); ink(17, 17, 17); doc.text('Esercizi', M, y); y += 6
+
+  const images = await Promise.all(exercises.map(e => e.image_url ? imgToData(e.image_url) : Promise.resolve(null)))
+  exercises.forEach((e, i) => {
+    const img = images[i]
+    const blockTop = y
+    ensure(22)
+    const textX = img ? M + 26 : M
+    const tw = maxW - (img ? 26 : 0)
+    // titolo
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(11.5); ink(17, 17, 17)
+    for (const ln of doc.splitTextToSize(`${i + 1}. ${e.name}${e.muscle_group ? '  (' + e.muscle_group + ')' : ''}`, tw)) { ensure(6); doc.text(ln, textX, y); y += 5 }
+    // chip riga
+    const chips = [e.sets != null ? `${e.sets} serie` : '', e.reps ? `${e.reps} rip` : '', e.load ? `carico ${e.load}` : '', e.isometry_time ? `iso ${e.isometry_time}` : '', e.recovery ? `rec ${e.recovery}` : '', e.side || ''].filter(Boolean).join('  ·  ')
+    if (chips) { doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); ink(90, 90, 90); for (const ln of doc.splitTextToSize(chips, tw)) { ensure(5); doc.text(ln, textX, y); y += 4.5 } }
+    if (e.technical_notes) { doc.setFontSize(9.5); ink(60, 60, 60); for (const ln of doc.splitTextToSize('Note: ' + e.technical_notes, tw)) { ensure(5); doc.text(ln, textX, y); y += 4.3 } }
+    if (e.mistakes) { doc.setFontSize(9.5); ink(150, 60, 60); for (const ln of doc.splitTextToSize('Da evitare: ' + e.mistakes, tw)) { ensure(5); doc.text(ln, textX, y); y += 4.3 } }
+    // immagine a sinistra
+    if (img) {
+      const side = 22, ratio = img.h / (img.w || 1)
+      const ih = Math.min(side, side * ratio), iw = ih / ratio
+      try { doc.addImage(img.data, 'JPEG', M, blockTop, iw, ih) } catch { /* skip */ }
+    }
+    y += 4
+  })
+
+  if (p.recovery_between_sets) text('Recupero tra serie: ' + p.recovery_between_sets, 10.5)
+  if (p.cooldown) text('Defaticamento: ' + p.cooldown, 10.5)
+  if (p.note_athlete) { y += 1; text('Nota preparatore: ' + p.note_athlete, 10.5, 'bold', [80, 80, 80]) }
+
+  const fname = `${(p.name || 'programma').replace(/[^\w\- ]/g, '')} ${p.program_date || ''}`.trim() + '.pdf'
+  doc.save(fname)
 }
