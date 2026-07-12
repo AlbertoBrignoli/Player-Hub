@@ -25,18 +25,36 @@ function TrainerFitness() {
   const { athleteId, athletes } = useAthlete()
   const { session } = useAuth()
   const [programs, setPrograms] = useState<FitnessProgram[]>([])
+  const [trash, setTrash] = useState<FitnessProgram[]>([])
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState<FitnessProgram | 'new' | null>(null)
 
   async function load() {
-    if (!athleteId) { setPrograms([]); setLoading(false); return }
+    if (!athleteId) { setPrograms([]); setTrash([]); setLoading(false); return }
     setLoading(true)
-    const { data } = await supabase.from('fitness_programs').select('*')
-      .eq('player_id', athleteId).order('program_date', { ascending: false, nullsFirst: false })
+    const [{ data }, { data: del }] = await Promise.all([
+      supabase.from('fitness_programs').select('*')
+        .eq('player_id', athleteId).is('deleted_at', null)
+        .order('program_date', { ascending: false, nullsFirst: false }),
+      supabase.from('fitness_programs').select('*')
+        .eq('player_id', athleteId).not('deleted_at', 'is', null)
+        .order('deleted_at', { ascending: false }),
+    ])
     setPrograms((data as FitnessProgram[]) || [])
+    setTrash((del as FitnessProgram[]) || [])
     setLoading(false)
   }
   useEffect(() => { load() }, [athleteId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function restore(p: FitnessProgram) {
+    await supabase.from('fitness_programs').update({ deleted_at: null }).eq('id', p.id)
+    load()
+  }
+  async function purge(p: FitnessProgram) {
+    if (!confirm(`Eliminare DEFINITIVAMENTE "${p.name}"? Questa operazione non è reversibile.`)) return
+    await supabase.from('fitness_programs').delete().eq('id', p.id)
+    load()
+  }
 
   if (loading) return <Spinner />
   if (!athleteId) return <Empty title="Nessun atleta selezionato" hint="Seleziona un atleta dal menù in alto per gestire i suoi programmi." />
@@ -61,6 +79,36 @@ function TrainerFitness() {
 
       <ProgramList title="Schede pubblicate" tone="published" items={pubblicate} onOpen={setEditing} />
       <ProgramList title="Schede in bozza" tone="draft" items={bozze} onOpen={setEditing} />
+
+      {trash.length > 0 && (
+        <div style={{ marginTop: 8, marginBottom: 22 }}>
+          <div style={label}>Cestino · {trash.length}</div>
+          <div className="faint" style={{ fontSize: 12.5, margin: '0 0 10px' }}>
+            I programmi eliminati restano qui e si possono ripristinare in qualsiasi momento.
+          </div>
+          <div style={grid(260)}>
+            {trash.map(p => (
+              <div key={p.id} className="card" style={{ padding: 16, border: '1px dashed var(--border)', opacity: .85 }}>
+                <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div style={{ fontWeight: 700 }}>{p.name}</div>
+                  <Badge tone="red">Eliminato</Badge>
+                </div>
+                <div className="faint" style={{ fontSize: 12.5, marginTop: 6 }}>
+                  {p.program_date ? fmtDate(p.program_date) : 'Data da definire'}{p.start_time ? ` · ${p.start_time.slice(0, 5)}` : ''}
+                </div>
+                <div className="flex gap" style={{ marginTop: 12 }}>
+                  <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }} onClick={() => restore(p)}>
+                    <Icon name="rotate-ccw" size={14} /> Ripristina
+                  </button>
+                  <button className="btn" style={{ color: '#e0574a' }} onClick={() => purge(p)} title="Elimina definitivamente">
+                    <Icon name="trash" size={14} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {editing && (
         <ProgramEditor
@@ -176,9 +224,9 @@ function ProgramEditor({ program, athleteId, athleteName, trainerId, onClose, on
 
   async function del() {
     if (isNew) return
-    if (!confirm('Eliminare definitivamente questo programma? L\'operazione non è reversibile.')) return
+    if (!confirm('Spostare questo programma nel cestino? Potrai ripristinarlo dal cestino in fondo alla pagina.')) return
     setBusy('draft')
-    await supabase.from('fitness_programs').delete().eq('id', (program as FitnessProgram).id)
+    await supabase.from('fitness_programs').update({ deleted_at: new Date().toISOString() }).eq('id', (program as FitnessProgram).id)
     setBusy(''); onSaved()
   }
 
@@ -189,7 +237,7 @@ function ProgramEditor({ program, athleteId, athleteName, trainerId, onClose, on
       onClose={onClose}
       footer={
         <>
-          {!isNew && <button className="btn" style={{ color: '#e0574a' }} onClick={del} disabled={!!busy}>Elimina</button>}
+          {!isNew && <button className="btn" style={{ color: '#e0574a' }} onClick={del} disabled={!!busy}>Sposta nel cestino</button>}
           <button className="btn" onClick={() => save('draft')} disabled={!!busy}>{busy === 'draft' ? 'Salvo…' : 'Salva bozza'}</button>
           <button className="btn btn-primary" onClick={() => save('published')} disabled={!!busy}>
             {busy === 'published' ? 'Pubblico…' : 'Pubblica in agenda'}
@@ -349,7 +397,8 @@ function AthleteFitness({ goto }: { goto?: (r: string) => void }) {
     setLoading(true)
     const { data } = await supabase.from('fitness_programs')
       .select('*, fitness_exercises(*), fitness_feedback(*)')
-      .eq('player_id', athleteId).eq('status', 'published').order('program_date', { ascending: true })
+      .eq('player_id', athleteId).eq('status', 'published').is('deleted_at', null)
+      .order('program_date', { ascending: true })
     setPrograms((data as ProgramFull[]) || [])
     setLoading(false)
   }

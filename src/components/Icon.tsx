@@ -28,6 +28,7 @@ const P: Record<string, React.ReactNode> = {
   x: <path d="M18 6 6 18M6 6l12 12" />,
   check: <path d="M20 6.5 9 17.5l-5-5" />,
   star: <path d="m12 2.8 2.9 5.9 6.5 1-4.7 4.5 1.1 6.4L12 17.6l-5.8 3-1.1-6.4L.4 9.7l6.5-1z" />,
+  'rotate-ccw': <><path d="M3 3v6h6" /><path d="M3.5 15a9 9 0 1 0 2.1-9.4L3 9" /></>,
   trash: <><path d="M3 6.5h18" /><path d="M8 6.5v-2a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><path d="M19 6.5V19a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6.5" /><path d="M10 11v6M14 11v6" /></>,
   menu: <path d="M4 6.5h16M4 12h16M4 17.5h16" />,
   ball: <><circle cx="12" cy="12" r="9" /><path d="m12 7.2 4.6 3.3-1.8 5.4H9.2l-1.8-5.4z" /><path d="M12 3v4.2M19.5 8l-2.9 2.5M17 19.3l-2.2-3.4M7 19.3l2.2-3.4M4.5 8l2.9 2.5" /></>,
