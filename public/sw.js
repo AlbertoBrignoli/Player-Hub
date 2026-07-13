@@ -4,8 +4,8 @@ self.addEventListener('activate', e => e.waitUntil(self.clients.claim()))
 
 self.addEventListener('push', e => {
   let d = {}
-  try { d = e.data ? e.data.json() : {} } catch { d = { title: 'Player Hub' } }
-  e.waitUntil(self.registration.showNotification(d.title || 'Player Hub', {
+  try { d = e.data ? e.data.json() : {} } catch { d = { title: 'AUVI Player' } }
+  e.waitUntil(self.registration.showNotification(d.title || 'AUVI Player', {
     body: d.body || '',
     icon: '/icons/icon-192.png',
     badge: '/icons/icon-192.png',

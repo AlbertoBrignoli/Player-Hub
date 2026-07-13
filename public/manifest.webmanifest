@@ -1,6 +1,6 @@
 {
-  "name": "AUVI · Player Hub",
-  "short_name": "Player Hub",
+  "name": "AUVI Player",
+  "short_name": "AUVI Player",
   "description": "Spazio di gestione riservato — Giocatore × AUVI Agency",
   "start_url": "/",
   "display": "standalone",

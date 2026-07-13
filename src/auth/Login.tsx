@@ -51,7 +51,7 @@ export default function Login() {
     <div className="login-wrap">
       <div className="login-card">
         <img className="login-logo-img" src="/icons/icon-192.png" alt="AUVI — All Around The Game" />
-        <div className="login-title">Player Hub</div>
+        <div className="login-title">AUVI Player</div>
         <div className="login-sub">Spazio riservato · {PLAYER_NAME} × {AGENCY_NAME}</div>
 
         {sent ? (
