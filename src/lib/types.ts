@@ -1,19 +1,4 @@
-export type Role = 'admin' | 'player' | 'creator' | 'brand' | 'preparatore'
-
-export interface Brand {
-  id: string
-  owner_id: string | null
-  name: string
-  contact_name: string | null
-  contact_role: string | null
-  email: string | null
-  phone: string | null
-  website: string | null
-  logo_url: string | null
-  notes: string | null
-  created_at: string
-  updated_at: string
-}
+export type Role = 'admin' | 'player' | 'creator' | 'preparatore' | 'brand'
 
 export interface Profile {
   id: string
@@ -43,11 +28,6 @@ export interface Player {
   birth_date: string | null
   instagram_url: string | null
   contact_email: string | null
-  instagram_followers: number | null
-  instagram_engagement: number | null
-  instagram_reach: number | null
-  audience_note: string | null
-  instagram_connected: boolean | null
   transfermarkt_url?: string | null
   contract_expiry?: string | null
   sofascore_url?: string | null
@@ -188,6 +168,9 @@ export interface EventItem {
   created_by?: string | null
   fitness_program_id?: string | null
   attachments?: EventAttachment[] | null
+  assignee_role?: string | null
+  request_status?: string | null
+  resolved_at?: string | null
 }
 
 export interface Task {
@@ -209,6 +192,14 @@ export interface Message {
   sender_role: string | null
   body: string
   created_at: string
+  player_id?: number | null
+  channel?: string | null
+}
+
+export interface BrandLite {
+  id: string
+  name: string
+  player_id?: number | null
 }
 
 export interface AllowedEmail {
@@ -249,9 +240,6 @@ export interface EditorialEntry {
     opponent_score?: number | null
   } | null
   copy_text: string | null
-  hashtags: string | null
-  brand_id: string | null
-  player_id?: number | null
   assets: EditorialAsset[]
   status: 'da_preparare' | 'copy_pronto' | 'grafica_caricata' | 'pronto' | 'pubblicato'
   notes: string | null
