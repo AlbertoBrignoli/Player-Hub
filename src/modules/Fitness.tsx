@@ -184,6 +184,18 @@ function ProgramEditor({ program, athleteId, athleteName, trainerId, onClose, on
   }
   const addFromLibrary = (item: FitnessLibraryItem) =>
     setExercises(prev => [...prev, { ...emptyExercise(), name: item.name, muscle_group: item.muscle_group || '', image_url: item.image_url || '' }])
+
+  // Salva l'esercizio (con la sua immagine) nella libreria personale, per riusarlo nelle prossime schede.
+  async function saveToLibrary(ex: FitnessExercise) {
+    if (!ex.name?.trim()) { toast('Dai un nome all\'esercizio prima di salvarlo in libreria.', 'err'); return }
+    if (!ex.image_url?.trim()) { toast('Aggiungi l\'immagine dell\'esercizio prima di salvarlo in libreria.', 'err'); return }
+    const { error } = await supabase.from('fitness_exercise_library').insert({
+      name: ex.name.trim(), muscle_group: ex.muscle_group || null,
+      image_url: ex.image_url, video_url: ex.video_url || null, archived: false,
+    })
+    if (error) toast(error.message, 'err')
+    else toast('Salvato in libreria')
+  }
   const onDrop = (target: number) => {
     if (dragIdx === null || dragIdx === target) return
     const copy = [...exercises]; const [m] = copy.splice(dragIdx, 1); copy.splice(target, 0, m)
@@ -285,6 +297,7 @@ function ProgramEditor({ program, athleteId, athleteName, trainerId, onClose, on
                 <div className="flex gap">
                   <button className="btn btn-sm" onClick={() => move(i, -1)} disabled={i === 0}>↑</button>
                   <button className="btn btn-sm" onClick={() => move(i, 1)} disabled={i === exercises.length - 1}>↓</button>
+                  {ex.image_url && <button className="btn btn-sm" title="Salva in libreria per riusarlo" onClick={() => saveToLibrary(ex)}><Icon name="archive" size={12} /> In libreria</button>}
                   <button className="btn btn-sm" onClick={() => setExercises(exercises.filter((_, idx) => idx !== i))}>Rimuovi</button>
                 </div>
               </div>
@@ -640,7 +653,7 @@ function LibraryPicker({ onClose, onPick }: { onClose: () => void; onPick: (i: F
   const [q, setQ] = useState(''); const [cat, setCat] = useState(''); const [eq, setEq] = useState(''); const [diff, setDiff] = useState('')
   const [cats, setCats] = useState<string[]>([]); const [eqs, setEqs] = useState<string[]>([])
   useEffect(() => {
-    supabase.from('fitness_exercise_library').select('*').order('name').then(({ data }) => {
+    supabase.from('fitness_exercise_library').select('*').eq('archived', false).order('name').then(({ data }) => {
       const d = (data as FitnessLibraryItem[]) || []
       setItems(d)
       setCats([...new Set(d.map(x => x.category).filter(Boolean) as string[])].sort())
@@ -669,7 +682,13 @@ function LibraryPicker({ onClose, onPick }: { onClose: () => void; onPick: (i: F
               <div className="faint" style={{ fontSize: 11 }}>{x.muscle_group || ''}</div>
             </button>
           ))}
-          {filtered.length === 0 && <div className="faint">Nessun esercizio trovato.</div>}
+          {filtered.length === 0 && (
+            <div className="faint" style={{ gridColumn: '1 / -1', padding: '10px 2px' }}>
+              {items.length === 0
+                ? 'La tua libreria è vuota. Aggiungi un esercizio nella scheda con la sua immagine e premi “Salva in libreria”: comparirà qui per le prossime schede.'
+                : 'Nessun esercizio trovato con questi filtri.'}
+            </div>
+          )}
         </div>
       )}
     </Modal>
