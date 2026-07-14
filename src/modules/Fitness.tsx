@@ -6,6 +6,7 @@ import { Modal, Field, Input, Textarea, Select, Spinner, Empty, Badge } from '..
 import Icon from '../components/Icon'
 import { fmtDate } from '../lib/format'
 import { toast } from '../lib/toast'
+import { notify } from '../lib/notify'
 import type { FitnessProgram, FitnessExercise, FitnessFeedback, FitnessLibraryItem } from '../lib/types'
 
 const ACCENT = '#8b93a1' // neutro (indipendente dai colori squadra)
@@ -168,6 +169,21 @@ function ProgramEditor({ program, athleteId, athleteName, trainerId, onClose, on
   const [uploading, setUploading] = useState(false)
   const [showLib, setShowLib] = useState(false)
   const [dragIdx, setDragIdx] = useState<number | null>(null)
+  const [uploadingImg, setUploadingImg] = useState<number | null>(null)
+  const [review, setReview] = useState(false)
+
+  async function uploadImage(i: number, file: File) {
+    setUploadingImg(i)
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
+    const base = (exercises[i]?.name || 'esercizio').replace(/[^a-z0-9]/gi, '_').slice(0, 40)
+    const path = `exercises/${Date.now()}-${base}.${ext}`
+    const up = await supabase.storage.from('exercise-images').upload(path, file, { upsert: false })
+    setUploadingImg(null)
+    if (up.error) { toast(up.error.message, 'err'); return }
+    const url = supabase.storage.from('exercise-images').getPublicUrl(path).data.publicUrl
+    setEx(i, 'image_url', url)
+    toast('Immagine caricata')
+  }
 
   useEffect(() => {
     if (isNew) return
@@ -231,6 +247,9 @@ function ProgramEditor({ program, athleteId, athleteName, trainerId, onClose, on
       }))
       if (rows.length) await supabase.from('fitness_exercises').insert(rows)
     }
+    if (status === 'published') {
+      notify('player', `Nuova scheda: ${form.name}`, 'Il preparatore ti ha inviato una nuova scheda. Aprila in Area Fitness.', 'fitness', athleteId)
+    }
     setBusy(''); onSaved()
   }
 
@@ -251,8 +270,9 @@ function ProgramEditor({ program, athleteId, athleteName, trainerId, onClose, on
         <>
           {!isNew && <button className="btn" style={{ color: '#e0574a' }} onClick={del} disabled={!!busy}>Sposta nel cestino</button>}
           <button className="btn" onClick={() => save('draft')} disabled={!!busy}>{busy === 'draft' ? 'Salvo…' : 'Salva bozza'}</button>
-          <button className="btn btn-primary" onClick={() => save('published')} disabled={!!busy}>
-            {busy === 'published' ? 'Pubblico…' : 'Pubblica in agenda'}
+          <button className="btn btn-primary" disabled={!!busy}
+            onClick={() => { if (!form.name?.trim()) { toast('Inserisci il nome del programma', 'err'); return } setReview(true) }}>
+            Rivedi e invia
           </button>
         </>
       }
@@ -321,7 +341,15 @@ function ProgramEditor({ program, athleteId, athleteName, trainerId, onClose, on
                 </Field>
               </div>
               <div style={grid(200)}>
-                <Field label="Immagine (URL)"><Input value={ex.image_url || ''} onChange={e => setEx(i, 'image_url', e.target.value)} placeholder="https://…" /></Field>
+                <Field label="Immagine">
+                  <div className="flex gap" style={{ alignItems: 'center' }}>
+                    <Input value={ex.image_url || ''} onChange={e => setEx(i, 'image_url', e.target.value)} placeholder="Carica o incolla URL…" />
+                    <label className="btn btn-sm" style={{ cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                      {uploadingImg === i ? 'Carico…' : <><Icon name="upload" size={12} /> Foto</>}
+                      <input type="file" accept="image/*" hidden onChange={e => { const f = e.target.files?.[0]; if (f) uploadImage(i, f); e.target.value = '' }} />
+                    </label>
+                  </div>
+                </Field>
                 <Field label="Video (URL)"><Input value={ex.video_url || ''} onChange={e => setEx(i, 'video_url', e.target.value)} placeholder="https://…" /></Field>
                 <Field label="Variante alternativa"><Input value={ex.alternative || ''} onChange={e => setEx(i, 'alternative', e.target.value)} /></Field>
               </div>
@@ -331,6 +359,25 @@ function ProgramEditor({ program, athleteId, athleteName, trainerId, onClose, on
           ))}
           <button className="btn" onClick={() => setExercises([...exercises, emptyExercise()])}><Icon name="plus" size={14} /> Aggiungi esercizio</button>
           {showLib && <LibraryPicker onClose={() => setShowLib(false)} onPick={addFromLibrary} />}
+
+          {review && (
+            <Modal wide title="Anteprima scheda — pronta da inviare" onClose={() => setReview(false)}
+              footer={
+                <>
+                  <button className="btn" onClick={() => setReview(false)} disabled={!!busy}>← Modifica</button>
+                  <button className="btn btn-primary" disabled={!!busy} onClick={() => save('published')}>
+                    {busy === 'published' ? 'Invio…' : 'Conferma e invia all\'atleta'}
+                  </button>
+                </>
+              }>
+              <div className="faint" style={{ fontSize: 12.5, marginBottom: 12 }}>
+                Ecco come l'atleta vedrà la scheda. Se è tutto ok premi “Conferma e invia”, altrimenti torna a modificarla.
+              </div>
+              <div style={{ maxWidth: 460, margin: '0 auto' }}>
+                <SchedaPreview form={form} exercises={exercises} athleteName={athleteName} />
+              </div>
+            </Modal>
+          )}
 
           {/* Scheda PDF */}
           <div style={label}>Scheda PDF</div>
