@@ -46,7 +46,7 @@ export default function Messages() {
     if (chans.length && !chans.some(c => c.key === chan)) setChan(chans[0].key)
   }, [chans.map(c => c.key).join('|')]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Brand associati all'atleta attivo (Under Armour è agganciato a Zortea).
+  // Brand associati all'atleta attivo, letti dal roster (crm_brand_athletes).
   useEffect(() => {
     let ok = true
     ;(async () => {
@@ -56,8 +56,16 @@ export default function Messages() {
         return
       }
       if (!athleteId) { setBrands([]); return }
-      const { data } = await supabase.from('crm_brands').select('id, name, player_id').eq('player_id', athleteId)
-      if (ok) setBrands((data as BrandLite[]) || [])
+      const { data } = await supabase
+        .from('crm_brand_athletes')
+        .select('player_id, crm_brands(id, name)')
+        .eq('player_id', athleteId)
+      if (!ok) return
+      const list = ((data as any[]) || [])
+        .map(r => r.crm_brands)
+        .filter(Boolean)
+        .map((b: any) => ({ id: b.id, name: b.name })) as BrandLite[]
+      setBrands(list)
     })()
     return () => { ok = false }
   }, [athleteId, isBrand])
