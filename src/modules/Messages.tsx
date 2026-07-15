@@ -9,7 +9,7 @@ import type { Message, BrandLite } from '../lib/types'
 
 // Canali: 'team' = giocatore <-> Alberto (Management) · 'fitness' = giocatore <-> preparatore
 // 'brand:<id>' = giocatore <-> brand (es. Under Armour, solo per Zortea).
-type Chan = { key: string; label: string; sub: string; icon: string }
+type Chan = { key: string; label: string; sub: string; icon: string; accent?: string | null; logo?: string | null }
 
 const roleLabel = (r?: string | null) =>
   r === 'admin' ? 'Management' : r === 'preparatore' ? 'Preparatore' : r === 'brand' ? 'Brand' : 'Giocatore'
@@ -32,13 +32,13 @@ export default function Messages() {
 
   // Canali disponibili in base al ruolo e all'atleta attivo.
   const chans: Chan[] = isBrand
-    ? brands.map(b => ({ key: `brand:${b.id}`, label: b.name, sub: 'Brand', icon: 'award' }))
+    ? brands.map(b => ({ key: `brand:${b.id}`, label: b.name, sub: 'Brand', icon: 'award', accent: b.accent_color, logo: b.logo_url }))
     : isCoach
       ? [{ key: 'fitness', label: 'Area Fitness', sub: 'Preparazione atletica', icon: 'dumbbell' }]
       : [
           { key: 'team', label: 'Alberto · Management', sub: 'AUVI Agency', icon: 'briefcase' },
           ...(hasCoach ? [{ key: 'fitness', label: coachName || 'Preparatore', sub: 'Preparazione atletica', icon: 'dumbbell' }] : []),
-          ...brands.map(b => ({ key: `brand:${b.id}`, label: b.name, sub: 'Brand', icon: 'award' })),
+          ...brands.map(b => ({ key: `brand:${b.id}`, label: b.name, sub: 'Partner ufficiale', icon: 'award', accent: b.accent_color, logo: b.logo_url })),
         ]
 
   // Tiene il canale attivo sempre valido quando cambia atleta o ruolo.
@@ -51,20 +51,20 @@ export default function Messages() {
     let ok = true
     ;(async () => {
       if (isBrand) {
-        const { data } = await supabase.from('crm_brands').select('id, name, player_id')
+        const { data } = await supabase.from('crm_brands').select('id, name, accent_color, logo_url')
         if (ok) setBrands((data as BrandLite[]) || [])
         return
       }
       if (!athleteId) { setBrands([]); return }
       const { data } = await supabase
         .from('crm_brand_athletes')
-        .select('player_id, crm_brands(id, name)')
+        .select('player_id, crm_brands(id, name, accent_color, logo_url)')
         .eq('player_id', athleteId)
       if (!ok) return
       const list = ((data as any[]) || [])
         .map(r => r.crm_brands)
         .filter(Boolean)
-        .map((b: any) => ({ id: b.id, name: b.name })) as BrandLite[]
+        .map((b: any) => ({ id: b.id, name: b.name, accent_color: b.accent_color, logo_url: b.logo_url })) as BrandLite[]
       setBrands(list)
     })()
     return () => { ok = false }
@@ -134,8 +134,11 @@ export default function Messages() {
       {chans.length > 1 && (
         <div className="pill-tabs wrap" style={{ alignSelf: 'start' }}>
           {chans.map(c => (
-            <button key={c.key} className={`pill-tab ${chan === c.key ? 'active' : ''}`} onClick={() => setChan(c.key)}>
-              <Icon name={c.icon} size={13} /> {c.label}
+            <button key={c.key} className={`pill-tab ${chan === c.key ? 'active' : ''}`} onClick={() => setChan(c.key)}
+              style={c.accent && chan === c.key ? { background: c.accent, color: '#fff', borderColor: c.accent } : undefined}>
+              {c.logo
+                ? <img src={c.logo} alt="" style={{ width: 14, height: 14, objectFit: 'contain', borderRadius: 3 }} />
+                : <Icon name={c.icon} size={13} />} {c.label}
             </button>
           ))}
         </div>
@@ -143,9 +146,15 @@ export default function Messages() {
 
       <div className="card" style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 250px)', padding: 0 }}>
         {active && (
-          <div style={{ padding: '12px 18px', borderBottom: '1px solid var(--border)' }}>
-            <div style={{ fontWeight: 700, fontSize: 14.5 }}>{active.label}</div>
-            <div className="faint" style={{ fontSize: 11.5 }}>{active.sub} · conversazione riservata</div>
+          <div style={{ padding: '12px 18px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 11 }}>
+            {active.accent && <span style={{ width: 3, height: 30, borderRadius: 2, background: active.accent }} />}
+            {active.logo && <div style={{ background: '#fff', borderRadius: 8, padding: 4, display: 'flex' }}>
+              <img src={active.logo} alt="" style={{ width: 24, height: 24, objectFit: 'contain' }} />
+            </div>}
+            <div>
+              <div style={{ fontWeight: 800, fontSize: 14.5, textTransform: active.accent ? 'uppercase' : 'none', letterSpacing: active.accent ? .5 : 0 }}>{active.label}</div>
+              <div className="faint" style={{ fontSize: 11.5 }}>{active.sub} · conversazione riservata</div>
+            </div>
           </div>
         )}
         <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>

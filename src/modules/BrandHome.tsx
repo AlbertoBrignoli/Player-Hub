@@ -7,15 +7,22 @@ import Icon from '../components/Icon'
 import { BrandLogo } from './BrandCard'
 import type { Brand } from '../lib/types'
 
-// Home del brand: la propria scheda in primo piano + gli atleti in partnership.
-// Ogni atleta è una box: al clic diventa l'atleta attivo e si apre il suo Media Kit.
+// Home del brand: hero con la sua identità (accento + claim dal DB, non cablati),
+// poi gli atleti in partnership. Ogni box apre il Media Kit di quell'atleta.
 type Roster = {
   api_player_id: number
   name: string | null
   photo_url: string | null
   team_name: string | null
   position: string | null
-  instagram_url: string | null
+  instagram_followers: number | null
+}
+
+const DEFAULT_ACCENT = '#E31837'
+
+// Tipografia del brand: maiuscolo compatto, come sui loro materiali.
+const kicker: React.CSSProperties = {
+  fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase', fontWeight: 800,
 }
 
 export default function BrandHome({ goto }: { goto?: (r: string) => void }) {
@@ -26,6 +33,7 @@ export default function BrandHome({ goto }: { goto?: (r: string) => void }) {
   const [loading, setLoading] = useState(true)
 
   const uid = session?.user.id
+  const accent = brand?.accent_color || DEFAULT_ACCENT
 
   useEffect(() => {
     if (!uid) return
@@ -35,7 +43,7 @@ export default function BrandHome({ goto }: { goto?: (r: string) => void }) {
       // RLS: il brand vede solo gli atleti del proprio roster.
       const { data: p } = await supabase
         .from('player')
-        .select('api_player_id, name, photo_url, team_name, position, instagram_url')
+        .select('api_player_id, name, photo_url, team_name, position, instagram_followers')
         .not('api_player_id', 'is', null)
         .order('name')
       if (!ok) return
@@ -46,39 +54,69 @@ export default function BrandHome({ goto }: { goto?: (r: string) => void }) {
     return () => { ok = false }
   }, [uid])
 
-  function openAthlete(id: number) {
+  function open(id: number, route: string) {
     setAthleteId(id)
-    goto?.('mediakit')
+    goto?.(route)
   }
 
   if (loading) return <Spinner />
 
+  const reach = rows.reduce((s, r) => s + (r.instagram_followers || 0), 0)
+  const fmtK = (n: number) => n >= 1000 ? `${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}K` : `${n}`
+
   return (
-    <div className="grid" style={{ gap: 18 }}>
-      {/* --- Profilo brand in primo piano --- */}
-      <div className="card" style={{ padding: 22 }}>
-        <div className="flex gap" style={{ alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-          <BrandLogo url={brand?.logo_url} name={brand?.name} size={64} />
+    <div className="grid" style={{ gap: 20 }}>
+      {/* --- HERO brandizzata --- */}
+      <div style={{
+        position: 'relative', overflow: 'hidden', borderRadius: 18,
+        background: '#0a0a0a', border: '1px solid var(--border)',
+        padding: '26px 24px',
+      }}>
+        {/* barra accento del brand */}
+        <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 5, background: accent }} />
+        <div style={{
+          position: 'absolute', right: -70, top: -70, width: 240, height: 240, borderRadius: '50%',
+          background: accent, opacity: .10, pointerEvents: 'none',
+        }} />
+
+        <div className="flex gap" style={{ alignItems: 'center', gap: 16, flexWrap: 'wrap', position: 'relative' }}>
+          <div style={{ background: '#fff', borderRadius: 14, padding: 8, display: 'flex' }}>
+            <BrandLogo url={brand?.logo_url} name={brand?.name} size={54} />
+          </div>
           <div style={{ minWidth: 0, flex: 1 }}>
-            <div className="faint" style={{ fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', fontWeight: 700 }}>
-              Brand · Partner
+            <div style={{ ...kicker, color: accent }}>Area partner · AUVI</div>
+            <div style={{ fontSize: 30, fontWeight: 900, letterSpacing: -0.5, lineHeight: 1.05, marginTop: 3, textTransform: 'uppercase' }}>
+              {brand?.name || 'Brand'}
             </div>
-            <div style={{ fontSize: 24, fontWeight: 800, marginTop: 2 }}>{brand?.name || 'La tua scheda'}</div>
-            {brand?.website && (
-              <a href={brand.website} target="_blank" rel="noreferrer" className="faint" style={{ fontSize: 12.5 }}>
-                {brand.website.replace(/^https?:\/\//, '')} ↗
-              </a>
+            {brand?.tagline && (
+              <div style={{ ...kicker, fontSize: 11.5, color: 'var(--text-dim)', marginTop: 7 }}>{brand.tagline}</div>
             )}
           </div>
-          {goto && <button className="btn btn-sm" onClick={() => goto('brandcard')}><Icon name="edit" size={13} /> Modifica scheda</button>}
+          {goto && (
+            <button className="btn btn-sm" onClick={() => goto('brandcard')}
+              style={{ background: accent, color: '#fff', fontWeight: 800, border: 'none' }}>
+              <Icon name="edit" size={13} /> Modifica scheda
+            </button>
+          )}
         </div>
 
-        <div className="grid g3" style={{ gap: 10, marginTop: 18 }}>
+        {/* numeri della partnership */}
+        <div className="flex gap" style={{ gap: 26, marginTop: 22, flexWrap: 'wrap', position: 'relative' }}>
+          <Metric label="Atleti" value={String(rows.length)} accent={accent} />
+          <Metric label="Reach social" value={reach ? fmtK(reach) : '—'} accent={accent} />
+          <Metric label="Referente" value={brand?.contact_name || '—'} accent={accent} small />
+        </div>
+      </div>
+
+      {/* --- Dati del brand --- */}
+      <div className="card">
+        <div style={{ ...kicker, color: 'var(--text-dim)', marginBottom: 12 }}>Scheda brand</div>
+        <div className="grid g3" style={{ gap: 10 }}>
           <Info k="Referente" v={brand?.contact_name} />
           <Info k="Ruolo" v={brand?.contact_role} />
           <Info k="Email" v={brand?.email} />
           <Info k="Telefono" v={brand?.phone} />
-          <Info k="Atleti in partnership" v={rows.length || null} />
+          <Info k="Sito" v={brand?.website?.replace(/^https?:\/\//, '')} />
         </div>
         {brand?.notes && (
           <div className="faint" style={{ fontSize: 13, marginTop: 14, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
@@ -89,11 +127,12 @@ export default function BrandHome({ goto }: { goto?: (r: string) => void }) {
 
       {/* --- Atleti in partnership --- */}
       <div>
-        <div className="flex between" style={{ alignItems: 'center', marginBottom: 10 }}>
-          <div style={{ fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: 'var(--text-dim)', fontWeight: 700 }}>
-            Atleti in partnership
+        <div className="flex between" style={{ alignItems: 'center', marginBottom: 12 }}>
+          <div className="flex gap" style={{ alignItems: 'center', gap: 9 }}>
+            <span style={{ width: 3, height: 15, background: accent, borderRadius: 2 }} />
+            <span style={{ ...kicker, color: 'var(--text)' }}>I tuoi atleti</span>
           </div>
-          <span className="faint" style={{ fontSize: 12 }}>{rows.length} attiv{rows.length === 1 ? 'o' : 'i'}</span>
+          <span className="faint" style={{ fontSize: 12 }}>{rows.length} in partnership</span>
         </div>
 
         {rows.length === 0 ? (
@@ -104,39 +143,60 @@ export default function BrandHome({ goto }: { goto?: (r: string) => void }) {
         ) : (
           <div className="grid g3" style={{ gap: 12 }}>
             {rows.map(a => (
-              <div key={a.api_player_id} className="card" style={{ padding: 16, cursor: 'pointer' }}
-                onClick={() => openAthlete(a.api_player_id)}
+              <div key={a.api_player_id} className="card"
+                style={{ padding: 0, cursor: 'pointer', overflow: 'hidden' }}
+                onClick={() => open(a.api_player_id, 'mediakit')}
                 role="button" tabIndex={0}
-                onKeyDown={e => { if (e.key === 'Enter') openAthlete(a.api_player_id) }}>
-                <div className="flex gap" style={{ alignItems: 'center', gap: 12 }}>
-                  {a.photo_url
-                    ? <img src={a.photo_url} alt={a.name || ''} style={{ width: 52, height: 52, borderRadius: 13, objectFit: 'cover' }} />
-                    : <div style={{ width: 52, height: 52, borderRadius: 13, background: 'var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>
-                        {(a.name || '?').slice(0, 1)}
-                      </div>}
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: 15.5, fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</div>
-                    <div className="faint" style={{ fontSize: 12 }}>
-                      {[a.position, a.team_name].filter(Boolean).join(' · ') || 'Atleta'}
+                onKeyDown={e => { if (e.key === 'Enter') open(a.api_player_id, 'mediakit') }}>
+                {/* filo accento: segnala che è area del brand */}
+                <div style={{ height: 3, background: accent }} />
+                <div style={{ padding: 16 }}>
+                  <div className="flex gap" style={{ alignItems: 'center', gap: 12 }}>
+                    {a.photo_url
+                      ? <img src={a.photo_url} alt={a.name || ''} style={{ width: 54, height: 54, borderRadius: 14, objectFit: 'cover' }} />
+                      : <div style={{ width: 54, height: 54, borderRadius: 14, background: 'var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>
+                          {(a.name || '?').slice(0, 1)}
+                        </div>}
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 15.5, fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</div>
+                      <div className="faint" style={{ fontSize: 12 }}>
+                        {[a.position, a.team_name].filter(Boolean).join(' · ') || 'Atleta'}
+                      </div>
+                      {a.instagram_followers ? (
+                        <div style={{ ...kicker, fontSize: 10.5, color: accent, marginTop: 4 }}>
+                          {fmtK(a.instagram_followers)} follower
+                        </div>
+                      ) : null}
                     </div>
                   </div>
-                </div>
 
-                <div className="flex gap" style={{ marginTop: 14, flexWrap: 'wrap' }}>
-                  <button className="btn btn-sm" onClick={e => { e.stopPropagation(); openAthlete(a.api_player_id) }}>
-                    <Icon name="activity" size={13} /> Media Kit
-                  </button>
-                  <button className="btn btn-ghost btn-sm" onClick={e => { e.stopPropagation(); setAthleteId(a.api_player_id); goto?.('messages') }}>
-                    <Icon name="message" size={13} /> Scrivi
-                  </button>
-                  <button className="btn btn-ghost btn-sm" onClick={e => { e.stopPropagation(); setAthleteId(a.api_player_id); goto?.('campaigns') }}>
-                    <Icon name="image" size={13} /> Campagne
-                  </button>
+                  <div className="flex gap" style={{ marginTop: 14, flexWrap: 'wrap' }}>
+                    <button className="btn btn-sm" onClick={e => { e.stopPropagation(); open(a.api_player_id, 'mediakit') }}>
+                      <Icon name="activity" size={13} /> Media Kit
+                    </button>
+                    <button className="btn btn-ghost btn-sm" onClick={e => { e.stopPropagation(); open(a.api_player_id, 'messages') }}>
+                      <Icon name="message" size={13} /> Scrivi
+                    </button>
+                    <button className="btn btn-ghost btn-sm" onClick={e => { e.stopPropagation(); open(a.api_player_id, 'campaigns') }}>
+                      <Icon name="image" size={13} /> Campagne
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         )}
+      </div>
+    </div>
+  )
+}
+
+function Metric({ label, value, accent, small }: { label: string; value: string; accent: string; small?: boolean }) {
+  return (
+    <div>
+      <div style={{ ...kicker, fontSize: 10, color: 'var(--text-dim)' }}>{label}</div>
+      <div style={{ fontSize: small ? 15 : 22, fontWeight: 900, marginTop: 2, borderBottom: `2px solid ${accent}`, display: 'inline-block', paddingBottom: 2 }}>
+        {value}
       </div>
     </div>
   )

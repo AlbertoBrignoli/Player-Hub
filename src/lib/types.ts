@@ -12,6 +12,8 @@ export interface Brand {
   logo_url: string | null
   notes: string | null
   player_id?: number | null
+  accent_color?: string | null
+  tagline?: string | null
   created_at: string
   updated_at: string
 }
@@ -221,6 +223,8 @@ export interface BrandLite {
   id: string
   name: string
   player_id?: number | null
+  accent_color?: string | null
+  logo_url?: string | null
 }
 
 export interface AllowedEmail {
