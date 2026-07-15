@@ -22,6 +22,7 @@ import Settings from './modules/Settings'
 import PasswordSetup from './components/PasswordSetup'
 import MediaKit from './modules/MediaKit'
 import BrandCard from './modules/BrandCard'
+import BrandHome from './modules/BrandHome'
 import BrandCampaigns from './modules/BrandCampaigns'
 
 export default function App() {
@@ -36,13 +37,14 @@ export default function App() {
 
   // Il brand ha un set di schermate dedicato e non accede alle aree interne.
   const isBrand = profile.role === 'brand'
-  const brandAllowed = ['mediakit', 'campaigns', 'brandcard', 'messages']
-  const home = isBrand ? 'mediakit' : 'dashboard'
+  const brandAllowed = ['brandhome', 'mediakit', 'campaigns', 'brandcard', 'messages']
+  const home = isBrand ? 'brandhome' : 'dashboard'
   let route = routeState ?? home
-  if (isBrand && !brandAllowed.includes(route)) route = 'mediakit'
+  if (isBrand && !brandAllowed.includes(route)) route = 'brandhome'
 
   const view = (() => {
     switch (route) {
+      case 'brandhome': return <BrandHome goto={setRoute} />
       case 'mediakit': return <MediaKit />
       case 'campaigns': return <BrandCampaigns />
       case 'brandcard': return <BrandCard goto={setRoute} />
