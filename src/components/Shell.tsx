@@ -52,6 +52,21 @@ export const BRAND_NAV: { group: string; items: NavDef[] }[] = [
   ]},
 ]
 
+// Menu dedicato al preparatore: fitness, parte sportiva, agenda e chat.
+// Fuori tutto ciò che non lo riguarda (contratti, sponsor, editoriale, media, documenti, task).
+export const COACH_NAV: { group: string; items: NavDef[] }[] = [
+  { group: 'Preparazione', items: [
+    { key: 'dashboard', label: 'Home', icon: 'grid' },
+    { key: 'fitness', label: 'Area Fitness', icon: 'dumbbell' },
+    { key: 'coach-profile', label: 'Il mio profilo', icon: 'user' },
+  ]},
+  { group: 'Atleta', items: [
+    { key: 'performance', label: 'Performance', icon: 'activity' },
+    { key: 'agenda', label: 'Agenda', icon: 'clock' },
+    { key: 'messages', label: 'Messaggi', icon: 'message' },
+  ]},
+]
+
 const TITLES: Record<string, { t: string; s: string }> = {
   dashboard: { t: 'Dashboard', s: 'Quadro generale della gestione' },
   fitness: { t: 'Area Fitness', s: 'Programmi, allenamenti e feedback' },
@@ -85,7 +100,8 @@ export default function Shell({ route, setRoute, right, children }: {
   const title = route === 'mediakit' && athleteName
     ? { t: baseTitle.t, s: `I numeri di ${athleteName}` }
     : baseTitle
-  const nav = isBrand ? BRAND_NAV : NAV
+  const isCoach = role === 'preparatore'
+  const nav = isBrand ? BRAND_NAV : isCoach ? COACH_NAV : NAV
 
   return (
     <div className="app">
@@ -170,6 +186,13 @@ export default function Shell({ route, setRoute, right, children }: {
               { key: 'campaigns', label: 'Campagne', icon: 'image' },
               { key: 'messages', label: 'Chat', icon: 'message' },
             ]
+          : isCoach
+          ? [
+              { key: 'dashboard', label: 'Home', icon: 'grid' },
+              { key: 'fitness', label: 'Fitness', icon: 'dumbbell' },
+              { key: 'agenda', label: 'Agenda', icon: 'clock' },
+              { key: 'messages', label: 'Chat', icon: 'message' },
+            ]
           : [
               { key: 'dashboard', label: 'Home', icon: 'home' },
               { key: 'editorial', label: 'Calendario', icon: 'calendar' },
@@ -182,7 +205,7 @@ export default function Shell({ route, setRoute, right, children }: {
             <span className="tab-lbl">{t.label}</span>
           </button>
         ))}
-        {!isBrand && (
+        {!isBrand && !isCoach && (
           <button className={`tab-item ${open ? 'active' : ''}`} onClick={() => setOpen(true)}>
             <span className="tab-ico"><Icon name="menu" size={21} strokeWidth={1.7} /></span>
             <span className="tab-lbl">Altro</span>
