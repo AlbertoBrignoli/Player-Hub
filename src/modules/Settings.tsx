@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase, PLAYER_NAME } from '../lib/supabase'
 import { useAuth } from '../auth/AuthContext'
+import { useAthlete } from '../lib/athlete'
 import { useCollection, insertRow, deleteRow } from '../lib/useData'
 import { Field, Input, Select, Badge, Spinner, ConfirmButton, Empty } from '../components/ui'
 import { fmtDate } from '../lib/format'
@@ -87,6 +88,8 @@ export default function Settings() {
 }
 
 function SocialCard() {
+  // I numeri sono PER ATLETA: si legge e si scrive sulla riga dell'atleta attivo.
+  const { athleteId, athletes } = useAthlete()
   const [followers, setFollowers] = useState('')
   const [engagement, setEngagement] = useState('')
   const [reach, setReach] = useState('')
@@ -98,20 +101,21 @@ function SocialCard() {
   const [msg, setMsg] = useState('')
 
   useEffect(() => {
-    supabase.from('player').select('*').limit(1).maybeSingle().then(({ data }) => {
+    if (!athleteId) return
+    setLoaded(false); setMsg('')
+    supabase.from('player').select('*').eq('api_player_id', athleteId).maybeSingle().then(({ data }) => {
       const p = data as any
-      if (p) {
-        setFollowers(p.instagram_followers ?? ''); setEngagement(p.instagram_engagement ?? '')
-        setReach(p.instagram_reach ?? ''); setIg(p.instagram_url ?? ''); setAudience(p.audience_note ?? '')
-        setConnected(!!p.instagram_connected)
-      }
+      // reset esplicito: cambiando atleta i campi non devono restare quelli di prima
+      setFollowers(p?.instagram_followers ?? ''); setEngagement(p?.instagram_engagement ?? '')
+      setReach(p?.instagram_reach ?? ''); setIg(p?.instagram_url ?? ''); setAudience(p?.audience_note ?? '')
+      setConnected(!!p?.instagram_connected)
       setLoaded(true)
     })
-  }, [])
+  }, [athleteId])
 
   async function save() {
+    if (!athleteId) return
     setBusy(true); setMsg('')
-    const { data: p } = await supabase.from('player').select('id').limit(1).maybeSingle()
     const { error } = await supabase.from('player').update({
       instagram_url: ig || null,
       instagram_followers: followers ? Number(followers) : null,
@@ -119,17 +123,23 @@ function SocialCard() {
       instagram_reach: reach ? Number(reach) : null,
       audience_note: audience || null,
       instagram_connected: connected,
-    }).eq('id', (p as any)?.id)
+    }).eq('api_player_id', athleteId)
     setBusy(false)
-    setMsg(error ? error.message : 'Numeri social salvati — visibili ai brand nel Media Kit.')
+    setMsg(error ? error.message : `Numeri social di ${athleteName} salvati — visibili ai brand nel Media Kit.`)
   }
+
+  const athleteName = athletes.find(a => a.api_player_id === athleteId)?.name || 'atleta'
 
   if (!loaded) return null
   return (
     <div className="card">
-      <div className="card-head"><div className="card-title">Instagram &amp; numeri social</div></div>
+      <div className="card-head">
+        <div className="card-title">Instagram &amp; numeri social</div>
+        <span className="badge">{athleteName}</span>
+      </div>
       <div className="faint" style={{ fontSize: 12.5, marginBottom: 14 }}>
-        Questi numeri compaiono nel Media Kit che vedono i brand. Inseriscili a mano (aggiornali ogni tanto).
+        Numeri di <b>{athleteName}</b>: cambia atleta dal selettore in alto per compilare gli altri.
+        Compaiono nel Media Kit che vedono i brand. Inseriscili a mano (aggiornali ogni tanto).
         La sincronizzazione automatica da Instagram richiede un collegamento con un account Business e l'app Meta:
         posso attivarla in un secondo momento se vuoi.
       </div>
