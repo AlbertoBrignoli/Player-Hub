@@ -62,7 +62,6 @@ export const COACH_NAV: { group: string; items: NavDef[] }[] = [
   ]},
   { group: 'Atleta', items: [
     { key: 'performance', label: 'Performance', icon: 'activity' },
-    { key: 'agenda', label: 'Agenda', icon: 'clock' },
     { key: 'messages', label: 'Messaggi', icon: 'message' },
   ]},
 ]
@@ -190,7 +189,7 @@ export default function Shell({ route, setRoute, right, children }: {
           ? [
               { key: 'dashboard', label: 'Home', icon: 'grid' },
               { key: 'fitness', label: 'Fitness', icon: 'dumbbell' },
-              { key: 'agenda', label: 'Agenda', icon: 'clock' },
+              { key: 'performance', label: 'Performance', icon: 'activity' },
               { key: 'messages', label: 'Chat', icon: 'message' },
             ]
           : [

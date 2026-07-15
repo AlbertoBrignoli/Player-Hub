@@ -38,8 +38,8 @@ export default function App() {
   // Il brand ha un set di schermate dedicato e non accede alle aree interne.
   const isBrand = profile.role === 'brand'
   const brandAllowed = ['brandhome', 'mediakit', 'campaigns', 'brandcard', 'messages']
-  // Il preparatore vede solo fitness, parte sportiva, agenda e chat.
-  const coachAllowed = ['dashboard', 'fitness', 'coach-profile', 'performance', 'agenda', 'messages']
+  // Il preparatore vede solo fitness, performance dell'atleta e chat.
+  const coachAllowed = ['dashboard', 'fitness', 'coach-profile', 'performance', 'messages']
   const isCoach = profile.role === 'preparatore'
   const home = isBrand ? 'brandhome' : 'dashboard'
   let route = routeState ?? home
