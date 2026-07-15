@@ -9,7 +9,7 @@ import type { FitnessProgram } from '../lib/types'
 
 // Home del preparatore: la sua scheda in evidenza + i suoi atleti.
 // Ogni box apre l'atleta: schede, performance, agenda, chat.
-const ACCENT = '#8b93a1' // neutro, indipendente dai colori squadra
+const ACCENT = '#C8FF2E' // verde fluo: identità del mondo fitness
 
 const kicker: React.CSSProperties = {
   fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase', fontWeight: 800,

@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { supabase, PLAYER_NAME } from '../lib/supabase'
+import { supabase } from '../lib/supabase'
 import { useAuth } from '../auth/AuthContext'
 import { useAthlete } from '../lib/athlete'
 import { Spinner, Badge } from '../components/ui'
@@ -93,7 +93,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
     .filter(x => x.d != null && x.d >= 0).sort((a, b) => (a.d! - b.d!))[0]
 
   const greeting = new Date().getHours() < 13 ? 'Buongiorno' : new Date().getHours() < 19 ? 'Buon pomeriggio' : 'Buonasera'
-  const firstName = (profile?.full_name || PLAYER_NAME).split(' ')[0]
+  const firstName = (profile?.full_name || '').split(' ')[0]
   const igHandle = player?.instagram_url?.replace(/\/$/, '').split('/').pop()
   const bd = player?.birth_date ? new Date(player.birth_date + 'T12:00') : null
   const birthLabel = bd ? `${bd.getDate()} ${MESI[bd.getMonth()]} ${bd.getFullYear()}` : null
@@ -132,7 +132,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
               : <div className="avatar" style={{ width: 74, height: 74, fontSize: 26, borderRadius: 20 }}>{firstName[0]}</div>}
             <div style={{ minWidth: 0 }}>
               <div className="ed-kicker">{greeting}</div>
-              <div className="ed-id-name">{player?.name || PLAYER_NAME}</div>
+              <div className="ed-id-name">{player?.name || 'Atleta'}</div>
               <div className="muted" style={{ marginTop: 6, fontSize: 12 }}>
                 {player ? `${player.position} · ${player.team_name} · #${player.shirt_number ?? '—'}` : 'Gestione riservata AUVI'}
               </div>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { supabase, AGENCY_NAME, PLAYER_NAME } from '../lib/supabase'
+import { supabase, AGENCY_NAME } from '../lib/supabase'
 import { Input } from '../components/ui'
 
 function friendlyError(error: any): string {
@@ -52,7 +52,7 @@ export default function Login() {
       <div className="login-card">
         <img className="login-logo-img" src="/icons/icon-192.png" alt="AUVI — All Around The Game" />
         <div className="login-title">AUVI Player</div>
-        <div className="login-sub">Spazio riservato · {PLAYER_NAME} × {AGENCY_NAME}</div>
+        <div className="login-sub">Spazio riservato · {AGENCY_NAME}</div>
 
         {sent ? (
           <div className="msg-ok">

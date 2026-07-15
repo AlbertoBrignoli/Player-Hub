@@ -9,7 +9,7 @@ import type { CoachProfile } from '../lib/types'
 const ALL_SPEC = ['Performance', 'Strength', 'Return To Play', 'Speed', 'Mobility', 'Recovery', 'Prevenzione infortuni']
 const ALL_SERV = ['Allenamento Online', 'Allenamento in presenza', 'Programmi personalizzati', 'Test atletici', 'Valutazioni', 'Video Analisi']
 const label: React.CSSProperties = { fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: 'var(--text-dim)', fontWeight: 700, margin: '22px 2px 10px' }
-const chip = (on: boolean): React.CSSProperties => ({ padding: '7px 13px', borderRadius: 999, cursor: 'pointer', fontSize: 13, border: on ? '1.5px solid #8b93a1' : '1px solid var(--border)', background: on ? 'rgba(139,147,161,.16)' : 'transparent' })
+const chip = (on: boolean): React.CSSProperties => ({ padding: '7px 13px', borderRadius: 999, cursor: 'pointer', fontSize: 13, border: on ? '1.5px solid #C8FF2E' : '1px solid var(--border)', background: on ? 'rgba(200,255,46,.16)' : 'transparent' })
 
 const empty = (tid: string): CoachProfile => ({ trainer_id: tid, verified: true, specializations: [], services: [], contacts: {} })
 

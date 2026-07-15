@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { supabase, PLAYER_NAME } from '../lib/supabase'
+import { supabase } from '../lib/supabase'
 import { useAuth } from '../auth/AuthContext'
 import { useAthlete } from '../lib/athlete'
 import { useCollection, insertRow, deleteRow } from '../lib/useData'
@@ -46,7 +46,7 @@ export default function Settings() {
       <div className="card">
         <div className="card-head"><div className="card-title">Chi può accedere a questo spazio</div></div>
         <div className="faint" style={{ fontSize: 12.5, marginBottom: 14 }}>
-          Solo gli indirizzi in questa lista possono entrare. Aggiungi qui l'email personale di {PLAYER_NAME} per dargli accesso — riceverà un link magico al primo login.
+          Solo gli indirizzi in questa lista possono entrare. Aggiungi qui l'email personale dell'atleta per dargli accesso — riceverà un link magico al primo login.
         </div>
         <div className="flex gap wrap" style={{ alignItems: 'flex-end' }}>
           <div style={{ flex: 2, minWidth: 200 }}><Field label="Email"><Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="giocatore@email.com" /></Field></div>

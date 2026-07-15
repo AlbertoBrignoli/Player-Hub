@@ -9,7 +9,7 @@ import { toast } from '../lib/toast'
 import { notify } from '../lib/notify'
 import type { FitnessProgram, FitnessExercise, FitnessFeedback, FitnessLibraryItem } from '../lib/types'
 
-const ACCENT = '#8b93a1' // neutro (indipendente dai colori squadra)
+const ACCENT = '#C8FF2E' // verde fluo: identità del mondo fitness
 const label: React.CSSProperties = { fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: 'var(--text-dim)', fontWeight: 700, margin: '18px 0 10px' }
 const grid = (min = 150): React.CSSProperties => ({ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(${min}px, 1fr))`, gap: 12 })
 const todayKey = () => new Date().toISOString().slice(0, 10)

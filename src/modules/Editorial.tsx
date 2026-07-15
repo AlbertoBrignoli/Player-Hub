@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { supabase, PLAYER_NAME } from '../lib/supabase'
+import { supabase } from '../lib/supabase'
 import { useAuth } from '../auth/AuthContext'
 import { useAthlete } from '../lib/athlete'
 import { useCollection, insertRow, updateRow, deleteRow } from '../lib/useData'
@@ -11,7 +11,6 @@ import { fmtDate, fmtDateTime, isImageFile, fileExt } from '../lib/format'
 import type { EditorialEntry, MediaItem } from '../lib/types'
 
 const BUCKET = 'crm-media'
-const PLAYER_FIRST = (PLAYER_NAME || 'giocatore').split(' ')[0]
 
 const TYPES: Record<string, { label: string; icon: string }> = {
   partita: { label: 'Partita', icon: 'ball' },
@@ -441,7 +440,7 @@ function EntryModal({ entry, onClose, onChanged }: {
           <Badge>{TYPES[entry.type]?.label || entry.type}</Badge>
           {entry.theme && <Badge>{THEMES[entry.theme] || entry.theme}</Badge>}
           {brandName && <Badge tone="red">Contenuto {brandName}</Badge>}
-          {entry.requested_by && <Badge tone="accent">Proposto da {PLAYER_FIRST}</Badge>}
+          {entry.requested_by && <Badge tone="accent">Proposto dal giocatore</Badge>}
           <span className="faint" style={{ fontSize: 12.5 }}>{fmtDate(entry.entry_date)}</span>
         </div>
 

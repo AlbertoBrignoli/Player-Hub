@@ -111,7 +111,7 @@ export default function Shell({ route, setRoute, right, children }: {
           <img className="brand-logo-img" src="/icons/icon-192.png" alt="AUVI" />
           <div>
             <div className="brand-name">AUVI Player</div>
-            <div className="brand-sub">{athletes.find(a => a.api_player_id === athleteId)?.name || 'AUVI Agency'} · {APP_VERSION}</div>
+            <div className="brand-sub">AUVI Agency · {APP_VERSION}</div>
           </div>
         </div>
         <nav className="nav"
