@@ -467,3 +467,44 @@ export interface FitnessRequest {
   status?: 'aperta' | 'gestita'
   created_at?: string
 }
+
+/* ---------- Ufficio del preparatore (dati privati del coach) ---------- */
+export interface CoachClient {
+  id: string
+  trainer_id: string
+  name: string
+  contact: string | null
+  player_id: number | null
+  rate: number | null
+  notes: string | null
+  archived: boolean
+  created_at: string
+}
+
+export interface CoachSession {
+  id: string
+  trainer_id: string
+  client_id: string | null
+  title: string | null
+  session_date: string
+  start_time: string | null
+  duration_min: number | null
+  location: string | null
+  status: string
+  price: number | null
+  paid: boolean
+  notes: string | null
+  created_at: string
+}
+
+export interface CoachLedger {
+  id: string
+  trainer_id: string
+  kind: string
+  amount: number
+  category: string | null
+  description: string | null
+  entry_date: string
+  session_id: string | null
+  created_at: string
+}

@@ -60,6 +60,9 @@ export const COACH_NAV: { group: string; items: NavDef[] }[] = [
     { key: 'fitness', label: 'Area Fitness', icon: 'dumbbell' },
     { key: 'coach-profile', label: 'Il mio profilo', icon: 'user' },
   ]},
+  { group: 'Ufficio', items: [
+    { key: 'coach-office', label: 'Il mio ufficio', icon: 'briefcase' },
+  ]},
   { group: 'Atleta', items: [
     { key: 'performance', label: 'Performance', icon: 'activity' },
     { key: 'messages', label: 'Messaggi', icon: 'message' },
@@ -82,6 +85,7 @@ const TITLES: Record<string, { t: string; s: string }> = {
   messages: { t: 'Messaggi', s: 'Comunicazione diretta' },
   settings: { t: 'Impostazioni', s: 'Password, accessi e configurazione' },
   brandhome: { t: 'Home', s: 'La tua scheda e gli atleti in partnership' },
+  'coach-office': { t: 'Il mio ufficio', s: 'Agenda personale, clienti e cassa · area privata' },
   mediakit: { t: 'Media Kit', s: "I numeri dell'atleta" },
   campaigns: { t: 'Campagne', s: 'Proponi contenuti e carica lo shooting' },
   brandcard: { t: 'La mia scheda', s: 'Dati e referente del brand' },

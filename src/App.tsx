@@ -23,6 +23,7 @@ import PasswordSetup from './components/PasswordSetup'
 import MediaKit from './modules/MediaKit'
 import BrandCard from './modules/BrandCard'
 import BrandHome from './modules/BrandHome'
+import CoachOffice from './modules/CoachOffice'
 import BrandCampaigns from './modules/BrandCampaigns'
 
 export default function App() {
@@ -39,7 +40,7 @@ export default function App() {
   const isBrand = profile.role === 'brand'
   const brandAllowed = ['brandhome', 'mediakit', 'campaigns', 'brandcard', 'messages']
   // Il preparatore vede solo fitness, performance dell'atleta e chat.
-  const coachAllowed = ['dashboard', 'fitness', 'coach-profile', 'performance', 'messages']
+  const coachAllowed = ['dashboard', 'fitness', 'coach-profile', 'coach-office', 'performance', 'messages']
   const isCoach = profile.role === 'preparatore'
   const home = isBrand ? 'brandhome' : 'dashboard'
   let route = routeState ?? home
@@ -57,6 +58,7 @@ export default function App() {
       case 'profile': return <Profile />
       case 'fitness': return <Fitness goto={setRoute} />
       case 'coach-profile': return <FitnessCoachProfile goto={setRoute} />
+      case 'coach-office': return <CoachOffice />
       case 'contracts': return <Contracts />
       case 'documents': return <Documents />
       case 'editorial': return <Editorial />
