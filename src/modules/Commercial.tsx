@@ -15,16 +15,11 @@ import { fmtMoney, fmtDate, fmtDateTime } from '../lib/format'
 import type { Player } from '../lib/types'
 import {
   COMP_META, DISCLAIMER, AVAIL_OPTS, followerBand,
+  VALUE_OPTS, INTEREST_OPTS, STYLE_OPTS, LANG_OPTS, MARKET_OPTS,
   computeFullScore, computeCategoryFit, buildRecommendations, trendOf,
   type FullScore, type Reco,
 } from '../lib/commercialScore'
 
-// ── Vocabolari onboarding ─────────────────────────────────────────────────────
-const VALUE_OPTS = ['Determinazione', 'Famiglia', 'Disciplina', 'Umiltà', 'Ambizione', 'Lealtà', 'Creatività', 'Resilienza', 'Solidarietà', 'Professionalità', 'Autenticità', 'Rispetto']
-const INTEREST_OPTS = ['Moda', 'Tecnologia', 'Gaming', 'Motori', 'Musica', 'Cinema & Serie', 'Viaggi', 'Cucina', 'Fitness', 'Lettura', 'Fotografia', 'Natura', 'Arte', 'Animali']
-const STYLE_OPTS = ['Elegante', 'Sportivo', 'Casual', 'Streetwear', 'Minimal', 'Premium', 'Autentico', 'Energico', 'Riservato', 'Solare']
-const LANG_OPTS = ['Italiano', 'Inglese', 'Spagnolo', 'Francese', 'Tedesco', 'Portoghese', 'Greco']
-const MARKET_OPTS = ['Italia', 'Grecia', 'Regno Unito', 'Spagna', 'Francia', 'Germania', 'USA', 'Sud America', 'Medio Oriente', 'Asia']
 const EXCL_PRESET = [['betting', 'Betting'], ['alcol', 'Alcol'], ['politica', 'Politica']]
 
 const OPP_STATUS: Record<string, { label: string; tone?: 'green' | 'red' | 'gold' | 'blue' | 'accent' }> = {
@@ -951,12 +946,13 @@ function AdminPanel({ athleteId, cfg, cats, opps, collabs, perf, userName, reloa
   return (
     <div className="grid" style={{ gap: 16 }}>
       <div className="flex gap" style={{ flexWrap: 'wrap' }}>
-        {[['opportunita', 'Opportunità'], ['collaborazioni', 'Collaborazioni'], ['valutazioni', 'Valutazione riservata'], ['instagram', 'Instagram Sync'], ['config', 'Pesi & Config']].map(([id, l]) => (
+        {[['opportunita', 'Opportunità'], ['collaborazioni', 'Collaborazioni'], ['ricerche', 'Ricerche brand'], ['valutazioni', 'Valutazione riservata'], ['instagram', 'Instagram Sync'], ['config', 'Pesi & Config']].map(([id, l]) => (
           <button key={id} className={`btn btn-sm ${sub === id ? 'btn-primary' : ''}`} onClick={() => setSub(id)}>{l}</button>
         ))}
       </div>
       {sub === 'opportunita' && <AdminOpps athleteId={athleteId} cats={cats} opps={opps} userName={userName} reload={reload} />}
       {sub === 'collaborazioni' && <AdminCollabs athleteId={athleteId} cats={cats} collabs={collabs} perf={perf} reload={reload} />}
+      {sub === 'ricerche' && <AdminBrandSearches />}
       {sub === 'valutazioni' && <AdminEval athleteId={athleteId} reload={reload} />}
       {sub === 'instagram' && <AdminInstagram athleteId={athleteId} reload={reload} />}
       {sub === 'config' && cfg && <AdminConfig cfg={cfg} reload={reload} />}
@@ -1430,4 +1426,41 @@ function TeaserAdminCard({ player, prof, topFits }: any) {
       </div>
     </div>
   )
+}
+
+// ── RICERCHE DEI BRAND (vista AUVI) ──────────────────────────────────────────
+// Cosa cercano i brand nella piattaforma: il brief compilato in "Ricerca talent".
+// AUVI lo usa per proporre atleti on target (dentro e fuori dal roster).
+function AdminBrandSearches() {
+  const [rows, setRows] = useState<any[] | null>(null)
+  useEffect(() => {
+    ;(async () => {
+      const [s, b] = await Promise.all([
+        supabase.from('cp_brand_search').select('*').order('updated_at', { ascending: false }),
+        supabase.from('crm_brands').select('id, name'),
+      ])
+      const brands = b.data || []
+      setRows((s.data || []).map((r: any) => ({ ...r, brand_name: brands.find((x: any) => x.id === r.brand_id)?.name || 'Brand' })))
+    })()
+  }, [])
+  if (!rows) return <Spinner />
+  if (!rows.length) return <div className="card"><Empty icon={<Icon name="users" size={28} strokeWidth={1.4} />} title="Nessuna ricerca attiva" hint="Quando un brand compila la Ricerca talent, il brief compare qui." /></div>
+  return (<>
+    {rows.map(r => (
+      <div key={r.id} className="card">
+        <div className="flex between" style={{ flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
+          <div style={{ fontWeight: 750, fontSize: 15 }}>{r.brand_name}</div>
+          <span className="faint" style={{ fontSize: 11.5 }}>aggiornata {fmtDateTime(r.updated_at)}</span>
+        </div>
+        <div className="flex gap" style={{ flexWrap: 'wrap', marginBottom: r.notes ? 10 : 0 }}>
+          {(r.categories || []).map((k: string) => <Badge key={k} tone="accent">{k}</Badge>)}
+          {(r.values_wanted || []).map((v: string) => <Badge key={v}>{v}</Badge>)}
+          {(r.activities || []).map((a: string) => <Badge key={a} tone="blue">{AVAIL_OPTS.find(x => x.key === a)?.label || a}</Badge>)}
+          {(r.markets || []).map((m: string) => <Badge key={m}>{m}</Badge>)}
+          {(r.age_min || r.age_max) && <Badge tone="gold">{r.age_min || '…'}–{r.age_max || '…'} anni</Badge>}
+        </div>
+        {r.notes && <div className="muted" style={{ fontSize: 12.5, lineHeight: 1.6 }}>{r.notes}</div>}
+      </div>
+    ))}
+  </>)
 }

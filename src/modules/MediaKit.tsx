@@ -6,7 +6,7 @@ import { Spinner, Empty, Select, Badge } from '../components/ui'
 import Icon from '../components/Icon'
 import { SeasonBlock } from '../components/statbits'
 import { seasonOf, fmtDate, fmtDateTime } from '../lib/format'
-import { followerBand, AVAIL_OPTS, CATEGORY_NAMES } from '../lib/commercialScore'
+import { followerBand, AVAIL_OPTS, CATEGORY_NAMES, computeBrandAthleteMatch } from '../lib/commercialScore'
 import type { Player, Match, StatsMatch, SeasonStat } from '../lib/types'
 
 type Tab = 'overview' | 'pitch' | 'social' | 'partnership'
@@ -409,13 +409,24 @@ function igHandle(url?: string | null): string | null {
    Fonte: vista cp_preferences_public — SOLO colonne sicure (mai fee minima,
    sponsor attivi, esclusività o dati audience). */
 function Partnership({ player, goto }: { player: Player; goto?: (r: string) => void }) {
+  const { isBrand } = useAuth()
   const [prefs, setPrefs] = useState<any>(null)
+  const [brandSearch, setBrandSearch] = useState<any>(null)
+  const [showWhy, setShowWhy] = useState(false)
   const [loading, setLoading] = useState(true)
   useEffect(() => {
     if (!player?.api_player_id) { setLoading(false); return }
-    supabase.from('cp_preferences_public').select('*').eq('player_id', player.api_player_id).maybeSingle()
-      .then(({ data }) => { setPrefs(data || null); setLoading(false) })
-  }, [player?.api_player_id])
+    ;(async () => {
+      const [pr, bs] = await Promise.all([
+        supabase.from('cp_preferences_public').select('*').eq('player_id', player.api_player_id).maybeSingle(),
+        isBrand ? supabase.from('cp_brand_search').select('*').limit(1).maybeSingle() : Promise.resolve({ data: null }),
+      ])
+      setPrefs(pr.data || null)
+      setBrandSearch((bs as any).data || null)
+      setLoading(false)
+    })()
+  }, [player?.api_player_id, isBrand])
+  const match = isBrand && brandSearch ? computeBrandAthleteMatch(brandSearch, prefs, player) : null
 
   if (loading) return <Spinner />
   const ident = prefs?.identity || {}
@@ -433,6 +444,26 @@ function Partnership({ player, goto }: { player: Player; goto?: (r: string) => v
 
   return (
     <>
+      {match && (
+        <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+          <svg width={62} height={62} style={{ flexShrink: 0 }}>
+            <circle cx={31} cy={31} r={26} fill="none" stroke="var(--border)" strokeWidth={6} />
+            <circle cx={31} cy={31} r={26} fill="none" stroke={match.pct >= 70 ? 'var(--green)' : match.pct >= 45 ? 'var(--gold)' : 'var(--text-faint)'}
+              strokeWidth={6} strokeLinecap="round" strokeDasharray={`${(match.pct / 100) * 2 * Math.PI * 26} ${2 * Math.PI * 26}`} transform="rotate(-90 31 31)" />
+            <text x="50%" y="54%" textAnchor="middle" dominantBaseline="middle" style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, fill: 'var(--text)' }}>{match.pct}</text>
+          </svg>
+          <div style={{ flex: 1, minWidth: 180 }}>
+            <div style={{ fontWeight: 750 }}>Match con la tua ricerca: {match.pct}/100</div>
+            <div className="muted" style={{ fontSize: 12.5 }}>Calcolato sulle preferenze dell'atleta e i criteri che hai indicato in Ricerca talent.</div>
+          </div>
+          <button className="btn btn-sm" onClick={() => setShowWhy(!showWhy)}>{showWhy ? 'Nascondi' : 'Perché'}</button>
+          {showWhy && (
+            <div style={{ width: '100%', background: 'var(--surface)', borderRadius: 'var(--radius-sm)', padding: '12px 14px', fontSize: 12.5, color: 'var(--text-dim)', lineHeight: 1.8 }}>
+              {match.reasons.map((r: string, i: number) => <div key={i}>· {r}</div>)}
+            </div>
+          )}
+        </div>
+      )}
       <SectionHead t="Identità e posizionamento" />
       <div className="card card-lg">
         {ident.desired_image && (

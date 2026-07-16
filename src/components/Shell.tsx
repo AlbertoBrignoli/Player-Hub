@@ -8,7 +8,7 @@ import Toaster from './Toaster'
 import Icon from './Icon'
 import { Modal, Field, Input } from './ui'
 
-export const APP_VERSION = 'v4.8'
+export const APP_VERSION = 'v4.9'
 
 export interface NavDef { key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[] }
 
@@ -47,6 +47,7 @@ export const BRAND_NAV: { group: string; items: NavDef[] }[] = [
   { group: 'Partnership', items: [
     { key: 'brandhome', label: 'Home', icon: 'grid' },
     { key: 'mediakit', label: 'Media Kit', icon: 'activity' },
+    { key: 'talentsearch', label: 'Ricerca talent', icon: 'users' },
     { key: 'campaigns', label: 'Campagne', icon: 'image' },
     { key: 'brandcard', label: 'La mia scheda', icon: 'award' },
     { key: 'messages', label: 'Messaggi', icon: 'message' },
@@ -89,6 +90,7 @@ const TITLES: Record<string, { t: string; s: string }> = {
   brandhome: { t: 'Home', s: 'La tua scheda e gli atleti in partnership' },
   'coach-office': { t: 'Il mio ufficio', s: 'Agenda personale, clienti e cassa · area privata' },
   mediakit: { t: 'Media Kit', s: "I numeri dell'atleta" },
+  talentsearch: { t: 'Ricerca talent', s: "Descrivi l'atleta ideale e scopri il match con il roster AUVI" },
   campaigns: { t: 'Campagne', s: 'Proponi contenuti e carica lo shooting' },
   brandcard: { t: 'La mia scheda', s: 'Dati e referente del brand' },
 }

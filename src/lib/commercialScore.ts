@@ -283,3 +283,72 @@ export function followerBand(n?: number | null): string | null {
   const v = Math.floor(n / step) * step
   return v >= 1000 ? `${v.toLocaleString('it-IT')}+` : `${n}`
 }
+
+// ── Vocabolari onboarding condivisi (atleta e ricerca brand) ─────────────────
+export const VALUE_OPTS = ['Determinazione', 'Famiglia', 'Disciplina', 'Umiltà', 'Ambizione', 'Lealtà', 'Creatività', 'Resilienza', 'Solidarietà', 'Professionalità', 'Autenticità', 'Rispetto']
+export const INTEREST_OPTS = ['Moda', 'Tecnologia', 'Gaming', 'Motori', 'Musica', 'Cinema & Serie', 'Viaggi', 'Cucina', 'Fitness', 'Lettura', 'Fotografia', 'Natura', 'Arte', 'Animali']
+export const STYLE_OPTS = ['Elegante', 'Sportivo', 'Casual', 'Streetwear', 'Minimal', 'Premium', 'Autentico', 'Energico', 'Riservato', 'Solare']
+export const LANG_OPTS = ['Italiano', 'Inglese', 'Spagnolo', 'Francese', 'Tedesco', 'Portoghese', 'Greco']
+export const MARKET_OPTS = ['Italia', 'Grecia', 'Regno Unito', 'Spagna', 'Francia', 'Germania', 'USA', 'Sud America', 'Medio Oriente', 'Asia']
+
+// ── MATCH BRAND ↔ ATLETA (0-100, rule-based e tracciabile) ───────────────────
+// Usa SOLO dati già visibili al brand: cp_preferences_public (scelte dell'atleta)
+// e player (età). Niente audience, fee o valutazioni riservate.
+export interface BrandMatch { pct: number; reasons: string[]; blocked: boolean; partial: boolean }
+
+export function computeBrandAthleteMatch(search: any, prefs: any, player: { age?: number | null } | null): BrandMatch | null {
+  if (!search) return null
+  const reasons: string[] = []
+  const liked: string[] = prefs?.categories_liked || []
+  const excluded: string[] = prefs?.categories_excluded || []
+  const ident = prefs?.identity || {}
+  const terr = prefs?.territories || {}
+  const avail = prefs?.availability || {}
+  const cats: string[] = search.categories || []
+
+  // Gate: se la categoria del brand è tra le escluse dell'atleta, il match crolla.
+  const catBlocked = cats.filter(c => excluded.includes(c))
+  if (catBlocked.length) {
+    return { pct: 5, reasons: ["La categoria del brand è tra quelle escluse dall'atleta"], blocked: true, partial: !prefs?.onboarding_completed }
+  }
+
+  let pct = 40 // base: atleta selezionato e gestito da AUVI
+  reasons.push('Atleta del roster AUVI')
+
+  const catHit = cats.filter(c => liked.includes(c))
+  if (catHit.length) { pct += 22; reasons.push(`Categoria tra le preferite dell'atleta (${catHit.map(k => CATEGORY_NAMES[k] || k).join(', ')})`) }
+  else if (cats.length && liked.length) { pct += 4; reasons.push('Categoria non indicata ma non esclusa') }
+
+  const valHit = (search.values_wanted || []).filter((v: string) => (ident.values || []).includes(v))
+  if (valHit.length) { pct += Math.min(12, valHit.length * 4); reasons.push(`Valori in comune: ${valHit.join(', ')}`) }
+
+  const intHit = (search.interests_wanted || []).filter((v: string) => (ident.interests || []).includes(v))
+  if (intHit.length) { pct += Math.min(9, intHit.length * 3); reasons.push(`Interessi in comune: ${intHit.join(', ')}`) }
+
+  const actReq: string[] = search.activities || []
+  if (actReq.length) {
+    const actHit = actReq.filter(k => avail[k])
+    const share = actHit.length / actReq.length
+    pct += Math.round(share * 12)
+    if (actHit.length) reasons.push(`Disponibile per ${actHit.length} attività su ${actReq.length} richieste`)
+    else reasons.push('Disponibilità richieste non ancora confermate')
+  }
+
+  const mktHit = (search.markets || []).filter((m: string) => (terr.markets || []).includes(m))
+  if (mktHit.length) { pct += 8; reasons.push(`Mercati in comune: ${mktHit.join(', ')}`) }
+
+  const langHit = (search.languages || []).filter((l: string) => (terr.languages || []).includes(l))
+  if (langHit.length) { pct += 5; reasons.push(`Lingue: ${langHit.join(', ')}`) }
+
+  const age = player?.age ?? null
+  if (age !== null && (search.age_min || search.age_max)) {
+    const inRange = (!search.age_min || age >= search.age_min) && (!search.age_max || age <= search.age_max)
+    if (inRange) { pct += 6; reasons.push(`Età in linea (${age} anni)`) }
+    else { pct -= 10; reasons.push(`Fuori dalla fascia d'età richiesta (${age} anni)`) }
+  }
+
+  const partial = !prefs?.onboarding_completed
+  if (partial) reasons.push('Profilo atleta in completamento: il match può crescere')
+
+  return { pct: Math.max(5, Math.min(98, Math.round(pct))), reasons, blocked: false, partial }
+}

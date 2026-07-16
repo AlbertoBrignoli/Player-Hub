@@ -26,6 +26,7 @@ import BrandCard from './modules/BrandCard'
 import BrandHome from './modules/BrandHome'
 import CoachOffice from './modules/CoachOffice'
 import BrandCampaigns from './modules/BrandCampaigns'
+import TalentSearch from './modules/TalentSearch'
 
 export default function App() {
   const { session, profile, loading } = useAuth()
@@ -39,7 +40,7 @@ export default function App() {
 
   // Il brand ha un set di schermate dedicato e non accede alle aree interne.
   const isBrand = profile.role === 'brand'
-  const brandAllowed = ['brandhome', 'mediakit', 'campaigns', 'brandcard', 'messages']
+  const brandAllowed = ['brandhome', 'mediakit', 'talentsearch', 'campaigns', 'brandcard', 'messages']
   // Il preparatore vede solo fitness, performance dell'atleta e chat.
   const coachAllowed = ['dashboard', 'fitness', 'coach-profile', 'coach-office', 'performance', 'messages']
   const isCoach = profile.role === 'preparatore'
@@ -52,6 +53,7 @@ export default function App() {
     switch (route) {
       case 'brandhome': return <BrandHome goto={setRoute} />
       case 'mediakit': return <MediaKit goto={setRoute} />
+      case 'talentsearch': return <TalentSearch goto={setRoute} />
       case 'campaigns': return <BrandCampaigns />
       case 'brandcard': return <BrandCard goto={setRoute} />
       case 'dashboard': return profile.role === 'preparatore' ? <FitnessCoachHome goto={setRoute} /> : <Dashboard goto={setRoute} />
