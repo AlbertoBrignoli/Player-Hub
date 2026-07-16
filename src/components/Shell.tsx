@@ -8,7 +8,7 @@ import Toaster from './Toaster'
 import Icon from './Icon'
 import { Modal, Field, Input } from './ui'
 
-export const APP_VERSION = 'v4.3'
+export const APP_VERSION = 'v4.4'
 
 export interface NavDef { key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[] }
 
@@ -26,6 +26,7 @@ export const NAV: { group: string; items: NavDef[] }[] = [
     { key: 'contracts', label: 'Contratti', icon: 'briefcase' },
     { key: 'documents', label: 'Documenti', icon: 'archive' },
     { key: 'sponsors', label: 'Sponsor', icon: 'award' },
+    { key: 'commercial', label: 'Commercial Profile', icon: 'star', roles: ['admin', 'player', 'creator'] },
   ]},
   { group: 'Fitness', items: [
     { key: 'fitness', label: 'Area Fitness', icon: 'dumbbell' },
@@ -80,6 +81,7 @@ const TITLES: Record<string, { t: string; s: string }> = {
   editorial: { t: 'Calendario Editoriale', s: 'Partite, copy e grafiche pronte da pubblicare' },
   media: { t: 'Media', s: 'Foto, selezioni e grafiche del team' },
   sponsors: { t: 'Sponsor & Commerciale', s: 'Accordi e deliverable' },
+  commercial: { t: 'Commercial Profile', s: 'Misura il tuo valore, scopri i brand compatibili, costruisci opportunità' },
   agenda: { t: 'Agenda', s: 'Impegni e appuntamenti' },
   tasks: { t: 'Task', s: 'Attività condivise' },
   messages: { t: 'Messaggi', s: 'Comunicazione diretta' },

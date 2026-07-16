@@ -15,6 +15,7 @@ import Documents from './modules/Documents'
 import Editorial from './modules/Editorial'
 import Media from './modules/Media'
 import Sponsors from './modules/Sponsors'
+import Commercial from './modules/Commercial'
 import Agenda from './modules/Agenda'
 import Tasks from './modules/Tasks'
 import Messages from './modules/Messages'
@@ -64,6 +65,7 @@ export default function App() {
       case 'editorial': return <Editorial />
       case 'media': return <Media />
       case 'sponsors': return <Sponsors />
+      case 'commercial': return <Commercial />
       case 'agenda': return <Agenda goto={setRoute} />
       case 'tasks': return <Tasks />
       case 'messages': return <Messages />
