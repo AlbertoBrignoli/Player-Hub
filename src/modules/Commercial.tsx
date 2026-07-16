@@ -923,13 +923,14 @@ function AdminPanel({ athleteId, cfg, cats, opps, collabs, perf, userName, reloa
   return (
     <div className="grid" style={{ gap: 16 }}>
       <div className="flex gap" style={{ flexWrap: 'wrap' }}>
-        {[['opportunita', 'Opportunità'], ['collaborazioni', 'Collaborazioni'], ['valutazioni', 'Valutazione riservata'], ['config', 'Pesi & Config']].map(([id, l]) => (
+        {[['opportunita', 'Opportunità'], ['collaborazioni', 'Collaborazioni'], ['valutazioni', 'Valutazione riservata'], ['instagram', 'Instagram Sync'], ['config', 'Pesi & Config']].map(([id, l]) => (
           <button key={id} className={`btn btn-sm ${sub === id ? 'btn-primary' : ''}`} onClick={() => setSub(id)}>{l}</button>
         ))}
       </div>
       {sub === 'opportunita' && <AdminOpps athleteId={athleteId} cats={cats} opps={opps} userName={userName} reload={reload} />}
       {sub === 'collaborazioni' && <AdminCollabs athleteId={athleteId} cats={cats} collabs={collabs} perf={perf} reload={reload} />}
       {sub === 'valutazioni' && <AdminEval athleteId={athleteId} reload={reload} />}
+      {sub === 'instagram' && <AdminInstagram athleteId={athleteId} reload={reload} />}
       {sub === 'config' && cfg && <AdminConfig cfg={cfg} reload={reload} />}
     </div>
   )
@@ -1210,6 +1211,118 @@ function AdminConfig({ cfg, reload }: any) {
         </div>
       ))}
       <button className="btn btn-primary" style={{ marginTop: 10 }} disabled={busy || total !== 100} onClick={save}>{busy ? 'Salvo…' : saved ? 'Salvato' : 'Salva configurazione'}</button>
+    </div>
+  )
+}
+
+// ── INSTAGRAM SYNC (Graph API Meta, senza servizi terzi) ─────────────────────
+// L'admin incolla App ID/Secret e il token generato dal Graph API Explorer;
+// la Edge Function `sync-instagram` scopre l'account IG, rinnova il token
+// long-lived e aggiorna follower/ER/reach/demografia nel Commercial Profile.
+function AdminInstagram({ athleteId, reload }: any) {
+  const [acc, setAcc] = useState<any>(null)
+  const [busy, setBusy] = useState(false)
+  const [syncing, setSyncing] = useState(false)
+  const [result, setResult] = useState<any>(null)
+  const [showGuide, setShowGuide] = useState(false)
+
+  async function load() {
+    const { data } = await supabase.from('cp_social_accounts').select('*').eq('player_id', athleteId).eq('platform', 'instagram').maybeSingle()
+    setAcc(data || { player_id: athleteId, platform: 'instagram' })
+  }
+  useEffect(() => { setResult(null); load() }, [athleteId])
+  if (!acc) return <Spinner />
+
+  async function save() {
+    setBusy(true)
+    await supabase.from('cp_social_accounts').upsert({
+      player_id: athleteId, platform: 'instagram',
+      app_id: acc.app_id || null, app_secret: acc.app_secret || null,
+      access_token: acc.access_token || null,
+      // token nuovo → azzera scadenza e account scoperto, verranno ricalcolati al sync
+      token_expires_at: null, ig_user_id: acc.ig_user_id || null,
+    }, { onConflict: 'player_id,platform' })
+    setBusy(false); await load()
+  }
+
+  async function syncNow() {
+    setSyncing(true); setResult(null)
+    const { data, error } = await supabase.functions.invoke('sync-instagram', { body: { player_id: athleteId } })
+    setSyncing(false)
+    if (error) { setResult({ ok: false, error: error.message }); return }
+    const r = data?.results?.[0] || data
+    setResult(r)
+    await load(); reload()
+  }
+
+  return (
+    <div className="card">
+      <div style={{ fontWeight: 700, marginBottom: 4 }}>Collegamento Instagram</div>
+      <div className="muted" style={{ fontSize: 12.5, marginBottom: 12 }}>
+        Sync diretto con la Graph API di Meta: follower, engagement, reach e demografia dell'audience
+        entrano da soli nel Commercial Score. Aggiornamento automatico ogni notte alle 04:30.
+      </div>
+
+      {acc.ig_username && (
+        <div className="flex gap" style={{ alignItems: 'center', marginBottom: 12, flexWrap: 'wrap' }}>
+          <Badge tone="green">@{acc.ig_username}</Badge>
+          {acc.last_sync_at && <span className="faint" style={{ fontSize: 12 }}>ultimo sync {fmtDateTime(acc.last_sync_at)}</span>}
+          {acc.last_sync_status === 'error' && <Badge tone="red">errore</Badge>}
+          {acc.token_expires_at && <span className="faint" style={{ fontSize: 12 }}>token valido fino al {fmtDate(acc.token_expires_at)}</span>}
+        </div>
+      )}
+      {acc.last_sync_error && <div style={{ fontSize: 12.5, color: 'var(--red)', marginBottom: 12 }}>{acc.last_sync_error}</div>}
+
+      <button className="btn btn-sm" style={{ marginBottom: 12 }} onClick={() => setShowGuide(!showGuide)}>
+        {showGuide ? 'Nascondi la guida' : 'Come ottengo App ID, Secret e Token?'}
+      </button>
+      {showGuide && (
+        <div className="muted" style={{ fontSize: 12.5, lineHeight: 1.8, marginBottom: 14, background: 'var(--surface)', borderRadius: 'var(--radius-sm)', padding: '12px 16px' }}>
+          <b style={{ color: 'var(--text)' }}>Prerequisito:</b> il profilo Instagram deve essere <b>Business o Creator</b> e collegato a una <b>Pagina Facebook</b>.<br />
+          1. Vai su <b>developers.facebook.com</b> → My Apps → <b>Create App</b> (tipo "Business"). L'app può restare in Development Mode.<br />
+          2. In <b>Settings → Basic</b> copia <b>App ID</b> e <b>App Secret</b>.<br />
+          3. Apri <b>Tools → Graph API Explorer</b>, seleziona la tua app e aggiungi i permessi:
+          <b> pages_show_list, pages_read_engagement, instagram_basic, instagram_manage_insights</b>.<br />
+          4. Clicca <b>Generate Access Token</b>, fai login e seleziona la Pagina + l'account Instagram.<br />
+          5. Incolla i tre valori qui sotto e premi <b>Sincronizza ora</b>: al resto (account IG, token long-lived 60gg, rinnovo automatico) pensa il sistema.
+        </div>
+      )}
+
+      <div className="row2">
+        <Field label="App ID"><Input value={acc.app_id || ''} onChange={e => setAcc({ ...acc, app_id: e.target.value.trim() })} placeholder="Es. 1234567890" /></Field>
+        <Field label="App Secret"><Input type="password" value={acc.app_secret || ''} onChange={e => setAcc({ ...acc, app_secret: e.target.value.trim() })} /></Field>
+      </div>
+      <Field label="Access Token (dal Graph API Explorer)"><Textarea rows={3} value={acc.access_token || ''} onChange={e => setAcc({ ...acc, access_token: e.target.value.trim() })} placeholder="EAAB..." /></Field>
+
+      <div className="flex gap" style={{ flexWrap: 'wrap' }}>
+        <button className="btn" disabled={busy} onClick={save}>{busy ? 'Salvo…' : 'Salva credenziali'}</button>
+        <button className="btn btn-primary" disabled={syncing || !acc.access_token} onClick={syncNow}>
+          {syncing ? 'Sincronizzazione…' : 'Sincronizza ora'}
+        </button>
+      </div>
+
+      {result && (
+        <div style={{ marginTop: 14 }}>
+          {result.ok ? (
+            <div className="grid g3">
+              <Stat label="Follower" value={Number(result.followers).toLocaleString('it-IT')} sub={result.username ? `@${result.username}` : undefined} />
+              <Stat label="Engagement" value={result.er != null ? `${result.er}%` : '—'} />
+              <Stat label="Reach media/post" value={result.reach != null ? Number(result.reach).toLocaleString('it-IT') : '—'} />
+              <Stat label="Paesi audience" value={(result.geo || []).join(', ') || '—'} />
+              <Stat label="Fascia età" value={result.age_band || '—'} />
+              <Stat label="Genere" value={result.gender_split || '—'} />
+            </div>
+          ) : (
+            <div style={{ fontSize: 12.5, color: 'var(--red)' }}>Sync fallito: {result.error}</div>
+          )}
+        </div>
+      )}
+
+      <div className="faint" style={{ fontSize: 11.5, marginTop: 14, lineHeight: 1.6 }}>
+        Le credenziali sono salvate su una tabella riservata (RLS admin-only). Il token viene scambiato
+        automaticamente in long-lived (60 giorni) e rinnovato a ogni sync: non dovrai reincollarlo,
+        salvo revoca del permesso da parte di Meta.
+      </div>
     </div>
   )
 }
