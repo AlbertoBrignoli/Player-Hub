@@ -14,23 +14,15 @@ import Icon from '../components/Icon'
 import { fmtMoney, fmtDate, fmtDateTime } from '../lib/format'
 import type { Player } from '../lib/types'
 import {
-  COMP_META, DISCLAIMER, computeFullScore, computeCategoryFit, buildRecommendations, trendOf,
+  COMP_META, DISCLAIMER, AVAIL_OPTS, followerBand,
+  computeFullScore, computeCategoryFit, buildRecommendations, trendOf,
   type FullScore, type Reco,
 } from '../lib/commercialScore'
-import { followerBand } from './MediaKit'
 
 // ── Vocabolari onboarding ─────────────────────────────────────────────────────
 const VALUE_OPTS = ['Determinazione', 'Famiglia', 'Disciplina', 'Umiltà', 'Ambizione', 'Lealtà', 'Creatività', 'Resilienza', 'Solidarietà', 'Professionalità', 'Autenticità', 'Rispetto']
 const INTEREST_OPTS = ['Moda', 'Tecnologia', 'Gaming', 'Motori', 'Musica', 'Cinema & Serie', 'Viaggi', 'Cucina', 'Fitness', 'Lettura', 'Fotografia', 'Natura', 'Arte', 'Animali']
 const STYLE_OPTS = ['Elegante', 'Sportivo', 'Casual', 'Streetwear', 'Minimal', 'Premium', 'Autentico', 'Energico', 'Riservato', 'Solare']
-const AVAIL_OPTS: { key: string; label: string }[] = [
-  { key: 'shooting', label: 'Shooting fotografici' }, { key: 'video', label: 'Video commerciali' },
-  { key: 'eventi', label: 'Eventi' }, { key: 'meet_greet', label: 'Meet & greet' },
-  { key: 'social_post', label: 'Social post' }, { key: 'stories', label: 'Stories' },
-  { key: 'reels', label: 'Reels' }, { key: 'presenza', label: 'Presenza fisica' },
-  { key: 'lungo_periodo', label: 'Campagne di lungo periodo' }, { key: 'ambassador', label: 'Ambassador' },
-  { key: 'licensing', label: 'Licensing' }, { key: 'immagine', label: "Utilizzo dell'immagine" },
-]
 const LANG_OPTS = ['Italiano', 'Inglese', 'Spagnolo', 'Francese', 'Tedesco', 'Portoghese', 'Greco']
 const MARKET_OPTS = ['Italia', 'Grecia', 'Regno Unito', 'Spagna', 'Francia', 'Germania', 'USA', 'Sud America', 'Medio Oriente', 'Asia']
 const EXCL_PRESET = [['betting', 'Betting'], ['alcol', 'Alcol'], ['politica', 'Politica']]

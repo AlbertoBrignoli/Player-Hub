@@ -258,3 +258,28 @@ export function trendOf(snapshots: any[], current: number, days: number): number
     .sort((a, b) => new Date(b.computed_at).getTime() - new Date(a.computed_at).getTime())[0]
   return past ? Math.round(current - Number(past.total)) : null
 }
+
+// ── Costanti e helper condivisi tra Commercial (interno) e MediaKit (brand) ──
+export const AVAIL_OPTS: { key: string; label: string }[] = [
+  { key: 'shooting', label: 'Shooting fotografici' }, { key: 'video', label: 'Video commerciali' },
+  { key: 'eventi', label: 'Eventi' }, { key: 'meet_greet', label: 'Meet & greet' },
+  { key: 'social_post', label: 'Social post' }, { key: 'stories', label: 'Stories' },
+  { key: 'reels', label: 'Reels' }, { key: 'presenza', label: 'Presenza fisica' },
+  { key: 'lungo_periodo', label: 'Campagne di lungo periodo' }, { key: 'ambassador', label: 'Ambassador' },
+  { key: 'licensing', label: 'Licensing' }, { key: 'immagine', label: "Utilizzo dell'immagine" },
+]
+
+export const CATEGORY_NAMES: Record<string, string> = {
+  sportswear: 'Sportswear', fashion: 'Fashion', technology: 'Technology', gaming: 'Gaming',
+  automotive: 'Automotive', wellness: 'Wellness', food: 'Food', beverage: 'Beverage',
+  travel: 'Travel', finance: 'Finance', luxury: 'Luxury', family: 'Family',
+  entertainment: 'Entertainment', betting: 'Betting', alcol: 'Alcol', politica: 'Politica',
+}
+
+// Fascia follower per le superfici brand: mai il numero esatto.
+export function followerBand(n?: number | null): string | null {
+  if (!n || n <= 0) return null
+  const step = n >= 5000 ? 5000 : 1000
+  const v = Math.floor(n / step) * step
+  return v >= 1000 ? `${v.toLocaleString('it-IT')}+` : `${n}`
+}

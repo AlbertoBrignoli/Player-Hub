@@ -6,9 +6,10 @@ import { Spinner, Empty, Select, Badge } from '../components/ui'
 import Icon from '../components/Icon'
 import { SeasonBlock } from '../components/statbits'
 import { seasonOf, fmtDate, fmtDateTime } from '../lib/format'
+import { followerBand, AVAIL_OPTS, CATEGORY_NAMES } from '../lib/commercialScore'
 import type { Player, Match, StatsMatch, SeasonStat } from '../lib/types'
 
-type Tab = 'overview' | 'pitch' | 'social'
+type Tab = 'overview' | 'pitch' | 'social' | 'partnership'
 
 const seasonLabel = (y: number) => `${y}/${String((y + 1) % 100).padStart(2, '0')}`
 
@@ -90,7 +91,7 @@ export default function MediaKit() {
       <Hero player={player} season={currentSeason} onOpen={() => setTab('pitch')} />
 
       <div className="mk-tabs">
-        {([['overview', 'Panoramica', 'grid'], ['pitch', 'In campo', 'activity'], ['social', 'Social', 'instagram']] as const).map(([k, label, ico]) => (
+        {([['overview', 'Panoramica', 'grid'], ['pitch', 'In campo', 'activity'], ['social', 'Social', 'instagram'], ['partnership', 'Partnership', 'award']] as const).map(([k, label, ico]) => (
           <button key={k} className={`mk-tab ${tab === k ? 'active' : ''}`} onClick={() => setTab(k)}>
             <Icon name={ico} size={15} /> {label}
           </button>
@@ -113,6 +114,7 @@ export default function MediaKit() {
         />
       )}
       {tab === 'social' && (isBrand ? <SocialTeaser player={player} teaser={teaser} /> : <Social player={player} fmtK={fmtK} />)}
+      {tab === 'partnership' && <Partnership player={player} />}
 
       <div className="faint" style={{ fontSize: 11.5, textAlign: 'center', padding: '4px 0 8px' }}>
         Dati riservati · condivisi da AUVI Agency per la valutazione della partnership.
@@ -190,14 +192,6 @@ function Overview({ player, agg, rating, seasonTxt, fmtK, onPitch, onSocial, isB
 /* ---------- TEASER (unica vista commerciale per il ruolo brand) ----------
    Mai ER, reach o demografia: fascia follower + categorie + highlights scelti
    da AUVI (cp_public_teaser). Il profilo completo si richiede in chat. */
-export function followerBand(n?: number | null): string | null {
-  if (!n || n <= 0) return null
-  const step = n >= 5000 ? 5000 : 1000
-  return Math.floor(n / step) * step >= 1000
-    ? `${(Math.floor(n / step) * step).toLocaleString('it-IT')}+`
-    : `${n}`
-}
-
 function TeaserBlock({ player, teaser, compact }: { player: Player; teaser?: any; compact?: boolean }) {
   const band = teaser?.follower_band || followerBand(player.instagram_followers)
   const cats: string[] = Array.isArray(teaser?.top_categories) ? teaser.top_categories : []
@@ -405,4 +399,116 @@ function igHandle(url?: string | null): string | null {
   if (!url) return null
   const m = url.match(/instagram\.com\/([^/?#]+)/i)
   return m ? '@' + m[1] : null
+}
+
+/* ---------- PARTNERSHIP ----------
+   Le scelte commerciali dell'atleta, visibili al brand: valori, stile,
+   interessi, categorie gradite/escluse, disponibilità, territori e lingue.
+   Fonte: vista cp_preferences_public — SOLO colonne sicure (mai fee minima,
+   sponsor attivi, esclusività o dati audience). */
+function Partnership({ player }: { player: Player }) {
+  const [prefs, setPrefs] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  useEffect(() => {
+    if (!player?.api_player_id) { setLoading(false); return }
+    supabase.from('cp_preferences_public').select('*').eq('player_id', player.api_player_id).maybeSingle()
+      .then(({ data }) => { setPrefs(data || null); setLoading(false) })
+  }, [player?.api_player_id])
+
+  if (loading) return <Spinner />
+  const ident = prefs?.identity || {}
+  const terr = prefs?.territories || {}
+  const liked: string[] = prefs?.categories_liked || []
+  const excluded: string[] = prefs?.categories_excluded || []
+  const avail = AVAIL_OPTS.filter(a => prefs?.availability?.[a.key]).map(a => a.label)
+  const catName = (k: string) => CATEGORY_NAMES[k] || k
+  const hasAnything = (ident.values || []).length || liked.length || avail.length || (terr.markets || []).length
+
+  if (!prefs || !hasAnything) {
+    return <Empty icon={<Icon name="award" size={28} strokeWidth={1.4} />} title="Preferenze in aggiornamento"
+      hint="L'atleta sta completando il suo profilo commerciale. Per una proposta su misura, scrivi ad AUVI in chat." />
+  }
+
+  return (
+    <>
+      <SectionHead t="Identità e posizionamento" />
+      <div className="card card-lg">
+        {ident.desired_image && (
+          <div style={{ fontSize: 16, fontWeight: 650, lineHeight: 1.5, marginBottom: 14, fontStyle: 'italic' }}>
+            “{ident.desired_image}”
+          </div>
+        )}
+        {(ident.values || []).length > 0 && (
+          <div style={{ marginBottom: 12 }}>
+            <div className="ed-kicker" style={{ marginBottom: 6 }}>Valori</div>
+            <div className="flex gap" style={{ flexWrap: 'wrap' }}>{ident.values.map((v: string) => <Badge key={v} tone="accent">{v}</Badge>)}</div>
+          </div>
+        )}
+        {(ident.style || []).length > 0 && (
+          <div style={{ marginBottom: 12 }}>
+            <div className="ed-kicker" style={{ marginBottom: 6 }}>Stile</div>
+            <div className="flex gap" style={{ flexWrap: 'wrap' }}>{ident.style.map((v: string) => <Badge key={v}>{v}</Badge>)}</div>
+          </div>
+        )}
+        {(ident.interests || []).length > 0 && (
+          <div>
+            <div className="ed-kicker" style={{ marginBottom: 6 }}>Interessi fuori dal campo</div>
+            <div className="flex gap" style={{ flexWrap: 'wrap' }}>{ident.interests.map((v: string) => <Badge key={v}>{v}</Badge>)}</div>
+          </div>
+        )}
+      </div>
+
+      <SectionHead t="Collaborazioni" />
+      <div className="grid g2">
+        <div className="card">
+          <div className="ed-kicker" style={{ marginBottom: 8 }}>Categorie gradite</div>
+          {liked.length
+            ? <div className="flex gap" style={{ flexWrap: 'wrap' }}>{liked.map(k => <Badge key={k} tone="green">{catName(k)}</Badge>)}</div>
+            : <div className="faint" style={{ fontSize: 12.5 }}>In definizione con AUVI.</div>}
+          {excluded.length > 0 && (
+            <div style={{ marginTop: 14 }}>
+              <div className="ed-kicker" style={{ marginBottom: 8 }}>Non in linea con il profilo</div>
+              <div className="flex gap" style={{ flexWrap: 'wrap' }}>{excluded.map(k => <Badge key={k} tone="red">{catName(k)}</Badge>)}</div>
+            </div>
+          )}
+        </div>
+        <div className="card">
+          <div className="ed-kicker" style={{ marginBottom: 8 }}>Disponibile per</div>
+          {avail.length
+            ? <div style={{ fontSize: 13.5, lineHeight: 2 }}>{avail.map(a => <div key={a}>· {a}</div>)}</div>
+            : <div className="faint" style={{ fontSize: 12.5 }}>Disponibilità in definizione con AUVI.</div>}
+        </div>
+      </div>
+
+      {((terr.markets || []).length > 0 || (terr.languages || []).length > 0) && (
+        <>
+          <SectionHead t="Territori e lingue" />
+          <div className="card">
+            {(terr.markets || []).length > 0 && (
+              <div style={{ marginBottom: (terr.languages || []).length ? 12 : 0 }}>
+                <div className="ed-kicker" style={{ marginBottom: 6 }}>Mercati di interesse</div>
+                <div className="flex gap" style={{ flexWrap: 'wrap' }}>{terr.markets.map((m: string) => <Badge key={m}>{m}</Badge>)}</div>
+              </div>
+            )}
+            {(terr.languages || []).length > 0 && (
+              <div>
+                <div className="ed-kicker" style={{ marginBottom: 6 }}>Lingue</div>
+                <div className="flex gap" style={{ flexWrap: 'wrap' }}>{terr.languages.map((l: string) => <Badge key={l}>{l}</Badge>)}</div>
+              </div>
+            )}
+            {terr.travel && <div style={{ marginTop: 12, fontSize: 13, color: 'var(--green)', fontWeight: 600 }}>Disponibile a viaggiare per le campagne</div>}
+          </div>
+        </>
+      )}
+
+      <div className="card" style={{ background: 'var(--bg-2)', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: 220 }}>
+          <div style={{ fontWeight: 700, marginBottom: 3 }}>Hai in mente una collaborazione?</div>
+          <div className="muted" style={{ fontSize: 12.5 }}>AUVI costruisce la proposta con l'atleta sulla base di queste disponibilità.</div>
+        </div>
+        <Badge tone="gold">Scrivici in chat</Badge>
+      </div>
+      <div className="faint" style={{ fontSize: 11.5 }}>Preferenze indicate dall'atleta con AUVI Agency{prefs.updated_at ? ` · aggiornate ${fmtDate(prefs.updated_at)}` : ''}.</div>
+    </>
+  )
 }
