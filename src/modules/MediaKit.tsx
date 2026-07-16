@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../auth/AuthContext'
 import { useAthlete } from '../lib/athlete'
-import { Spinner, Empty, Select } from '../components/ui'
+import { Spinner, Empty, Select, Badge } from '../components/ui'
 import Icon from '../components/Icon'
 import { SeasonBlock } from '../components/statbits'
 import { seasonOf, fmtDate, fmtDateTime } from '../lib/format'
@@ -18,11 +19,13 @@ interface Agg { app: number; min: number; goals: number; assists: number; rW: nu
 // Profilo navigabile: Panoramica · In campo · Social. Sola lettura.
 export default function MediaKit() {
   const { athleteId } = useAthlete()
+  const { isBrand } = useAuth()
   const [loading, setLoading] = useState(true)
   const [player, setPlayer] = useState<Player | null>(null)
   const [matches, setMatches] = useState<Match[]>([])
   const [tech, setTech] = useState<StatsMatch[]>([])
   const [api, setApi] = useState<SeasonStat[]>([])
+  const [teaser, setTeaser] = useState<any>(null)
   const [tab, setTab] = useState<Tab>('overview')
   const currentSeason = seasonOf(new Date())
 
@@ -31,16 +34,18 @@ export default function MediaKit() {
     setLoading(true)
     ;(async () => {
       const pid = athleteId
-      const [p, m, t, a] = await Promise.all([
+      const [p, m, t, a, tz] = await Promise.all([
         supabase.from('player').select('*').eq('api_player_id', pid).maybeSingle(),
         supabase.from('matches').select('*').eq('player_id', pid).order('match_date', { ascending: false }),
         supabase.from('player_stats_match').select('*').eq('player_id', pid).order('match_date', { ascending: false }),
         supabase.from('player_stats_api').select('*').eq('player_id', pid).order('season', { ascending: false }),
+        supabase.from('cp_public_teaser').select('*').eq('player_id', pid).eq('published', true).maybeSingle(),
       ])
       setPlayer(p.data as Player)
       setMatches((m.data as Match[]) || [])
       setTech((t.data as StatsMatch[]) || [])
       setApi((a.data as SeasonStat[]) || [])
+      setTeaser(tz.data || null)
       setLoading(false)
     })()
   }, [athleteId])
@@ -97,6 +102,7 @@ export default function MediaKit() {
           player={player} agg={aggOf(displayYear)} rating={ratingOf(aggOf(displayYear))}
           seasonTxt={seasonMap.has(displayYear) ? seasonLabel(displayYear) : currentSeason} fmtK={fmtK}
           onPitch={() => setTab('pitch')} onSocial={() => setTab('social')}
+          isBrand={isBrand} teaser={teaser}
         />
       )}
       {tab === 'pitch' && (
@@ -106,7 +112,7 @@ export default function MediaKit() {
           tech={tech.filter(t => seasonOf(t.match_date) === seasonLabel(activeYear))}
         />
       )}
-      {tab === 'social' && <Social player={player} fmtK={fmtK} />}
+      {tab === 'social' && (isBrand ? <SocialTeaser player={player} teaser={teaser} /> : <Social player={player} fmtK={fmtK} />)}
 
       <div className="faint" style={{ fontSize: 11.5, textAlign: 'center', padding: '4px 0 8px' }}>
         Dati riservati · condivisi da AUVI Agency per la valutazione della partnership.
@@ -139,9 +145,10 @@ function Hero({ player, season, onOpen }: { player: Player; season: string; onOp
 }
 
 /* ---------- PANORAMICA ---------- */
-function Overview({ player, agg, rating, seasonTxt, fmtK, onPitch, onSocial }: {
+function Overview({ player, agg, rating, seasonTxt, fmtK, onPitch, onSocial, isBrand, teaser }: {
   player: Player; agg: Agg; rating: number | null; seasonTxt: string
   fmtK: (n?: number | null) => string; onPitch: () => void; onSocial: () => void
+  isBrand?: boolean; teaser?: any
 }) {
   return (
     <>
@@ -154,24 +161,92 @@ function Overview({ player, agg, rating, seasonTxt, fmtK, onPitch, onSocial }: {
       </div>
 
       <SectionHead t="Audience · Instagram" onMore={onSocial} moreLabel="Dettaglio" />
-      <div className="grid g4">
-        <StatCard label="Follower" value={fmtK(player.instagram_followers)} />
-        <StatCard label="Engagement" value={player.instagram_engagement != null ? player.instagram_engagement + '%' : '—'} tone="var(--green)" />
-        <StatCard label="Reach medio" value={fmtK(player.instagram_reach)} />
-        <div className="card stat mk-ig" onClick={() => player.instagram_url && window.open(player.instagram_url, '_blank')} style={{ cursor: player.instagram_url ? 'pointer' : 'default' }}>
-          <div className="stat-label">Profilo</div>
-          <div className="stat-value" style={{ fontSize: 15, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Icon name="instagram" size={16} /> {igHandle(player.instagram_url) || '—'}
+      {isBrand ? (
+        <TeaserBlock player={player} teaser={teaser} compact />
+      ) : (
+        <div className="grid g4">
+          <StatCard label="Follower" value={fmtK(player.instagram_followers)} />
+          <StatCard label="Engagement" value={player.instagram_engagement != null ? player.instagram_engagement + '%' : '—'} tone="var(--green)" />
+          <StatCard label="Reach medio" value={fmtK(player.instagram_reach)} />
+          <div className="card stat mk-ig" onClick={() => player.instagram_url && window.open(player.instagram_url, '_blank')} style={{ cursor: player.instagram_url ? 'pointer' : 'default' }}>
+            <div className="stat-label">Profilo</div>
+            <div className="stat-value" style={{ fontSize: 15, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Icon name="instagram" size={16} /> {igHandle(player.instagram_url) || '—'}
+            </div>
+            {player.instagram_url && <div className="stat-sub">apri su Instagram ↗</div>}
           </div>
-          {player.instagram_url && <div className="stat-sub">apri su Instagram ↗</div>}
         </div>
-      </div>
-      {player.audience_note && (
+      )}
+      {!isBrand && player.audience_note && (
         <div className="card" style={{ background: 'var(--bg-2)' }}>
           <div className="ed-kicker" style={{ marginBottom: 6 }}>Pubblico</div>
           <div style={{ fontSize: 13.5, color: 'var(--text-dim)' }}>{player.audience_note}</div>
         </div>
       )}
+    </>
+  )
+}
+
+/* ---------- TEASER (unica vista commerciale per il ruolo brand) ----------
+   Mai ER, reach o demografia: fascia follower + categorie + highlights scelti
+   da AUVI (cp_public_teaser). Il profilo completo si richiede in chat. */
+export function followerBand(n?: number | null): string | null {
+  if (!n || n <= 0) return null
+  const step = n >= 5000 ? 5000 : 1000
+  return Math.floor(n / step) * step >= 1000
+    ? `${(Math.floor(n / step) * step).toLocaleString('it-IT')}+`
+    : `${n}`
+}
+
+function TeaserBlock({ player, teaser, compact }: { player: Player; teaser?: any; compact?: boolean }) {
+  const band = teaser?.follower_band || followerBand(player.instagram_followers)
+  const cats: string[] = Array.isArray(teaser?.top_categories) ? teaser.top_categories : []
+  const highlights: string[] = Array.isArray(teaser?.highlights) ? teaser.highlights : []
+  return (
+    <div className="card card-lg">
+      {teaser?.headline && <div style={{ fontWeight: 750, fontSize: compact ? 15 : 17, marginBottom: 10 }}>{teaser.headline}</div>}
+      <div className="flex gap" style={{ alignItems: 'center', flexWrap: 'wrap', marginBottom: highlights.length || cats.length ? 12 : 0 }}>
+        <div className="mk-ig-badge"><Icon name="instagram" size={20} /></div>
+        <div>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: compact ? 24 : 30, fontWeight: 700 }}>{band || '—'}</div>
+          <div className="faint" style={{ fontSize: 11.5 }}>follower · {igHandle(player.instagram_url) || 'Instagram'}</div>
+        </div>
+      </div>
+      {cats.length > 0 && (
+        <div style={{ marginBottom: highlights.length ? 12 : 0 }}>
+          <div className="ed-kicker" style={{ marginBottom: 6 }}>Territori commerciali più affini</div>
+          <div className="flex gap" style={{ flexWrap: 'wrap' }}>{cats.map(c => <Badge key={c} tone="accent">{c}</Badge>)}</div>
+        </div>
+      )}
+      {highlights.length > 0 && (
+        <div style={{ fontSize: 13, color: 'var(--text-dim)', lineHeight: 1.8 }}>
+          {highlights.map((h, i) => <div key={i}>· {h}</div>)}
+        </div>
+      )}
+      <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        <span className="muted" style={{ fontSize: 12.5 }}>Engagement, audience e storico campagne sono disponibili nel profilo commerciale completo.</span>
+        <Badge tone="gold">Richiedilo in chat ad AUVI</Badge>
+      </div>
+    </div>
+  )
+}
+
+function SocialTeaser({ player, teaser }: { player: Player; teaser?: any }) {
+  return (
+    <>
+      <SectionHead t="Instagram" />
+      <div className="card card-lg mk-social-head">
+        <div className="mk-ig-badge"><Icon name="instagram" size={22} /></div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: 750, fontSize: 17 }}>{igHandle(player.instagram_url) || player.name}</div>
+          <div className="muted" style={{ fontSize: 12.5 }}>Account ufficiale</div>
+        </div>
+        {player.instagram_url && (
+          <a href={player.instagram_url} target="_blank" rel="noreferrer" className="btn btn-primary"><Icon name="instagram" size={15} /> Apri</a>
+        )}
+      </div>
+      <TeaserBlock player={player} teaser={teaser} />
+      <div className="faint" style={{ fontSize: 11.5 }}>Panoramica indicativa curata da AUVI Agency · profilo commerciale completo disponibile su richiesta.</div>
     </>
   )
 }

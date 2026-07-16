@@ -17,6 +17,7 @@ import {
   COMP_META, DISCLAIMER, computeFullScore, computeCategoryFit, buildRecommendations, trendOf,
   type FullScore, type Reco,
 } from '../lib/commercialScore'
+import { followerBand } from './MediaKit'
 
 // ── Vocabolari onboarding ─────────────────────────────────────────────────────
 const VALUE_OPTS = ['Determinazione', 'Famiglia', 'Disciplina', 'Umiltà', 'Ambizione', 'Lealtà', 'Creatività', 'Resilienza', 'Solidarietà', 'Professionalità', 'Autenticità', 'Rispetto']
@@ -377,8 +378,10 @@ function BrandFit({ topFits, excluded }: any) {
 
 // ── MEDIA KIT ─────────────────────────────────────────────────────────────────
 function MediaKitTab({ player, prof, topFits, collabs, cats, saveProf }: any) {
+  const { isAdmin } = useAuth()
   const [lang, setLang] = useState(prof?.media_kit?.lang || 'it')
   const [target, setTarget] = useState(prof?.media_kit?.target_category || '')
+  const [version, setVersion] = useState<'completo' | 'teaser'>('completo')
   const [busy, setBusy] = useState(false)
   const [done, setDone] = useState(false)
   const avail = AVAIL_OPTS.filter(a => prof?.availability?.[a.key]).map(a => a.label)
@@ -387,7 +390,7 @@ function MediaKitTab({ player, prof, topFits, collabs, cats, saveProf }: any) {
   async function gen() {
     setBusy(true)
     try {
-      await makePdf(player, prof, topFits, collabs, cats, lang, target || null)
+      await makePdf(player, prof, topFits, collabs, cats, lang, target || null, version)
       await saveProf({ media_kit: { ...(prof.media_kit || {}), lang, target_category: target || null, generated_at: new Date().toISOString() } })
       setDone(true); setTimeout(() => setDone(false), 3000)
     } finally { setBusy(false) }
@@ -398,19 +401,28 @@ function MediaKitTab({ player, prof, topFits, collabs, cats, saveProf }: any) {
       <div style={{ fontWeight: 700, marginBottom: 4 }}>Media Kit dinamico</div>
       <div className="muted" style={{ fontSize: 12.5, marginBottom: 14 }}>Generato automaticamente dai dati del profilo: sempre aggiornato, personalizzabile per lingua e categoria di brand.</div>
       <div className="row2">
+        <Field label="Versione"><Select value={version} onChange={e => setVersion(e.target.value as any)}>
+          <option value="completo">Completa — numeri e dettagli (uso interno / su richiesta)</option>
+          <option value="teaser">Teaser — per incuriosire il brand (senza numeri sensibili)</option>
+        </Select></Field>
         <Field label="Lingua"><Select value={lang} onChange={e => setLang(e.target.value)}><option value="it">Italiano</option><option value="en">English</option></Select></Field>
+      </div>
+      <div className="row2">
         <Field label="Personalizza per categoria"><Select value={target} onChange={e => setTarget(e.target.value)}>
           <option value="">Generico</option>
           {cats.map((c: any) => <option key={c.key} value={c.key}>{c.name}</option>)}
         </Select></Field>
+        <div />
       </div>
+      {version === 'teaser' && <div className="faint" style={{ fontSize: 11.5, marginBottom: 10 }}>Il teaser mostra fascia follower, categorie affini e highlights — niente engagement, reach, demografia o storico campagne.</div>}
       <div className="flex gap">
         <button className="btn btn-primary" disabled={busy} onClick={gen}>
-          <Icon name="download" size={15} /> {busy ? 'Generazione…' : done ? 'PDF scaricato' : 'Genera PDF'}
+          <Icon name="download" size={15} /> {busy ? 'Generazione…' : done ? 'PDF scaricato' : `Genera PDF ${version === 'teaser' ? 'teaser' : 'completo'}`}
         </button>
       </div>
       {prof?.media_kit?.generated_at && <div className="faint" style={{ fontSize: 11.5, marginTop: 10 }}>Ultimo aggiornamento: {fmtDateTime(prof.media_kit.generated_at)}</div>}
     </div>
+    {isAdmin && <TeaserAdminCard player={player} prof={prof} topFits={topFits} />}
 
     {/* Anteprima */}
     <div className="card">
@@ -447,10 +459,13 @@ function MediaKitTab({ player, prof, topFits, collabs, cats, saveProf }: any) {
   </>)
 }
 
-// PDF con jsPDF (dipendenza già presente, stesso pattern dell'Area Fitness)
-async function makePdf(player: any, prof: any, topFits: any[], collabs: any[], cats: any[], lang: string, target: string | null) {
+// PDF con jsPDF (dipendenza già presente, stesso pattern dell'Area Fitness).
+// version 'teaser' = versione marketing per i brand: fascia follower, categorie
+// e highlights — MAI engagement, reach, demografia o storico campagne.
+async function makePdf(player: any, prof: any, topFits: any[], collabs: any[], cats: any[], lang: string, target: string | null, version: 'completo' | 'teaser' = 'completo') {
   const { jsPDF } = await import('jspdf')
   const t = (it: string, en: string) => (lang === 'en' ? en : it)
+  const teaser = version === 'teaser'
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
   const W = 210
   let y: number
@@ -505,38 +520,59 @@ async function makePdf(player: any, prof: any, topFits: any[], collabs: any[], c
     ])
   }
   const aud = prof?.audience || {}
-  const audRows: [string, string][] = []
-  if (player?.instagram_followers) audRows.push(['Instagram', `${Number(player.instagram_followers).toLocaleString('it-IT')} follower${player.instagram_engagement ? ` · ER ${player.instagram_engagement}%` : ''}${player.instagram_reach ? ` · reach ${Number(player.instagram_reach).toLocaleString('it-IT')}` : ''}`])
-  if (aud?.tiktok?.followers) audRows.push(['TikTok', `${Number(aud.tiktok.followers).toLocaleString('it-IT')} follower${aud.tiktok.er ? ` · ER ${aud.tiktok.er}%` : ''}`])
-  if (aud?.youtube?.followers) audRows.push(['YouTube', `${Number(aud.youtube.followers).toLocaleString('it-IT')} iscritti`])
-  if ((aud.geo || []).length) audRows.push([t('Geografia', 'Geography'), aud.geo.join(', ')])
-  if (aud.age_band) audRows.push([t('Fascia età', 'Age band'), aud.age_band])
-  if (audRows.length) { section('Audience'); kv(audRows) }
+  if (teaser) {
+    // Solo fascia follower, mai i numeri esatti né ER/reach/demografia
+    const band = followerBand(player?.instagram_followers)
+    if (band) { section('Audience'); kv([['Instagram', `${band} follower`]]) }
+  } else {
+    const audRows: [string, string][] = []
+    if (player?.instagram_followers) audRows.push(['Instagram', `${Number(player.instagram_followers).toLocaleString('it-IT')} follower${player.instagram_engagement ? ` · ER ${player.instagram_engagement}%` : ''}${player.instagram_reach ? ` · reach ${Number(player.instagram_reach).toLocaleString('it-IT')}` : ''}`])
+    if (aud?.tiktok?.followers) audRows.push(['TikTok', `${Number(aud.tiktok.followers).toLocaleString('it-IT')} follower${aud.tiktok.er ? ` · ER ${aud.tiktok.er}%` : ''}`])
+    if (aud?.youtube?.followers) audRows.push(['YouTube', `${Number(aud.youtube.followers).toLocaleString('it-IT')} iscritti`])
+    if ((aud.geo || []).length) audRows.push([t('Geografia', 'Geography'), aud.geo.join(', ')])
+    if (aud.age_band) audRows.push([t('Fascia età', 'Age band'), aud.age_band])
+    if (audRows.length) { section('Audience'); kv(audRows) }
+  }
 
-  const fits = [...topFits].sort((a, b) => (a.key === target ? -1 : b.key === target ? 1 : b.pct - a.pct)).slice(0, 6)
+  const fits = [...topFits].sort((a, b) => (a.key === target ? -1 : b.key === target ? 1 : b.pct - a.pct)).slice(0, teaser ? 3 : 6)
   if (fits.length) {
-    section(t('Categorie più compatibili', 'Top brand categories'))
+    section(t(teaser ? 'Territori commerciali più affini' : 'Categorie più compatibili', teaser ? 'Best-fit brand territories' : 'Top brand categories'))
     fits.forEach(f => {
       doc.setFont('helvetica', 'bold'); doc.setTextColor(10, 10, 11); doc.setFontSize(9.5)
-      doc.text(`${f.name} — ${f.pct}%`, 14, y)
-      doc.setFillColor(235, 235, 239); doc.roundedRect(90, y - 3, 100, 3.6, 1.8, 1.8, 'F')
-      if (f.key === target) doc.setFillColor(255, 214, 10); else doc.setFillColor(10, 10, 11)
-      doc.roundedRect(90, y - 3, f.pct, 3.6, 1.8, 1.8, 'F')
-      y += 7.5
+      if (teaser) {
+        // niente percentuali: solo etichetta qualitativa
+        const label = f.pct >= 75 ? t('compatibilità alta', 'strong fit') : t('compatibilità buona', 'good fit')
+        doc.text(`${f.name}`, 14, y)
+        doc.setFont('helvetica', 'normal'); doc.setTextColor(100, 100, 108)
+        doc.text(label, 90, y)
+        y += 7
+      } else {
+        doc.text(`${f.name} — ${f.pct}%`, 14, y)
+        doc.setFillColor(235, 235, 239); doc.roundedRect(90, y - 3, 100, 3.6, 1.8, 1.8, 'F')
+        if (f.key === target) doc.setFillColor(255, 214, 10); else doc.setFillColor(10, 10, 11)
+        doc.roundedRect(90, y - 3, f.pct, 3.6, 1.8, 1.8, 'F')
+        y += 7.5
+      }
     })
     y += 4
   }
   const avail = AVAIL_OPTS.filter(a => prof?.availability?.[a.key]).map(a => a.label)
   if (avail.length) { section(t('Formati disponibili', 'Available formats')); kv([[t('Attività', 'Activities'), avail.join(' · ')]]) }
   const terr = prof?.territories || {}
-  if ((terr.markets || []).length || (terr.languages || []).length) {
+  if (!teaser && ((terr.markets || []).length || (terr.languages || []).length)) {
     section(t('Territori e lingue', 'Territories & languages'))
     kv([[t('Mercati', 'Markets'), (terr.markets || []).join(', ')], [t('Lingue', 'Languages'), (terr.languages || []).join(', ')]])
   }
-  if (collabs.length) {
+  if (!teaser && collabs.length) {
     if (y > 235) { doc.addPage(); y = 20 }
     section(t('Collaborazioni', 'Past collaborations'))
     kv(collabs.slice(0, 6).map((c: any) => [c.brand_name, `${c.category_key || ''}${c.period_start ? ` · ${new Date(c.period_start).getFullYear()}` : ''}`] as [string, string]))
+  }
+  if (teaser) {
+    y += 4
+    doc.setFillColor(10, 10, 11); doc.roundedRect(14, y, W - 28, 16, 2.5, 2.5, 'F')
+    doc.setTextColor(255, 214, 10); doc.setFontSize(9); doc.setFont('helvetica', 'bold')
+    doc.text(t('Engagement, audience e storico campagne nel profilo commerciale completo — disponibile su richiesta.', 'Engagement, audience & campaign history in the full commercial profile — available upon request.'), 18, y + 9.5)
   }
   const fy = 285
   doc.setDrawColor(230, 230, 234); doc.line(14, fy - 6, W - 14, fy - 6)
@@ -544,7 +580,7 @@ async function makePdf(player: any, prof: any, topFits: any[], collabs: any[], c
   doc.text(t(`Contatti commerciali: ${AGENCY_NAME}`, `Commercial contacts: ${AGENCY_NAME}`), 14, fy)
   doc.setTextColor(150, 150, 158)
   doc.text(t('Documento generato automaticamente da AUVI Commercial Profile.', 'Automatically generated by AUVI Commercial Profile.'), 14, fy + 4)
-  doc.save(`MediaKit_${(player?.name || 'atleta').replace(/\s+/g, '_')}${target ? '_' + target : ''}_${lang}.pdf`)
+  doc.save(`MediaKit_${teaser ? 'Teaser_' : ''}${(player?.name || 'atleta').replace(/\s+/g, '_')}${target ? '_' + target : ''}_${lang}.pdf`)
 }
 
 // ── OPPORTUNITÀ ───────────────────────────────────────────────────────────────
@@ -1322,6 +1358,83 @@ function AdminInstagram({ athleteId, reload }: any) {
         Le credenziali sono salvate su una tabella riservata (RLS admin-only). Il token viene scambiato
         automaticamente in long-lived (60 giorni) e rinnovato a ogni sync: non dovrai reincollarlo,
         salvo revoca del permesso da parte di Meta.
+      </div>
+    </div>
+  )
+}
+
+// ── TEASER PER I BRAND ────────────────────────────────────────────────────────
+// Ciò che il ruolo brand vede nel Media Kit in-app: fascia follower, categorie
+// affini e highlights scelti da AUVI. Niente numeri sensibili. Finché non è
+// pubblicato, il brand vede solo la fascia follower di base.
+function TeaserAdminCard({ player, prof, topFits }: any) {
+  const [f, setF] = useState<any>(null)
+  const [busy, setBusy] = useState(false)
+  const [saved, setSaved] = useState(false)
+  useEffect(() => {
+    supabase.from('cp_public_teaser').select('*').eq('player_id', player?.api_player_id).maybeSingle()
+      .then(({ data }) => setF(data || { player_id: player?.api_player_id, published: false }))
+  }, [player?.api_player_id])
+  if (!f) return null
+
+  function autofill() {
+    const aud = prof?.audience || {}
+    const highlights: string[] = []
+    if ((aud.geo || []).length > 1) highlights.push(`Audience internazionale: ${aud.geo.slice(0, 3).join(', ')}`)
+    if (aud.age_band) highlights.push(`Pubblico prevalentemente ${aud.age_band}`)
+    if ((player?.instagram_engagement || 0) >= 4) highlights.push('Community molto coinvolta, engagement sopra la media del settore')
+    if (prof?.content?.shooting_available) highlights.push('Disponibile per shooting e contenuti dedicati al brand')
+    if (prof?.territories?.languages?.length > 1) highlights.push(`Parla ${prof.territories.languages.join(', ').toLowerCase()}`)
+    setF({
+      ...f,
+      headline: f.headline || [player?.position, player?.team_name].filter(Boolean).join(' · '),
+      follower_band: followerBand(player?.instagram_followers) || f.follower_band || '',
+      top_categories: topFits.slice(0, 3).map((x: any) => x.name),
+      highlights: highlights.slice(0, 4),
+    })
+  }
+
+  async function save(publish?: boolean) {
+    setBusy(true)
+    const body = {
+      player_id: player?.api_player_id,
+      headline: f.headline || null,
+      follower_band: f.follower_band || null,
+      top_categories: Array.isArray(f.top_categories) ? f.top_categories : [],
+      highlights: Array.isArray(f.highlights) ? f.highlights.filter((h: string) => h.trim()) : [],
+      published: publish ?? f.published ?? false,
+    }
+    await supabase.from('cp_public_teaser').upsert(body, { onConflict: 'player_id' })
+    setF({ ...f, ...body })
+    setBusy(false); setSaved(true); setTimeout(() => setSaved(false), 2500)
+  }
+
+  return (
+    <div className="card">
+      <div className="flex between" style={{ marginBottom: 4, flexWrap: 'wrap', gap: 8 }}>
+        <div style={{ fontWeight: 700 }}>Teaser per i brand</div>
+        <Badge tone={f.published ? 'green' : 'gold'}>{f.published ? 'Pubblicato — visibile ai brand' : 'Bozza — non visibile'}</Badge>
+      </div>
+      <div className="muted" style={{ fontSize: 12.5, marginBottom: 14 }}>
+        È l'unica vista commerciale che il brand vede in app: fascia follower, categorie affini e highlights.
+        Engagement, reach, demografia e storico restano riservati — li condividi tu col PDF completo quando il brand si muove.
+      </div>
+      <button className="btn btn-sm" style={{ marginBottom: 12 }} onClick={autofill}>Compila dai dati del profilo</button>
+      <div className="row2">
+        <Field label="Headline"><Input value={f.headline || ''} onChange={e => setF({ ...f, headline: e.target.value })} placeholder="Es. Portiere Serie A greca · profilo internazionale" /></Field>
+        <Field label="Fascia follower (mai il numero esatto)"><Input value={f.follower_band || ''} onChange={e => setF({ ...f, follower_band: e.target.value })} placeholder="Es. 65.000+" /></Field>
+      </div>
+      <Field label="Categorie affini (max 3, separate da virgola)">
+        <Input value={(f.top_categories || []).join(', ')} onChange={e => setF({ ...f, top_categories: e.target.value.split(',').map((x: string) => x.trim()).filter(Boolean).slice(0, 3) })} />
+      </Field>
+      <Field label="Highlights (uno per riga)">
+        <Textarea rows={4} value={(f.highlights || []).join('\n')} onChange={e => setF({ ...f, highlights: e.target.value.split('\n') })} />
+      </Field>
+      <div className="flex gap" style={{ flexWrap: 'wrap' }}>
+        <button className="btn" disabled={busy} onClick={() => save()}>{busy ? 'Salvo…' : saved ? 'Salvato' : 'Salva bozza'}</button>
+        {f.published
+          ? <button className="btn btn-danger" disabled={busy} onClick={() => save(false)}>Nascondi ai brand</button>
+          : <button className="btn btn-primary" disabled={busy} onClick={() => save(true)}>Pubblica per i brand</button>}
       </div>
     </div>
   )
