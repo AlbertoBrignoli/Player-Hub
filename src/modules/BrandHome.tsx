@@ -48,9 +48,7 @@ export default function BrandHome({ goto }: { goto?: (r: string) => void }) {
         .not('api_player_id', 'is', null)
         .order('name')
       // stato della relazione: partner (contratto attivo) o proposto (offerto da AUVI)
-      const { data: ba } = await supabase
-        .from('crm_brand_athletes')
-        .select('player_id, status')
+      const { data: ba } = await supabase.from('crm_brand_athletes').select('player_id, status')
       if (!ok) return
       const st = new Map(((ba as any[]) || []).map(r => [r.player_id, r.status]))
       setBrand((b as Brand) || null)
@@ -112,7 +110,7 @@ export default function BrandHome({ goto }: { goto?: (r: string) => void }) {
         <div className="flex gap" style={{ gap: 26, marginTop: 22, flexWrap: 'wrap', position: 'relative' }}>
           <Metric label="In partnership" value={String(partners.length)} accent={accent} />
           <Metric label="Profili proposti" value={String(proposti.length)} accent={accent} />
-          <Metric label="Reach totale" value={reach ? fmtK(reach) : '—'} accent={accent} />
+          <Metric label="Follower totali" value={reach ? fmtK(reach) : '—'} accent={accent} />
           <Metric label="Referente" value={brand?.contact_name || '—'} accent={accent} small />
         </div>
       </div>
@@ -134,21 +132,15 @@ export default function BrandHome({ goto }: { goto?: (r: string) => void }) {
         )}
       </div>
 
-      {/* --- Roster: partner attivi e profili proposti da AUVI --- */}
+      {/* --- Roster: chi il brand ha sotto contratto e chi AUVI gli propone --- */}
       {partners.length > 0 && (
-        <AthleteGroup
-          title="In partnership con te"
-          hint="Collaborazione attiva"
-          rows={partners} accent={accent} kicker={kicker} fmtK={fmtK} open={open} isPartner
-        />
+        <AthleteGroup title="In partnership con te" hint="Collaborazione attiva"
+          rows={partners} accent={accent} kicker={kicker} fmtK={fmtK} open={open} isPartner />
       )}
 
       {proposti.length > 0 && (
-        <AthleteGroup
-          title="Profili proposti da AUVI"
-          hint="Atleti del roster AUVI disponibili per una collaborazione"
-          rows={proposti} accent={accent} kicker={kicker} fmtK={fmtK} open={open}
-        />
+        <AthleteGroup title="Il roster AUVI per te" hint="Profili che AUVI ti propone per una collaborazione"
+          rows={proposti} accent={accent} kicker={kicker} fmtK={fmtK} open={open} />
       )}
 
       {rows.length === 0 && (
