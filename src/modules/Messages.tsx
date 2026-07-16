@@ -16,7 +16,7 @@ const roleLabel = (r?: string | null) =>
 
 export default function Messages() {
   const { session, profile, isAdmin, role } = useAuth()
-  const { athleteId } = useAthlete()
+  const { athleteId, athletes } = useAthlete()
   const [rows, setRows] = useState<Message[]>([])
   const [brands, setBrands] = useState<BrandLite[]>([])
   const [coachName, setCoachName] = useState<string | null>(null)
@@ -31,8 +31,16 @@ export default function Messages() {
   const isCoach = role === 'preparatore'
 
   // Canali disponibili in base al ruolo e all'atleta attivo.
+  // Per il brand l'interlocutore è l'ATLETA selezionato: la conversazione è già
+  // per-atleta (channel brand:<id> + player_id), qui lo rendiamo visibile in UI.
+  const activeAthlete = athletes.find(a => a.api_player_id === athleteId)
   const chans: Chan[] = isBrand
-    ? brands.map(b => ({ key: `brand:${b.id}`, label: b.name, sub: 'Brand', icon: 'award', accent: b.accent_color, logo: b.logo_url }))
+    ? brands.map(b => ({
+        key: `brand:${b.id}`,
+        label: activeAthlete?.name || b.name,
+        sub: "Conversazione con l'atleta · via AUVI Agency",
+        icon: 'user', accent: b.accent_color, logo: activeAthlete?.photo_url || null,
+      }))
     : isCoach
       ? [{ key: 'fitness', label: 'Area Fitness', sub: 'Preparazione atletica', icon: 'dumbbell' }]
       : [
@@ -125,9 +133,11 @@ export default function Messages() {
   }
 
   const active = chans.find(c => c.key === chan)
-  const placeholder = isAdmin || isCoach || isBrand
-    ? 'Scrivi al giocatore…'
-    : `Scrivi a ${active?.label || 'AUVI'}…`
+  const placeholder = isBrand
+    ? `Scrivi a ${activeAthlete?.name || 'il giocatore'}…`
+    : isAdmin || isCoach
+      ? 'Scrivi al giocatore…'
+      : `Scrivi a ${active?.label || 'AUVI'}…`
 
   return (
     <div className="grid" style={{ gap: 10 }}>

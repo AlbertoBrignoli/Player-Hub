@@ -18,7 +18,7 @@ interface Agg { app: number; min: number; goals: number; assists: number; rW: nu
 // Vista dedicata ai brand: il profilo dell'atleta che sponsorizzano.
 // L'atleta è determinato dallo scope RLS (profilo brand → player_api_id).
 // Profilo navigabile: Panoramica · In campo · Social. Sola lettura.
-export default function MediaKit() {
+export default function MediaKit({ goto }: { goto?: (r: string) => void }) {
   const { athleteId } = useAthlete()
   const { isBrand } = useAuth()
   const [loading, setLoading] = useState(true)
@@ -103,7 +103,7 @@ export default function MediaKit() {
           player={player} agg={aggOf(displayYear)} rating={ratingOf(aggOf(displayYear))}
           seasonTxt={seasonMap.has(displayYear) ? seasonLabel(displayYear) : currentSeason} fmtK={fmtK}
           onPitch={() => setTab('pitch')} onSocial={() => setTab('social')}
-          isBrand={isBrand} teaser={teaser}
+          isBrand={isBrand} teaser={teaser} goto={goto}
         />
       )}
       {tab === 'pitch' && (
@@ -113,8 +113,8 @@ export default function MediaKit() {
           tech={tech.filter(t => seasonOf(t.match_date) === seasonLabel(activeYear))}
         />
       )}
-      {tab === 'social' && (isBrand ? <SocialTeaser player={player} teaser={teaser} /> : <Social player={player} fmtK={fmtK} />)}
-      {tab === 'partnership' && <Partnership player={player} />}
+      {tab === 'social' && (isBrand ? <SocialTeaser player={player} teaser={teaser} goto={goto} /> : <Social player={player} fmtK={fmtK} />)}
+      {tab === 'partnership' && <Partnership player={player} goto={goto} />}
 
       <div className="faint" style={{ fontSize: 11.5, textAlign: 'center', padding: '4px 0 8px' }}>
         Dati riservati · condivisi da AUVI Agency per la valutazione della partnership.
@@ -147,10 +147,10 @@ function Hero({ player, season, onOpen }: { player: Player; season: string; onOp
 }
 
 /* ---------- PANORAMICA ---------- */
-function Overview({ player, agg, rating, seasonTxt, fmtK, onPitch, onSocial, isBrand, teaser }: {
+function Overview({ player, agg, rating, seasonTxt, fmtK, onPitch, onSocial, isBrand, teaser, goto }: {
   player: Player; agg: Agg; rating: number | null; seasonTxt: string
   fmtK: (n?: number | null) => string; onPitch: () => void; onSocial: () => void
-  isBrand?: boolean; teaser?: any
+  isBrand?: boolean; teaser?: any; goto?: (r: string) => void
 }) {
   return (
     <>
@@ -164,7 +164,7 @@ function Overview({ player, agg, rating, seasonTxt, fmtK, onPitch, onSocial, isB
 
       <SectionHead t="Audience · Instagram" onMore={onSocial} moreLabel="Dettaglio" />
       {isBrand ? (
-        <TeaserBlock player={player} teaser={teaser} compact />
+        <TeaserBlock player={player} teaser={teaser} compact goto={goto} />
       ) : (
         <div className="grid g4">
           <StatCard label="Follower" value={fmtK(player.instagram_followers)} />
@@ -192,7 +192,7 @@ function Overview({ player, agg, rating, seasonTxt, fmtK, onPitch, onSocial, isB
 /* ---------- TEASER (unica vista commerciale per il ruolo brand) ----------
    Mai ER, reach o demografia: fascia follower + categorie + highlights scelti
    da AUVI (cp_public_teaser). Il profilo completo si richiede in chat. */
-function TeaserBlock({ player, teaser, compact }: { player: Player; teaser?: any; compact?: boolean }) {
+function TeaserBlock({ player, teaser, compact, goto }: { player: Player; teaser?: any; compact?: boolean; goto?: (r: string) => void }) {
   const band = teaser?.follower_band || followerBand(player.instagram_followers)
   const cats: string[] = Array.isArray(teaser?.top_categories) ? teaser.top_categories : []
   const highlights: string[] = Array.isArray(teaser?.highlights) ? teaser.highlights : []
@@ -218,14 +218,16 @@ function TeaserBlock({ player, teaser, compact }: { player: Player; teaser?: any
         </div>
       )}
       <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-        <span className="muted" style={{ fontSize: 12.5 }}>Engagement, audience e storico campagne sono disponibili nel profilo commerciale completo.</span>
-        <Badge tone="gold">Richiedilo in chat ad AUVI</Badge>
+        <span className="muted" style={{ fontSize: 12.5, flex: 1, minWidth: 200 }}>Engagement, audience e storico campagne sono disponibili nel profilo commerciale completo.</span>
+        {goto
+          ? <button className="btn btn-primary btn-sm" onClick={() => goto('messages')}><Icon name="message" size={13} /> Richiedilo in chat</button>
+          : <Badge tone="gold">Richiedilo in chat ad AUVI</Badge>}
       </div>
     </div>
   )
 }
 
-function SocialTeaser({ player, teaser }: { player: Player; teaser?: any }) {
+function SocialTeaser({ player, teaser, goto }: { player: Player; teaser?: any; goto?: (r: string) => void }) {
   return (
     <>
       <SectionHead t="Instagram" />
@@ -239,7 +241,7 @@ function SocialTeaser({ player, teaser }: { player: Player; teaser?: any }) {
           <a href={player.instagram_url} target="_blank" rel="noreferrer" className="btn btn-primary"><Icon name="instagram" size={15} /> Apri</a>
         )}
       </div>
-      <TeaserBlock player={player} teaser={teaser} />
+      <TeaserBlock player={player} teaser={teaser} goto={goto} />
       <div className="faint" style={{ fontSize: 11.5 }}>Panoramica indicativa curata da AUVI Agency · profilo commerciale completo disponibile su richiesta.</div>
     </>
   )
@@ -406,7 +408,7 @@ function igHandle(url?: string | null): string | null {
    interessi, categorie gradite/escluse, disponibilità, territori e lingue.
    Fonte: vista cp_preferences_public — SOLO colonne sicure (mai fee minima,
    sponsor attivi, esclusività o dati audience). */
-function Partnership({ player }: { player: Player }) {
+function Partnership({ player, goto }: { player: Player; goto?: (r: string) => void }) {
   const [prefs, setPrefs] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   useEffect(() => {
@@ -506,7 +508,9 @@ function Partnership({ player }: { player: Player }) {
           <div style={{ fontWeight: 700, marginBottom: 3 }}>Hai in mente una collaborazione?</div>
           <div className="muted" style={{ fontSize: 12.5 }}>AUVI costruisce la proposta con l'atleta sulla base di queste disponibilità.</div>
         </div>
-        <Badge tone="gold">Scrivici in chat</Badge>
+        {goto
+          ? <button className="btn btn-primary" onClick={() => goto('messages')}><Icon name="message" size={15} /> Scrivici in chat</button>
+          : <Badge tone="gold">Scrivici in chat</Badge>}
       </div>
       <div className="faint" style={{ fontSize: 11.5 }}>Preferenze indicate dall'atleta con AUVI Agency{prefs.updated_at ? ` · aggiornate ${fmtDate(prefs.updated_at)}` : ''}.</div>
     </>

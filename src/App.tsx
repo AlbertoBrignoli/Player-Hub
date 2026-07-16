@@ -51,7 +51,7 @@ export default function App() {
   const view = (() => {
     switch (route) {
       case 'brandhome': return <BrandHome goto={setRoute} />
-      case 'mediakit': return <MediaKit />
+      case 'mediakit': return <MediaKit goto={setRoute} />
       case 'campaigns': return <BrandCampaigns />
       case 'brandcard': return <BrandCard goto={setRoute} />
       case 'dashboard': return profile.role === 'preparatore' ? <FitnessCoachHome goto={setRoute} /> : <Dashboard goto={setRoute} />
