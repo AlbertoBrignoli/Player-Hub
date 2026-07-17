@@ -9,7 +9,7 @@ import type { NotificationItem } from '../lib/types'
 
 export default function NotificationBell({ goto }: { goto: (route: string) => void }) {
   const { role, session } = useAuth()
-  const { athleteId } = useAthlete()
+  const { athleteId, athletes } = useAthlete()
   const [items, setItems] = useState<NotificationItem[]>([])
   const [open, setOpen] = useState(false)
   const [pushState, setPushState] = useState<'on' | 'off' | 'unsupported'>('unsupported')
@@ -36,11 +36,17 @@ export default function NotificationBell({ goto }: { goto: (route: string) => vo
     else { setPushState('on'); setPushMsg('Notifiche attive su questo dispositivo ✓') }
   }
 
+  // L'admin è super admin: vede le notifiche di TUTTI gli atleti, sempre,
+  // indipendentemente dall'atleta selezionato in alto.
+  const isSuper = role === 'admin'
+
   async function load() {
-    if (!athleteId) { setItems([]); return }
-    const { data } = await supabase.from('crm_notifications')
-      .select('*').eq('player_id', athleteId).order('created_at', { ascending: false }).limit(25)
-    setItems((data as NotificationItem[]) || [])
+    if (!isSuper && !athleteId) { setItems([]); return }
+    let q = supabase.from('crm_notifications').select('*')
+    if (!isSuper) q = q.eq('player_id', athleteId)
+    const { data } = await q.order('created_at', { ascending: false }).limit(40)
+    // mai mostrare le notifiche generate da me stesso
+    setItems(((data as NotificationItem[]) || []).filter(n => (n as any).source_user_id !== session?.user.id))
   }
 
   useEffect(() => {
@@ -48,13 +54,16 @@ export default function NotificationBell({ goto }: { goto: (route: string) => vo
     const ch = supabase.channel('crm_notifications_rt')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'crm_notifications' }, payload => {
         const n = payload.new as NotificationItem
+        if ((n as any).source_user_id === session?.user.id) return
         const forThisAthlete = n.player_id === athleteId
-        const mine = forThisAthlete && (n.recipient_role === role || (n.recipient_role === 'team' && (role === 'admin' || role === 'creator')))
-        if (mine) setItems(prev => [n, ...prev].slice(0, 25))
+        const mine = isSuper
+          ? true   // super admin: tutto, di qualunque atleta
+          : forThisAthlete && (n.recipient_role === role || (n.recipient_role === 'team' && role === 'creator'))
+        if (mine) setItems(prev => [n, ...prev].slice(0, 40))
       })
       .subscribe()
     return () => { supabase.removeChannel(ch) }
-  }, [role, athleteId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [role, athleteId, isSuper]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!open) return
@@ -66,10 +75,12 @@ export default function NotificationBell({ goto }: { goto: (route: string) => vo
   const unread = items.filter(n => !n.read_at).length
 
   async function markAllRead() {
-    if (!unread || !athleteId) return
+    if (!unread) return
     const now = new Date().toISOString()
     setItems(prev => prev.map(n => n.read_at ? n : { ...n, read_at: now }))
-    await supabase.from('crm_notifications').update({ read_at: now }).eq('player_id', athleteId).is('read_at', null)
+    let q = supabase.from('crm_notifications').update({ read_at: now })
+    if (!isSuper) q = q.eq('player_id', athleteId)
+    await q.is('read_at', null)
   }
 
   function onItem(n: NotificationItem) {
@@ -96,6 +107,11 @@ export default function NotificationBell({ goto }: { goto: (route: string) => vo
           ) : items.map(n => (
             <button className={`notif-item ${!n.read_at ? 'notif-new' : ''}`} key={n.id} onClick={() => onItem(n)}>
               <div className="notif-title">{n.title}</div>
+              {isSuper && n.player_id && (
+                <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: .6, textTransform: 'uppercase', color: 'var(--text-dim)', marginTop: 2 }}>
+                  {athletes.find(a => a.api_player_id === n.player_id)?.name || 'Atleta'}
+                </div>
+              )}
               {n.body && <div className="notif-body">{n.body}</div>}
               <div className="notif-time">{timeAgo(n.created_at)}</div>
             </button>

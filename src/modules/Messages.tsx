@@ -31,16 +31,8 @@ export default function Messages() {
   const isCoach = role === 'preparatore'
 
   // Canali disponibili in base al ruolo e all'atleta attivo.
-  // Per il brand l'interlocutore è l'ATLETA selezionato: la conversazione è già
-  // per-atleta (channel brand:<id> + player_id), qui lo rendiamo visibile in UI.
-  const activeAthlete = athletes.find(a => a.api_player_id === athleteId)
   const chans: Chan[] = isBrand
-    ? brands.map(b => ({
-        key: `brand:${b.id}`,
-        label: activeAthlete?.name || b.name,
-        sub: "Conversazione con l'atleta · via AUVI Agency",
-        icon: 'user', accent: b.accent_color, logo: activeAthlete?.photo_url || null,
-      }))
+    ? brands.map(b => ({ key: `brand:${b.id}`, label: b.name, sub: 'Brand', icon: 'award', accent: b.accent_color, logo: b.logo_url }))
     : isCoach
       ? [{ key: 'fitness', label: 'Area Fitness', sub: 'Preparazione atletica', icon: 'dumbbell' }]
       : [
@@ -133,11 +125,13 @@ export default function Messages() {
   }
 
   const active = chans.find(c => c.key === chan)
-  const placeholder = isBrand
-    ? `Scrivi a ${activeAthlete?.name || 'il giocatore'}…`
-    : isAdmin || isCoach
-      ? 'Scrivi al giocatore…'
-      : `Scrivi a ${active?.label || 'AUVI'}…`
+  // Chi scrive al giocatore (management, preparatore, brand) deve vedere SEMPRE
+  // e in chiaro a quale atleta sta scrivendo: il selettore in alto è troppo defilato.
+  const toAthlete = isAdmin || isCoach || isBrand
+  const athlete = athletes.find(a => a.api_player_id === athleteId)
+  const placeholder = toAthlete
+    ? `Scrivi a ${athlete?.name || 'giocatore'}…`
+    : `Scrivi a ${active?.label || 'AUVI'}…`
 
   return (
     <div className="grid" style={{ gap: 10 }}>
@@ -155,7 +149,27 @@ export default function Messages() {
       )}
 
       <div className="card" style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 250px)', padding: 0 }}>
-        {active && (
+        {toAthlete ? (
+          /* Destinatario in evidenza: foto, nome grande, canale come contesto */
+          <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 13 }}>
+            {athlete?.photo_url
+              ? <img src={athlete.photo_url} alt="" style={{ width: 44, height: 44, borderRadius: 12, objectFit: 'cover' }} />
+              : <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>
+                  {(athlete?.name || '?').slice(0, 1)}
+                </div>}
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', fontWeight: 800, color: 'var(--text-dim)' }}>
+                Stai scrivendo a
+              </div>
+              <div style={{ fontSize: 18, fontWeight: 900, letterSpacing: -0.2, lineHeight: 1.2 }}>
+                {athlete?.name || 'Nessun atleta selezionato'}
+              </div>
+              <div className="faint" style={{ fontSize: 11.5, marginTop: 1 }}>
+                {active?.label} · conversazione riservata
+              </div>
+            </div>
+          </div>
+        ) : active && (
           <div style={{ padding: '12px 18px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 11 }}>
             {active.accent && <span style={{ width: 3, height: 30, borderRadius: 2, background: active.accent }} />}
             {active.logo && <div style={{ background: '#fff', borderRadius: 8, padding: 4, display: 'flex' }}>
@@ -170,7 +184,7 @@ export default function Messages() {
         <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
           {loading ? <Spinner /> : rows.length === 0 ? (
             <Empty icon={<Icon name="message" size={30} strokeWidth={1.4} />} title="Nessun messaggio"
-              hint={`Inizia la conversazione con ${active?.label || 'il tuo referente'}.`} />
+              hint={`Inizia la conversazione con ${toAthlete ? (athlete?.name || 'il giocatore') : (active?.label || 'il tuo referente')}.`} />
           ) : (
             <div className="chat">
               {rows.map(m => {
