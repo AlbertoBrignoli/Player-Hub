@@ -40,7 +40,8 @@ export default function BrandHome({ goto }: { goto?: (r: string) => void }) {
     if (!uid) return
     let ok = true
     ;(async () => {
-      const { data: b } = await supabase.from('crm_brands').select('*').eq('owner_id', uid).maybeSingle()
+      // RLS: un utente brand vede solo la propria area, anche se l'owner anagrafico è un altro
+      const { data: b } = await supabase.from('crm_brands').select('*').limit(1).maybeSingle()
       // RLS: il brand vede solo gli atleti del proprio roster.
       const { data: p } = await supabase
         .from('player')

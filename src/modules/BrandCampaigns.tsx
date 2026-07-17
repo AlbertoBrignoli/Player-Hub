@@ -41,7 +41,8 @@ export default function BrandCampaigns() {
   async function load() {
     if (!uid) return
     setLoading(true)
-    const b = await supabase.from('crm_brands').select('id, name').eq('owner_id', uid).maybeSingle()
+    // RLS: l'utente brand vede solo la propria area (aggancio via whitelist, non via owner)
+    const b = await supabase.from('crm_brands').select('id, name').limit(1).maybeSingle()
     setBrand((b.data as any) || null)
     if (b.data) {
       const { data } = await supabase.from('crm_editorial').select('*')
