@@ -21,6 +21,7 @@ const kicker: React.CSSProperties = {
 }
 
 const AREAS = [
+  { k: 'riepilogo', l: 'Riepilogo', hint: 'Quanto spendi e per cosa sei coperto' },
   { k: 'sport', l: 'Sport', hint: 'Coperture legate alla carriera' },
   { k: 'personale', l: 'Personale', hint: 'Casa, veicoli, famiglia' },
 ] as const
@@ -50,6 +51,17 @@ export type Policy = {
   status: string
   notes: string | null
   attachments: { name: string; path: string; size?: number | null; mime?: string | null }[] | null
+  coverage_items?: { name: string; amount?: number | null; note?: string | null }[] | null
+  premium_is_annual?: boolean
+}
+
+// Costo annuo normalizzato: rende confrontabili polizze con rate diverse.
+const FREQ_MULT: Record<string, number> = { mensile: 12, trimestrale: 4, semestrale: 2, annuale: 1 }
+function annualCost(p: Partial<Policy>): number {
+  const v = Number(p.premium || 0)
+  if (!v) return 0
+  if (p.premium_is_annual) return v
+  return v * (FREQ_MULT[(p.payment_frequency || 'annuale').toLowerCase()] ?? 1)
 }
 
 const daysTo = (d?: string | null) =>
@@ -73,7 +85,7 @@ async function openDoc(path: string) {
 export default function Insurance() {
   const { role } = useAuth()
   const { athleteId } = useAthlete()
-  const [area, setArea] = useState<string>('sport')
+  const [area, setArea] = useState<string>('riepilogo')
   const [edit, setEdit] = useState<Partial<Policy> | null>(null)
 
   const canManage = role === 'assicuratore' || role === 'admin'
@@ -107,11 +119,12 @@ export default function Insurance() {
         {AREAS.map(a => (
           <button key={a.k} className={`pill-tab ${area === a.k ? 'active' : ''}`} onClick={() => setArea(a.k)}
             style={area === a.k ? { background: ACCENT, color: '#fff', borderColor: ACCENT } : undefined}>
-            <Icon name={a.k === 'sport' ? 'dumbbell' : 'home'} size={13} /> {a.l}
+            <Icon name={a.k === 'riepilogo' ? 'activity' : a.k === 'sport' ? 'dumbbell' : 'home'} size={13} /> {a.l}
           </button>
         ))}
       </div>
 
+      {area === 'riepilogo' ? <Overview rows={rows} /> : <>
       {/* --- riepilogo --- */}
       <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 18,
                     background: 'var(--bg-2)', border: '1px solid var(--border)', padding: '22px' }}>
@@ -171,7 +184,7 @@ export default function Insurance() {
           </div>
           {canManage && (
             <button className="btn btn-sm" style={{ background: ACCENT, color: '#fff', fontWeight: 800, border: 'none' }}
-              onClick={() => setEdit({ area, status: 'attiva' })}>
+              onClick={() => setEdit({ area: area === 'riepilogo' ? 'sport' : area, status: 'attiva' })}>
               <Icon name="plus" size={13} /> Nuova polizza
             </button>
           )}
@@ -242,10 +255,163 @@ export default function Insurance() {
         )}
       </div>
 
+      </>}
+
       {edit && athleteId && (
         <PolicyForm value={edit} playerId={athleteId}
           onClose={() => setEdit(null)} onSaved={() => { setEdit(null); reload() }} />
       )}
+    </div>
+  )
+}
+
+
+// Dashboard aggregata: costo annuo totale, ripartizione e mappa delle coperture.
+// I dati arrivano dai campi compilati: nessuna elaborazione automatica del PDF.
+function Overview({ rows }: { rows: Policy[] }) {
+  const attive = rows.filter(p => p.status !== 'disdetta')
+
+  const totale = attive.reduce((s, p) => s + annualCost(p), 0)
+  const perArea = ['sport', 'personale'].map(a => ({
+    area: a,
+    costo: attive.filter(p => p.area === a).reduce((s, p) => s + annualCost(p), 0),
+    n: attive.filter(p => p.area === a).length,
+  }))
+
+  // ripartizione per categoria, dalla più cara
+  const perCat = Object.entries(
+    attive.reduce((acc: Record<string, number>, p) => {
+      const k = p.category || 'Altro'
+      acc[k] = (acc[k] || 0) + annualCost(p)
+      return acc
+    }, {})
+  ).sort((a, b) => b[1] - a[1])
+
+  // tutte le garanzie dichiarate, con la polizza di provenienza
+  const garanzie = attive.flatMap(p =>
+    (p.coverage_items || []).map(g => ({ ...g, polizza: p.title, area: p.area }))
+  )
+
+  // Riepilogo testuale da incollare in un assistente AI per l'analisi.
+  function copiaRiepilogo() {
+    const righe = attive.map(p => {
+      const g = (p.coverage_items || []).map(x =>
+        `    - ${x.name}${x.amount ? ` (massimale ${x.amount} €)` : ''}${x.note ? ` — ${x.note}` : ''}`).join('\n')
+      return [
+        `POLIZZA: ${p.title}`,
+        `  Area: ${p.area} · Categoria: ${p.category || '—'}`,
+        `  Compagnia: ${p.company || '—'} · N. ${p.policy_number || '—'}`,
+        `  Assicurato: ${p.insured_party || '—'} · Contraente: ${p.holder || '—'}`,
+        `  Decorrenza: ${p.start_date || '—'} · Scadenza: ${p.expiry_date || '—'}`,
+        `  Premio: ${p.premium ?? '—'} € ${p.payment_frequency || ''} → costo annuo ${annualCost(p)} €`,
+        `  Massimale: ${p.coverage_amount ?? '—'} € · Franchigia: ${p.deductible || '—'}`,
+        g ? `  Garanzie:\n${g}` : '  Garanzie: non dettagliate',
+        p.notes ? `  Note: ${p.notes}` : '',
+      ].filter(Boolean).join('\n')
+    }).join('\n\n')
+
+    const testo = `RIEPILOGO ASSICURATIVO\nCosto annuo totale: ${totale} €\nPolizze attive: ${attive.length}\n\n${righe}`
+    navigator.clipboard.writeText(testo)
+      .then(() => toast('Riepilogo copiato: incollalo nel tuo assistente AI'))
+      .catch(() => toast('Copia non riuscita', 'err'))
+  }
+
+  if (attive.length === 0) {
+    return (
+      <div className="card">
+        <Empty icon={<Icon name="activity" size={30} strokeWidth={1.4} />}
+          title="Nessun dato da riepilogare"
+          hint="Quando ci saranno polizze, qui vedrai quanto spendi e per cosa sei coperto." />
+      </div>
+    )
+  }
+
+  return (
+    <div className="grid" style={{ gap: 18 }}>
+      {/* spesa annua */}
+      <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 18,
+                    background: 'var(--bg-2)', border: '1px solid var(--border)', padding: '22px' }}>
+        <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 5, background: ACCENT }} />
+        <div style={{ ...kicker, color: ACCENT }}>Spesa assicurativa annua</div>
+        <div style={{ fontSize: 36, fontWeight: 900, letterSpacing: -1, marginTop: 6 }}>{fmtMoney(totale)}</div>
+        <div className="faint" style={{ fontSize: 12, marginTop: 2 }}>
+          su {attive.length} polizze · {fmtMoney(totale / 12)} al mese
+        </div>
+
+        <div className="flex gap" style={{ gap: 26, marginTop: 18, flexWrap: 'wrap' }}>
+          {perArea.map(a => (
+            <Metric key={a.area}
+              label={a.area === 'sport' ? 'Sport' : 'Personale'}
+              value={fmtMoney(a.costo)} tone={ACCENT} />
+          ))}
+        </div>
+      </div>
+
+      {/* ripartizione per categoria */}
+      <div className="card">
+        <div style={{ ...kicker, color: 'var(--text-dim)', marginBottom: 12 }}>Dove vanno i soldi</div>
+        <div className="grid" style={{ gap: 9 }}>
+          {perCat.map(([cat, costo]) => {
+            const pct = totale > 0 ? Math.round((costo / totale) * 100) : 0
+            return (
+              <div key={cat}>
+                <div className="flex between" style={{ fontSize: 13, marginBottom: 4 }}>
+                  <span style={{ fontWeight: 600 }}>{cat}</span>
+                  <span className="faint">{fmtMoney(costo)} · {pct}%</span>
+                </div>
+                <div style={{ height: 6, borderRadius: 3, background: 'var(--border)', overflow: 'hidden' }}>
+                  <div style={{ width: `${pct}%`, height: '100%', background: ACCENT }} />
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* per cosa sono coperto */}
+      <div className="card">
+        <div className="flex between" style={{ alignItems: 'center', marginBottom: 12 }}>
+          <div style={{ ...kicker, color: 'var(--text-dim)' }}>Per cosa sei coperto</div>
+          <span className="faint" style={{ fontSize: 11.5 }}>{garanzie.length} garanzie</span>
+        </div>
+        {garanzie.length === 0 ? (
+          <div className="faint" style={{ fontSize: 13 }}>
+            Le garanzie non sono ancora state dettagliate. Chiedi al tuo assicuratore di compilarle:
+            compariranno qui, polizza per polizza.
+          </div>
+        ) : (
+          <div className="grid" style={{ gap: 8 }}>
+            {garanzie.map((g, i) => (
+              <div key={i} className="flex between" style={{ alignItems: 'flex-start', gap: 10,
+                     borderBottom: i < garanzie.length - 1 ? '1px solid var(--border)' : 'none', paddingBottom: 8 }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 700 }}>{g.name}</div>
+                  <div className="faint" style={{ fontSize: 11.5 }}>
+                    {g.polizza}{g.note ? ` · ${g.note}` : ''}
+                  </div>
+                </div>
+                {g.amount ? (
+                  <div style={{ fontSize: 13, fontWeight: 800, color: ACCENT, whiteSpace: 'nowrap' }}>
+                    {fmtMoney(g.amount)}
+                  </div>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* esportazione per analisi AI */}
+      <div className="card">
+        <div style={{ ...kicker, color: 'var(--text-dim)', marginBottom: 8 }}>Analisi con AI</div>
+        <div className="faint" style={{ fontSize: 12.5, marginBottom: 12 }}>
+          Copia il riepilogo completo delle tue polizze e incollalo in ChatGPT o Claude
+          per farti spiegare coperture, sovrapposizioni e buchi di tutela.
+        </div>
+        <button className="btn btn-sm" onClick={copiaRiepilogo}>
+          <Icon name="copy" size={13} /> Copia riepilogo per AI
+        </button>
+      </div>
     </div>
   )
 }
@@ -279,6 +445,9 @@ function PolicyForm({ value, playerId, onClose, onSaved }: {
   const [uploading, setUploading] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const [atts, setAtts] = useState(value.attachments || [])
+  const [cov, setCov] = useState<{ name: string; amount?: number | null; note?: string | null }[]>(value.coverage_items || [])
+  const setCovAt = (i: number, k: string, v: any) =>
+    setCov(prev => prev.map((x, j) => j === i ? { ...x, [k]: v } : x))
   const set = (k: keyof Policy, v: any) => setF(p => ({ ...p, [k]: v }))
 
   async function onFiles(e: React.ChangeEvent<HTMLInputElement>) {
@@ -318,6 +487,8 @@ function PolicyForm({ value, playerId, onClose, onSaved }: {
       status: f.status || 'attiva',
       notes: f.notes || null,
       attachments: atts,
+      coverage_items: cov.filter(c => c.name?.trim()),
+      premium_is_annual: !!f.premium_is_annual,
       updated_at: new Date().toISOString(),
     }
     if (f.id) await updateRow('crm_insurance_policies', f.id, payload)
@@ -364,7 +535,9 @@ function PolicyForm({ value, playerId, onClose, onSaved }: {
         </Field>
         <Field label="Decorrenza"><Input type="date" value={f.start_date || ''} onChange={e => set('start_date', e.target.value)} /></Field>
         <Field label="Scadenza"><Input type="date" value={f.expiry_date || ''} onChange={e => set('expiry_date', e.target.value)} /></Field>
-        <Field label="Premio (€)"><Input type="number" value={f.premium ?? ''} onChange={e => set('premium', e.target.value)} /></Field>
+        <Field label={f.premium_is_annual ? 'Premio annuo (€)' : 'Premio per rata (€)'}>
+          <Input type="number" value={f.premium ?? ''} onChange={e => set('premium', e.target.value)} />
+        </Field>
         <Field label="Frequenza">
           <Select value={f.payment_frequency || ''} onChange={e => set('payment_frequency', e.target.value)}>
             <option value="">—</option>
@@ -374,10 +547,52 @@ function PolicyForm({ value, playerId, onClose, onSaved }: {
             <option value="mensile">Mensile</option>
           </Select>
         </Field>
+        <Field label="Costo annuo">
+          <div style={{ padding: '9px 2px' }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: ACCENT }}>
+              {annualCost(f) ? fmtMoney(annualCost(f)) : '—'}
+            </div>
+            <label className="flex gap" style={{ gap: 7, fontSize: 12, cursor: 'pointer', marginTop: 5 }}>
+              <input type="checkbox" checked={!!f.premium_is_annual}
+                onChange={e => set('premium_is_annual', e.target.checked)} />
+              L'importo inserito è già il totale annuo
+            </label>
+          </div>
+        </Field>
         <Field label="Massimale (€)"><Input type="number" value={f.coverage_amount ?? ''} onChange={e => set('coverage_amount', e.target.value)} /></Field>
         <Field label="Franchigia"><Input value={f.deductible || ''} onChange={e => set('deductible', e.target.value)} /></Field>
       </div>
       <Field label="Note"><Textarea rows={2} value={f.notes || ''} onChange={e => set('notes', e.target.value)} /></Field>
+
+      <div style={{ marginTop: 4 }}>
+        <div className="flex between" style={{ alignItems: 'center', marginBottom: 8 }}>
+          <div style={{ ...kicker, color: 'var(--text-dim)' }}>Garanzie · per cosa copre</div>
+          <button className="btn btn-ghost btn-sm" onClick={() => setCov(prev => [...prev, { name: '' }])}>
+            <Icon name="plus" size={12} /> Aggiungi garanzia
+          </button>
+        </div>
+        {cov.length === 0 ? (
+          <div className="faint" style={{ fontSize: 11.5, marginBottom: 10 }}>
+            Es. "Invalidità permanente" · 500.000 € — alimentano la dashboard delle coperture.
+          </div>
+        ) : (
+          <div className="grid" style={{ gap: 7, marginBottom: 10 }}>
+            {cov.map((c, i) => (
+              <div key={i} className="flex gap" style={{ gap: 7, alignItems: 'center' }}>
+                <Input style={{ flex: 2 }} placeholder="Garanzia" value={c.name}
+                  onChange={e => setCovAt(i, 'name', e.target.value)} />
+                <Input style={{ flex: 1 }} type="number" placeholder="Massimale €" value={c.amount ?? ''}
+                  onChange={e => setCovAt(i, 'amount', e.target.value ? Number(e.target.value) : null)} />
+                <Input style={{ flex: 1.4 }} placeholder="Note" value={c.note || ''}
+                  onChange={e => setCovAt(i, 'note', e.target.value)} />
+                <button className="btn btn-ghost btn-sm" onClick={() => setCov(prev => prev.filter((_, j) => j !== i))}>
+                  <Icon name="x" size={12} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       <div style={{ marginTop: 4 }}>
         <div style={{ ...kicker, color: 'var(--text-dim)', marginBottom: 8 }}>Documenti</div>
