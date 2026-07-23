@@ -28,6 +28,7 @@ import type { Service } from '../components/ServiceDetail'
 type Req = {
   id: string
   player_id: number
+  player_name: string | null
   service_id: string | null
   service_title: string | null
   message: string | null
@@ -65,7 +66,8 @@ export default function Services() {
 
   if (loading) return <Spinner />
 
-  const athleteName = (id: number) => athletes.find(a => a.api_player_id === id)?.name || 'Atleta'
+  // il nome viaggia nella richiesta: il partner non legge l'anagrafica atleti
+  const athleteName = (r: Req) => r.player_name || athletes.find(a => a.api_player_id === r.player_id)?.name || 'Atleta'
 
   if (open) {
     return (
@@ -116,7 +118,7 @@ export default function Services() {
                     <div style={{ minWidth: 0 }}>
                       <div style={{ fontSize: 13.5, fontWeight: 700 }}>{r.service_title}</div>
                       <div className="faint" style={{ fontSize: 11.5 }}>
-                        {!isPlayer && `${athleteName(r.player_id)} · `}
+                        {!isPlayer && `${athleteName(r)} · `}
                         {fmtDateTime(r.created_at)}
                         {r.preferred_date ? ` · per il ${fmtDate(r.preferred_date)}` : ''}
                       </div>

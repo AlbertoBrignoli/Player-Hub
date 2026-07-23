@@ -62,7 +62,7 @@ export default function App() {
   const insurerAllowed = ['insurer-home', 'insurance', 'insurer-profile', 'documents', 'agenda', 'messages', 'access-requests']
   const isInsurer = profile.role === 'assicuratore'
   // Il commercialista vede solo la sua area.
-  const taxAllowed = ['tax-home', 'legaltax', 'tax-profile', 'documents', 'agenda', 'messages', 'access-requests']
+  const taxAllowed = ['tax-home', 'legaltax', 'tax-profile', 'services', 'documents', 'agenda', 'messages', 'access-requests']
   const isTax = profile.role === 'commercialista'
   const home = isBrand ? 'brandhome' : isAgent ? 'agent-home' : isInsurer ? 'insurer-home' : isTax ? 'tax-home' : 'dashboard'
   let route = routeState ?? home

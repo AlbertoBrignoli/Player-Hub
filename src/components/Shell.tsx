@@ -128,6 +128,7 @@ export const TAX_NAV: { group: string; items: NavDef[] }[] = [
   { group: 'Legal & Tax', items: [
     { key: 'tax-home', label: 'Home', icon: 'grid' },
     { key: 'legaltax', label: 'Fisco e legale', icon: 'briefcase' },
+    { key: 'services', label: 'Richieste servizi', icon: 'star' },
     { key: 'tax-profile', label: 'Il mio profilo', icon: 'user' },
     { key: 'access-requests', label: 'Collegamenti', icon: 'key' },
   ]},
