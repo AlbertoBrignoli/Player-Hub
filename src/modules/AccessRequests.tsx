@@ -23,6 +23,8 @@ const ROLE_LABEL: Record<string, string> = {
 type Req = {
   id: string
   requester_id: string
+  requester_name: string | null
+  requester_email: string | null
   requester_role: string
   player_id: number
   message: string | null
@@ -34,7 +36,6 @@ export default function AccessRequests() {
   const { role, isAdmin } = useAuth()
   const { athletes } = useAthlete()
   const [rows, setRows] = useState<Req[]>([])
-  const [names, setNames] = useState<Record<string, string>>({})
   const [codes, setCodes] = useState<{ name: string; code: string }[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -46,16 +47,6 @@ export default function AccessRequests() {
       .select('*').order('created_at', { ascending: false })
     const list = (data as Req[]) || []
     setRows(list)
-
-    // nomi dei richiedenti (visibili solo a chi decide)
-    const ids = [...new Set(list.map(r => r.requester_id))]
-    if (ids.length) {
-      const { data: profs } = await supabase.from('crm_profiles')
-        .select('id, full_name, email').in('id', ids)
-      const map: Record<string, string> = {}
-      ;((profs as any[]) || []).forEach(p => { map[p.id] = p.full_name || p.email })
-      setNames(map)
-    }
 
     // codici da consegnare ai professionisti (l'atleta trova il suo in home)
     if (isAdmin) {
@@ -111,8 +102,11 @@ export default function AccessRequests() {
                         {ROLE_LABEL[r.requester_role] || r.requester_role}
                       </div>
                       <div style={{ fontSize: 16, fontWeight: 800, marginTop: 3 }}>
-                        {names[r.requester_id] || 'Professionista'}
+                        {r.requester_name || 'Professionista'}
                       </div>
+                      {r.requester_email && (
+                        <div className="faint" style={{ fontSize: 11.5 }}>{r.requester_email}</div>
+                      )}
                       <div className="faint" style={{ fontSize: 13, marginTop: 3 }}>
                         chiede di accedere all'area di <b style={{ color: 'var(--text)' }}>{athleteName(r.player_id)}</b>
                       </div>
@@ -172,7 +166,7 @@ export default function AccessRequests() {
             {storico.map(r => (
               <div key={r.id} className="flex between" style={{ alignItems: 'center', gap: 10, fontSize: 13 }}>
                 <span>
-                  {names[r.requester_id] || ROLE_LABEL[r.requester_role]} · {athleteName(r.player_id)}
+                  {r.requester_name || ROLE_LABEL[r.requester_role]} · {athleteName(r.player_id)}
                 </span>
                 <span style={{ fontSize: 11.5, fontWeight: 800,
                                color: r.status === 'approvata' ? '#3fb984' : '#e5484d' }}>
