@@ -54,7 +54,7 @@ export default function App() {
                         'agenda', 'tasks', 'messages', 'agent-profile', 'insurance']
   const isAgent = profile.role === 'agente'
   // L'assicuratore vede solo la sua area: polizze, scadenze e chat.
-  const insurerAllowed = ['insurer-home', 'insurance', 'insurer-profile', 'agenda', 'messages']
+  const insurerAllowed = ['insurer-home', 'insurance', 'insurer-profile', 'documents', 'agenda', 'messages']
   const isInsurer = profile.role === 'assicuratore'
   const home = isBrand ? 'brandhome' : isAgent ? 'agent-home' : isInsurer ? 'insurer-home' : 'dashboard'
   let route = routeState ?? home

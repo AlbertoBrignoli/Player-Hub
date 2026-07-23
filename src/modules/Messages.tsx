@@ -21,6 +21,8 @@ export default function Messages() {
   const [brands, setBrands] = useState<BrandLite[]>([])
   const [coachName, setCoachName] = useState<string | null>(null)
   const [hasCoach, setHasCoach] = useState(false)
+  const [agentName, setAgentName] = useState<string | null>(null)
+  const [insurerName, setInsurerName] = useState<string | null>(null)
   const [chan, setChan] = useState<string>('team')
   const [loading, setLoading] = useState(true)
   const [text, setText] = useState('')
@@ -30,6 +32,7 @@ export default function Messages() {
   const isBrand = role === 'brand'
   const isCoach = role === 'preparatore'
   const isAgent = role === 'agente'
+  const isInsurer = role === 'assicuratore'
 
   // Canali disponibili in base al ruolo e all'atleta attivo.
   const chans: Chan[] = isBrand
@@ -38,11 +41,23 @@ export default function Messages() {
       ? [{ key: 'fitness', label: 'Area Fitness', sub: 'Preparazione atletica', icon: 'dumbbell' }]
     : isAgent
       ? [{ key: 'team', label: 'Gestione', sub: 'Management e procura', icon: 'briefcase' }]
+    : isInsurer
+      ? [{ key: 'assicuratore', label: 'Assicurazioni', sub: 'Polizze e coperture', icon: 'lock' }]
       : [
           { key: 'team', label: 'Alberto · Management', sub: 'AUVI Agency', icon: 'briefcase' },
+          ...(agentName ? [{ key: 'agente', label: agentName, sub: 'Procuratore', icon: 'briefcase' }] : []),
+          ...(insurerName ? [{ key: 'assicuratore', label: insurerName, sub: 'Assicuratore', icon: 'lock' }] : []),
           ...(hasCoach ? [{ key: 'fitness', label: coachName || 'Preparatore', sub: 'Preparazione atletica', icon: 'dumbbell' }] : []),
           ...brands.map(b => ({ key: `brand:${b.id}`, label: b.name, sub: 'Partner ufficiale', icon: 'award', accent: b.accent_color, logo: b.logo_url })),
         ]
+
+  // Apertura diretta su un canale scelto altrove (es. card referenti in home).
+  useEffect(() => {
+    try {
+      const want = sessionStorage.getItem('chat_channel')
+      if (want) { setChan(want); sessionStorage.removeItem('chat_channel') }
+    } catch { /* storage non disponibile */ }
+  }, [])
 
   // Tiene il canale attivo sempre valido quando cambia atleta o ruolo.
   useEffect(() => {
@@ -130,7 +145,7 @@ export default function Messages() {
   const active = chans.find(c => c.key === chan)
   // Chi scrive al giocatore (management, preparatore, brand) deve vedere SEMPRE
   // e in chiaro a quale atleta sta scrivendo: il selettore in alto è troppo defilato.
-  const toAthlete = isAdmin || isCoach || isBrand || isAgent
+  const toAthlete = isAdmin || isCoach || isBrand || isAgent || isInsurer
   const athlete = athletes.find(a => a.api_player_id === athleteId)
   const placeholder = toAthlete
     ? `Scrivi a ${athlete?.name || 'giocatore'}…`

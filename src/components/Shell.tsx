@@ -111,6 +111,7 @@ export const INSURER_NAV: { group: string; items: NavDef[] }[] = [
     { key: 'insurer-profile', label: 'Il mio profilo', icon: 'user' },
   ]},
   { group: 'Atleta', items: [
+    { key: 'documents', label: 'Documenti', icon: 'archive' },
     { key: 'agenda', label: 'Scadenze', icon: 'clock' },
     { key: 'messages', label: 'Messaggi', icon: 'message' },
   ]},

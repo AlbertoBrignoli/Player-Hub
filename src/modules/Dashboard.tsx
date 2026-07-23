@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthContext'
 import { useAthlete } from '../lib/athlete'
 import { Spinner, Badge } from '../components/ui'
 import Icon from '../components/Icon'
+import ReferentiCard from '../components/ReferentiCard'
 import { useIsMobile } from '../lib/useIsMobile'
 import { fmtDate, fmtDateTime, daysUntil, isImageFile } from '../lib/format'
 import type { Player, EventItem, Contract, Match, StatsMatch, EditorialEntry, MediaItem } from '../lib/types'
@@ -333,6 +334,8 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
         <StatBox label="Gol stagione" value={goals} />
         <StatBox label="Contratto" value={nextContractExpiry ? `${nextContractExpiry.d}gg` : '—'} sub={nextContractExpiry ? `scade ${fmtDate(nextContractExpiry.c.end_date)}` : 'nessuna scadenza'} />
       </div>
+
+      <ReferentiCard goto={goto} />
     </div>
   )
 }
