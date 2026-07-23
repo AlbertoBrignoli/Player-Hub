@@ -30,6 +30,7 @@ import AgentHome from './modules/AgentHome'
 import Insurance from './modules/Insurance'
 import InsurerHome from './modules/InsurerHome'
 import InsurerProfile from './modules/InsurerProfile'
+import AccessRequests from './modules/AccessRequests'
 import BrandCampaigns from './modules/BrandCampaigns'
 
 export default function App() {
@@ -46,15 +47,15 @@ export default function App() {
   const isBrand = profile.role === 'brand'
   const brandAllowed = ['brandhome', 'mediakit', 'campaigns', 'brandcard', 'messages']
   // Il preparatore vede solo fitness, performance dell'atleta e chat.
-  const coachAllowed = ['dashboard', 'fitness', 'coach-profile', 'coach-office', 'performance', 'messages']
+  const coachAllowed = ['dashboard', 'fitness', 'coach-profile', 'coach-office', 'performance', 'messages', 'access-requests']
   const isCoach = profile.role === 'preparatore'
   // L'agente vede solo le competenze del procuratore.
   const agentAllowed = ['agent-home', 'dashboard', 'performance', 'profile', 'editorial', 'media',
                         'contracts', 'documents', 'sponsors', 'commercial', 'fitness',
-                        'agenda', 'tasks', 'messages', 'agent-profile', 'insurance']
+                        'agenda', 'tasks', 'messages', 'agent-profile', 'insurance', 'access-requests']
   const isAgent = profile.role === 'agente'
   // L'assicuratore vede solo la sua area: polizze, scadenze e chat.
-  const insurerAllowed = ['insurer-home', 'insurance', 'insurer-profile', 'documents', 'agenda', 'messages']
+  const insurerAllowed = ['insurer-home', 'insurance', 'insurer-profile', 'documents', 'agenda', 'messages', 'access-requests']
   const isInsurer = profile.role === 'assicuratore'
   const home = isBrand ? 'brandhome' : isAgent ? 'agent-home' : isInsurer ? 'insurer-home' : 'dashboard'
   let route = routeState ?? home
@@ -79,6 +80,7 @@ export default function App() {
       case 'insurance': return <Insurance />
       case 'insurer-home': return <InsurerHome goto={setRoute} />
       case 'insurer-profile': return <InsurerProfile />
+      case 'access-requests': return <AccessRequests />
       case 'agent-profile': return <AgentProfile />
       case 'contracts': return <Contracts />
       case 'documents': return <Documents />

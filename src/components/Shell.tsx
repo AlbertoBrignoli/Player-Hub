@@ -39,6 +39,7 @@ export const NAV: { group: string; items: NavDef[] }[] = [
     { key: 'messages', label: 'Messaggi', icon: 'message' },
   ]},
   { group: 'Sistema', items: [
+    { key: 'access-requests', label: 'Collegamenti', icon: 'key' },
     { key: 'settings', label: 'Impostazioni', icon: 'sliders' },
   ]},
 ]
@@ -61,6 +62,7 @@ export const COACH_NAV: { group: string; items: NavDef[] }[] = [
     { key: 'dashboard', label: 'Home', icon: 'grid' },
     { key: 'fitness', label: 'Area Fitness', icon: 'dumbbell' },
     { key: 'coach-profile', label: 'Il mio profilo', icon: 'user' },
+    { key: 'access-requests', label: 'Collegamenti', icon: 'key' },
   ]},
   { group: 'Ufficio', items: [
     { key: 'coach-office', label: 'Il mio ufficio', icon: 'briefcase' },
@@ -77,6 +79,7 @@ export const AGENT_NAV: { group: string; items: NavDef[] }[] = [
   { group: 'Procura', items: [
     { key: 'agent-home', label: 'Home', icon: 'grid' },
     { key: 'agent-profile', label: 'Il mio profilo', icon: 'user' },
+    { key: 'access-requests', label: 'Collegamenti', icon: 'key' },
   ]},
   { group: 'Atleta', items: [
     { key: 'dashboard', label: 'Panoramica', icon: 'activity' },
@@ -109,6 +112,7 @@ export const INSURER_NAV: { group: string; items: NavDef[] }[] = [
     { key: 'insurer-home', label: 'Home', icon: 'grid' },
     { key: 'insurance', label: 'Polizze', icon: 'lock' },
     { key: 'insurer-profile', label: 'Il mio profilo', icon: 'user' },
+    { key: 'access-requests', label: 'Collegamenti', icon: 'key' },
   ]},
   { group: 'Atleta', items: [
     { key: 'documents', label: 'Documenti', icon: 'archive' },
@@ -137,6 +141,7 @@ const TITLES: Record<string, { t: string; s: string }> = {
   'coach-office': { t: 'Il mio ufficio', s: 'Agenda personale, clienti e cassa · area privata' },
   'agent-home': { t: 'Home', s: 'La tua scheda e i tuoi assistiti' },
   'insurer-home': { t: 'Home', s: 'La tua scheda e gli atleti seguiti' },
+  'access-requests': { t: 'Collegamenti', s: 'Richieste di accesso agli atleti' },
   'insurer-profile': { t: 'Il mio profilo', s: 'Contatti e agenzia' },
   insurance: { t: 'Insurance', s: 'Polizze, documenti e scadenze' },
   'agent-profile': { t: 'Il mio profilo', s: 'Contatti personali e agenzia' },
