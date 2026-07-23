@@ -12,35 +12,37 @@ export const APP_VERSION = 'v4.6'
 
 export interface NavDef { key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[] }
 
+// Menu principale (atleta / AUVI / creator) organizzato per AREE, non a lista.
+// Ogni area raggruppa i servizi affini: pochi tocchi, chiaro dove cliccare.
 export const NAV: { group: string; items: NavDef[] }[] = [
   { group: 'Panoramica', items: [
     { key: 'dashboard', label: 'Dashboard', icon: 'grid' },
-    { key: 'performance', label: 'Performance', icon: 'activity' },
-    { key: 'profile', label: 'Profilo', icon: 'user' },
   ]},
-  { group: 'Contenuti', items: [
+  { group: 'Campo', items: [
+    { key: 'performance', label: 'Performance', icon: 'activity' },
+    { key: 'fitness', label: 'Area Fitness', icon: 'dumbbell' },
+  ]},
+  { group: 'Immagine & Brand', items: [
     { key: 'editorial', label: 'Cal. Editoriale', icon: 'calendar' },
     { key: 'media', label: 'Media', icon: 'image' },
-  ]},
-  { group: 'Gestione', items: [
-    { key: 'contracts', label: 'Contratti', icon: 'briefcase' },
-    { key: 'documents', label: 'Documenti', icon: 'archive' },
     { key: 'sponsors', label: 'Sponsor', icon: 'award' },
     { key: 'commercial', label: 'Commercial Profile', icon: 'star', roles: ['admin', 'player', 'creator'] },
-    { key: 'insurance', label: 'Insurance', icon: 'lock' },
-    { key: 'legaltax', label: 'Legal & Tax', icon: 'briefcase' },
   ]},
-  { group: 'Fitness', items: [
-    { key: 'fitness', label: 'Area Fitness', icon: 'dumbbell' },
-    { key: 'coach-profile', label: 'Il mio profilo', icon: 'user', roles: ['preparatore'] },
+  { group: 'Carriera & Denaro', items: [
+    { key: 'contracts', label: 'Contratti', icon: 'briefcase' },
+    { key: 'documents', label: 'Documenti', icon: 'archive' },
+    { key: 'legaltax', label: 'Legal & Tax', icon: 'briefcase' },
+    { key: 'insurance', label: 'Insurance', icon: 'lock' },
   ]},
   { group: 'Operatività', items: [
     { key: 'agenda', label: 'Agenda', icon: 'clock' },
     { key: 'tasks', label: 'Task', icon: 'check-square' },
     { key: 'messages', label: 'Messaggi', icon: 'message' },
   ]},
-  { group: 'Sistema', items: [
+  { group: 'Account', items: [
+    { key: 'profile', label: 'Profilo', icon: 'user' },
     { key: 'access-requests', label: 'Collegamenti', icon: 'key' },
+    { key: 'coach-profile', label: 'Il mio profilo', icon: 'user', roles: ['preparatore'] },
     { key: 'settings', label: 'Impostazioni', icon: 'sliders' },
   ]},
 ]
