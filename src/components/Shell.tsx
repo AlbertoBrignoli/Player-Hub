@@ -73,8 +73,12 @@ export const COACH_NAV: { group: string; items: NavDef[] }[] = [
 // Menu dell'agente/procuratore: accesso completo a tutto ciò che riguarda il suo atleta.
 // Fuori solo le Impostazioni di sistema (whitelist accessi) e l'ufficio privato del preparatore.
 export const AGENT_NAV: { group: string; items: NavDef[] }[] = [
+  { group: 'Procura', items: [
+    { key: 'agent-home', label: 'Home', icon: 'grid' },
+    { key: 'agent-profile', label: 'Il mio profilo', icon: 'user' },
+  ]},
   { group: 'Atleta', items: [
-    { key: 'dashboard', label: 'Dashboard', icon: 'grid' },
+    { key: 'dashboard', label: 'Panoramica', icon: 'activity' },
     { key: 'performance', label: 'Performance', icon: 'activity' },
     { key: 'profile', label: 'Scheda atleta', icon: 'user' },
   ]},
@@ -96,9 +100,6 @@ export const AGENT_NAV: { group: string; items: NavDef[] }[] = [
     { key: 'tasks', label: 'Task', icon: 'check-square' },
     { key: 'messages', label: 'Messaggi', icon: 'message' },
   ]},
-  { group: 'Procura', items: [
-    { key: 'agent-profile', label: 'Il mio profilo', icon: 'user' },
-  ]},
 ]
 
 const TITLES: Record<string, { t: string; s: string }> = {
@@ -119,6 +120,7 @@ const TITLES: Record<string, { t: string; s: string }> = {
   settings: { t: 'Impostazioni', s: 'Password, accessi e configurazione' },
   brandhome: { t: 'Home', s: 'La tua scheda e gli atleti in partnership' },
   'coach-office': { t: 'Il mio ufficio', s: 'Agenda personale, clienti e cassa · area privata' },
+  'agent-home': { t: 'Home', s: 'La tua scheda e i tuoi assistiti' },
   'agent-profile': { t: 'Il mio profilo', s: 'Contatti personali e agenzia' },
   mediakit: { t: 'Media Kit', s: "I numeri dell'atleta" },
   campaigns: { t: 'Campagne', s: 'Proponi contenuti e carica lo shooting' },
@@ -148,6 +150,15 @@ export default function Shell({ route, setRoute, right, children }: {
     supabase.from('crm_user_roles').select('role, label')
       .then(({ data }) => setMyRoles((data as any[]) || []))
   }, [profile?.id])
+
+  // Con più profili sullo stesso account, full_name resta quello del ruolo con cui
+  // è stato creato: per l'agente si usa il nome del profilo procuratore.
+  const [agentName, setAgentName] = useState<string | null>(null)
+  useEffect(() => {
+    if (role !== 'agente' || !profile?.id) { setAgentName(null); return }
+    supabase.from('crm_agent_profile').select('name').eq('agent_id', profile.id).maybeSingle()
+      .then(({ data }) => setAgentName((data as any)?.name || null))
+  }, [role, profile?.id])
 
   async function switchRole(next: string) {
     if (next === role) return
@@ -189,9 +200,9 @@ export default function Shell({ route, setRoute, right, children }: {
         </nav>
         <div className="sidebar-foot" style={{ flexShrink: 0 }}>
           <div className="user-chip">
-            <div className="avatar">{initials(profile?.full_name || profile?.email)}</div>
+            <div className="avatar">{initials(agentName || profile?.full_name || profile?.email)}</div>
             <div className="user-meta">
-              <div className="user-name">{profile?.full_name || profile?.email}</div>
+              <div className="user-name">{agentName || profile?.full_name || profile?.email}</div>
               <div className="user-role">{role === 'admin' ? 'AUVI · Advisor' : role === 'creator' ? 'Team · Creator' : role === 'preparatore' ? 'Preparatore Atletico' : role === 'brand' ? 'Brand · Partner' : role === 'agente' ? 'Procuratore' : 'Giocatore'}</div>
             </div>
             <button className="btn-ghost" style={{ marginLeft: 'auto', padding: 6, color: 'var(--text-dim)' }} title="Imposta password" onClick={() => setPwOpen(true)}><Icon name="key" size={16} /></button>
@@ -255,7 +266,7 @@ export default function Shell({ route, setRoute, right, children }: {
             ]
           : isAgent
           ? [
-              { key: 'dashboard', label: 'Home', icon: 'grid' },
+              { key: 'agent-home', label: 'Home', icon: 'grid' },
               { key: 'contracts', label: 'Contratti', icon: 'briefcase' },
               { key: 'agenda', label: 'Agenda', icon: 'clock' },
               { key: 'messages', label: 'Chat', icon: 'message' },

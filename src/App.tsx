@@ -26,6 +26,7 @@ import BrandCard from './modules/BrandCard'
 import BrandHome from './modules/BrandHome'
 import CoachOffice from './modules/CoachOffice'
 import AgentProfile from './modules/AgentProfile'
+import AgentHome from './modules/AgentHome'
 import BrandCampaigns from './modules/BrandCampaigns'
 
 export default function App() {
@@ -45,15 +46,15 @@ export default function App() {
   const coachAllowed = ['dashboard', 'fitness', 'coach-profile', 'coach-office', 'performance', 'messages']
   const isCoach = profile.role === 'preparatore'
   // L'agente vede solo le competenze del procuratore.
-  const agentAllowed = ['dashboard', 'performance', 'profile', 'editorial', 'media',
+  const agentAllowed = ['agent-home', 'dashboard', 'performance', 'profile', 'editorial', 'media',
                         'contracts', 'documents', 'sponsors', 'commercial', 'fitness',
                         'agenda', 'tasks', 'messages', 'agent-profile']
   const isAgent = profile.role === 'agente'
-  const home = isBrand ? 'brandhome' : 'dashboard'
+  const home = isBrand ? 'brandhome' : isAgent ? 'agent-home' : 'dashboard'
   let route = routeState ?? home
   if (isBrand && !brandAllowed.includes(route)) route = 'brandhome'
   if (isCoach && !coachAllowed.includes(route)) route = 'dashboard'
-  if (isAgent && !agentAllowed.includes(route)) route = 'dashboard'
+  if (isAgent && !agentAllowed.includes(route)) route = 'agent-home'
 
   const view = (() => {
     switch (route) {
@@ -67,6 +68,7 @@ export default function App() {
       case 'fitness': return <Fitness goto={setRoute} />
       case 'coach-profile': return <FitnessCoachProfile goto={setRoute} />
       case 'coach-office': return <CoachOffice />
+      case 'agent-home': return <AgentHome goto={setRoute} />
       case 'agent-profile': return <AgentProfile />
       case 'contracts': return <Contracts />
       case 'documents': return <Documents />
