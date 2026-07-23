@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import { useAthlete } from '../lib/athlete'
 import { supabase } from '../lib/supabase'
@@ -139,6 +139,22 @@ export default function Shell({ route, setRoute, right, children }: {
     : baseTitle
   const isCoach = role === 'preparatore'
   const isAgent = role === 'agente'
+
+  // Profili in cui questo utente può entrare (es. brand / procuratore).
+  // Il selettore compare solo se ne ha più di uno.
+  const [myRoles, setMyRoles] = useState<{ role: string; label: string | null }[]>([])
+  useEffect(() => {
+    if (!profile?.id) return
+    supabase.from('crm_user_roles').select('role, label')
+      .then(({ data }) => setMyRoles((data as any[]) || []))
+  }, [profile?.id])
+
+  async function switchRole(next: string) {
+    if (next === role) return
+    const { error } = await supabase.rpc('crm_switch_role', { p_role: next })
+    if (error) { alert(error.message); return }
+    window.location.reload()
+  }
   const nav = isBrand ? BRAND_NAV : isCoach ? COACH_NAV : isAgent ? AGENT_NAV : NAV
 
   return (
@@ -176,10 +192,23 @@ export default function Shell({ route, setRoute, right, children }: {
             <div className="avatar">{initials(profile?.full_name || profile?.email)}</div>
             <div className="user-meta">
               <div className="user-name">{profile?.full_name || profile?.email}</div>
-              <div className="user-role">{role === 'admin' ? 'AUVI · Advisor' : role === 'creator' ? 'Team · Creator' : role === 'preparatore' ? 'Preparatore Atletico' : role === 'brand' ? 'Brand · Partner' : 'Giocatore'}</div>
+              <div className="user-role">{role === 'admin' ? 'AUVI · Advisor' : role === 'creator' ? 'Team · Creator' : role === 'preparatore' ? 'Preparatore Atletico' : role === 'brand' ? 'Brand · Partner' : role === 'agente' ? 'Procuratore' : 'Giocatore'}</div>
             </div>
             <button className="btn-ghost" style={{ marginLeft: 'auto', padding: 6, color: 'var(--text-dim)' }} title="Imposta password" onClick={() => setPwOpen(true)}><Icon name="key" size={16} /></button>
           </div>
+          {myRoles.length > 1 && (
+            <div style={{ marginTop: 10 }}>
+              <div style={{ fontSize: 10, letterSpacing: 1.2, textTransform: 'uppercase', fontWeight: 800, color: 'var(--text-dim)', marginBottom: 5 }}>
+                Cambia profilo
+              </div>
+              <select className="input" style={{ width: '100%', fontSize: 13 }}
+                value={role || ''} onChange={e => switchRole(e.target.value)}>
+                {myRoles.map(r => (
+                  <option key={r.role} value={r.role}>{r.label || r.role}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <button className="btn" style={{ width: '100%', marginTop: 8, justifyContent: 'center' }} onClick={signOut}>
             <Icon name="logout" size={15} /> Esci
           </button>
