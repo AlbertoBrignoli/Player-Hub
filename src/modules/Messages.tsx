@@ -81,8 +81,9 @@ export default function Messages() {
       if (!athleteId) { setBrands([]); return }
       const { data } = await supabase
         .from('crm_brand_athletes')
-        .select('player_id, crm_brands(id, name, accent_color, logo_url)')
+        .select('player_id, status, crm_brands(id, name, accent_color, logo_url)')
         .eq('player_id', athleteId)
+        .eq('status', 'partner')   // sui profili solo proposti non esiste conversazione
       if (!ok) return
       const list = ((data as any[]) || [])
         .map(r => r.crm_brands)

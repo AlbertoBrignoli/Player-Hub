@@ -206,9 +206,11 @@ function AthleteGroup({ title, hint, rows, accent, kicker, fmtK, open, isPartner
                 <button className="btn btn-sm" onClick={e => { e.stopPropagation(); open(a.api_player_id, 'mediakit') }}>
                   <Icon name="activity" size={13} /> Media Kit
                 </button>
-                <button className="btn btn-ghost btn-sm" onClick={e => { e.stopPropagation(); open(a.api_player_id, 'messages') }}>
-                  <Icon name="message" size={13} /> Scrivi
-                </button>
+                {isPartner && (
+                  <button className="btn btn-ghost btn-sm" onClick={e => { e.stopPropagation(); open(a.api_player_id, 'messages') }}>
+                    <Icon name="message" size={13} /> Scrivi
+                  </button>
+                )}
                 <button className="btn btn-ghost btn-sm" onClick={e => { e.stopPropagation(); open(a.api_player_id, 'campaigns') }}>
                   <Icon name="image" size={13} /> Campagne
                 </button>
