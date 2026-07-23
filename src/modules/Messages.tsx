@@ -29,12 +29,15 @@ export default function Messages() {
 
   const isBrand = role === 'brand'
   const isCoach = role === 'preparatore'
+  const isAgent = role === 'agente'
 
   // Canali disponibili in base al ruolo e all'atleta attivo.
   const chans: Chan[] = isBrand
     ? brands.map(b => ({ key: `brand:${b.id}`, label: b.name, sub: 'Brand', icon: 'award', accent: b.accent_color, logo: b.logo_url }))
     : isCoach
       ? [{ key: 'fitness', label: 'Area Fitness', sub: 'Preparazione atletica', icon: 'dumbbell' }]
+    : isAgent
+      ? [{ key: 'team', label: 'Gestione', sub: 'Management e procura', icon: 'briefcase' }]
       : [
           { key: 'team', label: 'Alberto · Management', sub: 'AUVI Agency', icon: 'briefcase' },
           ...(hasCoach ? [{ key: 'fitness', label: coachName || 'Preparatore', sub: 'Preparazione atletica', icon: 'dumbbell' }] : []),
@@ -75,7 +78,7 @@ export default function Messages() {
   useEffect(() => {
     let ok = true
     ;(async () => {
-      if (!athleteId || isBrand) { setCoachName(null); setHasCoach(false); return }
+      if (!athleteId || isBrand || isAgent) { setCoachName(null); setHasCoach(false); return }
       const { data: a } = await supabase.from('fitness_trainer_athletes')
         .select('trainer_id').eq('player_id', athleteId).limit(1).maybeSingle()
       const tid = (a as { trainer_id?: string } | null)?.trainer_id
@@ -127,7 +130,7 @@ export default function Messages() {
   const active = chans.find(c => c.key === chan)
   // Chi scrive al giocatore (management, preparatore, brand) deve vedere SEMPRE
   // e in chiaro a quale atleta sta scrivendo: il selettore in alto è troppo defilato.
-  const toAthlete = isAdmin || isCoach || isBrand
+  const toAthlete = isAdmin || isCoach || isBrand || isAgent
   const athlete = athletes.find(a => a.api_player_id === athleteId)
   const placeholder = toAthlete
     ? `Scrivi a ${athlete?.name || 'giocatore'}…`

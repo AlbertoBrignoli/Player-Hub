@@ -46,7 +46,7 @@ export function AthleteProvider({ children }: { children: React.ReactNode }) {
     return () => { mounted = false }
   }, [profile?.id, profile?.player_api_id])
 
-  const canSwitch = (role === 'admin' || role === 'creator' || role === 'preparatore' || role === 'brand') && athletes.length > 1
+  const canSwitch = (role === 'admin' || role === 'creator' || role === 'preparatore' || role === 'brand' || role === 'agente') && athletes.length > 1
 
   return (
     <Ctx.Provider value={{ athleteId, athletes, loading, canSwitch, setAthleteId }}>

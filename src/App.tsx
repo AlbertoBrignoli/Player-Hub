@@ -25,8 +25,8 @@ import MediaKit from './modules/MediaKit'
 import BrandCard from './modules/BrandCard'
 import BrandHome from './modules/BrandHome'
 import CoachOffice from './modules/CoachOffice'
+import AgentProfile from './modules/AgentProfile'
 import BrandCampaigns from './modules/BrandCampaigns'
-import TalentSearch from './modules/TalentSearch'
 
 export default function App() {
   const { session, profile, loading } = useAuth()
@@ -40,20 +40,25 @@ export default function App() {
 
   // Il brand ha un set di schermate dedicato e non accede alle aree interne.
   const isBrand = profile.role === 'brand'
-  const brandAllowed = ['brandhome', 'mediakit', 'talentsearch', 'campaigns', 'brandcard', 'messages']
+  const brandAllowed = ['brandhome', 'mediakit', 'campaigns', 'brandcard', 'messages']
   // Il preparatore vede solo fitness, performance dell'atleta e chat.
   const coachAllowed = ['dashboard', 'fitness', 'coach-profile', 'coach-office', 'performance', 'messages']
   const isCoach = profile.role === 'preparatore'
+  // L'agente vede solo le competenze del procuratore.
+  const agentAllowed = ['dashboard', 'performance', 'profile', 'editorial', 'media',
+                        'contracts', 'documents', 'sponsors', 'commercial', 'fitness',
+                        'agenda', 'tasks', 'messages', 'agent-profile']
+  const isAgent = profile.role === 'agente'
   const home = isBrand ? 'brandhome' : 'dashboard'
   let route = routeState ?? home
   if (isBrand && !brandAllowed.includes(route)) route = 'brandhome'
   if (isCoach && !coachAllowed.includes(route)) route = 'dashboard'
+  if (isAgent && !agentAllowed.includes(route)) route = 'dashboard'
 
   const view = (() => {
     switch (route) {
       case 'brandhome': return <BrandHome goto={setRoute} />
-      case 'mediakit': return <MediaKit goto={setRoute} />
-      case 'talentsearch': return <TalentSearch goto={setRoute} />
+      case 'mediakit': return <MediaKit />
       case 'campaigns': return <BrandCampaigns />
       case 'brandcard': return <BrandCard goto={setRoute} />
       case 'dashboard': return profile.role === 'preparatore' ? <FitnessCoachHome goto={setRoute} /> : <Dashboard goto={setRoute} />
@@ -62,6 +67,7 @@ export default function App() {
       case 'fitness': return <Fitness goto={setRoute} />
       case 'coach-profile': return <FitnessCoachProfile goto={setRoute} />
       case 'coach-office': return <CoachOffice />
+      case 'agent-profile': return <AgentProfile />
       case 'contracts': return <Contracts />
       case 'documents': return <Documents />
       case 'editorial': return <Editorial />

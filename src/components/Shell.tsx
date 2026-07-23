@@ -8,7 +8,7 @@ import Toaster from './Toaster'
 import Icon from './Icon'
 import { Modal, Field, Input } from './ui'
 
-export const APP_VERSION = 'v4.9'
+export const APP_VERSION = 'v4.6'
 
 export interface NavDef { key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[] }
 
@@ -47,7 +47,6 @@ export const BRAND_NAV: { group: string; items: NavDef[] }[] = [
   { group: 'Partnership', items: [
     { key: 'brandhome', label: 'Home', icon: 'grid' },
     { key: 'mediakit', label: 'Media Kit', icon: 'activity' },
-    { key: 'talentsearch', label: 'Ricerca talent', icon: 'users' },
     { key: 'campaigns', label: 'Campagne', icon: 'image' },
     { key: 'brandcard', label: 'La mia scheda', icon: 'award' },
     { key: 'messages', label: 'Messaggi', icon: 'message' },
@@ -71,6 +70,37 @@ export const COACH_NAV: { group: string; items: NavDef[] }[] = [
   ]},
 ]
 
+// Menu dell'agente/procuratore: accesso completo a tutto ciò che riguarda il suo atleta.
+// Fuori solo le Impostazioni di sistema (whitelist accessi) e l'ufficio privato del preparatore.
+export const AGENT_NAV: { group: string; items: NavDef[] }[] = [
+  { group: 'Atleta', items: [
+    { key: 'dashboard', label: 'Dashboard', icon: 'grid' },
+    { key: 'performance', label: 'Performance', icon: 'activity' },
+    { key: 'profile', label: 'Scheda atleta', icon: 'user' },
+  ]},
+  { group: 'Contenuti', items: [
+    { key: 'editorial', label: 'Cal. Editoriale', icon: 'calendar' },
+    { key: 'media', label: 'Media', icon: 'image' },
+  ]},
+  { group: 'Gestione', items: [
+    { key: 'contracts', label: 'Contratti', icon: 'briefcase' },
+    { key: 'documents', label: 'Documenti', icon: 'archive' },
+    { key: 'sponsors', label: 'Sponsor', icon: 'award' },
+    { key: 'commercial', label: 'Commercial Profile', icon: 'star' },
+  ]},
+  { group: 'Fitness', items: [
+    { key: 'fitness', label: 'Area Fitness', icon: 'dumbbell' },
+  ]},
+  { group: 'Operatività', items: [
+    { key: 'agenda', label: 'Agenda', icon: 'clock' },
+    { key: 'tasks', label: 'Task', icon: 'check-square' },
+    { key: 'messages', label: 'Messaggi', icon: 'message' },
+  ]},
+  { group: 'Procura', items: [
+    { key: 'agent-profile', label: 'Il mio profilo', icon: 'user' },
+  ]},
+]
+
 const TITLES: Record<string, { t: string; s: string }> = {
   dashboard: { t: 'Dashboard', s: 'Quadro generale della gestione' },
   fitness: { t: 'Area Fitness', s: 'Programmi, allenamenti e feedback' },
@@ -89,8 +119,8 @@ const TITLES: Record<string, { t: string; s: string }> = {
   settings: { t: 'Impostazioni', s: 'Password, accessi e configurazione' },
   brandhome: { t: 'Home', s: 'La tua scheda e gli atleti in partnership' },
   'coach-office': { t: 'Il mio ufficio', s: 'Agenda personale, clienti e cassa · area privata' },
+  'agent-profile': { t: 'Il mio profilo', s: 'Contatti personali e agenzia' },
   mediakit: { t: 'Media Kit', s: "I numeri dell'atleta" },
-  talentsearch: { t: 'Ricerca talent', s: "Descrivi l'atleta ideale e scopri il match con il roster AUVI" },
   campaigns: { t: 'Campagne', s: 'Proponi contenuti e carica lo shooting' },
   brandcard: { t: 'La mia scheda', s: 'Dati e referente del brand' },
 }
@@ -108,7 +138,8 @@ export default function Shell({ route, setRoute, right, children }: {
     ? { t: baseTitle.t, s: `I numeri di ${athleteName}` }
     : baseTitle
   const isCoach = role === 'preparatore'
-  const nav = isBrand ? BRAND_NAV : isCoach ? COACH_NAV : NAV
+  const isAgent = role === 'agente'
+  const nav = isBrand ? BRAND_NAV : isCoach ? COACH_NAV : isAgent ? AGENT_NAV : NAV
 
   return (
     <div className="app">
@@ -191,6 +222,13 @@ export default function Shell({ route, setRoute, right, children }: {
               { key: 'brandhome', label: 'Home', icon: 'grid' },
               { key: 'mediakit', label: 'Numeri', icon: 'activity' },
               { key: 'campaigns', label: 'Campagne', icon: 'image' },
+              { key: 'messages', label: 'Chat', icon: 'message' },
+            ]
+          : isAgent
+          ? [
+              { key: 'dashboard', label: 'Home', icon: 'grid' },
+              { key: 'contracts', label: 'Contratti', icon: 'briefcase' },
+              { key: 'agenda', label: 'Agenda', icon: 'clock' },
               { key: 'messages', label: 'Chat', icon: 'message' },
             ]
           : isCoach

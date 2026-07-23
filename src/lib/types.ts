@@ -1,4 +1,4 @@
-export type Role = 'admin' | 'player' | 'creator' | 'brand' | 'preparatore'
+export type Role = 'admin' | 'player' | 'creator' | 'brand' | 'preparatore' | 'agente'
 
 export interface Brand {
   id: string
