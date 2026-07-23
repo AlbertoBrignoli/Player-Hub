@@ -57,8 +57,15 @@ export default function Agenda({ goto }: { goto?: (r: string) => void }) {
   if (loading) return <Spinner />
 
   const canEdit = (e: EventItem) => isAdmin || e.created_by === uid
+  // Richieste dell'atleta: l'agenzia conferma o rifiuta.
+  const canConfirm = (e: EventItem) => isAdmin && e.request_status === 'da_confermare'
+  const onConfirm = async (e: EventItem, ok: boolean) => {
+    await updateRow('crm_events', e.id, { request_status: ok ? 'confermata' : 'rifiutata' })
+    toast(ok ? 'Richiesta confermata' : 'Richiesta rifiutata')
+    reload()
+  }
   const onDel = async (e: EventItem) => { await deleteRow('crm_events', e.id); reload() }
-  const shared = { canEdit, onEdit: setEdit, onDel, goto }
+  const shared = { canEdit, onEdit: setEdit, onDel, canConfirm, onConfirm, goto }
 
   return (
     <div className="grid" style={{ gap: 8 }}>
@@ -83,10 +90,11 @@ export default function Agenda({ goto }: { goto?: (r: string) => void }) {
 
 type SharedProps = {
   rows: EventItem[]; canEdit: (e: EventItem) => boolean;
+  canConfirm: (e: EventItem) => boolean; onConfirm: (e: EventItem, ok: boolean) => void;
   onEdit: (e: EventItem) => void; onDel: (e: EventItem) => void; goto?: (r: string) => void
 }
 
-function ListView({ rows, canEdit, onEdit, onDel, goto }: SharedProps) {
+function ListView({ rows, canEdit, onEdit, onDel, canConfirm, onConfirm, goto }: SharedProps) {
   const now = Date.now()
   const upcoming = rows.filter(e => new Date(e.start_at).getTime() >= now - 3600000)
   const past = rows.filter(e => new Date(e.start_at).getTime() < now - 3600000).reverse()
@@ -106,7 +114,7 @@ function ListView({ rows, canEdit, onEdit, onDel, goto }: SharedProps) {
     else groups[3].items.push(e)
   })
 
-  const card = (e: EventItem) => <EvCard key={e.id} e={e} canEdit={canEdit(e)} onEdit={() => onEdit(e)} onDel={() => onDel(e)} goto={goto} />
+  const card = (e: EventItem) => <EvCard key={e.id} e={e} canEdit={canEdit(e)} onEdit={() => onEdit(e)} onDel={() => onDel(e)} canConfirm={canConfirm(e)} onConfirm={ok => onConfirm(e, ok)} goto={goto} />
 
   return (
     <>
@@ -126,7 +134,7 @@ function ListView({ rows, canEdit, onEdit, onDel, goto }: SharedProps) {
   )
 }
 
-function CalendarView({ rows, canEdit, onEdit, onDel, goto }: SharedProps) {
+function CalendarView({ rows, canEdit, onEdit, onDel, canConfirm, onConfirm, goto }: SharedProps) {
   const [cur, setCur] = useState(() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() } })
 
   const byDay: Record<string, EventItem[]> = {}
@@ -178,12 +186,13 @@ function CalendarView({ rows, canEdit, onEdit, onDel, goto }: SharedProps) {
       <div style={sectionLabel}>Prossimi impegni</div>
       {next3.length === 0
         ? <div className="faint" style={{ padding: '4px 6px' }}>Nessun impegno in programma.</div>
-        : next3.map(e => <EvCard key={e.id} e={e} canEdit={canEdit(e)} onEdit={() => onEdit(e)} onDel={() => onDel(e)} goto={goto} />)}
+        : next3.map(e => <EvCard key={e.id} e={e} canEdit={canEdit(e)} onEdit={() => onEdit(e)} onDel={() => onDel(e)} canConfirm={canConfirm(e)} onConfirm={ok => onConfirm(e, ok)} goto={goto} />)}
     </>
   )
 }
 
-function EvCard({ e, canEdit, onEdit, onDel, goto }: { e: EventItem; canEdit: boolean; onEdit: () => void; onDel: () => void; goto?: (r: string) => void }) {
+function EvCard({ e, canEdit, onEdit, onDel, canConfirm, onConfirm, goto }: { e: EventItem; canEdit: boolean; onEdit: () => void; onDel: () => void; canConfirm: boolean; onConfirm: (ok: boolean) => void; goto?: (r: string) => void }) {
+  const req = e.request_status
   const t = typeOf(e.type)
   const isTraining = e.type === 'allenamento' && !!e.fitness_program_id
   const d = new Date(e.start_at)
@@ -208,6 +217,25 @@ function EvCard({ e, canEdit, onEdit, onDel, goto }: { e: EventItem; canEdit: bo
           </span>
         </div>
         {e.location && <div className="faint" style={{ fontSize: 13, marginTop: 7, display: 'inline-flex', alignItems: 'center', gap: 6 }}><Icon name="pin" size={13} /> {e.location}</div>}
+        {req && req !== 'confermata' && (
+          <div style={{ marginTop: 9 }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700,
+                           padding: '4px 10px', borderRadius: 999,
+                           background: req === 'rifiutata' ? 'rgba(229,72,77,.14)' : 'rgba(201,146,43,.16)',
+                           color: req === 'rifiutata' ? '#e5484d' : '#c9922b' }}>
+              <Icon name={req === 'rifiutata' ? 'x' : 'clock'} size={12} />
+              {req === 'rifiutata' ? 'Richiesta non accolta' : "Richiesta dell'atleta · da confermare"}
+            </span>
+          </div>
+        )}
+        {req === 'confermata' && (
+          <div style={{ marginTop: 9 }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700,
+                           padding: '4px 10px', borderRadius: 999, background: 'rgba(63,185,132,.14)', color: '#3fb984' }}>
+              <Icon name="check" size={12} /> Confermato
+            </span>
+          </div>
+        )}
         {e.attachments && e.attachments.length > 0 && (
           <div className="flex gap" style={{ marginTop: 11, flexWrap: 'wrap' }}>
             {e.attachments.map(a => (
@@ -220,9 +248,11 @@ function EvCard({ e, canEdit, onEdit, onDel, goto }: { e: EventItem; canEdit: bo
             ))}
           </div>
         )}
-        {(isTraining || canEdit) && (
+        {(isTraining || canEdit || canConfirm) && (
           <div className="flex gap" style={{ marginTop: 12, flexWrap: 'wrap' }}>
             {isTraining && goto && <button className="btn btn-sm" style={{ background: t.c, color: '#111', fontWeight: 700 }} onClick={() => goto('fitness')}>Apri scheda →</button>}
+            {canConfirm && <button className="btn btn-sm" style={{ background: '#3fb984', color: '#111', fontWeight: 800 }} onClick={() => onConfirm(true)}>Conferma</button>}
+            {canConfirm && <button className="btn btn-ghost btn-sm" onClick={() => onConfirm(false)}>Rifiuta</button>}
             {canEdit && <button className="btn btn-ghost btn-sm" onClick={onEdit}>Modifica</button>}
             {canEdit && <ConfirmButton onConfirm={onDel}>Elimina</ConfirmButton>}
           </div>
