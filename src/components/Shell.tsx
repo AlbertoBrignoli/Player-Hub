@@ -12,37 +12,36 @@ export const APP_VERSION = 'v4.6'
 
 export interface NavDef { key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[] }
 
-// Menu principale (atleta / AUVI / creator) organizzato per AREE, non a lista.
-// Ogni area raggruppa i servizi affini: pochi tocchi, chiaro dove cliccare.
 export const NAV: { group: string; items: NavDef[] }[] = [
   { group: 'Panoramica', items: [
     { key: 'dashboard', label: 'Dashboard', icon: 'grid' },
-  ]},
-  { group: 'Campo', items: [
     { key: 'performance', label: 'Performance', icon: 'activity' },
-    { key: 'fitness', label: 'Area Fitness', icon: 'dumbbell' },
+    { key: 'profile', label: 'Profilo', icon: 'user' },
   ]},
-  { group: 'Immagine & Brand', items: [
+  { group: 'Contenuti', items: [
     { key: 'editorial', label: 'Cal. Editoriale', icon: 'calendar' },
     { key: 'media', label: 'Media', icon: 'image' },
-    { key: 'sponsors', label: 'Sponsor', icon: 'award' },
-    { key: 'commercial', label: 'Commercial Profile', icon: 'star', roles: ['admin', 'player', 'creator'] },
   ]},
-  { group: 'Carriera & Denaro', items: [
+  { group: 'Gestione', items: [
     { key: 'contracts', label: 'Contratti', icon: 'briefcase' },
     { key: 'documents', label: 'Documenti', icon: 'archive' },
-    { key: 'legaltax', label: 'Legal & Tax', icon: 'briefcase' },
+    { key: 'sponsors', label: 'Sponsor', icon: 'award' },
+    { key: 'commercial', label: 'Commercial Profile', icon: 'star', roles: ['admin', 'player', 'creator'] },
     { key: 'insurance', label: 'Insurance', icon: 'lock' },
+    { key: 'legaltax', label: 'Legal & Tax', icon: 'briefcase' },
+    { key: 'services', label: 'Servizi AUVI', icon: 'star' },
+  ]},
+  { group: 'Fitness', items: [
+    { key: 'fitness', label: 'Area Fitness', icon: 'dumbbell' },
+    { key: 'coach-profile', label: 'Il mio profilo', icon: 'user', roles: ['preparatore'] },
   ]},
   { group: 'Operatività', items: [
     { key: 'agenda', label: 'Agenda', icon: 'clock' },
     { key: 'tasks', label: 'Task', icon: 'check-square' },
     { key: 'messages', label: 'Messaggi', icon: 'message' },
   ]},
-  { group: 'Account', items: [
-    { key: 'profile', label: 'Profilo', icon: 'user' },
+  { group: 'Sistema', items: [
     { key: 'access-requests', label: 'Collegamenti', icon: 'key' },
-    { key: 'coach-profile', label: 'Il mio profilo', icon: 'user', roles: ['preparatore'] },
     { key: 'settings', label: 'Impostazioni', icon: 'sliders' },
   ]},
 ]
@@ -163,6 +162,7 @@ const TITLES: Record<string, { t: string; s: string }> = {
   'insurer-profile': { t: 'Il mio profilo', s: 'Contatti e agenzia' },
   insurance: { t: 'Insurance', s: 'Polizze, documenti e scadenze' },
   legaltax: { t: 'Legal & Tax', s: 'Pagamenti, documenti e richieste' },
+  services: { t: 'Servizi AUVI', s: 'Servizi e partner a tua disposizione' },
   'tax-home': { t: 'Home', s: 'La tua scheda e gli atleti seguiti' },
   'tax-profile': { t: 'Il mio profilo', s: 'Contatti e studio' },
   'agent-profile': { t: 'Il mio profilo', s: 'Contatti personali e agenzia' },

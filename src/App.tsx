@@ -32,6 +32,7 @@ import InsurerHome from './modules/InsurerHome'
 import InsurerProfile from './modules/InsurerProfile'
 import AccessRequests from './modules/AccessRequests'
 import LegalTax from './modules/LegalTax'
+import Services from './modules/Services'
 import TaxAdvisorHome from './modules/TaxAdvisorHome'
 import TaxAdvisorProfile from './modules/TaxAdvisorProfile'
 import BrandCampaigns from './modules/BrandCampaigns'
@@ -55,7 +56,7 @@ export default function App() {
   // L'agente vede solo le competenze del procuratore.
   const agentAllowed = ['agent-home', 'dashboard', 'performance', 'profile', 'editorial', 'media',
                         'contracts', 'documents', 'sponsors', 'commercial', 'fitness',
-                        'agenda', 'tasks', 'messages', 'agent-profile', 'insurance', 'legaltax', 'access-requests']
+                        'agenda', 'tasks', 'messages', 'agent-profile', 'insurance', 'legaltax', 'services', 'access-requests']
   const isAgent = profile.role === 'agente'
   // L'assicuratore vede solo la sua area: polizze, scadenze e chat.
   const insurerAllowed = ['insurer-home', 'insurance', 'insurer-profile', 'documents', 'agenda', 'messages', 'access-requests']
@@ -89,6 +90,7 @@ export default function App() {
       case 'insurer-profile': return <InsurerProfile />
       case 'access-requests': return <AccessRequests />
       case 'legaltax': return <LegalTax />
+      case 'services': return <Services />
       case 'tax-home': return <TaxAdvisorHome goto={setRoute} />
       case 'tax-profile': return <TaxAdvisorProfile />
       case 'agent-profile': return <AgentProfile />
