@@ -64,6 +64,16 @@ function annualCost(p: Partial<Policy>): number {
   return v * (FREQ_MULT[(p.payment_frequency || 'annuale').toLowerCase()] ?? 1)
 }
 
+export type Payment = {
+  id: string
+  policy_id: string | null
+  player_id: number
+  amount: number
+  paid_on: string
+  method: string | null
+  note: string | null
+}
+
 const daysTo = (d?: string | null) =>
   d ? Math.ceil((new Date(d).getTime() - Date.now()) / 86400000) : null
 
@@ -93,6 +103,34 @@ export default function Insurance() {
     orderBy: 'expiry_date', ascending: true,
     match: athleteId ? { player_id: athleteId } : undefined,
   })
+
+  const { rows: pays, reload: reloadPays } = useCollection<Payment>('crm_insurance_payments', {
+    orderBy: 'paid_on', ascending: false,
+    match: athleteId ? { player_id: athleteId } : undefined,
+  })
+  const [payFor, setPayFor] = useState<Policy | null>(null)
+  const quickRef = useRef<HTMLInputElement>(null)
+  const [quickBusy, setQuickBusy] = useState(false)
+
+  // Percorso "documento prima": carichi la polizza e il form si apre già con
+  // l'allegato dentro, pronto per i pochi dati che contano.
+  async function quickUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file || !athleteId) return
+    setQuickBusy(true)
+    const path = `${athleteId}/${Date.now()}-${file.name.replace(/[^\w.\-]/g, '_')}`
+    const up = await supabase.storage.from(BUCKET).upload(path, file, { upsert: false })
+    setQuickBusy(false)
+    if (up.error) { toast(up.error.message, 'err'); return }
+    setEdit({
+      area: area === 'riepilogo' ? 'sport' : area,
+      status: 'attiva',
+      title: file.name.replace(/\.[^.]+$/, ''),
+      attachments: [{ name: file.name, path, size: file.size, mime: file.type }],
+    })
+    toast('Documento caricato: completa i dati')
+  }
 
   const ofArea = useMemo(() => rows.filter(p => p.area === area), [rows, area])
 
@@ -124,7 +162,7 @@ export default function Insurance() {
         ))}
       </div>
 
-      {area === 'riepilogo' ? <Overview rows={rows} /> : <>
+      {area === 'riepilogo' ? <Overview rows={rows} pays={pays} /> : <>
       {/* --- riepilogo --- */}
       <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 18,
                     background: 'var(--bg-2)', border: '1px solid var(--border)', padding: '22px' }}>
@@ -183,10 +221,16 @@ export default function Insurance() {
             <span style={{ ...kicker, color: 'var(--text)' }}>Le mie polizze</span>
           </div>
           {canManage && (
-            <button className="btn btn-sm" style={{ background: ACCENT, color: '#fff', fontWeight: 800, border: 'none' }}
-              onClick={() => setEdit({ area: area === 'riepilogo' ? 'sport' : area, status: 'attiva' })}>
-              <Icon name="plus" size={13} /> Nuova polizza
-            </button>
+            <div className="flex gap" style={{ flexWrap: 'wrap' }}>
+              <button className="btn btn-sm" disabled={quickBusy} onClick={() => quickRef.current?.click()}>
+                <Icon name="upload" size={13} /> {quickBusy ? 'Carico…' : 'Carica polizza'}
+              </button>
+              <input ref={quickRef} type="file" hidden onChange={quickUpload} />
+              <button className="btn btn-sm" style={{ background: ACCENT, color: '#fff', fontWeight: 800, border: 'none' }}
+                onClick={() => setEdit({ area: area === 'riepilogo' ? 'sport' : area, status: 'attiva' })}>
+                <Icon name="plus" size={13} /> Nuova polizza
+              </button>
+            </div>
           )}
         </div>
 
@@ -242,7 +286,10 @@ export default function Insurance() {
                     {p.notes && <div className="faint" style={{ fontSize: 12.5, marginTop: 11 }}>{p.notes}</div>}
 
                     {canManage && (
-                      <div className="flex gap" style={{ marginTop: 13 }}>
+                      <div className="flex gap" style={{ marginTop: 13, flexWrap: 'wrap' }}>
+                        <button className="btn btn-sm" onClick={() => setPayFor(p)}>
+                          <Icon name="plus" size={12} /> Pagamento
+                        </button>
                         <button className="btn btn-ghost btn-sm" onClick={() => setEdit(p)}>Modifica</button>
                         <ConfirmButton onConfirm={async () => { await deleteRow('crm_insurance_policies', p.id); reload() }}>Elimina</ConfirmButton>
                       </div>
@@ -257,6 +304,11 @@ export default function Insurance() {
 
       </>}
 
+      {payFor && athleteId && (
+        <PaymentForm policy={payFor} playerId={athleteId}
+          onClose={() => setPayFor(null)} onSaved={() => { setPayFor(null); reloadPays() }} />
+      )}
+
       {edit && athleteId && (
         <PolicyForm value={edit} playerId={athleteId}
           onClose={() => setEdit(null)} onSaved={() => { setEdit(null); reload() }} />
@@ -268,7 +320,7 @@ export default function Insurance() {
 
 // Dashboard aggregata: costo annuo totale, ripartizione e mappa delle coperture.
 // I dati arrivano dai campi compilati: nessuna elaborazione automatica del PDF.
-function Overview({ rows }: { rows: Policy[] }) {
+function Overview({ rows, pays }: { rows: Policy[]; pays: Payment[] }) {
   const attive = rows.filter(p => p.status !== 'disdetta')
 
   const totale = attive.reduce((s, p) => s + annualCost(p), 0)
@@ -346,6 +398,31 @@ function Overview({ rows }: { rows: Policy[] }) {
           ))}
         </div>
       </div>
+
+      {/* spesa effettiva dell'anno */}
+      {(() => {
+        const anno = new Date().getFullYear()
+        const speso = pays.filter(x => new Date(x.paid_on).getFullYear() === anno)
+                          .reduce((s, x) => s + Number(x.amount || 0), 0)
+        if (!pays.length) return null
+        const pct = totale > 0 ? Math.min(100, Math.round((speso / totale) * 100)) : 0
+        return (
+          <div className="card">
+            <div className="flex between" style={{ alignItems: 'center', marginBottom: 10 }}>
+              <div style={{ ...kicker, color: 'var(--text-dim)' }}>Speso nel {anno}</div>
+              <span className="faint" style={{ fontSize: 11.5 }}>{pays.length} pagamenti registrati</span>
+            </div>
+            <div className="flex gap" style={{ gap: 26, flexWrap: 'wrap', marginBottom: 12 }}>
+              <Metric label="Effettivo" value={fmtMoney(speso)} tone={OK} />
+              <Metric label="Previsto" value={fmtMoney(totale)} tone={ACCENT} />
+              <Metric label="Differenza" value={fmtMoney(speso - totale)} tone={speso > totale ? DANGER : OK} />
+            </div>
+            <div style={{ height: 6, borderRadius: 3, background: 'var(--border)', overflow: 'hidden' }}>
+              <div style={{ width: `${pct}%`, height: '100%', background: OK }} />
+            </div>
+          </div>
+        )
+      })()}
 
       {/* ripartizione per categoria */}
       <div className="card">
@@ -437,6 +514,51 @@ function Info({ k, v }: { k: string; v?: any }) {
   )
 }
 
+// Registrazione di un pagamento: alimenta la spesa effettiva dell'anno.
+function PaymentForm({ policy, playerId, onClose, onSaved }: {
+  policy: Policy; playerId: number; onClose: () => void; onSaved: () => void
+}) {
+  const [amount, setAmount] = useState<string>(policy.premium ? String(policy.premium) : '')
+  const [paidOn, setPaidOn] = useState(new Date().toISOString().slice(0, 10))
+  const [method, setMethod] = useState('')
+  const [note, setNote] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  async function save() {
+    if (!amount) return
+    setBusy(true)
+    await insertRow('crm_insurance_payments', {
+      policy_id: policy.id, player_id: playerId,
+      amount: Number(amount), paid_on: paidOn,
+      method: method || null, note: note || null,
+    })
+    setBusy(false); onSaved()
+  }
+
+  return (
+    <Modal title={`Pagamento · ${policy.title}`} onClose={onClose}
+      footer={<>
+        <button className="btn btn-ghost" onClick={onClose}>Annulla</button>
+        <button className="btn btn-primary" disabled={busy || !amount} onClick={save}>{busy ? 'Salvo…' : 'Registra'}</button>
+      </>}>
+      <div className="grid g2" style={{ gap: 10 }}>
+        <Field label="Importo (€)"><Input type="number" value={amount} onChange={e => setAmount(e.target.value)} /></Field>
+        <Field label="Data"><Input type="date" value={paidOn} onChange={e => setPaidOn(e.target.value)} /></Field>
+      </div>
+      <Field label="Metodo">
+        <Select value={method} onChange={e => setMethod(e.target.value)}>
+          <option value="">—</option>
+          <option value="bonifico">Bonifico</option>
+          <option value="carta">Carta</option>
+          <option value="RID">Addebito automatico</option>
+          <option value="contanti">Contanti</option>
+        </Select>
+      </Field>
+      <Field label="Note"><Input value={note} onChange={e => setNote(e.target.value)} placeholder="Es. prima rata 2026" /></Field>
+    </Modal>
+  )
+}
+
 function PolicyForm({ value, playerId, onClose, onSaved }: {
   value: Partial<Policy>; playerId: number; onClose: () => void; onSaved: () => void
 }) {
@@ -504,6 +626,12 @@ function PolicyForm({ value, playerId, onClose, onSaved }: {
         <button className="btn btn-ghost" onClick={onClose}>Annulla</button>
         <button className="btn btn-primary" disabled={busy || !f.title} onClick={save}>{busy ? 'Salvo…' : 'Salva'}</button>
       </>}>
+      {!f.id && (f.attachments?.length ?? 0) > 0 && (
+        <div className="faint" style={{ fontSize: 12.5, marginBottom: 10, borderLeft: `2px solid ${ACCENT}`, paddingLeft: 10 }}>
+          Documento allegato. Compila i dati essenziali: <b>area</b>, <b>categoria</b>,
+          <b> importo</b> e <b>scadenza</b> — bastano per la dashboard dei costi.
+        </div>
+      )}
       <div className="grid g2" style={{ gap: 10 }}>
         <Field label="Area">
           <Select value={f.area || 'sport'} onChange={e => { set('area', e.target.value); set('category', '') }}>
