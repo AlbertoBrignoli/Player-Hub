@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAthlete } from '../lib/athlete'
+import { useAuth } from '../auth/AuthContext'
+import { toast } from '../lib/toast'
 import Icon from '../components/Icon'
 
 // I referenti dell'atleta: procuratore, assicuratore, preparatore.
@@ -27,7 +29,11 @@ const kicker: React.CSSProperties = {
 
 export default function ReferentiCard({ goto }: { goto?: (r: string) => void }) {
   const { athleteId } = useAthlete()
+  const { role } = useAuth()
   const [refs, setRefs] = useState<Ref[]>([])
+  const [code, setCode] = useState<string | null>(null)
+  const [pending, setPending] = useState(0)
+  const isPlayer = role === 'player'
 
   useEffect(() => {
     if (!athleteId) { setRefs([]); return }
@@ -78,19 +84,68 @@ export default function ReferentiCard({ goto }: { goto?: (r: string) => void }) 
         })
       }
 
+      // il codice personale dell'atleta e le richieste da approvare
+      if (isPlayer) {
+        const [pl, rq] = await Promise.all([
+          supabase.from('player').select('access_code').eq('api_player_id', athleteId).maybeSingle(),
+          supabase.from('crm_access_requests').select('id').eq('player_id', athleteId).eq('status', 'pending'),
+        ])
+        if (ok) {
+          setCode((pl.data as any)?.access_code || null)
+          setPending(((rq.data as any[]) || []).length)
+        }
+      }
+
       if (ok) setRefs(out)
     })()
     return () => { ok = false }
-  }, [athleteId])
+  }, [athleteId, isPlayer])
 
-  if (refs.length === 0) return null
+  if (refs.length === 0 && !isPlayer) return null
 
   return (
     <div style={{ marginTop: 4 }}>
+      {isPlayer && pending > 0 && (
+        <div className="card" style={{ borderColor: '#8b7ff055', marginBottom: 14 }}>
+          <div className="flex between" style={{ alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <div>
+              <div style={{ ...kicker, fontSize: 10, color: '#8b7ff0' }}>Da approvare</div>
+              <div style={{ fontSize: 14.5, fontWeight: 700, marginTop: 2 }}>
+                {pending} {pending === 1 ? 'professionista chiede' : 'professionisti chiedono'} accesso alla tua area
+              </div>
+            </div>
+            <button className="btn btn-sm" style={{ background: '#8b7ff0', color: '#fff', fontWeight: 800, border: 'none' }}
+              onClick={() => goto?.('access-requests')}>Vedi richieste</button>
+          </div>
+        </div>
+      )}
+
+      {isPlayer && code && (
+        <div className="card" style={{ marginBottom: 14 }}>
+          <div style={{ ...kicker, color: 'var(--text-dim)' }}>Il tuo codice</div>
+          <div className="faint" style={{ fontSize: 12.5, marginTop: 4 }}>
+            Dallo al tuo procuratore, assicuratore o preparatore: gli serve per chiedere
+            l'accesso alla tua area. Nessuno può entrare senza la tua approvazione.
+          </div>
+          <div className="flex gap" style={{ alignItems: 'center', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
+            <code style={{ fontSize: 20, fontWeight: 900, letterSpacing: 3, color: '#8b7ff0',
+                           border: '1px dashed var(--border)', borderRadius: 10, padding: '9px 16px' }}>
+              {code}
+            </code>
+            <button className="btn btn-sm"
+              onClick={() => { navigator.clipboard.writeText(code); toast('Codice copiato') }}>
+              <Icon name="copy" size={13} /> Copia
+            </button>
+          </div>
+        </div>
+      )}
+
+      {refs.length > 0 && (
       <div className="flex between" style={{ alignItems: 'center', marginBottom: 12 }}>
         <div style={{ ...kicker, color: 'var(--text-dim)' }}>I tuoi referenti</div>
         <span className="faint" style={{ fontSize: 11.5 }}>Scrivi direttamente dall'app</span>
       </div>
+      )}
 
       <div className="grid g3" style={{ gap: 12 }}>
         {refs.map(r => (

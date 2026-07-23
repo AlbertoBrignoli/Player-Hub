@@ -57,8 +57,8 @@ export default function AccessRequests() {
       setNames(map)
     }
 
-    // codici da consegnare ai professionisti
-    if (isAdmin || role === 'player') {
+    // codici da consegnare ai professionisti (l'atleta trova il suo in home)
+    if (isAdmin) {
       const { data: pl } = await supabase.from('player').select('name, access_code')
       setCodes(((pl as any[]) || []).filter(p => p.access_code)
         .map(p => ({ name: p.name, code: p.access_code })))
