@@ -25,6 +25,7 @@ export type Service = {
   category: string
   title: string
   description: string | null
+  details: string | null
   icon: string
   verified: boolean
   partner_name: string | null
@@ -122,6 +123,14 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
         <div className="card">
           <div style={{ ...kicker, color: 'var(--text-dim)', marginBottom: 8 }}>Il metodo</div>
           <div style={{ fontSize: 13.5, lineHeight: 1.6 }}>{service.about}</div>
+        </div>
+      )}
+
+      {/* --- come funziona --- */}
+      {service.details && (
+        <div className="card" style={{ borderLeft: `3px solid ${accent}` }}>
+          <div style={{ ...kicker, color: accent, marginBottom: 8 }}>Il percorso</div>
+          <div style={{ fontSize: 13.5, lineHeight: 1.6 }}>{service.details}</div>
         </div>
       )}
 
