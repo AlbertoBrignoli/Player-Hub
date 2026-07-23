@@ -27,6 +27,9 @@ import BrandHome from './modules/BrandHome'
 import CoachOffice from './modules/CoachOffice'
 import AgentProfile from './modules/AgentProfile'
 import AgentHome from './modules/AgentHome'
+import Insurance from './modules/Insurance'
+import InsurerHome from './modules/InsurerHome'
+import InsurerProfile from './modules/InsurerProfile'
 import BrandCampaigns from './modules/BrandCampaigns'
 
 export default function App() {
@@ -48,13 +51,17 @@ export default function App() {
   // L'agente vede solo le competenze del procuratore.
   const agentAllowed = ['agent-home', 'dashboard', 'performance', 'profile', 'editorial', 'media',
                         'contracts', 'documents', 'sponsors', 'commercial', 'fitness',
-                        'agenda', 'tasks', 'messages', 'agent-profile']
+                        'agenda', 'tasks', 'messages', 'agent-profile', 'insurance']
   const isAgent = profile.role === 'agente'
-  const home = isBrand ? 'brandhome' : isAgent ? 'agent-home' : 'dashboard'
+  // L'assicuratore vede solo la sua area: polizze, scadenze e chat.
+  const insurerAllowed = ['insurer-home', 'insurance', 'insurer-profile', 'agenda', 'messages']
+  const isInsurer = profile.role === 'assicuratore'
+  const home = isBrand ? 'brandhome' : isAgent ? 'agent-home' : isInsurer ? 'insurer-home' : 'dashboard'
   let route = routeState ?? home
   if (isBrand && !brandAllowed.includes(route)) route = 'brandhome'
   if (isCoach && !coachAllowed.includes(route)) route = 'dashboard'
   if (isAgent && !agentAllowed.includes(route)) route = 'agent-home'
+  if (isInsurer && !insurerAllowed.includes(route)) route = 'insurer-home'
 
   const view = (() => {
     switch (route) {
@@ -69,6 +76,9 @@ export default function App() {
       case 'coach-profile': return <FitnessCoachProfile goto={setRoute} />
       case 'coach-office': return <CoachOffice />
       case 'agent-home': return <AgentHome goto={setRoute} />
+      case 'insurance': return <Insurance />
+      case 'insurer-home': return <InsurerHome goto={setRoute} />
+      case 'insurer-profile': return <InsurerProfile />
       case 'agent-profile': return <AgentProfile />
       case 'contracts': return <Contracts />
       case 'documents': return <Documents />

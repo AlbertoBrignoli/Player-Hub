@@ -27,6 +27,7 @@ export const NAV: { group: string; items: NavDef[] }[] = [
     { key: 'documents', label: 'Documenti', icon: 'archive' },
     { key: 'sponsors', label: 'Sponsor', icon: 'award' },
     { key: 'commercial', label: 'Commercial Profile', icon: 'star', roles: ['admin', 'player', 'creator'] },
+    { key: 'insurance', label: 'Insurance', icon: 'lock' },
   ]},
   { group: 'Fitness', items: [
     { key: 'fitness', label: 'Area Fitness', icon: 'dumbbell' },
@@ -102,6 +103,19 @@ export const AGENT_NAV: { group: string; items: NavDef[] }[] = [
   ]},
 ]
 
+// Menu dell'assicuratore: le sue polizze, i suoi atleti, la sua scheda.
+export const INSURER_NAV: { group: string; items: NavDef[] }[] = [
+  { group: 'Assicurazioni', items: [
+    { key: 'insurer-home', label: 'Home', icon: 'grid' },
+    { key: 'insurance', label: 'Polizze', icon: 'lock' },
+    { key: 'insurer-profile', label: 'Il mio profilo', icon: 'user' },
+  ]},
+  { group: 'Atleta', items: [
+    { key: 'agenda', label: 'Scadenze', icon: 'clock' },
+    { key: 'messages', label: 'Messaggi', icon: 'message' },
+  ]},
+]
+
 const TITLES: Record<string, { t: string; s: string }> = {
   dashboard: { t: 'Dashboard', s: 'Quadro generale della gestione' },
   fitness: { t: 'Area Fitness', s: 'Programmi, allenamenti e feedback' },
@@ -121,6 +135,9 @@ const TITLES: Record<string, { t: string; s: string }> = {
   brandhome: { t: 'Home', s: 'La tua scheda e gli atleti in partnership' },
   'coach-office': { t: 'Il mio ufficio', s: 'Agenda personale, clienti e cassa · area privata' },
   'agent-home': { t: 'Home', s: 'La tua scheda e i tuoi assistiti' },
+  'insurer-home': { t: 'Home', s: 'La tua scheda e gli atleti seguiti' },
+  'insurer-profile': { t: 'Il mio profilo', s: 'Contatti e agenzia' },
+  insurance: { t: 'Insurance', s: 'Polizze, documenti e scadenze' },
   'agent-profile': { t: 'Il mio profilo', s: 'Contatti personali e agenzia' },
   mediakit: { t: 'Media Kit', s: "I numeri dell'atleta" },
   campaigns: { t: 'Campagne', s: 'Proponi contenuti e carica lo shooting' },
@@ -141,6 +158,7 @@ export default function Shell({ route, setRoute, right, children }: {
     : baseTitle
   const isCoach = role === 'preparatore'
   const isAgent = role === 'agente'
+  const isInsurer = role === 'assicuratore'
 
   // Profili in cui questo utente può entrare (es. brand / procuratore).
   // Il selettore compare solo se ne ha più di uno.
@@ -166,7 +184,7 @@ export default function Shell({ route, setRoute, right, children }: {
     if (error) { alert(error.message); return }
     window.location.reload()
   }
-  const nav = isBrand ? BRAND_NAV : isCoach ? COACH_NAV : isAgent ? AGENT_NAV : NAV
+  const nav = isBrand ? BRAND_NAV : isCoach ? COACH_NAV : isAgent ? AGENT_NAV : isInsurer ? INSURER_NAV : NAV
 
   return (
     <div className="app">
@@ -203,7 +221,7 @@ export default function Shell({ route, setRoute, right, children }: {
             <div className="avatar">{initials(agentName || profile?.full_name || profile?.email)}</div>
             <div className="user-meta">
               <div className="user-name">{agentName || profile?.full_name || profile?.email}</div>
-              <div className="user-role">{role === 'admin' ? 'AUVI · Advisor' : role === 'creator' ? 'Team · Creator' : role === 'preparatore' ? 'Preparatore Atletico' : role === 'brand' ? 'Brand · Partner' : role === 'agente' ? 'Procuratore' : 'Giocatore'}</div>
+              <div className="user-role">{role === 'admin' ? 'AUVI · Advisor' : role === 'creator' ? 'Team · Creator' : role === 'preparatore' ? 'Preparatore Atletico' : role === 'brand' ? 'Brand · Partner' : role === 'agente' ? 'Procuratore' : role === 'assicuratore' ? 'Assicuratore' : 'Giocatore'}</div>
             </div>
             <button className="btn-ghost" style={{ marginLeft: 'auto', padding: 6, color: 'var(--text-dim)' }} title="Imposta password" onClick={() => setPwOpen(true)}><Icon name="key" size={16} /></button>
           </div>
@@ -262,6 +280,13 @@ export default function Shell({ route, setRoute, right, children }: {
               { key: 'brandhome', label: 'Home', icon: 'grid' },
               { key: 'mediakit', label: 'Numeri', icon: 'activity' },
               { key: 'campaigns', label: 'Campagne', icon: 'image' },
+              { key: 'messages', label: 'Chat', icon: 'message' },
+            ]
+          : isInsurer
+          ? [
+              { key: 'insurer-home', label: 'Home', icon: 'grid' },
+              { key: 'insurance', label: 'Polizze', icon: 'lock' },
+              { key: 'agenda', label: 'Scadenze', icon: 'clock' },
               { key: 'messages', label: 'Chat', icon: 'message' },
             ]
           : isAgent
