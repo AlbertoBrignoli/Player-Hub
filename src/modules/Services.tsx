@@ -6,6 +6,7 @@ import { useAthlete } from '../lib/athlete'
 import { Modal, Field, Input, Textarea, Select, Empty, Spinner } from '../components/ui'
 import Icon from '../components/Icon'
 import { fmtDate, fmtDateTime } from '../lib/format'
+import ServiceDetail from '../components/ServiceDetail'
 
 // Marketplace interno: l'atleta sfoglia i servizi e chiede ciò che gli serve.
 // La richiesta arriva ad AUVI, che la prende in carico e la chiude.
@@ -22,19 +23,7 @@ const STATUS: Record<string, { l: string; c: string }> = {
   annullata: { l: 'Annullata', c: '#e5484d' },
 }
 
-type Service = {
-  id: string
-  category: string
-  title: string
-  description: string | null
-  details: string | null
-  icon: string
-  verified: boolean
-  show_partner: boolean
-  partner_name: string | null
-  partner_website: string | null
-  sort: number
-}
+import type { Service } from '../components/ServiceDetail'
 
 type Req = {
   id: string
@@ -54,7 +43,7 @@ export default function Services() {
   const [services, setServices] = useState<Service[]>([])
   const [reqs, setReqs] = useState<Req[]>([])
   const [loading, setLoading] = useState(true)
-  const [ask, setAsk] = useState<Service | null>(null)
+  const [open, setOpen] = useState<Service | null>(null)
   const [manage, setManage] = useState<Req | null>(null)
 
   const isPlayer = role === 'player'
@@ -77,6 +66,13 @@ export default function Services() {
   if (loading) return <Spinner />
 
   const athleteName = (id: number) => athletes.find(a => a.api_player_id === id)?.name || 'Atleta'
+
+  if (open) {
+    return (
+      <ServiceDetail service={open} playerId={athleteId} canRequest={!!athleteId}
+        onBack={() => setOpen(null)} onSent={() => { setOpen(null); load() }} />
+    )
+  }
 
   return (
     <div className="grid" style={{ gap: 20 }}>
@@ -148,13 +144,13 @@ export default function Services() {
       {/* --- partner verificati --- */}
       {verificati.length > 0 && (
         <Group title="Partner verificati" hint="Professionisti con cui lavoriamo già"
-          services={verificati} accent={ACCENT} isPlayer={isPlayer} onAsk={setAsk} badge />
+          services={verificati} accent={ACCENT} isPlayer={isPlayer} onAsk={setOpen} badge />
       )}
 
       {/* --- altri servizi --- */}
       {altri.length > 0 && (
         <Group title="Altri servizi disponibili" hint="Attiviamo il professionista giusto su richiesta"
-          services={altri} accent={ACCENT} isPlayer={isPlayer} onAsk={setAsk} />
+          services={altri} accent={ACCENT} isPlayer={isPlayer} onAsk={setOpen} />
       )}
 
       {services.length === 0 && (
@@ -164,10 +160,6 @@ export default function Services() {
         </div>
       )}
 
-      {ask && athleteId && (
-        <AskForm service={ask} playerId={athleteId}
-          onClose={() => setAsk(null)} onSaved={() => { setAsk(null); load() }} />
-      )}
       {manage && (
         <ManageForm req={manage} onClose={() => setManage(null)} onSaved={() => { setManage(null); load() }} />
       )}
@@ -233,7 +225,7 @@ function Group({ title, hint, services, accent, isPlayer, onAsk, badge }: {
                   <button className="btn btn-sm" style={{ marginTop: 12, width: '100%', justifyContent: 'center',
                                                           background: accent, color: '#fff', fontWeight: 800, border: 'none' }}
                     onClick={() => onAsk(s)}>
-                    {isPlayer ? 'Richiedi' : 'Richiedi per l\'atleta'}
+                    {isPlayer ? 'Scopri e richiedi' : 'Apri servizio'}
                   </button>
                 </div>
               </div>
@@ -252,50 +244,6 @@ function Metric({ label, value }: { label: string; value: string }) {
       <div style={{ fontSize: 21, fontWeight: 900, marginTop: 2,
                     borderBottom: `2px solid ${ACCENT}`, display: 'inline-block', paddingBottom: 2 }}>{value}</div>
     </div>
-  )
-}
-
-function AskForm({ service, playerId, onClose, onSaved }: {
-  service: Service; playerId: number; onClose: () => void; onSaved: () => void
-}) {
-  const [message, setMessage] = useState('')
-  const [date, setDate] = useState('')
-  const [busy, setBusy] = useState(false)
-
-  async function send() {
-    setBusy(true)
-    const { error } = await supabase.from('crm_service_requests').insert({
-      player_id: playerId, service_id: service.id, service_title: service.title,
-      message: message || null, preferred_date: date || null,
-    })
-    setBusy(false)
-    if (error) { toast(error.message, 'err'); return }
-    toast('Richiesta inviata ad AUVI')
-    onSaved()
-  }
-
-  return (
-    <Modal title={service.title} onClose={onClose}
-      footer={<>
-        <button className="btn btn-ghost" onClick={onClose}>Annulla</button>
-        <button className="btn btn-primary" disabled={busy} onClick={send}>{busy ? 'Invio…' : 'Invia richiesta'}</button>
-      </>}>
-      {service.description && (
-        <div className="faint" style={{ fontSize: 12.5, marginBottom: 12, borderLeft: `2px solid ${ACCENT}`, paddingLeft: 10 }}>
-          {service.description}
-        </div>
-      )}
-      <Field label="Cosa ti serve">
-        <Textarea rows={3} value={message} onChange={e => setMessage(e.target.value)}
-          placeholder="Es. volo Bologna-Atene per due persone, rientro domenica sera" />
-      </Field>
-      <Field label="Per quando (facoltativo)">
-        <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
-      </Field>
-      <div className="faint" style={{ fontSize: 11.5, marginTop: 6 }}>
-        La richiesta arriva ad AUVI: ti ricontattiamo noi con la soluzione.
-      </div>
-    </Modal>
   )
 }
 
