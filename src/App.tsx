@@ -31,6 +31,9 @@ import Insurance from './modules/Insurance'
 import InsurerHome from './modules/InsurerHome'
 import InsurerProfile from './modules/InsurerProfile'
 import AccessRequests from './modules/AccessRequests'
+import LegalTax from './modules/LegalTax'
+import TaxAdvisorHome from './modules/TaxAdvisorHome'
+import TaxAdvisorProfile from './modules/TaxAdvisorProfile'
 import BrandCampaigns from './modules/BrandCampaigns'
 
 export default function App() {
@@ -52,17 +55,21 @@ export default function App() {
   // L'agente vede solo le competenze del procuratore.
   const agentAllowed = ['agent-home', 'dashboard', 'performance', 'profile', 'editorial', 'media',
                         'contracts', 'documents', 'sponsors', 'commercial', 'fitness',
-                        'agenda', 'tasks', 'messages', 'agent-profile', 'insurance', 'access-requests']
+                        'agenda', 'tasks', 'messages', 'agent-profile', 'insurance', 'legaltax', 'access-requests']
   const isAgent = profile.role === 'agente'
   // L'assicuratore vede solo la sua area: polizze, scadenze e chat.
   const insurerAllowed = ['insurer-home', 'insurance', 'insurer-profile', 'documents', 'agenda', 'messages', 'access-requests']
   const isInsurer = profile.role === 'assicuratore'
-  const home = isBrand ? 'brandhome' : isAgent ? 'agent-home' : isInsurer ? 'insurer-home' : 'dashboard'
+  // Il commercialista vede solo la sua area.
+  const taxAllowed = ['tax-home', 'legaltax', 'tax-profile', 'documents', 'agenda', 'messages', 'access-requests']
+  const isTax = profile.role === 'commercialista'
+  const home = isBrand ? 'brandhome' : isAgent ? 'agent-home' : isInsurer ? 'insurer-home' : isTax ? 'tax-home' : 'dashboard'
   let route = routeState ?? home
   if (isBrand && !brandAllowed.includes(route)) route = 'brandhome'
   if (isCoach && !coachAllowed.includes(route)) route = 'dashboard'
   if (isAgent && !agentAllowed.includes(route)) route = 'agent-home'
   if (isInsurer && !insurerAllowed.includes(route)) route = 'insurer-home'
+  if (isTax && !taxAllowed.includes(route)) route = 'tax-home'
 
   const view = (() => {
     switch (route) {
@@ -81,6 +88,9 @@ export default function App() {
       case 'insurer-home': return <InsurerHome goto={setRoute} />
       case 'insurer-profile': return <InsurerProfile />
       case 'access-requests': return <AccessRequests />
+      case 'legaltax': return <LegalTax />
+      case 'tax-home': return <TaxAdvisorHome goto={setRoute} />
+      case 'tax-profile': return <TaxAdvisorProfile />
       case 'agent-profile': return <AgentProfile />
       case 'contracts': return <Contracts />
       case 'documents': return <Documents />
