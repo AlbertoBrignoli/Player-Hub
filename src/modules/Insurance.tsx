@@ -98,7 +98,8 @@ export default function Insurance() {
   const [area, setArea] = useState<string>('riepilogo')
   const [edit, setEdit] = useState<Partial<Policy> | null>(null)
 
-  const canManage = role === 'assicuratore' || role === 'admin'
+  // Anche l'atleta gestisce le proprie polizze: molte (auto, casa) non passano da un assicuratore.
+  const canManage = role === 'assicuratore' || role === 'admin' || role === 'player'
   const { rows, loading, reload } = useCollection<Policy>('crm_insurance_policies', {
     orderBy: 'expiry_date', ascending: true,
     match: athleteId ? { player_id: athleteId } : undefined,
@@ -238,7 +239,9 @@ export default function Insurance() {
           <div className="card">
             <Empty icon={<Icon name="archive" size={30} strokeWidth={1.4} />}
               title="Nessuna polizza in questa area"
-              hint={canManage ? 'Aggiungi la prima polizza.' : 'Il tuo assicuratore le caricherà qui.'} />
+              hint={canManage
+                ? 'Carica il documento della polizza o inseriscila a mano.'
+                : 'Il tuo assicuratore le caricherà qui.'} />
           </div>
         ) : (
           <div className="grid g2" style={{ gap: 12 }}>
