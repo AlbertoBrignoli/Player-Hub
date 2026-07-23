@@ -17,6 +17,7 @@ export type FieldDef = {
   options?: string[]
   required?: boolean
   help?: string
+  section?: string
 }
 
 export type Service = {
@@ -54,6 +55,11 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
     const cur: string[] = p[k] || []
     return { ...p, [k]: cur.includes(v) ? cur.filter(x => x !== v) : [...cur, v] }
   })
+
+  const risposte = schema.filter(f => {
+    const v = answers[f.key]
+    return v != null && v !== '' && (!Array.isArray(v) || v.length > 0)
+  }).length
 
   const mancanti = schema.filter(f => f.required &&
     (answers[f.key] == null || (Array.isArray(answers[f.key]) && answers[f.key].length === 0)))
@@ -156,8 +162,27 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
             </button>
           ) : (
             <div className="grid" style={{ gap: 16 }}>
-              {schema.map(f => (
+              {/* avanzamento: un form lungo deve dire quanto manca */}
+              <div>
+                <div className="flex between" style={{ fontSize: 11.5, marginBottom: 5 }}>
+                  <span className="faint">{risposte} di {schema.length} risposte</span>
+                  <span className="faint">{Math.round((risposte / schema.length) * 100)}%</span>
+                </div>
+                <div style={{ height: 5, borderRadius: 3, background: 'var(--border)', overflow: 'hidden' }}>
+                  <div style={{ width: `${(risposte / schema.length) * 100}%`, height: '100%',
+                                background: accent, transition: 'width .2s ease' }} />
+                </div>
+              </div>
+
+              {schema.map((f, i) => (
                 <div key={f.key}>
+                  {f.section && f.section !== schema[i - 1]?.section && (
+                    <div style={{ ...kicker, fontSize: 10, color: accent,
+                                  marginTop: i === 0 ? 0 : 10, marginBottom: 12,
+                                  paddingBottom: 7, borderBottom: '1px solid var(--border)' }}>
+                      {f.section}
+                    </div>
+                  )}
                   <div style={{ fontSize: 13.5, fontWeight: 700, marginBottom: 3 }}>
                     {f.label}{f.required && <span style={{ color: accent }}> *</span>}
                   </div>
