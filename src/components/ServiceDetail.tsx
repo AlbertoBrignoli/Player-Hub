@@ -4,9 +4,9 @@ import { toast } from '../lib/toast'
 import { Input, Textarea } from '../components/ui'
 import Icon from '../components/Icon'
 
-// Scheda servizio (design handoff): hero foto + identità partner, "il metodo",
-// pilastri, questionario a 3 passi e conferma con timeline. Il questionario è
-// costruito dallo schema salvato sul servizio: nessun form scritto a mano.
+// Scheda servizio (design handoff): hero + identità partner, metodo, pilastri,
+// cosa include, citazione, questionario a passi (per sezione) e conferma.
+// Tutto guidato dai dati del servizio: nessun contenuto scritto a mano.
 
 const T = {
   bg: '#0b0b0e', card: '#141419', cardDark: '#101015',
@@ -25,6 +25,7 @@ export type FieldDef = {
   required?: boolean
   help?: string
   section?: string
+  placeholder?: string
 }
 
 export type Service = {
@@ -32,6 +33,7 @@ export type Service = {
   category: string
   title: string
   description: string | null
+  desc_long: string | null
   details: string | null
   icon: string
   verified: boolean
@@ -40,38 +42,49 @@ export type Service = {
   logo_url: string | null
   cover_url: string | null
   accent_color: string | null
+  hue: number | null
   hero_claim: string | null
   about: string | null
   highlights: { title: string; text: string }[] | null
+  includes: string[] | null
+  partner_note: string | null
+  sla: string | null
+  quote: string | null
+  quote_by: string | null
   form_intro: string | null
   form_schema: FieldDef[] | null
   contact_email: string | null
   contact_phone: string | null
 }
 
-// divide lo schema in massimo 3 passi bilanciati (Passo N di 3)
-function splitSteps(schema: FieldDef[]): FieldDef[][] {
-  const n = schema.length
-  if (n === 0) return []
-  const g = Math.min(3, n)
-  const base = Math.floor(n / g), rem = n % g
-  const out: FieldDef[][] = []
-  let i = 0
-  for (let s = 0; s < g; s++) {
-    const size = base + (s < rem ? 1 : 0)
-    out.push(schema.slice(i, i + size))
-    i += size
+// colore accent: esplicito, oppure derivato dalla tinta (oklch) come nel prototipo
+function accentOf(s: Service) {
+  return s.accent_color || `oklch(0.85 0.13 ${s.hue ?? 250})`
+}
+function tileBg(s: Service) { return `oklch(0.3 0.07 ${s.hue ?? 250})` }
+function initials(s: string) {
+  return s.trim().split(/\s+/).slice(0, 2).map(w => w[0] || '').join('').toUpperCase()
+}
+
+// raggruppa lo schema per sezione (ogni sezione = un passo)
+function toSteps(schema: FieldDef[]) {
+  const map = new Map<string, FieldDef[]>()
+  const order: string[] = []
+  for (const f of schema) {
+    const s = f.section || ' '
+    if (!map.has(s)) { map.set(s, []); order.push(s) }
+    map.get(s)!.push(f)
   }
-  return out
+  return order.map(s => ({ title: s, fields: map.get(s)! }))
 }
 
 export default function ServiceDetail({ service, playerId, canRequest, onBack, onSent }: {
   service: Service; playerId: number | null; canRequest: boolean
   onBack: () => void; onSent: () => void
 }) {
-  const accent = service.accent_color || '#7D6AE8'
+  const accent = accentOf(service)
   const schema = service.form_schema || []
-  const steps = useMemo(() => splitSteps(schema), [schema])
+  const steps = useMemo(() => toSteps(schema), [schema])
 
   const [mode, setMode] = useState<'detail' | 'form' | 'sent'>('detail')
   const [step, setStep] = useState(0)
@@ -83,10 +96,6 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
     const cur: string[] = p[k] || []
     return { ...p, [k]: cur.includes(v) ? cur.filter(x => x !== v) : [...cur, v] }
   })
-
-  const missingIn = (fields: FieldDef[]) => fields.filter(f => f.required &&
-    (answers[f.key] == null || answers[f.key] === '' ||
-      (Array.isArray(answers[f.key]) && answers[f.key].length === 0)))
 
   async function invia() {
     if (!playerId) return
@@ -100,7 +109,7 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
     setMode('sent')
   }
 
-  // ---------- VISTA CONFERMA ----------
+  // ---------- CONFERMA ----------
   if (mode === 'sent') {
     const given = schema.filter(f => {
       const v = answers[f.key]
@@ -111,11 +120,9 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
       <div className="grid" style={{ gap: 18, color: T.text }}>
         <style>{sentAnim}</style>
         <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 18, padding: '28px 22px', textAlign: 'center' }}>
-          <div style={{
-            width: 66, height: 66, borderRadius: '50%', margin: '0 auto', background: `${T.green}22`,
+          <div style={{ width: 66, height: 66, borderRadius: '50%', margin: '0 auto', background: `${T.green}22`,
             border: `2px solid ${T.green}`, color: T.green, display: 'flex', alignItems: 'center',
-            justifyContent: 'center', animation: 'auviPop .35s ease',
-          }}>
+            justifyContent: 'center', animation: 'auviPop .35s ease' }}>
             <Icon name="check" size={30} />
           </div>
           <div style={{ fontSize: 21, fontWeight: 900, marginTop: 16 }}>Richiesta inviata</div>
@@ -124,7 +131,6 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
           </div>
         </div>
 
-        {/* timeline 3 step */}
         <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 16, padding: 18 }}>
           {[
             { t: 'Richiesta inviata', s: 'Le risposte sono arrivate al tuo advisor', done: true },
@@ -133,12 +139,11 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
           ].map((r, i, arr) => (
             <div key={i} className="flex gap" style={{ gap: 12, alignItems: 'flex-start' }}>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <span style={{
-                  width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
+                <span style={{ width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
                   background: r.done ? T.green : 'transparent', color: r.done ? '#0b0b0e' : T.muted,
                   border: `1.5px solid ${r.done ? T.green : T.border}`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 900,
-                }}>{r.done ? '✓' : i + 1}</span>
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 900 }}>
+                  {r.done ? '✓' : i + 1}</span>
                 {i < arr.length - 1 && <span style={{ width: 2, height: 26, background: T.border }} />}
               </div>
               <div style={{ paddingBottom: i < arr.length - 1 ? 8 : 0 }}>
@@ -149,7 +154,6 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
           ))}
         </div>
 
-        {/* riepilogo per il partner */}
         {given.length > 0 && (
           <div style={{ background: T.cardDark, border: `1px solid ${T.border}`, borderRadius: 16, padding: 18 }}>
             <div style={{ ...kicker, fontSize: 10, color: accent, marginBottom: 12 }}>Riepilogo per il partner</div>
@@ -173,15 +177,11 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
     )
   }
 
-  // ---------- VISTA QUESTIONARIO ----------
+  // ---------- QUESTIONARIO ----------
   if (mode === 'form') {
-    const cur = steps[step] || []
+    const cur = steps[step]
     const last = step === steps.length - 1
-    const missing = missingIn(cur)
-    const next = () => {
-      if (missing.length) { toast('Completa le domande obbligatorie', 'err'); return }
-      if (last) invia(); else setStep(s => s + 1)
-    }
+    const next = () => { if (last) invia(); else setStep(s => s + 1) }
     return (
       <div className="grid" style={{ gap: 18, color: T.text }}>
         <button onClick={() => (step === 0 ? setMode('detail') : setStep(s => s - 1))}
@@ -195,64 +195,64 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
           <div style={{ fontSize: 20, fontWeight: 900, marginTop: 4 }}>{service.title}</div>
         </div>
 
-        {/* progress: Passo N di M */}
         <div>
           <div style={{ fontSize: 11.5, color: T.dim, marginBottom: 6 }}>Passo {step + 1} di {steps.length}</div>
           <div className="flex gap" style={{ gap: 5 }}>
             {steps.map((_, i) => (
-              <span key={i} style={{ flex: 1, height: 4, borderRadius: 2,
-                background: i <= step ? T.text : T.border }} />
+              <span key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: i <= step ? T.text : T.border }} />
             ))}
           </div>
         </div>
 
-        <div className="grid" style={{ gap: 18 }}>
-          {cur.map(f => (
-            <div key={f.key}>
-              <div style={{ fontSize: 13.5, fontWeight: 700, marginBottom: 3 }}>
-                {f.label}{f.required && <span style={{ color: accent }}> *</span>}
-              </div>
-              {f.help && <div style={{ fontSize: 11.5, color: T.muted, marginBottom: 7 }}>{f.help}</div>}
+        {cur && (
+          <>
+            <div style={{ ...kicker, fontSize: 10, color: accent }}>{cur.title}</div>
+            <div className="grid" style={{ gap: 18 }}>
+              {cur.fields.map(f => (
+                <div key={f.key}>
+                  <div style={{ fontSize: 13.5, fontWeight: 700, marginBottom: 3 }}>{f.label}</div>
+                  {f.help && <div style={{ fontSize: 11.5, color: T.muted, marginBottom: 7 }}>{f.help}</div>}
 
-              {f.type === 'textarea' && (
-                <Textarea rows={3} value={answers[f.key] || ''} onChange={e => set(f.key, e.target.value)} />
-              )}
-              {f.type === 'text' && (
-                <Input value={answers[f.key] || ''} onChange={e => set(f.key, e.target.value)} />
-              )}
-              {f.type === 'number' && (
-                <Input type="number" value={answers[f.key] ?? ''} onChange={e => set(f.key, e.target.value)} />
-              )}
-              {f.type === 'date' && (
-                <Input type="date" value={answers[f.key] || ''} onChange={e => set(f.key, e.target.value)} />
-              )}
-              {f.type === 'radio' && (
-                <div className="flex gap" style={{ flexWrap: 'wrap', gap: 8 }}>
-                  {(f.options || []).map(o => {
-                    const on = answers[f.key] === o
-                    return <Chip key={o} on={on} accent={accent} onClick={() => set(f.key, o)}>{o}</Chip>
-                  })}
+                  {f.type === 'textarea' && (
+                    <Textarea rows={3} value={answers[f.key] || ''} placeholder={f.placeholder}
+                      onChange={e => set(f.key, e.target.value)} />
+                  )}
+                  {f.type === 'text' && (
+                    <Input value={answers[f.key] || ''} placeholder={f.placeholder}
+                      onChange={e => set(f.key, e.target.value)} />
+                  )}
+                  {f.type === 'number' && (
+                    <Input type="number" value={answers[f.key] ?? ''} onChange={e => set(f.key, e.target.value)} />
+                  )}
+                  {f.type === 'date' && (
+                    <Input type="date" value={answers[f.key] || ''} onChange={e => set(f.key, e.target.value)} />
+                  )}
+                  {f.type === 'radio' && (
+                    <div className="flex gap" style={{ flexWrap: 'wrap', gap: 8 }}>
+                      {(f.options || []).map(o => (
+                        <Chip key={o} on={answers[f.key] === o} accent={accent} onClick={() => set(f.key, o)}>{o}</Chip>
+                      ))}
+                    </div>
+                  )}
+                  {f.type === 'multiselect' && (
+                    <div className="flex gap" style={{ flexWrap: 'wrap', gap: 8 }}>
+                      {(f.options || []).map(o => (
+                        <Chip key={o} on={(answers[f.key] || []).includes(o)} accent={accent} onClick={() => toggle(f.key, o)}>{o}</Chip>
+                      ))}
+                    </div>
+                  )}
+                  {f.type === 'scale' && (
+                    <div className="flex gap" style={{ gap: 8 }}>
+                      {[1, 2, 3, 4, 5].map(n => (
+                        <Chip key={n} on={answers[f.key] === n} accent={accent} onClick={() => set(f.key, n)} min={44}>{String(n)}</Chip>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
-              {f.type === 'multiselect' && (
-                <div className="flex gap" style={{ flexWrap: 'wrap', gap: 8 }}>
-                  {(f.options || []).map(o => {
-                    const on = (answers[f.key] || []).includes(o)
-                    return <Chip key={o} on={on} accent={accent} onClick={() => toggle(f.key, o)}>{o}</Chip>
-                  })}
-                </div>
-              )}
-              {f.type === 'scale' && (
-                <div className="flex gap" style={{ gap: 8 }}>
-                  {[1, 2, 3, 4, 5].map(n => {
-                    const on = answers[f.key] === n
-                    return <Chip key={n} on={on} accent={accent} onClick={() => set(f.key, n)} min={44}>{String(n)}</Chip>
-                  })}
-                </div>
-              )}
+              ))}
             </div>
-          ))}
-        </div>
+          </>
+        )}
 
         <button onClick={next} disabled={busy}
           style={{ padding: '14px 18px', borderRadius: 999, border: 'none', cursor: 'pointer',
@@ -266,8 +266,9 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
     )
   }
 
-  // ---------- VISTA DETTAGLIO ----------
+  // ---------- DETTAGLIO ----------
   const hasForm = canRequest && schema.length > 0
+  const longDesc = service.desc_long || service.description
   return (
     <div className="grid" style={{ gap: 16, color: T.text }}>
       <button onClick={onBack}
@@ -278,47 +279,46 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
 
       {/* hero */}
       <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 20,
-        minHeight: service.cover_url ? 300 : 180, background: accent, padding: 22,
-        display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', color: '#fff' }}>
+        minHeight: service.cover_url ? 300 : 190, background: service.cover_url ? T.cardDark : tileBg(service),
+        padding: 22, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', color: '#fff' }}>
         {service.cover_url && (
           <>
             <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${service.cover_url})`,
               backgroundSize: 'cover', backgroundPosition: 'center' }} />
             <div style={{ position: 'absolute', inset: 0,
-              background: `linear-gradient(180deg, ${accent}44 0%, ${accent}cc 62%, ${accent} 100%)` }} />
+              background: 'linear-gradient(180deg, rgba(11,11,14,.15) 0%, rgba(11,11,14,.62) 55%, #0b0b0e 100%)' }} />
           </>
         )}
         <div style={{ position: 'relative' }}>
-          <div style={{ ...kicker, fontSize: 10, opacity: .8 }}>
+          <div style={{ ...kicker, fontSize: 10, opacity: .85, color: accent }}>
             Servizio AUVI · {service.verified ? 'Partner verificato' : 'Su richiesta'}
           </div>
-          {service.logo_url && (
+          {service.logo_url ? (
             <div style={{ marginTop: 12 }}>
               {service.cover_url ? (
                 <img src={service.logo_url} alt={service.partner_name || ''}
-                  style={{ height: 42, maxWidth: 210, objectFit: 'contain',
-                    filter: 'drop-shadow(0 2px 10px rgba(0,0,0,.55))' }} />
+                  style={{ height: 42, maxWidth: 210, objectFit: 'contain', filter: 'drop-shadow(0 2px 10px rgba(0,0,0,.55))' }} />
               ) : (
-                <div style={{ background: '#fff', borderRadius: 12, padding: '10px 14px',
-                  display: 'inline-flex' }}>
-                  <img src={service.logo_url} alt={service.partner_name || ''}
-                    style={{ height: 32, objectFit: 'contain' }} />
+                <div style={{ background: '#fff', borderRadius: 12, padding: '10px 14px', display: 'inline-flex' }}>
+                  <img src={service.logo_url} alt={service.partner_name || ''} style={{ height: 32, objectFit: 'contain' }} />
                 </div>
               )}
             </div>
-          )}
+          ) : (!service.cover_url && (
+            <div style={{ marginTop: 12, width: 52, height: 52, borderRadius: 12, background: 'rgba(255,255,255,.1)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 900,
+              color: '#fff' }}>{initials(service.partner_name || service.title)}</div>
+          ))}
           <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: -0.5, lineHeight: 1.1, marginTop: 12 }}>
             {service.partner_name || service.title}
           </div>
           {service.hero_claim && (
-            <div style={{ ...kicker, fontSize: 10.5, opacity: .85, marginTop: 6 }}>{service.hero_claim}</div>
+            <div style={{ ...kicker, fontSize: 10.5, marginTop: 6, color: accent }}>{service.hero_claim}</div>
           )}
         </div>
       </div>
 
-      {service.description && (
-        <div style={{ fontSize: 15, lineHeight: 1.55, color: T.dim }}>{service.description}</div>
-      )}
+      {longDesc && <div style={{ fontSize: 15, lineHeight: 1.55, color: T.dim }}>{longDesc}</div>}
 
       {service.about && (
         <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 16, padding: 18 }}>
@@ -327,11 +327,11 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
         </div>
       )}
 
-      {service.details && (
-        <div style={{ background: T.card, border: `1px solid ${T.border}`, borderLeft: `3px solid ${accent}`,
-          borderRadius: 16, padding: 18 }}>
-          <div style={{ ...kicker, fontSize: 10.5, color: accent, marginBottom: 8 }}>Il percorso</div>
-          <div style={{ fontSize: 13.5, lineHeight: 1.6 }}>{service.details}</div>
+      {/* citazione */}
+      {service.quote && (
+        <div style={{ padding: '4px 4px 4px 16px', borderLeft: `3px solid ${accent}` }}>
+          <div style={{ fontSize: 16, fontStyle: 'italic', lineHeight: 1.5 }}>{service.quote}</div>
+          {service.quote_by && <div style={{ fontSize: 12, color: T.muted, marginTop: 6 }}>— {service.quote_by}</div>}
         </div>
       )}
 
@@ -345,6 +345,40 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
               <div style={{ fontSize: 12.5, color: T.dim, marginTop: 6, lineHeight: 1.5 }}>{h.text}</div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* cosa include */}
+      {service.includes && service.includes.length > 0 && (
+        <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 16, padding: 18 }}>
+          <div style={{ ...kicker, fontSize: 10.5, color: accent, marginBottom: 12 }}>Cosa include</div>
+          <div className="grid" style={{ gap: 10 }}>
+            {service.includes.map((it, i) => (
+              <div key={i} className="flex gap" style={{ gap: 10, alignItems: 'flex-start' }}>
+                <span style={{ width: 20, height: 20, borderRadius: '50%', flexShrink: 0, marginTop: 1,
+                  border: `1.5px solid ${accent}`, color: accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Icon name="check" size={12} />
+                </span>
+                <div style={{ fontSize: 13.5, lineHeight: 1.4 }}>{it}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* nota partner + SLA */}
+      {(service.partner_note || service.sla) && (
+        <div style={{ background: T.cardDark, border: `1px solid ${T.border}`, borderRadius: 16, padding: 16 }}>
+          {service.sla && (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 800,
+              color: T.green, background: `${T.green}1f`, border: `1px solid ${T.green}55`,
+              padding: '4px 10px', borderRadius: 999 }}>
+              <Icon name="clock" size={12} /> {service.sla}
+            </span>
+          )}
+          {service.partner_note && (
+            <div style={{ fontSize: 12, color: T.dim, marginTop: service.sla ? 10 : 0, lineHeight: 1.5 }}>{service.partner_note}</div>
+          )}
         </div>
       )}
 
@@ -364,9 +398,9 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
               </a>
             )}
             {service.contact_phone && (
-              <a className="btn btn-ghost btn-sm" href={`tel:${service.contact_phone.replace(/\s/g, '')}`}>
+              <span className="btn btn-ghost btn-sm">
                 <Icon name="smartphone" size={13} /> {service.contact_phone}
-              </a>
+              </span>
             )}
           </div>
           <div style={{ fontSize: 11.5, color: T.muted, marginTop: 10 }}>
@@ -398,12 +432,10 @@ function Chip({ on, accent, onClick, children, min }: {
 }) {
   return (
     <button onClick={onClick}
-      style={{
-        padding: '9px 14px', borderRadius: 999, cursor: 'pointer', fontSize: 13, fontWeight: 700,
+      style={{ padding: '9px 14px', borderRadius: 999, cursor: 'pointer', fontSize: 13, fontWeight: 700,
         minWidth: min, justifyContent: 'center', display: 'inline-flex', alignItems: 'center',
         border: `1px solid ${on ? accent : '#2e2e3a'}`,
-        background: on ? accent : 'transparent', color: on ? '#fff' : '#c9c9d4',
-      }}>
+        background: on ? accent : 'transparent', color: on ? '#0b0b0e' : '#c9c9d4' }}>
       {children}
     </button>
   )

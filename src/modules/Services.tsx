@@ -230,8 +230,9 @@ export default function Services() {
                     <div className="flex gap" style={{ alignItems: 'center', gap: 12, minWidth: 0 }}>
                       <div style={{
                         width: 52, height: 52, borderRadius: 12, flexShrink: 0,
-                        background: s.accent_color || T.cardDark, display: 'flex',
-                        alignItems: 'center', justifyContent: 'center', color: '#fff',
+                        background: `oklch(0.3 0.07 ${s.hue ?? 250})`, display: 'flex',
+                        alignItems: 'center', justifyContent: 'center',
+                        color: `oklch(0.85 0.13 ${s.hue ?? 250})`,
                       }}>
                         <Icon name={s.icon} size={20} />
                       </div>
@@ -270,7 +271,7 @@ export default function Services() {
 
 // --- card partner verificato: foto (se c'è) + logo sovrapposto, altrimenti logo centrato ---
 function VerifiedCard({ s, onOpen }: { s: Service; onOpen: () => void }) {
-  const accent = s.accent_color || '#2a2a34'
+  const accent = s.accent_color || `oklch(0.85 0.13 ${s.hue ?? 250})`
   return (
     <button onClick={onOpen}
       style={{
@@ -278,7 +279,7 @@ function VerifiedCard({ s, onOpen }: { s: Service; onOpen: () => void }) {
         background: T.card, border: `1px solid ${T.border}`, borderRadius: 18,
         display: 'flex', flexDirection: 'column',
       }}>
-      <div style={{ position: 'relative', height: 170, background: accent }}>
+      <div style={{ position: 'relative', height: 170, background: s.cover_url ? T.cardDark : `oklch(0.3 0.07 ${s.hue ?? 250})` }}>
         {s.cover_url ? (
           <>
             <div style={{
@@ -286,7 +287,7 @@ function VerifiedCard({ s, onOpen }: { s: Service; onOpen: () => void }) {
               backgroundSize: 'cover', backgroundPosition: 'center',
             }} />
             <div style={{ position: 'absolute', inset: 0,
-              background: `linear-gradient(180deg, rgba(11,11,14,0) 40%, ${accent}cc 100%)` }} />
+              background: `linear-gradient(180deg, rgba(11,11,14,0) 38%, rgba(11,11,14,.86) 100%)` }} />
             {s.logo_url && (
               <img src={s.logo_url} alt={s.partner_name || s.title}
                 style={{ position: 'absolute', left: 12, bottom: 12, height: 26, maxWidth: '55%',
@@ -302,7 +303,7 @@ function VerifiedCard({ s, onOpen }: { s: Service; onOpen: () => void }) {
         ) : (
           <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center',
             justifyContent: 'center', fontSize: 40, fontWeight: 900, letterSpacing: -1,
-            color: '#fff', opacity: .9 }}>{initials(s.partner_name || s.title)}</div>
+            color: `oklch(0.85 0.13 ${s.hue ?? 250})` }}>{initials(s.partner_name || s.title)}</div>
         )}
         <span style={{
           position: 'absolute', left: 10, top: 10, display: 'flex', alignItems: 'center', gap: 6,
@@ -313,7 +314,7 @@ function VerifiedCard({ s, onOpen }: { s: Service; onOpen: () => void }) {
       <div style={{ padding: 16 }}>
         {s.hero_claim && (
           <div style={{ fontSize: 9, letterSpacing: 1.8, fontWeight: 800, textTransform: 'uppercase',
-            color: s.accent_color || T.yellow }}>{s.hero_claim}</div>
+            color: accent }}>{s.hero_claim}</div>
         )}
         <div style={{ fontSize: 18, fontWeight: 800, marginTop: 4, letterSpacing: -0.3 }}>{s.title}</div>
         {s.partner_name && (
