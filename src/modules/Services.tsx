@@ -13,6 +13,11 @@ import type { Service } from '../components/ServiceDetail'
 // come in un marketplace, apre la scheda del partner, compila il questionario
 // e segue lo stato delle richieste. La richiesta passa sempre da AUVI.
 
+// asset in public/servizi (spediti col deploy)
+const STUDIO_BG = '/servizi/auvi-hero.jpg'
+const AUVI_MARK = '/servizi/auvi-mark-white.png'
+const STUDIO_CAT = 'AUVI Studio'
+
 // --- token del design (store scuro) ---
 const T = {
   card: '#141419',
@@ -30,7 +35,6 @@ const kicker: React.CSSProperties = {
   fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', fontWeight: 800,
 }
 
-// stato richiesta -> etichetta, colore, passo (1..3)
 const STATUS: Record<string, { l: string; c: string; step: number }> = {
   aperta: { l: 'Inviata', c: '#FBBF24', step: 1 },
   in_carico: { l: 'In lavorazione', c: '#7DD3FC', step: 2 },
@@ -52,7 +56,8 @@ type Req = {
   created_at: string
 }
 
-// iniziali per il monogramma quando non c'è un logo
+const isStudio = (s: Service) => s.category === STUDIO_CAT
+
 function initials(s: string) {
   return s.trim().split(/\s+/).slice(0, 2).map(w => w[0] || '').join('').toUpperCase()
 }
@@ -81,11 +86,12 @@ export default function Services() {
   }
   useEffect(() => { load() }, [athleteId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const verificati = useMemo(() => services.filter(s => s.verified), [services])
-  const altri = useMemo(() => services.filter(s => !s.verified), [services])
+  const studio = useMemo(() => services.filter(isStudio), [services])
+  const verificati = useMemo(() => services.filter(s => s.verified && !isStudio(s)), [services])
+  const altri = useMemo(() => services.filter(s => !s.verified && !isStudio(s)), [services])
   const cats = useMemo(() => {
     const seen: string[] = []
-    for (const s of services) if (!seen.includes(s.category)) seen.push(s.category)
+    for (const s of services) if (!isStudio(s) && !seen.includes(s.category)) seen.push(s.category)
     return ['Tutti', ...seen]
   }, [services])
 
@@ -157,7 +163,7 @@ export default function Services() {
               <div className="flex gap" style={{ alignItems: 'center', gap: 12, minWidth: 0 }}>
                 <span style={{
                   width: 10, height: 10, borderRadius: '50%', flexShrink: 0,
-                  background: st(attive[0].status).c, boxShadow: `0 0 0 0 ${st(attive[0].status).c}`,
+                  background: st(attive[0].status).c,
                   animation: 'auviPulse 2s infinite',
                 }} />
                 <div style={{ minWidth: 0 }}>
@@ -173,8 +179,8 @@ export default function Services() {
             </button>
           )}
 
-          {/* --- AUVI Studio (servizi interni, se presenti a catalogo) --- */}
-          <StudioHero services={services} onOpen={setOpen} />
+          {/* --- AUVI Studio --- */}
+          {studio.length > 0 && <StudioHero studio={studio} onOpen={setOpen} />}
 
           {/* --- chip categorie --- */}
           {cats.length > 1 && (
@@ -261,7 +267,7 @@ export default function Services() {
   )
 }
 
-// --- card partner verificato (fotografica) ---
+// --- card partner verificato: foto (se c'è) + logo sovrapposto, altrimenti logo centrato ---
 function VerifiedCard({ s, onOpen }: { s: Service; onOpen: () => void }) {
   const accent = s.accent_color || '#2a2a34'
   return (
@@ -272,13 +278,31 @@ function VerifiedCard({ s, onOpen }: { s: Service; onOpen: () => void }) {
         display: 'flex', flexDirection: 'column',
       }}>
       <div style={{ position: 'relative', height: 170, background: accent }}>
-        {s.logo_url
-          ? <img src={s.logo_url} alt={s.partner_name || s.title}
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          : <div style={{
-              width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 40, fontWeight: 900, letterSpacing: -1, color: '#fff', opacity: .9,
-            }}>{initials(s.partner_name || s.title)}</div>}
+        {s.cover_url ? (
+          <>
+            <div style={{
+              position: 'absolute', inset: 0, backgroundImage: `url(${s.cover_url})`,
+              backgroundSize: 'cover', backgroundPosition: 'center',
+            }} />
+            <div style={{ position: 'absolute', inset: 0,
+              background: `linear-gradient(180deg, rgba(11,11,14,0) 40%, ${accent}cc 100%)` }} />
+            {s.logo_url && (
+              <img src={s.logo_url} alt={s.partner_name || s.title}
+                style={{ position: 'absolute', left: 12, bottom: 12, height: 26, maxWidth: '55%',
+                  objectFit: 'contain' }} />
+            )}
+          </>
+        ) : s.logo_url ? (
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center',
+            justifyContent: 'center', padding: 26 }}>
+            <img src={s.logo_url} alt={s.partner_name || s.title}
+              style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+          </div>
+        ) : (
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center',
+            justifyContent: 'center', fontSize: 40, fontWeight: 900, letterSpacing: -1,
+            color: '#fff', opacity: .9 }}>{initials(s.partner_name || s.title)}</div>
+        )}
         <span style={{
           position: 'absolute', left: 10, top: 10, display: 'flex', alignItems: 'center', gap: 6,
           background: 'rgba(11,11,14,.72)', color: T.green, padding: '4px 9px', borderRadius: 999,
@@ -299,17 +323,25 @@ function VerifiedCard({ s, onOpen }: { s: Service; onOpen: () => void }) {
   )
 }
 
-// --- hero AUVI Studio: mostra i servizi interni se marcati a catalogo ---
-function StudioHero({ services, onOpen }: { services: Service[]; onOpen: (s: Service) => void }) {
-  const studio = services.filter(s =>
-    /studio|brand|media|immagine/i.test(s.category) ||
-    (s.partner_name || '').toLowerCase().includes('auvi'))
-  if (studio.length === 0) return null
+// --- hero AUVI Studio (foto atleta + servizi interni) ---
+function StudioHero({ studio, onOpen }: { studio: Service[]; onOpen: (s: Service) => void }) {
   return (
     <div style={{ background: T.cardDark, border: '1px solid #3a3420', borderRadius: 20, overflow: 'hidden' }}>
-      <div style={{ padding: '22px 20px', background: 'linear-gradient(160deg,#1a1708,#101015)' }}>
-        <div style={{ ...kicker, fontSize: 10, color: T.yellow, letterSpacing: 2 }}>Il team creativo della tua agenzia</div>
-        <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: -0.6, marginTop: 6 }}>Own your image.</div>
+      <div style={{ position: 'relative', padding: '26px 20px', minHeight: 150 }}>
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${STUDIO_BG})`,
+          backgroundSize: 'cover', backgroundPosition: 'center' }} />
+        <div style={{ position: 'absolute', inset: 0,
+          background: 'linear-gradient(160deg, rgba(16,16,21,.35), rgba(16,16,21,.9))' }} />
+        <div style={{ position: 'relative' }}>
+          <img src={AUVI_MARK} alt="AUVI" style={{ height: 22, opacity: .95 }} />
+          <div style={{ ...kicker, fontSize: 10, color: T.yellow, letterSpacing: 2, marginTop: 14 }}>
+            Il team creativo della tua agenzia
+          </div>
+          <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: -0.6, marginTop: 6 }}>Own your image.</div>
+          <div style={{ fontSize: 12.5, color: '#d5d5de', marginTop: 4 }}>
+            Diamo forza all'immagine, valore alle storie.
+          </div>
+        </div>
       </div>
       <div className="grid" style={{ gap: 1, background: T.border }}>
         {studio.map(s => (
@@ -318,15 +350,15 @@ function StudioHero({ services, onOpen }: { services: Service[]; onOpen: (s: Ser
             style={{ textAlign: 'left', cursor: 'pointer', width: '100%', gap: 12,
               background: T.cardDark, border: 'none', padding: 14 }}>
             <div className="flex gap" style={{ alignItems: 'center', gap: 12, minWidth: 0 }}>
-              <div style={{ width: 34, height: 34, borderRadius: 9, background: T.yellow, color: '#0b0b0e',
+              <div style={{ width: 40, height: 40, borderRadius: 10, background: T.yellow, color: '#0b0b0e',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <Icon name={s.icon} size={17} />
+                <Icon name={s.icon} size={18} />
               </div>
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: 14.5, fontWeight: 700, color: T.text }}>{s.title}</div>
                 {s.description && (
                   <div style={{ fontSize: 12, color: T.dim, overflow: 'hidden', textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap', maxWidth: 240 }}>{s.description}</div>
+                    whiteSpace: 'nowrap', maxWidth: 260 }}>{s.description}</div>
                 )}
               </div>
             </div>
@@ -414,7 +446,6 @@ function RequestsView({ reqs, isPlayer, isAdmin, athleteName, onManage, onEmptyG
                 </span>
               </div>
 
-              {/* barra 3 segmenti */}
               <div className="flex gap" style={{ gap: 4, marginTop: 12 }}>
                 {[1, 2, 3].map(n => (
                   <span key={n} style={{ flex: 1, height: 4, borderRadius: 2,

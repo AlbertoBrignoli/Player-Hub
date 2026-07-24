@@ -31,6 +31,7 @@ export type Service = {
   partner_name: string | null
   partner_website: string | null
   logo_url: string | null
+  cover_url: string | null
   accent_color: string | null
   hero_claim: string | null
   about: string | null
@@ -88,8 +89,17 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
       {/* --- hero con l'identità del partner --- */}
       <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 18,
                     background: accent, padding: '30px 26px', color: '#fff' }}>
+        {service.cover_url && (
+          <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${service.cover_url})`,
+                        backgroundSize: 'cover', backgroundPosition: 'center', pointerEvents: 'none' }} />
+        )}
+        {service.cover_url && (
+          <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none',
+                        background: `linear-gradient(180deg, ${accent}66 0%, ${accent}dd 78%, ${accent} 100%)` }} />
+        )}
         <div style={{ position: 'absolute', right: -60, top: -60, width: 220, height: 220,
                       borderRadius: '50%', background: '#fff', opacity: .06, pointerEvents: 'none' }} />
+        <div style={{ position: 'relative' }}>
         <div style={{ ...kicker, fontSize: 10, opacity: .7 }}>
           Servizio offerto da AUVI{service.verified ? ' · Partner verificato' : ''}
         </div>
@@ -116,6 +126,7 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
             {service.description}
           </div>
         )}
+        </div>
       </div>
 
       {/* --- chi sono --- */}
