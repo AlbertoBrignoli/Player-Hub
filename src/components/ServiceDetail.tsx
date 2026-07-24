@@ -106,10 +106,16 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
 
         <div className="flex gap" style={{ alignItems: 'center', gap: 16, marginTop: 14, flexWrap: 'wrap' }}>
           {service.logo_url && (
-            <div style={{ background: '#fff', borderRadius: 12, padding: '10px 14px', display: 'flex' }}>
+            service.cover_url ? (
               <img src={service.logo_url} alt={service.partner_name || ''}
-                style={{ height: 34, objectFit: 'contain' }} />
-            </div>
+                style={{ height: 40, maxWidth: 200, objectFit: 'contain',
+                         filter: 'drop-shadow(0 2px 10px rgba(0,0,0,.55))' }} />
+            ) : (
+              <div style={{ background: '#fff', borderRadius: 12, padding: '10px 14px', display: 'flex' }}>
+                <img src={service.logo_url} alt={service.partner_name || ''}
+                  style={{ height: 34, objectFit: 'contain' }} />
+              </div>
+            )
           )}
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: 27, fontWeight: 900, letterSpacing: -0.5, lineHeight: 1.1 }}>
