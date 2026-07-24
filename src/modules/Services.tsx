@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { toast } from '../lib/toast'
 import { useAuth } from '../auth/AuthContext'
@@ -15,6 +15,7 @@ import type { Service } from '../components/ServiceDetail'
 
 // asset in public/servizi (spediti col deploy)
 const STUDIO_BG = '/servizi/auvi-hero.jpg'
+const STUDIO_VIDEO = '/servizi/auvi-video.mp4'
 const AUVI_MARK = '/servizi/auvi-mark-white.png'
 const STUDIO_CAT = 'AUVI Studio'
 
@@ -108,7 +109,7 @@ export default function Services() {
   if (open) {
     return (
       <ServiceDetail service={open} playerId={athleteId} canRequest={!!athleteId}
-        onBack={() => setOpen(null)} onSent={() => { setOpen(null); setTab('requests'); load() }} />
+        onBack={() => setOpen(null)} onSent={() => { setOpen(null); setTab('store'); load() }} />
     )
   }
 
@@ -325,11 +326,15 @@ function VerifiedCard({ s, onOpen }: { s: Service; onOpen: () => void }) {
 
 // --- hero AUVI Studio (foto atleta + servizi interni) ---
 function StudioHero({ studio, onOpen }: { studio: Service[]; onOpen: (s: Service) => void }) {
+  const vidRef = useRef<HTMLVideoElement | null>(null)
+  useEffect(() => { const v = vidRef.current; if (v) { v.muted = true; v.play().catch(() => {}) } }, [])
   return (
     <div style={{ background: T.cardDark, border: '1px solid #3a3420', borderRadius: 20, overflow: 'hidden' }}>
       <div style={{ position: 'relative', padding: '26px 20px', minHeight: 150 }}>
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${STUDIO_BG})`,
-          backgroundSize: 'cover', backgroundPosition: 'center' }} />
+        <video ref={vidRef} poster={STUDIO_BG} muted loop playsInline autoPlay preload="metadata"
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}>
+          <source src={STUDIO_VIDEO} type="video/mp4" />
+        </video>
         <div style={{ position: 'absolute', inset: 0,
           background: 'linear-gradient(160deg, rgba(16,16,21,.35), rgba(16,16,21,.9))' }} />
         <div style={{ position: 'relative' }}>

@@ -1,13 +1,20 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { toast } from '../lib/toast'
-import { Field, Input, Textarea } from '../components/ui'
+import { Input, Textarea } from '../components/ui'
 import Icon from '../components/Icon'
 
-// Pagina di un servizio: identità del partner + form di onboarding costruito
-// dallo schema salvato sul servizio. Nessun form scritto a mano per ogni partner.
+// Scheda servizio (design handoff): hero foto + identità partner, "il metodo",
+// pilastri, questionario a 3 passi e conferma con timeline. Il questionario è
+// costruito dallo schema salvato sul servizio: nessun form scritto a mano.
+
+const T = {
+  bg: '#0b0b0e', card: '#141419', cardDark: '#101015',
+  border: '#26262e', text: '#f2f2f5', dim: '#c9c9d4', muted: '#8a8a96', faint: '#6e6e7a',
+  green: '#4ade80',
+}
 const kicker: React.CSSProperties = {
-  fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase', fontWeight: 800,
+  fontSize: 11, letterSpacing: 1.8, textTransform: 'uppercase', fontWeight: 800,
 }
 
 export type FieldDef = {
@@ -42,15 +49,34 @@ export type Service = {
   contact_phone: string | null
 }
 
+// divide lo schema in massimo 3 passi bilanciati (Passo N di 3)
+function splitSteps(schema: FieldDef[]): FieldDef[][] {
+  const n = schema.length
+  if (n === 0) return []
+  const g = Math.min(3, n)
+  const base = Math.floor(n / g), rem = n % g
+  const out: FieldDef[][] = []
+  let i = 0
+  for (let s = 0; s < g; s++) {
+    const size = base + (s < rem ? 1 : 0)
+    out.push(schema.slice(i, i + size))
+    i += size
+  }
+  return out
+}
+
 export default function ServiceDetail({ service, playerId, canRequest, onBack, onSent }: {
   service: Service; playerId: number | null; canRequest: boolean
   onBack: () => void; onSent: () => void
 }) {
   const accent = service.accent_color || '#7D6AE8'
   const schema = service.form_schema || []
+  const steps = useMemo(() => splitSteps(schema), [schema])
+
+  const [mode, setMode] = useState<'detail' | 'form' | 'sent'>('detail')
+  const [step, setStep] = useState(0)
   const [answers, setAnswers] = useState<Record<string, any>>({})
   const [busy, setBusy] = useState(false)
-  const [open, setOpen] = useState(false)
 
   const set = (k: string, v: any) => setAnswers(p => ({ ...p, [k]: v }))
   const toggle = (k: string, v: string) => setAnswers(p => {
@@ -58,17 +84,12 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
     return { ...p, [k]: cur.includes(v) ? cur.filter(x => x !== v) : [...cur, v] }
   })
 
-  const risposte = schema.filter(f => {
-    const v = answers[f.key]
-    return v != null && v !== '' && (!Array.isArray(v) || v.length > 0)
-  }).length
-
-  const mancanti = schema.filter(f => f.required &&
-    (answers[f.key] == null || (Array.isArray(answers[f.key]) && answers[f.key].length === 0)))
+  const missingIn = (fields: FieldDef[]) => fields.filter(f => f.required &&
+    (answers[f.key] == null || answers[f.key] === '' ||
+      (Array.isArray(answers[f.key]) && answers[f.key].length === 0)))
 
   async function invia() {
     if (!playerId) return
-    if (mancanti.length) { toast('Completa le domande obbligatorie', 'err'); return }
     setBusy(true)
     const { error } = await supabase.from('crm_service_requests').insert({
       player_id: playerId, service_id: service.id, service_title: service.title,
@@ -76,219 +97,261 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
     })
     setBusy(false)
     if (error) { toast(error.message, 'err'); return }
-    toast('Richiesta inviata')
-    onSent()
+    setMode('sent')
   }
 
+  // ---------- VISTA CONFERMA ----------
+  if (mode === 'sent') {
+    const given = schema.filter(f => {
+      const v = answers[f.key]
+      return v != null && v !== '' && (!Array.isArray(v) || v.length > 0)
+    })
+    const fmt = (v: any) => Array.isArray(v) ? v.join(', ') : String(v)
+    return (
+      <div className="grid" style={{ gap: 18, color: T.text }}>
+        <style>{sentAnim}</style>
+        <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 18, padding: '28px 22px', textAlign: 'center' }}>
+          <div style={{
+            width: 66, height: 66, borderRadius: '50%', margin: '0 auto', background: `${T.green}22`,
+            border: `2px solid ${T.green}`, color: T.green, display: 'flex', alignItems: 'center',
+            justifyContent: 'center', animation: 'auviPop .35s ease',
+          }}>
+            <Icon name="check" size={30} />
+          </div>
+          <div style={{ fontSize: 21, fontWeight: 900, marginTop: 16 }}>Richiesta inviata</div>
+          <div style={{ fontSize: 13, color: T.dim, marginTop: 4 }}>
+            {service.partner_name ? `Ci occupiamo noi di attivare ${service.partner_name}.` : 'Ci pensiamo noi da qui.'}
+          </div>
+        </div>
+
+        {/* timeline 3 step */}
+        <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 16, padding: 18 }}>
+          {[
+            { t: 'Richiesta inviata', s: 'Le risposte sono arrivate al tuo advisor', done: true },
+            { t: 'Il tuo advisor ti scrive', s: 'Entro 24 ore', done: false },
+            { t: 'Attivazione partner', s: service.partner_name || 'Professionista selezionato da AUVI', done: false },
+          ].map((r, i, arr) => (
+            <div key={i} className="flex gap" style={{ gap: 12, alignItems: 'flex-start' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <span style={{
+                  width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
+                  background: r.done ? T.green : 'transparent', color: r.done ? '#0b0b0e' : T.muted,
+                  border: `1.5px solid ${r.done ? T.green : T.border}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 900,
+                }}>{r.done ? '✓' : i + 1}</span>
+                {i < arr.length - 1 && <span style={{ width: 2, height: 26, background: T.border }} />}
+              </div>
+              <div style={{ paddingBottom: i < arr.length - 1 ? 8 : 0 }}>
+                <div style={{ fontSize: 13.5, fontWeight: 700 }}>{r.t}</div>
+                <div style={{ fontSize: 12, color: T.dim }}>{r.s}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* riepilogo per il partner */}
+        {given.length > 0 && (
+          <div style={{ background: T.cardDark, border: `1px solid ${T.border}`, borderRadius: 16, padding: 18 }}>
+            <div style={{ ...kicker, fontSize: 10, color: accent, marginBottom: 12 }}>Riepilogo per il partner</div>
+            <div className="grid" style={{ gap: 10 }}>
+              {given.map(f => (
+                <div key={f.key}>
+                  <div style={{ fontSize: 11.5, color: T.muted }}>{f.label}</div>
+                  <div style={{ fontSize: 13.5, marginTop: 1 }}>{fmt(answers[f.key])}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <button onClick={onSent}
+          style={{ padding: '13px 18px', borderRadius: 999, border: 'none', cursor: 'pointer',
+            background: T.text, color: '#0b0b0e', fontWeight: 800, fontSize: 14 }}>
+          Torna allo store
+        </button>
+      </div>
+    )
+  }
+
+  // ---------- VISTA QUESTIONARIO ----------
+  if (mode === 'form') {
+    const cur = steps[step] || []
+    const last = step === steps.length - 1
+    const missing = missingIn(cur)
+    const next = () => {
+      if (missing.length) { toast('Completa le domande obbligatorie', 'err'); return }
+      if (last) invia(); else setStep(s => s + 1)
+    }
+    return (
+      <div className="grid" style={{ gap: 18, color: T.text }}>
+        <button onClick={() => (step === 0 ? setMode('detail') : setStep(s => s - 1))}
+          className="flex gap" style={{ alignItems: 'center', gap: 8, alignSelf: 'start', background: 'none',
+            border: 'none', color: T.dim, cursor: 'pointer', fontSize: 13, fontWeight: 600, padding: 0 }}>
+          ← Indietro
+        </button>
+
+        <div>
+          <div style={{ ...kicker, fontSize: 10, color: accent }}>Questionario · 3 minuti</div>
+          <div style={{ fontSize: 20, fontWeight: 900, marginTop: 4 }}>{service.title}</div>
+        </div>
+
+        {/* progress: Passo N di M */}
+        <div>
+          <div style={{ fontSize: 11.5, color: T.dim, marginBottom: 6 }}>Passo {step + 1} di {steps.length}</div>
+          <div className="flex gap" style={{ gap: 5 }}>
+            {steps.map((_, i) => (
+              <span key={i} style={{ flex: 1, height: 4, borderRadius: 2,
+                background: i <= step ? T.text : T.border }} />
+            ))}
+          </div>
+        </div>
+
+        <div className="grid" style={{ gap: 18 }}>
+          {cur.map(f => (
+            <div key={f.key}>
+              <div style={{ fontSize: 13.5, fontWeight: 700, marginBottom: 3 }}>
+                {f.label}{f.required && <span style={{ color: accent }}> *</span>}
+              </div>
+              {f.help && <div style={{ fontSize: 11.5, color: T.muted, marginBottom: 7 }}>{f.help}</div>}
+
+              {f.type === 'textarea' && (
+                <Textarea rows={3} value={answers[f.key] || ''} onChange={e => set(f.key, e.target.value)} />
+              )}
+              {f.type === 'text' && (
+                <Input value={answers[f.key] || ''} onChange={e => set(f.key, e.target.value)} />
+              )}
+              {f.type === 'number' && (
+                <Input type="number" value={answers[f.key] ?? ''} onChange={e => set(f.key, e.target.value)} />
+              )}
+              {f.type === 'date' && (
+                <Input type="date" value={answers[f.key] || ''} onChange={e => set(f.key, e.target.value)} />
+              )}
+              {f.type === 'radio' && (
+                <div className="flex gap" style={{ flexWrap: 'wrap', gap: 8 }}>
+                  {(f.options || []).map(o => {
+                    const on = answers[f.key] === o
+                    return <Chip key={o} on={on} accent={accent} onClick={() => set(f.key, o)}>{o}</Chip>
+                  })}
+                </div>
+              )}
+              {f.type === 'multiselect' && (
+                <div className="flex gap" style={{ flexWrap: 'wrap', gap: 8 }}>
+                  {(f.options || []).map(o => {
+                    const on = (answers[f.key] || []).includes(o)
+                    return <Chip key={o} on={on} accent={accent} onClick={() => toggle(f.key, o)}>{o}</Chip>
+                  })}
+                </div>
+              )}
+              {f.type === 'scale' && (
+                <div className="flex gap" style={{ gap: 8 }}>
+                  {[1, 2, 3, 4, 5].map(n => {
+                    const on = answers[f.key] === n
+                    return <Chip key={n} on={on} accent={accent} onClick={() => set(f.key, n)} min={44}>{String(n)}</Chip>
+                  })}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <button onClick={next} disabled={busy}
+          style={{ padding: '14px 18px', borderRadius: 999, border: 'none', cursor: 'pointer',
+            background: T.text, color: '#0b0b0e', fontWeight: 800, fontSize: 14 }}>
+          {busy ? 'Invio…' : last ? 'Invia richiesta' : 'Continua'}
+        </button>
+        <div style={{ fontSize: 11.5, color: T.muted, textAlign: 'center' }}>
+          Le risposte vanno solo al tuo advisor e al partner.
+        </div>
+      </div>
+    )
+  }
+
+  // ---------- VISTA DETTAGLIO ----------
+  const hasForm = canRequest && schema.length > 0
   return (
-    <div className="grid" style={{ gap: 18 }}>
-      <button className="btn btn-ghost btn-sm" style={{ alignSelf: 'start' }} onClick={onBack}>
+    <div className="grid" style={{ gap: 16, color: T.text }}>
+      <button onClick={onBack}
+        className="flex gap" style={{ alignItems: 'center', gap: 8, alignSelf: 'start', background: 'none',
+          border: 'none', color: T.dim, cursor: 'pointer', fontSize: 13, fontWeight: 600, padding: 0 }}>
         ← Tutti i servizi
       </button>
 
-      {/* --- hero con l'identità del partner --- */}
-      <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 18,
-                    background: accent, padding: '30px 26px', color: '#fff' }}>
+      {/* hero */}
+      <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 20,
+        minHeight: service.cover_url ? 300 : 180, background: accent, padding: 22,
+        display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', color: '#fff' }}>
         {service.cover_url && (
-          <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${service.cover_url})`,
-                        backgroundSize: 'cover', backgroundPosition: 'center', pointerEvents: 'none' }} />
+          <>
+            <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${service.cover_url})`,
+              backgroundSize: 'cover', backgroundPosition: 'center' }} />
+            <div style={{ position: 'absolute', inset: 0,
+              background: `linear-gradient(180deg, ${accent}44 0%, ${accent}cc 62%, ${accent} 100%)` }} />
+          </>
         )}
-        {service.cover_url && (
-          <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none',
-                        background: `linear-gradient(180deg, ${accent}66 0%, ${accent}dd 78%, ${accent} 100%)` }} />
-        )}
-        <div style={{ position: 'absolute', right: -60, top: -60, width: 220, height: 220,
-                      borderRadius: '50%', background: '#fff', opacity: .06, pointerEvents: 'none' }} />
         <div style={{ position: 'relative' }}>
-        <div style={{ ...kicker, fontSize: 10, opacity: .7 }}>
-          Servizio offerto da AUVI{service.verified ? ' · Partner verificato' : ''}
-        </div>
-
-        <div className="flex gap" style={{ alignItems: 'center', gap: 16, marginTop: 14, flexWrap: 'wrap' }}>
+          <div style={{ ...kicker, fontSize: 10, opacity: .8 }}>
+            Servizio AUVI · {service.verified ? 'Partner verificato' : 'Su richiesta'}
+          </div>
           {service.logo_url && (
-            service.cover_url ? (
-              <img src={service.logo_url} alt={service.partner_name || ''}
-                style={{ height: 40, maxWidth: 200, objectFit: 'contain',
-                         filter: 'drop-shadow(0 2px 10px rgba(0,0,0,.55))' }} />
-            ) : (
-              <div style={{ background: '#fff', borderRadius: 12, padding: '10px 14px', display: 'flex' }}>
+            <div style={{ marginTop: 12 }}>
+              {service.cover_url ? (
                 <img src={service.logo_url} alt={service.partner_name || ''}
-                  style={{ height: 34, objectFit: 'contain' }} />
-              </div>
-            )
+                  style={{ height: 42, maxWidth: 210, objectFit: 'contain',
+                    filter: 'drop-shadow(0 2px 10px rgba(0,0,0,.55))' }} />
+              ) : (
+                <div style={{ background: '#fff', borderRadius: 12, padding: '10px 14px',
+                  display: 'inline-flex' }}>
+                  <img src={service.logo_url} alt={service.partner_name || ''}
+                    style={{ height: 32, objectFit: 'contain' }} />
+                </div>
+              )}
+            </div>
           )}
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 27, fontWeight: 900, letterSpacing: -0.5, lineHeight: 1.1 }}>
-              {service.partner_name || service.title}
-            </div>
-            <div style={{ ...kicker, fontSize: 11, opacity: .85, marginTop: 5 }}>
-              {service.hero_claim || service.title}
-            </div>
+          <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: -0.5, lineHeight: 1.1, marginTop: 12 }}>
+            {service.partner_name || service.title}
           </div>
-        </div>
-
-        {service.description && (
-          <div style={{ fontSize: 14, marginTop: 18, maxWidth: 640, opacity: .92, lineHeight: 1.55 }}>
-            {service.description}
-          </div>
-        )}
+          {service.hero_claim && (
+            <div style={{ ...kicker, fontSize: 10.5, opacity: .85, marginTop: 6 }}>{service.hero_claim}</div>
+          )}
         </div>
       </div>
 
-      {/* --- chi sono --- */}
+      {service.description && (
+        <div style={{ fontSize: 15, lineHeight: 1.55, color: T.dim }}>{service.description}</div>
+      )}
+
       {service.about && (
-        <div className="card">
-          <div style={{ ...kicker, color: 'var(--text-dim)', marginBottom: 8 }}>Il metodo</div>
+        <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 16, padding: 18 }}>
+          <div style={{ ...kicker, fontSize: 10.5, color: accent, marginBottom: 8 }}>Il metodo</div>
           <div style={{ fontSize: 13.5, lineHeight: 1.6 }}>{service.about}</div>
         </div>
       )}
 
-      {/* --- come funziona --- */}
       {service.details && (
-        <div className="card" style={{ borderLeft: `3px solid ${accent}` }}>
-          <div style={{ ...kicker, color: accent, marginBottom: 8 }}>Il percorso</div>
+        <div style={{ background: T.card, border: `1px solid ${T.border}`, borderLeft: `3px solid ${accent}`,
+          borderRadius: 16, padding: 18 }}>
+          <div style={{ ...kicker, fontSize: 10.5, color: accent, marginBottom: 8 }}>Il percorso</div>
           <div style={{ fontSize: 13.5, lineHeight: 1.6 }}>{service.details}</div>
         </div>
       )}
 
-      {/* --- pilastri --- */}
+      {/* pilastri a scorrimento orizzontale */}
       {service.highlights && service.highlights.length > 0 && (
-        <div className="grid g3" style={{ gap: 12 }}>
+        <div className="flex gap" style={{ gap: 12, overflowX: 'auto', paddingBottom: 4 }}>
           {service.highlights.map((h, i) => (
-            <div key={i} className="card" style={{ padding: 0, overflow: 'hidden' }}>
-              <div style={{ height: 3, background: accent }} />
-              <div style={{ padding: 16 }}>
-                <div style={{ ...kicker, fontSize: 10.5, color: accent }}>{h.title}</div>
-                <div className="faint" style={{ fontSize: 12.5, marginTop: 6, lineHeight: 1.5 }}>{h.text}</div>
-              </div>
+            <div key={i} style={{ flex: '0 0 75%', maxWidth: 300, background: T.card,
+              border: `1px solid ${T.border}`, borderRadius: 14, padding: 16 }}>
+              <div style={{ ...kicker, fontSize: 10, color: accent }}>{h.title}</div>
+              <div style={{ fontSize: 12.5, color: T.dim, marginTop: 6, lineHeight: 1.5 }}>{h.text}</div>
             </div>
           ))}
         </div>
       )}
 
-      {/* --- form di onboarding --- */}
-      {canRequest && schema.length > 0 && (
-        <div className="card">
-          <div className="flex between" style={{ alignItems: 'center', marginBottom: 8, flexWrap: 'wrap', gap: 10 }}>
-            <div style={{ ...kicker, color: accent }}>Iniziamo</div>
-            <span className="faint" style={{ fontSize: 11.5 }}>
-              <Icon name="clock" size={11} /> circa 3 minuti · {schema.length} domande
-            </span>
-          </div>
-          {service.form_intro && (
-            <div className="faint" style={{ fontSize: 12.5, marginBottom: 14, lineHeight: 1.55 }}>
-              {service.form_intro}
-            </div>
-          )}
-
-          {!open ? (
-            <button className="btn" style={{ background: accent, color: '#fff', fontWeight: 800, border: 'none' }}
-              onClick={() => setOpen(true)}>
-              Compila il questionario
-            </button>
-          ) : (
-            <div className="grid" style={{ gap: 16 }}>
-              {/* avanzamento: un form lungo deve dire quanto manca */}
-              <div>
-                <div className="flex between" style={{ fontSize: 11.5, marginBottom: 5 }}>
-                  <span className="faint">{risposte} di {schema.length} risposte</span>
-                  <span className="faint">{Math.round((risposte / schema.length) * 100)}%</span>
-                </div>
-                <div style={{ height: 5, borderRadius: 3, background: 'var(--border)', overflow: 'hidden' }}>
-                  <div style={{ width: `${(risposte / schema.length) * 100}%`, height: '100%',
-                                background: accent, transition: 'width .2s ease' }} />
-                </div>
-              </div>
-
-              {schema.map((f, i) => (
-                <div key={f.key}>
-                  {f.section && f.section !== schema[i - 1]?.section && (
-                    <div style={{ ...kicker, fontSize: 10, color: accent,
-                                  marginTop: i === 0 ? 0 : 10, marginBottom: 12,
-                                  paddingBottom: 7, borderBottom: '1px solid var(--border)' }}>
-                      {f.section}
-                    </div>
-                  )}
-                  <div style={{ fontSize: 13.5, fontWeight: 700, marginBottom: 3 }}>
-                    {f.label}{f.required && <span style={{ color: accent }}> *</span>}
-                  </div>
-                  {f.help && <div className="faint" style={{ fontSize: 11.5, marginBottom: 7 }}>{f.help}</div>}
-
-                  {f.type === 'textarea' && (
-                    <Textarea rows={3} value={answers[f.key] || ''} onChange={e => set(f.key, e.target.value)} />
-                  )}
-                  {f.type === 'text' && (
-                    <Input value={answers[f.key] || ''} onChange={e => set(f.key, e.target.value)} />
-                  )}
-                  {f.type === 'number' && (
-                    <Input type="number" value={answers[f.key] ?? ''} onChange={e => set(f.key, e.target.value)} />
-                  )}
-                  {f.type === 'date' && (
-                    <Input type="date" value={answers[f.key] || ''} onChange={e => set(f.key, e.target.value)} />
-                  )}
-
-                  {f.type === 'radio' && (
-                    <div className="flex gap" style={{ flexWrap: 'wrap', gap: 8 }}>
-                      {(f.options || []).map(o => {
-                        const on = answers[f.key] === o
-                        return (
-                          <button key={o} className="btn btn-sm"
-                            style={on ? { background: accent, color: '#fff', border: 'none', fontWeight: 700 } : undefined}
-                            onClick={() => set(f.key, o)}>{o}</button>
-                        )
-                      })}
-                    </div>
-                  )}
-
-                  {f.type === 'multiselect' && (
-                    <div className="flex gap" style={{ flexWrap: 'wrap', gap: 8 }}>
-                      {(f.options || []).map(o => {
-                        const on = (answers[f.key] || []).includes(o)
-                        return (
-                          <button key={o} className="btn btn-sm"
-                            style={on ? { background: accent, color: '#fff', border: 'none', fontWeight: 700 } : undefined}
-                            onClick={() => toggle(f.key, o)}>{o}</button>
-                        )
-                      })}
-                    </div>
-                  )}
-
-                  {f.type === 'scale' && (
-                    <div className="flex gap" style={{ gap: 8 }}>
-                      {[1, 2, 3, 4, 5].map(n => {
-                        const on = answers[f.key] === n
-                        return (
-                          <button key={n} className="btn btn-sm"
-                            style={{ minWidth: 44, justifyContent: 'center',
-                                     ...(on ? { background: accent, color: '#fff', border: 'none', fontWeight: 800 } : {}) }}
-                            onClick={() => set(f.key, n)}>{n}</button>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
-              ))}
-
-              <div className="flex gap" style={{ alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                <button className="btn" style={{ background: accent, color: '#fff', fontWeight: 800, border: 'none' }}
-                  disabled={busy} onClick={invia}>
-                  {busy ? 'Invio…' : 'Invia richiesta'}
-                </button>
-                {mancanti.length > 0 && (
-                  <span className="faint" style={{ fontSize: 12 }}>
-                    Mancano {mancanti.length} risposte obbligatorie
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* --- contatti del partner --- */}
+      {/* contatti */}
       {(service.contact_email || service.contact_phone || service.partner_website) && (
-        <div className="card">
-          <div style={{ ...kicker, color: 'var(--text-dim)', marginBottom: 10 }}>Contatti</div>
+        <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 16, padding: 18 }}>
+          <div style={{ ...kicker, fontSize: 10.5, color: T.muted, marginBottom: 10 }}>Contatti</div>
           <div className="flex gap" style={{ flexWrap: 'wrap', gap: 10 }}>
             {service.partner_website && (
               <a className="btn btn-ghost btn-sm" href={service.partner_website} target="_blank" rel="noreferrer">
@@ -306,11 +369,50 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
               </a>
             )}
           </div>
-          <div className="faint" style={{ fontSize: 11.5, marginTop: 10 }}>
+          <div style={{ fontSize: 11.5, color: T.muted, marginTop: 10 }}>
             La richiesta passa comunque da AUVI: ti seguiamo noi fino all'avvio del percorso.
+          </div>
+        </div>
+      )}
+
+      {/* CTA sticky */}
+      {hasForm && (
+        <div style={{ position: 'sticky', bottom: 0, marginTop: 4, paddingTop: 10,
+          background: `linear-gradient(180deg, transparent, ${T.bg} 40%)` }}>
+          <button onClick={() => { setStep(0); setMode('form') }}
+            style={{ width: '100%', padding: '15px 18px', borderRadius: 999, border: 'none', cursor: 'pointer',
+              background: T.text, color: '#0b0b0e', fontWeight: 800, fontSize: 15 }}>
+            Compila il questionario
+          </button>
+          <div style={{ fontSize: 11.5, color: T.muted, textAlign: 'center', marginTop: 8 }}>
+            ◷ circa 3 minuti · il partner costruisce il pacchetto su di te · nessun impegno
           </div>
         </div>
       )}
     </div>
   )
 }
+
+function Chip({ on, accent, onClick, children, min }: {
+  on: boolean; accent: string; onClick: () => void; children: React.ReactNode; min?: number
+}) {
+  return (
+    <button onClick={onClick}
+      style={{
+        padding: '9px 14px', borderRadius: 999, cursor: 'pointer', fontSize: 13, fontWeight: 700,
+        minWidth: min, justifyContent: 'center', display: 'inline-flex', alignItems: 'center',
+        border: `1px solid ${on ? accent : '#2e2e3a'}`,
+        background: on ? accent : 'transparent', color: on ? '#fff' : '#c9c9d4',
+      }}>
+      {children}
+    </button>
+  )
+}
+
+const sentAnim = `
+@keyframes auviPop {
+  0% { transform: scale(.4); opacity: 0; }
+  60% { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(1); }
+}
+`
