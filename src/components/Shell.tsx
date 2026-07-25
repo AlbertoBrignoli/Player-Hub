@@ -13,6 +13,12 @@ export const APP_VERSION = 'v4.6'
 export interface NavDef { key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[] }
 
 export const NAV: { group: string; items: NavDef[] }[] = [
+  { group: 'Servizi AUVI', items: [
+    { key: 'services', label: 'Servizi AUVI', icon: 'star' },
+  ]},
+  { group: 'Il mio club', items: [
+    { key: 'my-team', label: 'Il mio team', icon: 'users' },
+  ]},
   { group: 'Panoramica', items: [
     { key: 'dashboard', label: 'Dashboard', icon: 'grid' },
     { key: 'performance', label: 'Performance', icon: 'activity' },
@@ -23,13 +29,11 @@ export const NAV: { group: string; items: NavDef[] }[] = [
     { key: 'media', label: 'Media', icon: 'image' },
   ]},
   { group: 'Gestione', items: [
-    { key: 'contracts', label: 'Contratti', icon: 'briefcase' },
-    { key: 'documents', label: 'Documenti', icon: 'archive' },
+    { key: 'archivio', label: 'Contratti e Documenti', icon: 'archive' },
     { key: 'sponsors', label: 'Sponsor', icon: 'award' },
     { key: 'commercial', label: 'Commercial Profile', icon: 'star', roles: ['admin', 'player', 'creator'] },
     { key: 'insurance', label: 'Insurance', icon: 'lock' },
     { key: 'legaltax', label: 'Legal & Tax', icon: 'briefcase' },
-    { key: 'services', label: 'Servizi AUVI', icon: 'star' },
   ]},
   { group: 'Fitness', items: [
     { key: 'fitness', label: 'Area Fitness', icon: 'dumbbell' },
@@ -70,6 +74,7 @@ export const COACH_NAV: { group: string; items: NavDef[] }[] = [
     { key: 'coach-office', label: 'Il mio ufficio', icon: 'briefcase' },
   ]},
   { group: 'Atleta', items: [
+    { key: 'my-team', label: 'Il mio team', icon: 'users' },
     { key: 'performance', label: 'Performance', icon: 'activity' },
     { key: 'messages', label: 'Messaggi', icon: 'message' },
   ]},
@@ -84,6 +89,7 @@ export const AGENT_NAV: { group: string; items: NavDef[] }[] = [
     { key: 'access-requests', label: 'Collegamenti', icon: 'key' },
   ]},
   { group: 'Atleta', items: [
+    { key: 'my-team', label: 'Il mio team', icon: 'users' },
     { key: 'dashboard', label: 'Panoramica', icon: 'activity' },
     { key: 'performance', label: 'Performance', icon: 'activity' },
     { key: 'profile', label: 'Scheda atleta', icon: 'user' },
@@ -117,6 +123,7 @@ export const INSURER_NAV: { group: string; items: NavDef[] }[] = [
     { key: 'access-requests', label: 'Collegamenti', icon: 'key' },
   ]},
   { group: 'Atleta', items: [
+    { key: 'my-team', label: 'Il mio team', icon: 'users' },
     { key: 'documents', label: 'Documenti', icon: 'archive' },
     { key: 'agenda', label: 'Scadenze', icon: 'clock' },
     { key: 'messages', label: 'Messaggi', icon: 'message' },
@@ -133,6 +140,7 @@ export const TAX_NAV: { group: string; items: NavDef[] }[] = [
     { key: 'access-requests', label: 'Collegamenti', icon: 'key' },
   ]},
   { group: 'Atleta', items: [
+    { key: 'my-team', label: 'Il mio team', icon: 'users' },
     { key: 'documents', label: 'Documenti', icon: 'archive' },
     { key: 'agenda', label: 'Scadenze', icon: 'clock' },
     { key: 'messages', label: 'Messaggi', icon: 'message' },
@@ -164,6 +172,8 @@ const TITLES: Record<string, { t: string; s: string }> = {
   insurance: { t: 'Insurance', s: 'Polizze, documenti e scadenze' },
   legaltax: { t: 'Legal & Tax', s: 'Pagamenti, documenti e richieste' },
   services: { t: 'Servizi AUVI', s: 'Servizi e partner a tua disposizione' },
+  'my-team': { t: 'Il mio team', s: 'Le persone che lavorano con te' },
+  archivio: { t: 'Contratti e Documenti', s: 'Accordi, scadenze e archivio file riservato' },
   'tax-home': { t: 'Home', s: 'La tua scheda e gli atleti seguiti' },
   'tax-profile': { t: 'Il mio profilo', s: 'Contatti e studio' },
   'agent-profile': { t: 'Il mio profilo', s: 'Contatti personali e agenzia' },

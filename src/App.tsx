@@ -36,6 +36,8 @@ import Services from './modules/Services'
 import TaxAdvisorHome from './modules/TaxAdvisorHome'
 import TaxAdvisorProfile from './modules/TaxAdvisorProfile'
 import BrandCampaigns from './modules/BrandCampaigns'
+import MyTeam from './modules/MyTeam'
+import Archivio from './modules/Archivio'
 
 export default function App() {
   const { session, profile, loading } = useAuth()
@@ -51,18 +53,18 @@ export default function App() {
   const isBrand = profile.role === 'brand'
   const brandAllowed = ['brandhome', 'mediakit', 'campaigns', 'brandcard', 'messages']
   // Il preparatore vede solo fitness, performance dell'atleta e chat.
-  const coachAllowed = ['dashboard', 'fitness', 'coach-profile', 'coach-office', 'performance', 'messages', 'access-requests']
+  const coachAllowed = ['dashboard', 'fitness', 'coach-profile', 'coach-office', 'performance', 'messages', 'access-requests', 'my-team']
   const isCoach = profile.role === 'preparatore'
   // L'agente vede solo le competenze del procuratore.
   const agentAllowed = ['agent-home', 'dashboard', 'performance', 'profile', 'editorial', 'media',
                         'contracts', 'documents', 'sponsors', 'commercial', 'fitness',
-                        'agenda', 'tasks', 'messages', 'agent-profile', 'insurance', 'legaltax', 'services', 'access-requests']
+                        'agenda', 'tasks', 'messages', 'agent-profile', 'insurance', 'legaltax', 'services', 'access-requests', 'my-team', 'archivio']
   const isAgent = profile.role === 'agente'
   // L'assicuratore vede solo la sua area: polizze, scadenze e chat.
-  const insurerAllowed = ['insurer-home', 'insurance', 'insurer-profile', 'documents', 'agenda', 'messages', 'access-requests']
+  const insurerAllowed = ['insurer-home', 'insurance', 'insurer-profile', 'documents', 'agenda', 'messages', 'access-requests', 'my-team']
   const isInsurer = profile.role === 'assicuratore'
   // Il commercialista vede solo la sua area.
-  const taxAllowed = ['tax-home', 'legaltax', 'tax-profile', 'services', 'documents', 'agenda', 'messages', 'access-requests']
+  const taxAllowed = ['tax-home', 'legaltax', 'tax-profile', 'services', 'documents', 'agenda', 'messages', 'access-requests', 'my-team']
   const isTax = profile.role === 'commercialista'
   const home = isBrand ? 'brandhome' : isAgent ? 'agent-home' : isInsurer ? 'insurer-home' : isTax ? 'tax-home' : 'dashboard'
   let route = routeState ?? home
@@ -91,6 +93,8 @@ export default function App() {
       case 'access-requests': return <AccessRequests />
       case 'legaltax': return <LegalTax />
       case 'services': return <Services />
+      case 'my-team': return <MyTeam goto={setRoute} />
+      case 'archivio': return <Archivio />
       case 'tax-home': return <TaxAdvisorHome goto={setRoute} />
       case 'tax-profile': return <TaxAdvisorProfile />
       case 'agent-profile': return <AgentProfile />
