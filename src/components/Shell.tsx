@@ -32,6 +32,8 @@ export const NAV: { group: string; items: NavDef[] }[] = [
     { key: 'archivio', label: 'Contratti e Documenti', icon: 'archive' },
     { key: 'sponsors', label: 'Sponsor', icon: 'award' },
     { key: 'commercial', label: 'Commercial Profile', icon: 'star', roles: ['admin', 'player', 'creator'] },
+  ]},
+  { group: 'Consulenza', items: [
     { key: 'insurance', label: 'Insurance', icon: 'lock' },
     { key: 'legaltax', label: 'Legal & Tax', icon: 'briefcase' },
   ]},
