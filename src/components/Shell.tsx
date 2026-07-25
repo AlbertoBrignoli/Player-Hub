@@ -33,10 +33,6 @@ export const NAV: { group: string; items: NavDef[] }[] = [
     { key: 'sponsors', label: 'Sponsor', icon: 'award' },
     { key: 'commercial', label: 'Commercial Profile', icon: 'star', roles: ['admin', 'player', 'creator'] },
   ]},
-  { group: 'Consulenza', items: [
-    { key: 'insurance', label: 'Insurance', icon: 'lock' },
-    { key: 'legaltax', label: 'Legal & Tax', icon: 'briefcase' },
-  ]},
   { group: 'Fitness', items: [
     { key: 'fitness', label: 'Area Fitness', icon: 'dumbbell' },
     { key: 'coach-profile', label: 'Il mio profilo', icon: 'user', roles: ['preparatore'] },
