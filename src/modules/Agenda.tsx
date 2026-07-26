@@ -6,6 +6,7 @@ import { useAthlete } from '../lib/athlete'
 import { useCollection, insertRow, updateRow, deleteRow } from '../lib/useData'
 import { Modal, Field, Input, Textarea, Select, Empty, Spinner, ConfirmButton } from '../components/ui'
 import Icon from '../components/Icon'
+import LuogoAutocomplete from '../components/LuogoAutocomplete'
 import type { EventItem, EventAttachment } from '../lib/types'
 
 const DOC_BUCKET = 'crm-documents'
@@ -216,7 +217,7 @@ function EvCard({ e, canEdit, onEdit, onDel, canConfirm, onConfirm, goto }: { e:
             <Icon name="clock" size={15} /> {time}
           </span>
         </div>
-        {e.location && <div className="faint" style={{ fontSize: 13, marginTop: 7, display: 'inline-flex', alignItems: 'center', gap: 6 }}><Icon name="pin" size={13} /> {e.location}</div>}
+        {e.location && <a className="faint" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.location)}`} target="_blank" rel="noreferrer" title="Apri in Maps" style={{ fontSize: 13, marginTop: 7, display: 'inline-flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}><Icon name="pin" size={13} /> {e.location} <span style={{ opacity: .7 }}>↗</span></a>}
         {req && req !== 'confermata' && (
           <div style={{ marginTop: 9 }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700,
@@ -315,7 +316,7 @@ function EventForm({ value, isAdmin, uid, athleteId, onClose, onSaved }: {
       <Field label="Titolo"><Input value={f.title || ''} onChange={e => set('title', e.target.value)} placeholder="es. Transfer aeroporto" /></Field>
       <div className="row2">
         <Field label="Tipo"><Select value={f.type} onChange={e => set('type', e.target.value)}>{types.map(k => <option key={k} value={k}>{typeOf(k).l}</option>)}</Select></Field>
-        <Field label="Luogo"><Input value={f.location || ''} onChange={e => set('location', e.target.value)} /></Field>
+        <Field label="Luogo"><LuogoAutocomplete value={f.location || ''} onChange={v => set('location', v)} /></Field>
       </div>
       <div className="row2">
         <Field label="Inizio"><Input type="datetime-local" value={f.start_at as string || ''} onChange={e => set('start_at', e.target.value)} /></Field>
