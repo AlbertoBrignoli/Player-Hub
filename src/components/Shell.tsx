@@ -70,7 +70,6 @@ export const COACH_NAV: { group: string; items: NavDef[] }[] = [
     { key: 'coach-office', label: 'Il mio ufficio', icon: 'briefcase' },
   ]},
   { group: 'Atleta', items: [
-    { key: 'my-team', label: 'Il mio team', icon: 'users' },
     { key: 'performance', label: 'Performance', icon: 'activity' },
     { key: 'messages', label: 'Messaggi', icon: 'message' },
   ]},
@@ -168,7 +167,7 @@ const TITLES: Record<string, { t: string; s: string }> = {
   insurance: { t: 'Insurance', s: 'Polizze, documenti e scadenze' },
   legaltax: { t: 'Legal & Tax', s: 'Pagamenti, documenti e richieste' },
   services: { t: 'Servizi AUVI', s: 'Servizi e partner a tua disposizione' },
-  'my-team': { t: 'Il mio team', s: 'Le persone che lavorano con te' },
+  'my-team': { t: 'Il mio team', s: 'Il tuo team di lavoro' },
   archivio: { t: 'Contratti e Documenti', s: 'Accordi, scadenze e archivio file riservato' },
   'tax-home': { t: 'Home', s: 'La tua scheda e gli atleti seguiti' },
   'tax-profile': { t: 'Il mio profilo', s: 'Contatti e studio' },

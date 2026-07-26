@@ -26,23 +26,70 @@ const ROLE: Record<string, { label: string; icon: string; area?: Area }> = {
 }
 
 const PRO = ['preparatore', 'agente', 'assicuratore', 'commercialista', 'brand']
+// Un professionista in "Il mio team" vede i GIOCATORI che segue (non altri professionisti).
+const ROSTER_ROLES = ['agente', 'assicuratore', 'commercialista']
+const AREA_FOR: Record<string, string> = { agente: 'profile', assicuratore: 'insurance', commercialista: 'legaltax' }
 
 export default function MyTeam({ goto }: { goto?: (r: string) => void }) {
-  const { athletes, athleteId } = useAthlete()
+  const { athletes, athleteId, setAthleteId } = useAthlete()
   const { isAdmin, role } = useAuth()
   const [rows, setRows] = useState<Member[]>([])
   const [loading, setLoading] = useState(true)
 
   const athlete = athletes.find(a => a.api_player_id === athleteId)
+  const isRoster = ROSTER_ROLES.includes(role || '')
   // Chi può aprire tutte le aree: agenzia e atleta. Un professionista apre solo la sua.
   const canOpenAll = isAdmin || !PRO.includes(role || '')
 
   useEffect(() => {
+    if (isRoster) { setLoading(false); return }
     if (!athleteId) { setRows([]); setLoading(false); return }
     setLoading(true)
     supabase.from('crm_athlete_team').select('*').eq('player_id', athleteId).order('sort')
       .then(({ data }) => { setRows((data as Member[]) || []); setLoading(false) })
-  }, [athleteId])
+  }, [athleteId, isRoster])
+
+  // ----- VISTA PROFESSIONISTA: i giocatori che segue -----
+  if (isRoster) {
+    const open = (api: number) => { setAthleteId(api); goto?.(AREA_FOR[role || ''] || 'profile') }
+    return (
+      <div className="grid" style={{ gap: 18 }}>
+        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 18, padding: 18 }}>
+          <div style={{ fontSize: 11, letterSpacing: 1.4, textTransform: 'uppercase', fontWeight: 800, color: 'var(--text-dim)' }}>
+            Il mio team
+          </div>
+          <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: -0.3 }}>I miei giocatori</div>
+          <div style={{ fontSize: 12.5, color: 'var(--text-dim)', marginTop: 2 }}>
+            Gli atleti che segui. Tocca un giocatore per aprire la sua area.
+          </div>
+        </div>
+        {athletes.length === 0 ? (
+          <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: 20 }}>
+            <Empty icon={<Icon name="users" size={30} strokeWidth={1.4} />}
+              title="Nessun giocatore ancora collegato"
+              hint="Quando vieni collegato a un atleta, comparirà qui." />
+          </div>
+        ) : (
+          <div className="grid" style={{ gap: 10 }}>
+            {athletes.map(a => (
+              <button key={a.api_player_id} onClick={() => open(a.api_player_id)}
+                className="flex between" style={{ alignItems: 'center', gap: 12, cursor: 'pointer', textAlign: 'left',
+                  background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: 14, color: 'var(--text)' }}>
+                <span className="flex gap" style={{ alignItems: 'center', gap: 12, minWidth: 0 }}>
+                  {a.photo_url
+                    ? <img src={a.photo_url} alt={a.name || ''} style={{ width: 46, height: 46, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                    : <span className="avatar" style={{ width: 46, height: 46, fontSize: 16 }}>{initials(a.name)}</span>}
+                  <span style={{ fontSize: 15, fontWeight: 800 }}>{a.name}</span>
+                </span>
+                <Icon name="chevron-right" size={18} />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
+
 
   return (
     <div className="grid" style={{ gap: 18 }}>
