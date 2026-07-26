@@ -778,6 +778,9 @@ function AnagraficaCard({ athleteId, canEdit }: { athleteId: number | null; canE
   useEffect(() => { setEditing(false); load() }, [athleteId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const set = (k: string, v: string) => setForm((f: any) => ({ ...f, [k]: v }))
+  // Unisce eventuale vecchio documento singolo alla lista multipla.
+  const docsOf = (x: any): { name?: string; path: string }[] =>
+    [...((x?.id_docs as any[]) || []), ...(x?.id_doc_path ? [{ name: 'Documento', path: x.id_doc_path }] : [])]
 
   async function save() {
     if (!athleteId) return
@@ -788,7 +791,7 @@ function AnagraficaCard({ athleteId, canEdit }: { athleteId: number | null; canE
       iban: form.iban || null, bic_swift: form.bic_swift || null,
       bank_name: form.bank_name || null, bank_address: form.bank_address || null,
       id_doc_type: form.id_doc_type || null, id_doc_number: form.id_doc_number || null,
-      id_doc_path: form.id_doc_path || null,
+      id_docs: form.id_docs || [], id_doc_path: null,
       updated_at: new Date().toISOString(), updated_by: session?.user.id,
     }
     const { error } = await supabase.from('crm_athlete_anagrafica').upsert(payload, { onConflict: 'player_id' })
@@ -798,14 +801,21 @@ function AnagraficaCard({ athleteId, canEdit }: { athleteId: number | null; canE
   }
 
   async function uploadDoc(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]; e.target.value = ''
-    if (!file || !athleteId) return
+    const files = Array.from(e.target.files || []); e.target.value = ''
+    if (!files.length || !athleteId) return
     setUploading(true)
-    const path = `${athleteId}/anagrafica-${Date.now()}-${file.name.replace(/[^\w.\-]/g, '_')}`
-    const up = await supabase.storage.from(BUCKET).upload(path, file, { upsert: false })
+    const added: { name: string; path: string }[] = []
+    for (const file of files) {
+      const path = `${athleteId}/anagrafica-${Date.now()}-${Math.random().toString(36).slice(2, 7)}-${file.name.replace(/[^\w.\-]/g, '_')}`
+      const up = await supabase.storage.from(BUCKET).upload(path, file, { upsert: false })
+      if (up.error) { toast(`${file.name}: ${up.error.message}`, 'err'); continue }
+      added.push({ name: file.name, path })
+    }
     setUploading(false)
-    if (up.error) { toast(up.error.message, 'err'); return }
-    set('id_doc_path', path); toast('Documento caricato')
+    if (added.length) {
+      setForm((f: any) => ({ ...f, id_docs: [...(f.id_docs || []), ...added] }))
+      toast(`${added.length} file caricat${added.length > 1 ? 'i' : 'o'}`)
+    }
   }
 
   if (loading) return null
@@ -833,7 +843,7 @@ function AnagraficaCard({ athleteId, canEdit }: { athleteId: number | null; canE
           <div className="faint" style={{ fontSize: 12, marginTop: 2 }}>Dati bancari e identità dell'atleta</div>
         </div>
         {canEdit && !editing && (
-          <button className="btn btn-sm" onClick={() => { setForm(data || {}); setEditing(true) }}>
+          <button className="btn btn-sm" onClick={() => { setForm({ ...(data || {}), id_docs: docsOf(data) }); setEditing(true) }}>
             <Icon name={empty ? 'plus' : 'edit'} size={13} /> {empty ? 'Compila' : 'Modifica'}
           </button>
         )}
@@ -854,15 +864,27 @@ function AnagraficaCard({ athleteId, canEdit }: { athleteId: number | null; canE
             <Field label="Numero documento"><Input value={form.id_doc_number || ''} onChange={e => set('id_doc_number', e.target.value)} /></Field>
           </div>
           <div>
-            <div className="faint" style={{ fontSize: 12, marginBottom: 6 }}>Documento d'identità (scansione)</div>
-            <div className="flex gap" style={{ gap: 8, alignItems: 'center' }}>
-              <button className="btn btn-sm" disabled={uploading} onClick={() => fileRef.current?.click()}>
-                <Icon name="upload" size={13} /> {uploading ? 'Carico…' : form.id_doc_path ? 'Sostituisci file' : 'Carica file'}
-              </button>
-              {form.id_doc_path && <button className="btn btn-ghost btn-sm" onClick={() => openDoc(form.id_doc_path)}>Apri</button>}
-              {form.id_doc_path && <button className="btn btn-ghost btn-sm" onClick={() => set('id_doc_path', '')}>Rimuovi</button>}
-              <input ref={fileRef} type="file" accept="image/*,application/pdf" hidden onChange={uploadDoc} />
-            </div>
+            <div className="faint" style={{ fontSize: 12, marginBottom: 6 }}>Documenti (identità, tessera sanitaria, ecc.) — puoi caricarne più insieme</div>
+            {(form.id_docs || []).length > 0 && (
+              <div className="grid" style={{ gap: 6, marginBottom: 8 }}>
+                {(form.id_docs || []).map((doc: any, i: number) => (
+                  <div key={i} className="flex between" style={{ alignItems: 'center', gap: 10,
+                    border: '1px solid var(--border)', borderRadius: 10, padding: '8px 10px' }}>
+                    <span className="flex gap" style={{ alignItems: 'center', gap: 8, minWidth: 0 }}>
+                      <Icon name="file" size={13} /> <span style={{ fontSize: 12.5, overflow: 'hidden', textOverflow: 'ellipsis' }}>{doc.name || 'Documento'}</span>
+                    </span>
+                    <span className="flex gap" style={{ gap: 6, flexShrink: 0 }}>
+                      <button className="btn btn-ghost btn-sm" onClick={() => openDoc(doc.path)}>Apri</button>
+                      <button className="btn btn-ghost btn-sm" onClick={() => setForm((f: any) => ({ ...f, id_docs: (f.id_docs || []).filter((_: any, j: number) => j !== i) }))}>Rimuovi</button>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <button className="btn btn-sm" disabled={uploading} onClick={() => fileRef.current?.click()}>
+              <Icon name="upload" size={13} /> {uploading ? 'Carico…' : 'Carica file'}
+            </button>
+            <input ref={fileRef} type="file" multiple accept="image/*,application/pdf" hidden onChange={uploadDoc} />
           </div>
           <div className="flex gap" style={{ gap: 8, marginTop: 4 }}>
             <button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? 'Salvo…' : 'Salva'}</button>
@@ -882,9 +904,16 @@ function AnagraficaCard({ athleteId, canEdit }: { athleteId: number | null; canE
           <Row k="Banca" v={d.bank_name} />
           <Row k="Indirizzo sede banca" v={d.bank_address} />
           <Row k="Documento" v={[d.id_doc_type, d.id_doc_number].filter(Boolean).join(' · ')} />
-          {d.id_doc_path && (
-            <div style={{ paddingTop: 10 }}>
-              <button className="btn btn-sm" onClick={() => openDoc(d.id_doc_path)}><Icon name="file" size={13} /> Apri documento d'identità</button>
+          {docsOf(d).length > 0 && (
+            <div style={{ paddingTop: 12 }}>
+              <div className="faint" style={{ fontSize: 12, marginBottom: 6 }}>Documenti allegati</div>
+              <div className="grid" style={{ gap: 6 }}>
+                {docsOf(d).map((doc, i) => (
+                  <button key={i} className="btn btn-sm" style={{ justifyContent: 'flex-start' }} onClick={() => openDoc(doc.path)}>
+                    <Icon name="file" size={13} /> {doc.name || 'Documento'}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </div>
