@@ -32,7 +32,6 @@ export default function ReferentiCard({ goto }: { goto?: (r: string) => void }) 
   const { athleteId } = useAthlete()
   const { role } = useAuth()
   const [refs, setRefs] = useState<Ref[]>([])
-  const [code, setCode] = useState<string | null>(null)
   const [pending, setPending] = useState(0)
   const isPlayer = role === 'player'
 
@@ -101,14 +100,9 @@ export default function ReferentiCard({ goto }: { goto?: (r: string) => void }) 
 
       // il codice personale dell'atleta e le richieste da approvare
       if (isPlayer) {
-        const [pl, rq] = await Promise.all([
-          supabase.from('player').select('access_code').eq('api_player_id', athleteId).maybeSingle(),
-          supabase.from('crm_access_requests').select('id').eq('player_id', athleteId).eq('status', 'pending'),
-        ])
-        if (ok) {
-          setCode((pl.data as any)?.access_code || null)
-          setPending(((rq.data as any[]) || []).length)
-        }
+        const { data: rq } = await supabase.from('crm_access_requests')
+          .select('id').eq('player_id', athleteId).eq('status', 'pending')
+        if (ok) setPending(((rq as any[]) || []).length)
       }
 
       if (ok) setRefs(out)
@@ -131,26 +125,6 @@ export default function ReferentiCard({ goto }: { goto?: (r: string) => void }) 
             </div>
             <button className="btn btn-sm" style={{ background: '#8b7ff0', color: '#fff', fontWeight: 800, border: 'none' }}
               onClick={() => goto?.('access-requests')}>Vedi richieste</button>
-          </div>
-        </div>
-      )}
-
-      {isPlayer && code && (
-        <div className="card" style={{ marginBottom: 14 }}>
-          <div style={{ ...kicker, color: 'var(--text-dim)' }}>Il tuo codice</div>
-          <div className="faint" style={{ fontSize: 12.5, marginTop: 4 }}>
-            Dallo al tuo procuratore, assicuratore o preparatore: gli serve per chiedere
-            l'accesso alla tua area. Nessuno può entrare senza la tua approvazione.
-          </div>
-          <div className="flex gap" style={{ alignItems: 'center', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
-            <code style={{ fontSize: 20, fontWeight: 900, letterSpacing: 3, color: '#8b7ff0',
-                           border: '1px dashed var(--border)', borderRadius: 10, padding: '9px 16px' }}>
-              {code}
-            </code>
-            <button className="btn btn-sm"
-              onClick={() => { navigator.clipboard.writeText(code); toast('Codice copiato') }}>
-              <Icon name="copy" size={13} /> Copia
-            </button>
           </div>
         </div>
       )}

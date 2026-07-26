@@ -34,9 +34,8 @@ type Req = {
 
 export default function AccessRequests() {
   const { role, isAdmin } = useAuth()
-  const { athletes } = useAthlete()
+  const { athletes, athleteId } = useAthlete()
   const [rows, setRows] = useState<Req[]>([])
-  const [codes, setCodes] = useState<{ name: string; code: string }[]>([])
   const [loading, setLoading] = useState(true)
 
   const isPro = ['assicuratore', 'agente', 'preparatore'].includes(role || '')
@@ -47,13 +46,6 @@ export default function AccessRequests() {
       .select('*').order('created_at', { ascending: false })
     const list = (data as Req[]) || []
     setRows(list)
-
-    // codici da consegnare ai professionisti (l'atleta trova il suo in home)
-    if (isAdmin) {
-      const { data: pl } = await supabase.from('player').select('name, access_code')
-      setCodes(((pl as any[]) || []).filter(p => p.access_code)
-        .map(p => ({ name: p.name, code: p.access_code })))
-    }
     setLoading(false)
   }
 
@@ -131,31 +123,8 @@ export default function AccessRequests() {
             )}
           </div>
 
-          {/* codici da consegnare */}
-          {codes.length > 0 && (
-            <div className="card">
-              <div style={{ ...kicker, color: 'var(--text-dim)', marginBottom: 8 }}>Codici atleta</div>
-              <div className="faint" style={{ fontSize: 12.5, marginBottom: 12 }}>
-                Consegna il codice al professionista: gli serve per chiedere il collegamento.
-                Senza codice non può nemmeno sapere quali atleti esistono.
-              </div>
-              <div className="grid" style={{ gap: 8 }}>
-                {codes.map(c => (
-                  <div key={c.code} className="flex between" style={{ alignItems: 'center', gap: 10,
-                         border: '1px solid var(--border)', borderRadius: 10, padding: '9px 12px' }}>
-                    <span style={{ fontSize: 13.5, fontWeight: 600 }}>{c.name}</span>
-                    <span className="flex gap" style={{ alignItems: 'center', gap: 8 }}>
-                      <code style={{ fontSize: 14, fontWeight: 800, letterSpacing: 1.5, color: ACCENT }}>{c.code}</code>
-                      <button className="btn btn-ghost btn-sm" title="Copia"
-                        onClick={() => { navigator.clipboard.writeText(c.code); toast('Codice copiato') }}>
-                        <Icon name="copy" size={13} />
-                      </button>
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          {/* codici di collegamento: uno per professionista */}
+          <CodesManager athleteId={athleteId} athleteName={athletes.find(a => a.api_player_id === athleteId)?.name || 'questo atleta'} />
         </>
       )}
 
@@ -230,6 +199,103 @@ function RequestForm({ onDone, mine }: { onDone: () => void; mine: Req[] }) {
       {inAttesa.length > 0 && (
         <div className="faint" style={{ fontSize: 12.5, marginTop: 14 }}>
           <Icon name="clock" size={12} /> Hai {inAttesa.length} richiest{inAttesa.length === 1 ? 'a' : 'e'} in attesa di approvazione.
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Gestore dei codici di collegamento: l'atleta (o l'agenzia) genera un codice
+// personale per ogni professionista. Ogni codice è monouso e, una volta usato,
+// resta legato al professionista che l'ha inserito.
+function CodesManager({ athleteId, athleteName }: { athleteId: number | null; athleteName: string }) {
+  const [codes, setCodes] = useState<any[]>([])
+  const [label, setLabel] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [loading, setLoading] = useState(true)
+
+  async function load() {
+    if (!athleteId) { setCodes([]); setLoading(false); return }
+    setLoading(true)
+    const { data } = await supabase.rpc('crm_list_codes', { p_player_id: athleteId })
+    setCodes((data as any[]) || [])
+    setLoading(false)
+  }
+  useEffect(() => { load() }, [athleteId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function genera() {
+    if (!athleteId || busy) return
+    setBusy(true)
+    const { error } = await supabase.rpc('crm_generate_code', { p_player_id: athleteId, p_label: label.trim() || null })
+    setBusy(false)
+    if (error) { toast(error.message, 'err'); return }
+    setLabel(''); toast('Codice generato'); load()
+  }
+  async function revoca(id: string) {
+    if (!window.confirm('Revocare questo codice? Non sarà più utilizzabile.')) return
+    const { error } = await supabase.rpc('crm_revoke_code', { p_code_id: id })
+    if (error) { toast(error.message, 'err'); return }
+    toast('Codice revocato'); load()
+  }
+
+  const attivi = codes.filter(c => c.status === 'active').length
+
+  return (
+    <div className="card">
+      <div style={{ ...kicker, color: 'var(--text-dim)', marginBottom: 8 }}>Codici di collegamento</div>
+      <div className="faint" style={{ fontSize: 12.5, marginBottom: 12 }}>
+        Genera un codice per ogni professionista da collegare a <b style={{ color: 'var(--text)' }}>{athleteName}</b>.
+        Ogni codice è personale e monouso: quando il professionista lo inserisce resta legato a lui.
+        Nessuno può entrare senza la tua approvazione.
+      </div>
+
+      <div className="flex gap" style={{ gap: 8, flexWrap: 'wrap', marginBottom: codes.length ? 14 : 0 }}>
+        <input value={label} onChange={e => setLabel(e.target.value)} placeholder="Per chi? es. Assicuratore Anthea (facoltativo)"
+          style={{ flex: 1, minWidth: 220, background: 'var(--card-dark, #101015)', border: '1px solid var(--border)',
+            borderRadius: 10, padding: '10px 12px', color: 'var(--text)', fontSize: 13.5 }} />
+        <button className="btn btn-primary" disabled={busy || !athleteId} onClick={genera}>
+          <Icon name="plus" size={15} /> Genera codice
+        </button>
+      </div>
+
+      {loading ? null : codes.length === 0 ? (
+        <div className="faint" style={{ fontSize: 12.5 }}>Nessun codice ancora generato.</div>
+      ) : (
+        <div className="grid" style={{ gap: 8 }}>
+          {codes.map(c => {
+            const used = c.status === 'used', revoked = c.status === 'revoked'
+            const badge = used ? { t: c.used_by_name ? `Usato da ${c.used_by_name}` : 'Usato', col: 'var(--text-dim)' }
+                        : revoked ? { t: 'Revocato', col: '#e5484d' }
+                        : { t: 'Attivo', col: '#3fb984' }
+            return (
+              <div key={c.id} className="flex between" style={{ alignItems: 'center', gap: 10,
+                border: '1px solid var(--border)', borderRadius: 10, padding: '10px 12px', opacity: revoked ? .55 : 1 }}>
+                <div style={{ minWidth: 0 }}>
+                  <code style={{ fontSize: 14, fontWeight: 800, letterSpacing: 1.5, color: ACCENT,
+                    textDecoration: revoked ? 'line-through' : 'none' }}>{c.code}</code>
+                  <div className="faint" style={{ fontSize: 11.5, marginTop: 2 }}>
+                    {c.label ? c.label + ' · ' : ''}<span style={{ color: badge.col, fontWeight: 700 }}>{badge.t}</span>
+                  </div>
+                </div>
+                <span className="flex gap" style={{ alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                  {!used && !revoked && (
+                    <>
+                      <button className="btn btn-ghost btn-sm" title="Copia"
+                        onClick={() => { navigator.clipboard.writeText(c.code); toast('Codice copiato') }}>
+                        <Icon name="copy" size={13} />
+                      </button>
+                      <button className="btn btn-ghost btn-sm" title="Revoca" onClick={() => revoca(c.id)}>
+                        <Icon name="rotate-ccw" size={13} />
+                      </button>
+                    </>
+                  )}
+                </span>
+              </div>
+            )
+          })}
+          <div className="faint" style={{ fontSize: 11, marginTop: 2 }}>
+            {attivi} {attivi === 1 ? 'codice attivo' : 'codici attivi'} · {codes.length} totali
+          </div>
         </div>
       )}
     </div>
