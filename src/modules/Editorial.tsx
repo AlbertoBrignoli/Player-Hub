@@ -251,6 +251,7 @@ function EntryModal({ entry, onClose, onChanged }: {
   const [urls, setUrls] = useState<Record<string, string>>({})
   const [brandName, setBrandName] = useState<string | null>(null)
   const [hCopied, setHCopied] = useState(false)
+  const [pickerOpen, setPickerOpen] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const materialRef = useRef<HTMLInputElement>(null)
   const mi = entry.match_info
@@ -399,9 +400,32 @@ function EntryModal({ entry, onClose, onChanged }: {
   }
 
   async function removeAsset(m: MediaItem) {
-    await supabase.storage.from(BUCKET).remove([m.storage_path])
+    // Se è una foto COLLEGATA dalla libreria non tocchiamo il file (è condiviso): rimuoviamo solo il riferimento.
+    if (!m.source_media_id) await supabase.storage.from(BUCKET).remove([m.storage_path])
     await deleteRow('crm_media', m.id)
     loadMedia()
+  }
+
+  // Collega al contenuto foto già presenti in Media (nessun nuovo upload: si crea un riferimento).
+  async function linkFromMedia(items: MediaItem[]) {
+    const already = new Set(media.filter(m => m.source_media_id).map(m => m.source_media_id))
+    let ok = 0
+    for (const it of items) {
+      if (already.has(it.id)) continue
+      const ins = await insertRow('crm_media', {
+        storage_path: it.storage_path, file_name: it.file_name, kind: 'foto', status: 'approvata',
+        editorial_id: entry.id, source_media_id: it.id, uploaded_by: session?.user.id,
+        uploaded_role: profile?.role, note: entry.title, player_id: athleteId,
+      })
+      if (!ins.error) ok++
+    }
+    setPickerOpen(false)
+    if (ok) {
+      notify(isTeam ? 'player' : 'team', `Materiale per "${entry.title}"`,
+        `${ok} foto selezionat${ok > 1 ? 'e' : 'a'} dalla libreria, pronte per la grafica.`, 'editorial', athleteId)
+      toast(`${ok} foto collegat${ok > 1 ? 'e' : 'a'} dalla libreria`)
+      loadMedia(); onChanged()
+    }
   }
 
   async function setStatus(s: string) {
@@ -496,9 +520,14 @@ function EntryModal({ entry, onClose, onChanged }: {
               Materiale{approvate.length ? '' : ' per la grafica'}
               {approvate.length > 0 && <span className="faint" style={{ fontWeight: 400, fontSize: 12 }}> · {approvate.length} file pronti</span>}
             </div>
-            <button className="btn btn-sm" disabled={uploading} onClick={() => materialRef.current?.click()}>
-              <Icon name="upload" size={13} /> {uploading ? 'Carico…' : 'Carica materiale'}
-            </button>
+            <div className="flex gap" style={{ gap: 8 }}>
+              <button className="btn btn-sm" onClick={() => setPickerOpen(true)}>
+                <Icon name="image" size={13} /> Seleziona da Media
+              </button>
+              <button className="btn btn-sm" disabled={uploading} onClick={() => materialRef.current?.click()}>
+                <Icon name="upload" size={13} /> {uploading ? 'Carico…' : 'Carica materiale'}
+              </button>
+            </div>
             <input ref={materialRef} type="file" multiple accept="image/*,video/*" hidden onChange={onUploadMaterial} />
           </div>
           {approvate.length === 0
@@ -556,6 +585,11 @@ function EntryModal({ entry, onClose, onChanged }: {
 
         {err && <div className="msg-err">{err}</div>}
       </div>
+      {pickerOpen && (
+        <MediaPicker athleteId={athleteId}
+          excludeSourceIds={media.filter(m => m.source_media_id).map(m => m.source_media_id as string)}
+          onClose={() => setPickerOpen(false)} onConfirm={linkFromMedia} />
+      )}
     </Modal>
   )
 }
@@ -634,6 +668,111 @@ function NewEntryModal({ onClose, onCreated }: { onClose: () => void; onCreated:
         </Field>
         {err && <div className="msg-err">{err}</div>}
       </div>
+    </Modal>
+  )
+}
+
+// Selettore foto dalla libreria Media: mostra le foto dell'atleta raggruppate per
+// cartella e permette di sceglierne più d'una da collegare al contenuto.
+function MediaPicker({ athleteId, excludeSourceIds, onClose, onConfirm }: {
+  athleteId: number | null
+  excludeSourceIds: string[]
+  onClose: () => void
+  onConfirm: (items: MediaItem[]) => void | Promise<void>
+}) {
+  const [items, setItems] = useState<MediaItem[]>([])
+  const [urls, setUrls] = useState<Record<string, string>>({})
+  const [sel, setSel] = useState<Set<string>>(new Set())
+  const [loading, setLoading] = useState(true)
+  const [busy, setBusy] = useState(false)
+
+  useEffect(() => {
+    let ok = true
+    ;(async () => {
+      const { data } = await supabase.from('crm_media').select('*')
+        .eq('player_id', athleteId).eq('kind', 'foto').neq('status', 'scartata')
+        .is('source_media_id', null).order('created_at', { ascending: false })
+      let list = (data as MediaItem[]) || []
+      const excl = new Set(excludeSourceIds)
+      list = list.filter(m => !excl.has(m.id))
+      if (!ok) return
+      setItems(list); setLoading(false)
+      const paths = list.map(m => m.storage_path)
+      if (paths.length) {
+        const { data: signed } = await supabase.storage.from(BUCKET).createSignedUrls(paths, 3600)
+        if (signed && ok) {
+          const next: Record<string, string> = {}
+          signed.forEach(d => { if (d.signedUrl && d.path) next[d.path] = d.signedUrl })
+          setUrls(next)
+        }
+      }
+    })()
+    return () => { ok = false }
+  }, [athleteId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const toggle = (id: string) => setSel(s => {
+    const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n
+  })
+
+  const folders = [...new Set(items.map(m => m.folder || 'Senza cartella'))]
+
+  async function confirm() {
+    setBusy(true)
+    await onConfirm(items.filter(m => sel.has(m.id)))
+    setBusy(false)
+  }
+
+  return (
+    <Modal title="Seleziona dalle foto in Media" onClose={onClose} wide
+      footer={
+        <div className="flex between" style={{ width: '100%', alignItems: 'center' }}>
+          <span className="faint" style={{ fontSize: 12.5 }}>
+            {sel.size ? `${sel.size} selezionat${sel.size > 1 ? 'e' : 'a'}` : 'Tocca le foto da collegare'}
+          </span>
+          <div className="flex gap">
+            <button className="btn" onClick={onClose}>Annulla</button>
+            <button className="btn btn-primary" disabled={busy || sel.size === 0} onClick={confirm}>
+              {busy ? 'Collego…' : `Aggiungi${sel.size ? ' ' + sel.size : ''}`}
+            </button>
+          </div>
+        </div>
+      }>
+      {loading ? <Spinner /> : items.length === 0 ? (
+        <Empty icon={<Icon name="image" size={28} strokeWidth={1.4} />} title="Nessuna foto in libreria"
+          hint="Carica prima le foto in Media, poi potrai selezionarle qui." />
+      ) : (
+        <div className="grid" style={{ gap: 18 }}>
+          {folders.map(f => (
+            <div key={f}>
+              <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.8px',
+                fontWeight: 700, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Icon name="folder" size={13} /> {f}
+              </div>
+              <div className="asset-grid">
+                {items.filter(m => (m.folder || 'Senza cartella') === f).map(m => {
+                  const on = sel.has(m.id)
+                  return (
+                    <div key={m.id} className="asset-card" onClick={() => toggle(m.id)}
+                      title={m.file_name || ''}
+                      style={{ position: 'relative', cursor: 'pointer',
+                        outline: on ? '2px solid var(--accent, #C6FF3A)' : 'none', outlineOffset: -2 }}>
+                      {isImageFile(m.file_name) && urls[m.storage_path]
+                        ? <img src={urls[m.storage_path]} alt="" loading="lazy" />
+                        : <div className="asset-ph"><Icon name="camera" size={20} strokeWidth={1.4} /></div>}
+                      <div style={{ position: 'absolute', top: 6, right: 6, width: 22, height: 22, borderRadius: '50%',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        background: on ? 'var(--accent, #C6FF3A)' : 'rgba(0,0,0,.5)',
+                        color: on ? '#0b0b0e' : '#fff', border: '1.5px solid ' + (on ? 'var(--accent, #C6FF3A)' : 'rgba(255,255,255,.6)') }}>
+                        {on && <Icon name="check" size={13} />}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </Modal>
   )
 }

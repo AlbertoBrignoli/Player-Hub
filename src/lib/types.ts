@@ -282,6 +282,8 @@ export interface MediaItem {
   kind: 'foto' | 'grafica' | 'carosello'
   status: 'da_approvare' | 'approvata' | 'da_pubblicare' | 'pubblicata' | 'scartata'
   source_ids: string[] | null
+  source_media_id: string | null
+  player_id: number | null
   folder: string | null
   editorial_id: string | null
   uploaded_by: string | null
