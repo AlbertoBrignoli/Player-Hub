@@ -153,21 +153,29 @@ export default function Insurance() {
 
   return (
     <div className="grid" style={{ gap: 18 }}>
-      {/* Vista assicuratore: l'anagrafica in alto, subito consultabile. */}
-      {role === 'assicuratore' && <AnagraficaCard athleteId={athleteId} canEdit={false} />}
-      {/* --- selettore area: due dashboard distinte --- */}
-      <div className="pill-tabs" style={{ alignSelf: 'start' }}>
-        {AREAS.map(a => (
-          <button key={a.k} className={`pill-tab ${area === a.k ? 'active' : ''}`} onClick={() => setArea(a.k)}
-            style={area === a.k ? { background: ACCENT, color: '#fff', borderColor: ACCENT } : undefined}>
-            <Icon name={a.k === 'riepilogo' ? 'activity' : a.k === 'sport' ? 'dumbbell' : 'home'} size={13} /> {a.l}
-          </button>
-        ))}
+      {/* selettore area (Riepilogo/Sport/Personale) + Anagrafica come tab staccata a destra */}
+      <div className="flex between wrap" style={{ gap: 10, alignItems: 'center' }}>
+        <div className="pill-tabs" style={{ alignSelf: 'start' }}>
+          {AREAS.map(a => (
+            <button key={a.k} className={`pill-tab ${area === a.k ? 'active' : ''}`} onClick={() => setArea(a.k)}
+              style={area === a.k ? { background: ACCENT, color: '#fff', borderColor: ACCENT } : undefined}>
+              <Icon name={a.k === 'riepilogo' ? 'activity' : a.k === 'sport' ? 'dumbbell' : 'home'} size={13} /> {a.l}
+            </button>
+          ))}
+        </div>
+        <button className={`pill-tab ${area === 'anagrafica' ? 'active' : ''}`} onClick={() => setArea('anagrafica')}
+          title="Dati bancari e identità dell'atleta"
+          style={area === 'anagrafica'
+            ? { background: ACCENT, color: '#fff', borderColor: ACCENT }
+            : { borderColor: ACCENT, color: ACCENT }}>
+          <Icon name="user" size={13} /> Anagrafica
+        </button>
       </div>
 
-      {area === 'riepilogo' ? <>
+      {area === 'anagrafica' ? (
+        <AnagraficaCard athleteId={athleteId} canEdit={role === 'admin' || role === 'player'} />
+      ) : area === 'riepilogo' ? <>
         <Overview rows={rows} pays={pays} />
-        {role !== 'assicuratore' && <AnagraficaCard athleteId={athleteId} canEdit={role === 'admin' || role === 'player'} />}
       </> : <>
       {/* --- riepilogo --- */}
       <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 18,
