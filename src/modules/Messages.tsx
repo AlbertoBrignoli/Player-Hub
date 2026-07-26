@@ -113,6 +113,26 @@ export default function Messages() {
     return () => { ok = false }
   }, [athleteId, isBrand])
 
+  // Nomi dei professionisti collegati all'atleta (procuratore, assicuratore,
+  // commercialista): servono a mostrare i rispettivi canali al giocatore, così
+  // può scrivere loro direttamente. Se non collegati, il canale non compare.
+  useEffect(() => {
+    let ok = true
+    ;(async () => {
+      if (!athleteId || isBrand || isCoach || isAgent || isInsurer || isTax) {
+        setAgentName(null); setInsurerName(null); setTaxName(null); return
+      }
+      const { data } = await supabase.from('crm_athlete_team').select('role, name').eq('player_id', athleteId)
+      if (!ok) return
+      const rows = (data as { role: string; name: string | null }[]) || []
+      const byRole = (r: string) => rows.find(x => x.role === r)?.name || null
+      setAgentName(byRole('agente'))
+      setInsurerName(byRole('assicuratore'))
+      setTaxName(byRole('commercialista'))
+    })()
+    return () => { ok = false }
+  }, [athleteId, isBrand, isCoach, isAgent, isInsurer, isTax])
+
   async function load() {
     if (!athleteId) { setRows([]); setLoading(false); return }
     let q = supabase.from('crm_messages').select('*').eq('player_id', athleteId).order('created_at', { ascending: true })
