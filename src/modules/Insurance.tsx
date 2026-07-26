@@ -801,7 +801,7 @@ function AnagraficaCard({ athleteId, canEdit }: { athleteId: number | null; canE
     const file = e.target.files?.[0]; e.target.value = ''
     if (!file || !athleteId) return
     setUploading(true)
-    const path = `anagrafica/${athleteId}/${Date.now()}-${file.name.replace(/[^\w.\-]/g, '_')}`
+    const path = `${athleteId}/anagrafica-${Date.now()}-${file.name.replace(/[^\w.\-]/g, '_')}`
     const up = await supabase.storage.from(BUCKET).upload(path, file, { upsert: false })
     setUploading(false)
     if (up.error) { toast(up.error.message, 'err'); return }
