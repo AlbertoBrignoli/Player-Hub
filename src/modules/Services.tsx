@@ -358,7 +358,8 @@ function StudioHero({ studio, onOpen }: { studio: Service[]; onOpen: (s: Service
             <div className="flex gap" style={{ alignItems: 'center', gap: 12, minWidth: 0 }}>
               <div style={{ width: 40, height: 40, borderRadius: 10, background: T.yellow, color: '#0b0b0e',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <Icon name={s.icon} size={18} />
+                <img src="/servizi/auvi-mark-white.png" alt="AUVI"
+                  style={{ width: 22, height: 22, objectFit: 'contain', filter: 'brightness(0)' }} />
               </div>
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: 14.5, fontWeight: 700, color: T.text }}>{s.title}</div>
