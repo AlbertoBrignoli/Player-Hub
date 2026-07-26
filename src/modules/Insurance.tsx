@@ -153,6 +153,8 @@ export default function Insurance() {
 
   return (
     <div className="grid" style={{ gap: 18 }}>
+      {/* Vista assicuratore: l'anagrafica in alto, subito consultabile. */}
+      {role === 'assicuratore' && <AnagraficaCard athleteId={athleteId} canEdit={false} />}
       {/* --- selettore area: due dashboard distinte --- */}
       <div className="pill-tabs" style={{ alignSelf: 'start' }}>
         {AREAS.map(a => (
@@ -165,7 +167,7 @@ export default function Insurance() {
 
       {area === 'riepilogo' ? <>
         <Overview rows={rows} pays={pays} />
-        <AnagraficaCard athleteId={athleteId} canEdit={role === 'admin' || role === 'player'} />
+        {role !== 'assicuratore' && <AnagraficaCard athleteId={athleteId} canEdit={role === 'admin' || role === 'player'} />}
       </> : <>
       {/* --- riepilogo --- */}
       <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 18,
