@@ -429,6 +429,12 @@ function EntryModal({ entry, onClose, onChanged }: {
   }
 
   async function setStatus(s: string) {
+    // Non si può approvare/pubblicare finché l'atleta non ha caricato il materiale:
+    // altrimenti il team vedrebbe "approvato" senza avere le foto per la grafica.
+    if ((s === 'pronto' || s === 'pubblicato') && approvate.length === 0) {
+      toast('Per approvare carica prima il materiale: le foto da cui il team preparerà la grafica.', 'err')
+      return
+    }
     await updateRow('crm_editorial', entry.id, { status: s })
     // Alla pubblicazione: le grafiche del contenuto confluiscono nell'archivio "Pubblicati".
     if (s === 'pubblicato') {
@@ -450,8 +456,11 @@ function EntryModal({ entry, onClose, onChanged }: {
       footer={
         <div className="flex between wrap gap" style={{ width: '100%' }}>
           <div className="flex gap" style={{ alignItems: 'center' }}>
-            <Select value={entry.status} onChange={e => setStatus(e.target.value)} style={{ width: 180 }}>
-              {Object.entries(STATUSES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+            <Select value={entry.status} onChange={e => setStatus(e.target.value)} style={{ width: 200 }}>
+              {Object.entries(STATUSES).map(([k, v]) => {
+                const locked = (k === 'pronto' || k === 'pubblicato') && approvate.length === 0
+                return <option key={k} value={k} disabled={locked}>{v.label}{locked ? ' · manca materiale' : ''}</option>
+              })}
             </Select>
             {isAdmin && entry.type !== 'partita' && <ConfirmButton onConfirm={removeEntry}>Elimina</ConfirmButton>}
           </div>
@@ -467,6 +476,13 @@ function EntryModal({ entry, onClose, onChanged }: {
           {entry.requested_by && <Badge tone="accent">Proposto dal giocatore</Badge>}
           <span className="faint" style={{ fontSize: 12.5 }}>{fmtDate(entry.entry_date)}</span>
         </div>
+        {approvate.length === 0 && entry.status !== 'pubblicato' && (
+          <div style={{ fontSize: 12.5, color: '#e5a400', background: 'rgba(229,164,0,.10)',
+            border: '1px solid rgba(229,164,0,.35)', borderRadius: 10, padding: '9px 12px',
+            display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Icon name="clock" size={14} /> Per approvare (Pronto ✓) serve prima il materiale: carica o seleziona le foto qui sotto, così il team ha di che lavorare.
+          </div>
+        )}
 
         {entry.brief && (
           <div className="card" style={{ background: 'var(--bg-2)' }}>
