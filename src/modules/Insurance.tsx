@@ -163,7 +163,10 @@ export default function Insurance() {
         ))}
       </div>
 
-      {area === 'riepilogo' ? <Overview rows={rows} pays={pays} /> : <>
+      {area === 'riepilogo' ? <>
+        <Overview rows={rows} pays={pays} />
+        <AnagraficaCard athleteId={athleteId} canEdit={role === 'admin' || role === 'player'} />
+      </> : <>
       {/* --- riepilogo --- */}
       <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 18,
                     background: 'var(--bg-2)', border: '1px solid var(--border)', padding: '22px' }}>
@@ -749,5 +752,143 @@ function PolicyForm({ value, playerId, onClose, onSaved }: {
         </div>
       </div>
     </Modal>
+  )
+}
+
+// Anagrafica dell'atleta per la parte assicurativa: dati bancari e identità.
+// Lettura per assicuratore/agenzia/giocatore (RLS), modifica per agenzia e giocatore.
+const DOC_TYPES = ['Carta d\'identità', 'Passaporto', 'Patente']
+
+function AnagraficaCard({ athleteId, canEdit }: { athleteId: number | null; canEdit: boolean }) {
+  const { session } = useAuth()
+  const [data, setData] = useState<any | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [editing, setEditing] = useState(false)
+  const [form, setForm] = useState<any>({})
+  const [busy, setBusy] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  async function load() {
+    if (!athleteId) { setData(null); setLoading(false); return }
+    setLoading(true)
+    const { data: d } = await supabase.from('crm_athlete_anagrafica').select('*').eq('player_id', athleteId).maybeSingle()
+    setData(d || null); setLoading(false)
+  }
+  useEffect(() => { setEditing(false); load() }, [athleteId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const set = (k: string, v: string) => setForm((f: any) => ({ ...f, [k]: v }))
+
+  async function save() {
+    if (!athleteId) return
+    setBusy(true)
+    const payload = {
+      player_id: athleteId,
+      account_holder: form.account_holder || null, fiscal_code: form.fiscal_code || null,
+      iban: form.iban || null, bic_swift: form.bic_swift || null,
+      bank_name: form.bank_name || null, bank_address: form.bank_address || null,
+      id_doc_type: form.id_doc_type || null, id_doc_number: form.id_doc_number || null,
+      id_doc_path: form.id_doc_path || null,
+      updated_at: new Date().toISOString(), updated_by: session?.user.id,
+    }
+    const { error } = await supabase.from('crm_athlete_anagrafica').upsert(payload, { onConflict: 'player_id' })
+    setBusy(false)
+    if (error) { toast(error.message, 'err'); return }
+    toast('Anagrafica salvata'); setEditing(false); load()
+  }
+
+  async function uploadDoc(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]; e.target.value = ''
+    if (!file || !athleteId) return
+    setUploading(true)
+    const path = `anagrafica/${athleteId}/${Date.now()}-${file.name.replace(/[^\w.\-]/g, '_')}`
+    const up = await supabase.storage.from(BUCKET).upload(path, file, { upsert: false })
+    setUploading(false)
+    if (up.error) { toast(up.error.message, 'err'); return }
+    set('id_doc_path', path); toast('Documento caricato')
+  }
+
+  if (loading) return null
+  const empty = !data
+  const d = data || {}
+
+  const Row = ({ k, v, copy }: { k: string; v?: string | null; copy?: boolean }) => (
+    <div className="flex between" style={{ alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: '1px solid var(--border)' }}>
+      <span className="faint" style={{ fontSize: 12 }}>{k}</span>
+      <span className="flex gap" style={{ alignItems: 'center', gap: 8, minWidth: 0 }}>
+        <span style={{ fontSize: 13.5, fontWeight: 600, textAlign: 'right', wordBreak: 'break-all' }}>{v || '—'}</span>
+        {copy && v && (
+          <button className="btn btn-ghost btn-sm" title="Copia"
+            onClick={() => { navigator.clipboard.writeText(v); toast('Copiato') }}><Icon name="copy" size={12} /></button>
+        )}
+      </span>
+    </div>
+  )
+
+  return (
+    <div className="card">
+      <div className="flex between" style={{ alignItems: 'center', marginBottom: 6 }}>
+        <div>
+          <div style={{ ...kicker, color: ACCENT }}>Anagrafica</div>
+          <div className="faint" style={{ fontSize: 12, marginTop: 2 }}>Dati bancari e identità dell'atleta</div>
+        </div>
+        {canEdit && !editing && (
+          <button className="btn btn-sm" onClick={() => { setForm(data || {}); setEditing(true) }}>
+            <Icon name={empty ? 'plus' : 'edit'} size={13} /> {empty ? 'Compila' : 'Modifica'}
+          </button>
+        )}
+      </div>
+
+      {editing ? (
+        <div className="grid" style={{ gap: 12, marginTop: 8 }}>
+          <Field label="Intestatario"><Input value={form.account_holder || ''} onChange={e => set('account_holder', e.target.value)} placeholder="Nome e cognome" /></Field>
+          <Field label="Codice fiscale"><Input value={form.fiscal_code || ''} onChange={e => set('fiscal_code', e.target.value.toUpperCase())} /></Field>
+          <Field label="IBAN"><Input value={form.iban || ''} onChange={e => set('iban', e.target.value.toUpperCase().replace(/\s/g, ''))} placeholder="IT.." /></Field>
+          <Field label="BIC / SWIFT"><Input value={form.bic_swift || ''} onChange={e => set('bic_swift', e.target.value.toUpperCase())} /></Field>
+          <Field label="Banca"><Input value={form.bank_name || ''} onChange={e => set('bank_name', e.target.value)} /></Field>
+          <Field label="Indirizzo sede della banca"><Input value={form.bank_address || ''} onChange={e => set('bank_address', e.target.value)} /></Field>
+          <div className="flex gap" style={{ gap: 10 }}>
+            <Field label="Tipo documento"><Select value={form.id_doc_type || ''} onChange={e => set('id_doc_type', e.target.value)}>
+              <option value="">—</option>{DOC_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+            </Select></Field>
+            <Field label="Numero documento"><Input value={form.id_doc_number || ''} onChange={e => set('id_doc_number', e.target.value)} /></Field>
+          </div>
+          <div>
+            <div className="faint" style={{ fontSize: 12, marginBottom: 6 }}>Documento d'identità (scansione)</div>
+            <div className="flex gap" style={{ gap: 8, alignItems: 'center' }}>
+              <button className="btn btn-sm" disabled={uploading} onClick={() => fileRef.current?.click()}>
+                <Icon name="upload" size={13} /> {uploading ? 'Carico…' : form.id_doc_path ? 'Sostituisci file' : 'Carica file'}
+              </button>
+              {form.id_doc_path && <button className="btn btn-ghost btn-sm" onClick={() => openDoc(form.id_doc_path)}>Apri</button>}
+              {form.id_doc_path && <button className="btn btn-ghost btn-sm" onClick={() => set('id_doc_path', '')}>Rimuovi</button>}
+              <input ref={fileRef} type="file" accept="image/*,application/pdf" hidden onChange={uploadDoc} />
+            </div>
+          </div>
+          <div className="flex gap" style={{ gap: 8, marginTop: 4 }}>
+            <button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? 'Salvo…' : 'Salva'}</button>
+            <button className="btn" onClick={() => setEditing(false)}>Annulla</button>
+          </div>
+        </div>
+      ) : empty ? (
+        <div className="faint" style={{ fontSize: 13, padding: '10px 0' }}>
+          Anagrafica non ancora compilata.{canEdit ? ' Premi "Compila" per aggiungerla.' : ''}
+        </div>
+      ) : (
+        <div style={{ marginTop: 4 }}>
+          <Row k="Intestatario" v={d.account_holder} />
+          <Row k="Codice fiscale" v={d.fiscal_code} copy />
+          <Row k="IBAN" v={d.iban} copy />
+          <Row k="BIC / SWIFT" v={d.bic_swift} copy />
+          <Row k="Banca" v={d.bank_name} />
+          <Row k="Indirizzo sede banca" v={d.bank_address} />
+          <Row k="Documento" v={[d.id_doc_type, d.id_doc_number].filter(Boolean).join(' · ')} />
+          {d.id_doc_path && (
+            <div style={{ paddingTop: 10 }}>
+              <button className="btn btn-sm" onClick={() => openDoc(d.id_doc_path)}><Icon name="file" size={13} /> Apri documento d'identità</button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   )
 }
