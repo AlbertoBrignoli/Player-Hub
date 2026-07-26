@@ -269,6 +269,8 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
   // ---------- DETTAGLIO ----------
   const hasForm = canRequest && schema.length > 0
   const longDesc = service.desc_long || service.description
+  // Per i servizi AUVI il titolo grande è il nome del servizio; il partner (es. "AUVI Studio") resta come etichetta.
+  const heroName = service.category === 'AUVI Studio' ? service.title : (service.partner_name || service.title)
   return (
     <div className="grid" style={{ gap: 16, color: T.text }}>
       <button onClick={onBack}
@@ -307,11 +309,16 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
           ) : (!service.cover_url && (
             <div style={{ marginTop: 12, width: 52, height: 52, borderRadius: 12, background: 'rgba(255,255,255,.1)',
               display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 900,
-              color: '#fff' }}>{initials(service.partner_name || service.title)}</div>
+              color: '#fff' }}>{initials(heroName)}</div>
           ))}
           <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: -0.5, lineHeight: 1.1, marginTop: 12 }}>
-            {service.partner_name || service.title}
+            {heroName}
           </div>
+          {service.partner_name && service.partner_name !== heroName && (
+            <div style={{ fontSize: 12.5, color: 'rgba(255,255,255,.72)', fontWeight: 600, marginTop: 4 }}>
+              con {service.partner_name}
+            </div>
+          )}
           {service.hero_claim && (
             <div style={{ ...kicker, fontSize: 10.5, marginTop: 6, color: accent }}>{service.hero_claim}</div>
           )}

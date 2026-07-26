@@ -22,6 +22,7 @@ export const NAV: { group: string; items: NavDef[] }[] = [
   { group: 'Panoramica', items: [
     { key: 'dashboard', label: 'Dashboard', icon: 'grid' },
     { key: 'performance', label: 'Performance', icon: 'activity' },
+    { key: 'fitness', label: 'AUVI Performance', icon: 'dumbbell' },
     { key: 'profile', label: 'Profilo', icon: 'user' },
   ]},
   { group: 'Contenuti', items: [
@@ -32,12 +33,9 @@ export const NAV: { group: string; items: NavDef[] }[] = [
     { key: 'archivio', label: 'Contratti e Documenti', icon: 'archive' },
     { key: 'sponsors', label: 'Sponsor', icon: 'award' },
     { key: 'commercial', label: 'Commercial Profile', icon: 'star', roles: ['admin', 'player', 'creator'] },
-  ]},
-  { group: 'Fitness', items: [
-    { key: 'fitness', label: 'Area Fitness', icon: 'dumbbell' },
     { key: 'coach-profile', label: 'Il mio profilo', icon: 'user', roles: ['preparatore'] },
   ]},
-  { group: 'Operatività', items: [
+  { group: 'Operatività · extra campo', items: [
     { key: 'agenda', label: 'Agenda', icon: 'clock' },
     { key: 'tasks', label: 'Task', icon: 'check-square' },
     { key: 'messages', label: 'Messaggi', icon: 'message' },
@@ -147,7 +145,7 @@ export const TAX_NAV: { group: string; items: NavDef[] }[] = [
 
 const TITLES: Record<string, { t: string; s: string }> = {
   dashboard: { t: 'Dashboard', s: 'Quadro generale della gestione' },
-  fitness: { t: 'Area Fitness', s: 'Programmi, allenamenti e feedback' },
+  fitness: { t: 'AUVI Performance', s: 'Preparazione atletica e performance' },
   'coach-profile': { t: 'Profilo Preparatore', s: 'Il tuo profilo professionale' },
   profile: { t: 'Profilo', s: 'Spedizioni, equipaggiamento e contatti club' },
   performance: { t: 'Performance', s: 'Statistiche, partite e rendimento' },
@@ -157,7 +155,7 @@ const TITLES: Record<string, { t: string; s: string }> = {
   media: { t: 'Media', s: 'Foto, selezioni e grafiche del team' },
   sponsors: { t: 'Sponsor & Commerciale', s: 'Accordi e deliverable' },
   commercial: { t: 'Commercial Profile', s: 'Misura il tuo valore, scopri i brand compatibili, costruisci opportunità' },
-  agenda: { t: 'Agenda', s: 'Impegni e appuntamenti' },
+  agenda: { t: 'Agenda', s: 'Extra campo · impegni, prenotazioni, call, viaggi' },
   tasks: { t: 'Task', s: 'Attività condivise' },
   messages: { t: 'Messaggi', s: 'Comunicazione diretta' },
   settings: { t: 'Impostazioni', s: 'Password, accessi e configurazione' },
