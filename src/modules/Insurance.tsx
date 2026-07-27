@@ -6,6 +6,7 @@ import { useAthlete } from '../lib/athlete'
 import { useCollection, insertRow, updateRow, deleteRow } from '../lib/useData'
 import { Modal, Field, Input, Textarea, Select, Empty, Spinner, ConfirmButton } from '../components/ui'
 import Icon from '../components/Icon'
+import { OffersTab, EditorialTab, EDITORIAL_DEFAULTS } from './InsuranceStore'
 import { fmtDate, fmtMoney } from '../lib/format'
 
 // Area assicurativa dell'atleta: due mondi distinti (sport e personale),
@@ -21,9 +22,12 @@ const kicker: React.CSSProperties = {
 }
 
 const AREAS = [
-  { k: 'riepilogo', l: 'Riepilogo', hint: 'Quanto spendi e per cosa sei coperto' },
-  { k: 'sport', l: 'Sport', hint: 'Coperture legate alla carriera' },
-  { k: 'personale', l: 'Personale', hint: 'Casa, veicoli, famiglia' },
+  { k: 'riepilogo', l: 'Riepilogo', icon: 'activity', hint: 'Quanto spendi e per cosa sei coperto' },
+  { k: 'sport', l: 'Sport', icon: 'dumbbell', hint: 'Coperture legate alla carriera' },
+  { k: 'personale', l: 'Personale', icon: 'home', hint: 'Casa, veicoli, famiglia' },
+  { k: 'proposte', l: 'Proposte', icon: 'lock', hint: 'Soluzioni pensate per te' },
+  { k: 'perche', l: 'Perché', icon: 'star', hint: 'Perché assicurarti' },
+  { k: 'broker', l: 'Il broker', icon: 'briefcase', hint: 'Cosa fa il tuo broker' },
 ] as const
 
 const CATEGORIES: Record<string, string[]> = {
@@ -93,7 +97,7 @@ async function openDoc(path: string) {
 }
 
 export default function Insurance() {
-  const { role } = useAuth()
+  const { role, session } = useAuth()
   const { athleteId } = useAthlete()
   const [area, setArea] = useState<string>('riepilogo')
   const [edit, setEdit] = useState<Partial<Policy> | null>(null)
@@ -159,7 +163,7 @@ export default function Insurance() {
           {AREAS.map(a => (
             <button key={a.k} className={`pill-tab ${area === a.k ? 'active' : ''}`} onClick={() => setArea(a.k)}
               style={area === a.k ? { background: ACCENT, color: '#fff', borderColor: ACCENT } : undefined}>
-              <Icon name={a.k === 'riepilogo' ? 'activity' : a.k === 'sport' ? 'dumbbell' : 'home'} size={13} /> {a.l}
+              <Icon name={a.icon} size={13} /> {a.l}
             </button>
           ))}
         </div>
@@ -174,6 +178,14 @@ export default function Insurance() {
 
       {area === 'anagrafica' ? (
         <AnagraficaCard athleteId={athleteId} canEdit={role === 'admin' || role === 'player'} />
+      ) : area === 'proposte' ? (
+        <OffersTab athleteId={athleteId} isInsurer={role === 'assicuratore'} canInterest={role === 'player'} uid={session?.user.id || null} />
+      ) : area === 'perche' ? (
+        <EditorialTab slug="why" isInsurer={role === 'assicuratore'} uid={session?.user.id || null}
+          defaultTitle={EDITORIAL_DEFAULTS.why.title} defaultBody={EDITORIAL_DEFAULTS.why.body} />
+      ) : area === 'broker' ? (
+        <EditorialTab slug="broker" isInsurer={role === 'assicuratore'} uid={session?.user.id || null}
+          defaultTitle={EDITORIAL_DEFAULTS.broker.title} defaultBody={EDITORIAL_DEFAULTS.broker.body} />
       ) : area === 'riepilogo' ? <>
         <Overview rows={rows} pays={pays} />
       </> : <>
