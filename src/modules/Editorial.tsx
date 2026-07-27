@@ -198,7 +198,7 @@ function EntryChip({ e, onOpen, full }: { e: EditorialEntry; onOpen: (e: Editori
     return (
       <button className={`cal-match cal-${e.status} ${full ? 'cal-w-full' : ''}`} onClick={() => onOpen(e)} title={e.title}>
         <div className="cal-match-top">
-          <span className="cal-league">{shortLeague(mi.league)}</span>
+          <span className="cal-league"><Icon name="instagram" size={10} style={{ verticalAlign: '-1px', marginRight: 3, color: e.status === 'pubblicato' ? '#E1306C' : 'currentColor', opacity: e.status === 'pubblicato' ? 1 : 0.55 }} />{shortLeague(mi.league)}</span>
           <span>{home ? 'CASA' : 'TRASF'} · {score || time}</span>
         </div>
         <div className="cal-match-teams">{mi.home_team}<br />{mi.away_team}</div>
@@ -207,7 +207,9 @@ function EntryChip({ e, onOpen, full }: { e: EditorialEntry; onOpen: (e: Editori
     )
   }
   return (
-    <button className={`cal-chip cal-${e.status} ${full ? 'cal-w-full' : ''}`} onClick={() => onOpen(e)} title={e.title}>
+    <button className={`cal-chip cal-${e.status} ${full ? 'cal-w-full' : ''}`} onClick={() => onOpen(e)} title={`${e.title} · Instagram`}>
+      <Icon name="instagram" size={11} style={{ verticalAlign: '-1.5px', marginRight: 3,
+        color: e.status === 'pubblicato' ? '#E1306C' : 'currentColor', opacity: e.status === 'pubblicato' ? 1 : 0.55 }} />
       <Icon name={TYPES[e.type]?.icon || 'file'} size={11} style={{ verticalAlign: '-1.5px', marginRight: 4 }} />{e.title}
     </button>
   )
@@ -233,7 +235,10 @@ function EntryList({ title, entries, onOpen, empty }: {
         <div className="list">
           {entries.slice(0, 30).map(e => (
             <button className="row" key={e.id} onClick={() => onOpen(e)} style={{ textAlign: 'left', width: '100%' }}>
-              <span style={{ color: 'var(--text-dim)' }}><Icon name={TYPES[e.type]?.icon || 'file'} size={16} /></span>
+              <span className="flex gap" style={{ alignItems: 'center', gap: 6 }}>
+                <Icon name="instagram" size={15} style={{ color: e.status === 'pubblicato' ? '#E1306C' : 'var(--text-dim)' }} />
+                <span style={{ color: 'var(--text-dim)' }}><Icon name={TYPES[e.type]?.icon || 'file'} size={16} /></span>
+              </span>
               <div className="row-main">
                 <div className="row-title">{e.title}</div>
                 <div className="row-sub">{fmtDate(e.entry_date)}{e.match_info?.league ? ` · ${e.match_info.league}` : ''}</div>
