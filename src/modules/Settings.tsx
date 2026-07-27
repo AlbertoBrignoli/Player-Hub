@@ -76,11 +76,11 @@ export default function Settings() {
       </div>
 
       <div className="card">
-        <div className="card-head"><div className="card-title">Come replicare per un nuovo atleta</div></div>
+        <div className="card-head"><div className="card-title">Come aggiungere un nuovo atleta</div></div>
         <ol className="muted" style={{ fontSize: 13, lineHeight: 1.9, paddingLeft: 18 }}>
-          <li>Crea un nuovo progetto Supabase dedicato all'atleta e applica le stesse migrazioni <code>crm_*</code>.</li>
-          <li>Duplica questo repo, imposta le env <code>VITE_SUPABASE_URL</code> / <code>VITE_SUPABASE_ANON_KEY</code> / <code>VITE_PLAYER_NAME</code>.</li>
-          <li>Fai il deploy su Vercel e autorizza qui l'email dell'atleta e di AUVI.</li>
+          <li>Inserisci i dati dell'atleta in <b>questo stesso</b> progetto Supabase (riga <code>player</code> + record <code>crm_*</code>). Nessun nuovo progetto, nessun nuovo deploy.</li>
+          <li>Autorizza qui sopra l'email dell'atleta con ruolo <b>Giocatore</b> (e le email dei professionisti collegati).</li>
+          <li>L'atleta comparirà nel selettore in alto e, grazie alla RLS, vedrà solo i propri dati.</li>
         </ol>
       </div>
     </div>
