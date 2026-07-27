@@ -15,7 +15,7 @@ const TYPES: { k: string; l: string }[] = [
 const typeLabel = (k: string) => TYPES.find(t => t.k === k)?.l || k
 
 type Offer = {
-  id: string; insurer_id: string; player_id: number | null; type: string; title: string
+  id: string; insurer_id: string; player_id: number | null; type: string; category: string; title: string
   description: string | null; price_hint: string | null; brochure_path: string | null; brochure_name: string | null; active: boolean
 }
 
@@ -28,6 +28,7 @@ async function openPath(path: string) {
 export function OffersTab({ athleteId, isInsurer, canInterest, uid }: { athleteId: number | null; isInsurer: boolean; canInterest: boolean; uid: string | null }) {
   const { athletes } = useAthlete()
   const [offers, setOffers] = useState<Offer[]>([])
+  const [cat, setCat] = useState<'sport' | 'personale'>('sport')
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState<Offer | 'new' | null>(null)
 
@@ -68,45 +69,62 @@ export function OffersTab({ athleteId, isInsurer, canInterest, uid }: { athleteI
         {isInsurer && <button className="btn btn-primary btn-sm" onClick={() => setEditing('new')}><Icon name="plus" size={14} /> Nuova proposta</button>}
       </div>
 
-      {offers.length === 0 ? (
-        <div className="card"><Empty icon={<Icon name="lock" size={28} strokeWidth={1.4} />}
-          title={isInsurer ? 'Nessuna proposta' : 'Nessuna proposta al momento'}
-          hint={isInsurer ? 'Aggiungi la prima proposta con "Nuova proposta".' : 'Quando il tuo assicuratore aggiunge proposte, compaiono qui.'} /></div>
-      ) : (
-        <div className="grid" style={{ gap: 12 }}>
-          {offers.map(o => (
-            <div key={o.id} className="card" style={{ opacity: o.active ? 1 : .55 }}>
-              <div className="flex between" style={{ alignItems: 'flex-start', gap: 12 }}>
-                <div style={{ minWidth: 0 }}>
-                  <div className="flex gap" style={{ alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
-                    <Badge>{typeLabel(o.type)}</Badge>
-                    {o.price_hint && <span style={{ fontSize: 12.5, fontWeight: 700, color: ACCENT }}>{o.price_hint}</span>}
-                    {isInsurer && <span className="faint" style={{ fontSize: 11 }}>· {o.player_id ? (athletes.find(a => a.api_player_id === o.player_id)?.name || 'atleta') : 'tutti i tuoi atleti'}{o.active ? '' : ' · nascosta'}</span>}
+      {/* due grandi tab: Sport / Personale */}
+      <div className="flex gap" style={{ gap: 12 }}>
+        {([{ k: 'sport', l: 'Sport', icon: 'dumbbell' }, { k: 'personale', l: 'Personale', icon: 'home' }] as const).map(c => (
+          <button key={c.k} onClick={() => setCat(c.k)}
+            style={{ flex: 1, padding: 18, borderRadius: 16, cursor: 'pointer', fontWeight: 800, fontSize: 16,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+              background: cat === c.k ? ACCENT : 'var(--card)', color: cat === c.k ? '#fff' : 'var(--text)',
+              border: '1px solid ' + (cat === c.k ? ACCENT : 'var(--border)') }}>
+            <Icon name={c.icon} size={20} /> {c.l}
+          </button>
+        ))}
+      </div>
+
+      {(() => {
+        const shown = offers.filter(o => (o.category || 'sport') === cat)
+        if (shown.length === 0) return (
+          <div className="card"><Empty icon={<Icon name="lock" size={28} strokeWidth={1.4} />}
+            title={isInsurer ? `Nessuna proposta ${cat === 'sport' ? 'Sport' : 'Personale'}` : 'Nessuna proposta al momento'}
+            hint={isInsurer ? 'Aggiungi una proposta con "Nuova proposta".' : 'Quando il tuo assicuratore aggiunge proposte, compaiono qui.'} /></div>
+        )
+        return (
+          <div className="grid" style={{ gap: 12 }}>
+            {shown.map(o => (
+              <div key={o.id} className="card" style={{ opacity: o.active ? 1 : .55 }}>
+                <div className="flex between" style={{ alignItems: 'flex-start', gap: 12 }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div className="flex gap" style={{ alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
+                      <Badge>{typeLabel(o.type)}</Badge>
+                      {o.price_hint && <span style={{ fontSize: 12.5, fontWeight: 700, color: ACCENT }}>{o.price_hint}</span>}
+                      {isInsurer && <span className="faint" style={{ fontSize: 11 }}>· {o.player_id ? (athletes.find(a => a.api_player_id === o.player_id)?.name || 'atleta') : 'tutti i tuoi atleti'}{o.active ? '' : ' · nascosta'}</span>}
+                    </div>
+                    <div style={{ fontSize: 16, fontWeight: 800, letterSpacing: -0.2 }}>{o.title}</div>
+                    {o.description && <div className="faint" style={{ fontSize: 13, marginTop: 4, whiteSpace: 'pre-wrap' }}>{o.description}</div>}
                   </div>
-                  <div style={{ fontSize: 16, fontWeight: 800, letterSpacing: -0.2 }}>{o.title}</div>
-                  {o.description && <div className="faint" style={{ fontSize: 13, marginTop: 4, whiteSpace: 'pre-wrap' }}>{o.description}</div>}
+                </div>
+                <div className="flex gap" style={{ gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+                  {o.brochure_path && <button className="btn btn-sm" onClick={() => openPath(o.brochure_path!)}><Icon name="file" size={13} /> {o.brochure_name || 'Brochure'}</button>}
+                  {!isInsurer && canInterest && <button className="btn btn-primary btn-sm" onClick={() => interested(o)}><Icon name="check" size={13} /> Mi interessa</button>}
+                  {isInsurer && <><button className="btn btn-sm" onClick={() => setEditing(o)}><Icon name="edit" size={13} /> Modifica</button>
+                    <ConfirmButton onConfirm={() => del(o)}>Elimina</ConfirmButton></>}
                 </div>
               </div>
-              <div className="flex gap" style={{ gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
-                {o.brochure_path && <button className="btn btn-sm" onClick={() => openPath(o.brochure_path!)}><Icon name="file" size={13} /> {o.brochure_name || 'Brochure'}</button>}
-                {!isInsurer && canInterest && <button className="btn btn-primary btn-sm" onClick={() => interested(o)}><Icon name="check" size={13} /> Mi interessa</button>}
-                {isInsurer && <><button className="btn btn-sm" onClick={() => setEditing(o)}><Icon name="edit" size={13} /> Modifica</button>
-                  <ConfirmButton onConfirm={() => del(o)}>Elimina</ConfirmButton></>}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )
+      })()}
 
-      {editing && <OfferModal offer={editing === 'new' ? null : editing} uid={uid}
+      {editing && <OfferModal offer={editing === 'new' ? null : editing} uid={uid} defaultCategory={cat}
         onClose={() => setEditing(null)} onSaved={() => { setEditing(null); load() }} />}
     </div>
   )
 }
 
-function OfferModal({ offer, uid, onClose, onSaved }: { offer: Offer | null; uid: string | null; onClose: () => void; onSaved: () => void }) {
+function OfferModal({ offer, uid, defaultCategory, onClose, onSaved }: { offer: Offer | null; uid: string | null; defaultCategory: 'sport' | 'personale'; onClose: () => void; onSaved: () => void }) {
   const { athletes } = useAthlete()
-  const [f, setF] = useState<any>(offer || { type: 'infortuni', title: '', description: '', price_hint: '', player_id: null, active: true, brochure_path: null, brochure_name: null })
+  const [f, setF] = useState<any>(offer || { type: 'infortuni', category: defaultCategory, title: '', description: '', price_hint: '', player_id: null, active: true, brochure_path: null, brochure_name: null })
   const [busy, setBusy] = useState(false)
   const [uploading, setUploading] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -127,7 +145,7 @@ function OfferModal({ offer, uid, onClose, onSaved }: { offer: Offer | null; uid
     if (!f.title.trim()) { toast('Serve un titolo', 'err'); return }
     setBusy(true)
     const payload = {
-      insurer_id: uid, type: f.type, title: f.title.trim(), description: f.description || null,
+      insurer_id: uid, type: f.type, category: f.category || 'sport', title: f.title.trim(), description: f.description || null,
       price_hint: f.price_hint || null, player_id: f.player_id || null, active: f.active !== false,
       brochure_path: f.brochure_path || null, brochure_name: f.brochure_name || null, updated_at: new Date().toISOString(),
     }
@@ -147,6 +165,9 @@ function OfferModal({ offer, uid, onClose, onSaved }: { offer: Offer | null; uid
       </div>}>
       <div className="grid" style={{ gap: 12 }}>
         <div className="flex gap" style={{ gap: 10 }}>
+          <Field label="Categoria"><Select value={f.category || 'sport'} onChange={e => set('category', e.target.value)}>
+            <option value="sport">Sport</option><option value="personale">Personale</option>
+          </Select></Field>
           <Field label="Tipo"><Select value={f.type} onChange={e => set('type', e.target.value)}>{TYPES.map(t => <option key={t.k} value={t.k}>{t.l}</option>)}</Select></Field>
           <Field label="Prezzo indicativo"><Input value={f.price_hint || ''} onChange={e => set('price_hint', e.target.value)} placeholder="es. da 15€/mese" /></Field>
         </div>

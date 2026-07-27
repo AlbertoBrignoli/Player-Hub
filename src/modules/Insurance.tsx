@@ -21,14 +21,16 @@ const kicker: React.CSSProperties = {
   fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase', fontWeight: 800,
 }
 
-const AREAS = [
+const POLICY_AREAS = [
   { k: 'riepilogo', l: 'Riepilogo', icon: 'activity', hint: 'Quanto spendi e per cosa sei coperto' },
   { k: 'sport', l: 'Sport', icon: 'dumbbell', hint: 'Coperture legate alla carriera' },
   { k: 'personale', l: 'Personale', icon: 'home', hint: 'Casa, veicoli, famiglia' },
+]
+const STORE_AREAS = [
+  { k: 'broker', l: 'Il broker', icon: 'briefcase', hint: 'Cosa fa il tuo broker' },
   { k: 'proposte', l: 'Proposte', icon: 'lock', hint: 'Soluzioni pensate per te' },
   { k: 'perche', l: 'Perché', icon: 'star', hint: 'Perché assicurarti' },
-  { k: 'broker', l: 'Il broker', icon: 'briefcase', hint: 'Cosa fa il tuo broker' },
-] as const
+]
 
 const CATEGORIES: Record<string, string[]> = {
   sport: ['Infortuni', 'Invalidità permanente', 'Tutela legale', 'Responsabilità civile', 'Perdita guadagno', 'Altro'],
@@ -99,8 +101,16 @@ async function openDoc(path: string) {
 export default function Insurance() {
   const { role, session } = useAuth()
   const { athleteId } = useAthlete()
-  const [area, setArea] = useState<string>('riepilogo')
+  // L'assicuratore vede lo "store" (Il broker · Proposte · Perché); l'atleta anche le sue polizze.
+  const isInsurerRole = role === 'assicuratore'
+  const AREAS = isInsurerRole ? STORE_AREAS : [...POLICY_AREAS, ...STORE_AREAS]
+  const [area, setArea] = useState<string>(isInsurerRole ? 'broker' : 'riepilogo')
   const [edit, setEdit] = useState<Partial<Policy> | null>(null)
+
+  // Se cambia il ruolo e l'area corrente non è più valida, riparti dalla prima.
+  useEffect(() => {
+    if (!AREAS.some(a => a.k === area) && area !== 'anagrafica') setArea(AREAS[0].k)
+  }, [role]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Anche l'atleta gestisce le proprie polizze: molte (auto, casa) non passano da un assicuratore.
   const canManage = role === 'assicuratore' || role === 'admin' || role === 'player'
