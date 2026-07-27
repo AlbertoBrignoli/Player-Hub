@@ -40,6 +40,12 @@ const STATUSES: Record<string, { label: string; tone?: 'green' | 'red' | 'gold' 
   pubblicato: { label: 'Pubblicato', tone: 'accent' },
 }
 
+const moveBtn = (disabled: boolean): React.CSSProperties => ({
+  width: 24, height: 24, borderRadius: 7, border: 'none', cursor: disabled ? 'default' : 'pointer',
+  background: 'rgba(0,0,0,.72)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+  opacity: disabled ? 0.35 : 1,
+})
+
 const MONTHS = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre']
 const DOW = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom']
 
@@ -272,6 +278,17 @@ function EntryModal({ entry, onClose, onChanged }: {
 
   const grafiche = media.filter(m => m.kind !== 'foto')
   const approvate = media.filter(m => m.kind === 'foto' && m.status === 'approvata')
+    .sort((a, b) => (a.sort ?? 9999) - (b.sort ?? 9999) || (a.created_at < b.created_at ? -1 : 1))
+
+  // Riordino carosello: sposta una foto e ripersiste l'ordine (sort = posizione) su tutte.
+  async function moveMaterial(index: number, dir: -1 | 1) {
+    const arr = [...approvate]
+    const j = index + dir
+    if (j < 0 || j >= arr.length) return
+    ;[arr[index], arr[j]] = [arr[j], arr[index]]
+    await Promise.all(arr.map((m, i) => updateRow('crm_media', m.id, { sort: i })))
+    loadMedia()
+  }
 
   async function loadMedia() {
     const { data } = await supabase.from('crm_media').select('*')
@@ -296,7 +313,7 @@ function EntryModal({ entry, onClose, onChanged }: {
     const { error } = await updateRow('crm_editorial', entry.id, { copy_text: copy || null, status })
     if (error) toast(error.message, 'err')
     else {
-      if (copy.trim()) notify('player', `Copy pronto: ${entry.title}`, 'Il testo è pronto nel calendario editoriale.', 'editorial', athleteId)
+      if (copy.trim()) notify(isTeam ? 'player' : 'team', `Copy aggiornato: ${entry.title}`, 'Il testo del post è stato aggiornato nel calendario editoriale.', 'editorial', athleteId)
       toast('Copy salvato')
       onChanged()
     }
@@ -550,13 +567,26 @@ function EntryModal({ entry, onClose, onChanged }: {
             ? <div className="faint" style={{ fontSize: 12.5, padding: '6px 0' }}>Carica qui le foto/video da cui il team preparerà la grafica.</div>
             : (
               <div className="asset-grid">
-                {approvate.map(m => (
+                {approvate.map((m, i) => (
                   <div className="asset-card" key={m.id} title={m.file_name || ''} style={{ position: 'relative' }}>
                     <div onClick={() => openAsset(m)}>
                       {isImageFile(m.file_name) && urls[m.storage_path]
                         ? <img src={urls[m.storage_path]} alt="" loading="lazy" />
                         : <div className="asset-ph"><Icon name="camera" size={20} strokeWidth={1.4} /></div>}
                     </div>
+                    {/* numero d'ordine nel carosello */}
+                    <div style={{ position: 'absolute', top: 6, left: 6, minWidth: 20, height: 20, padding: '0 5px',
+                      borderRadius: 10, background: 'rgba(0,0,0,.72)', color: '#fff', fontSize: 11, fontWeight: 800,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{i + 1}</div>
+                    {/* frecce per ordinare il carosello */}
+                    {approvate.length > 1 && (
+                      <div style={{ position: 'absolute', bottom: 6, left: 6, display: 'flex', gap: 4 }}>
+                        <button title="Sposta prima" disabled={i === 0} onClick={() => moveMaterial(i, -1)}
+                          style={moveBtn(i === 0)}><span style={{ display: 'inline-flex', transform: 'rotate(180deg)' }}><Icon name="chevron-right" size={13} /></span></button>
+                        <button title="Sposta dopo" disabled={i === approvate.length - 1} onClick={() => moveMaterial(i, 1)}
+                          style={moveBtn(i === approvate.length - 1)}><Icon name="chevron-right" size={13} /></button>
+                      </div>
+                    )}
                     {(isAdmin || m.uploaded_by === session?.user.id) && (
                       <button className="asset-del" title="Rimuovi" onClick={() => removeAsset(m)}><Icon name="x" size={12} /></button>
                     )}

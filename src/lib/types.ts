@@ -283,6 +283,7 @@ export interface MediaItem {
   status: 'da_approvare' | 'approvata' | 'da_pubblicare' | 'pubblicata' | 'scartata'
   source_ids: string[] | null
   source_media_id: string | null
+  sort: number | null
   player_id: number | null
   folder: string | null
   editorial_id: string | null
