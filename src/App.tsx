@@ -39,6 +39,7 @@ import TaxAdvisorProfile from './modules/TaxAdvisorProfile'
 import BrandCampaigns from './modules/BrandCampaigns'
 import MyTeam from './modules/MyTeam'
 import Archivio from './modules/Archivio'
+import TalentSearch from './modules/TalentSearch'
 
 export default function App() {
   const { session, profile, loading } = useAuth()
@@ -52,7 +53,7 @@ export default function App() {
 
   // Il brand ha un set di schermate dedicato e non accede alle aree interne.
   const isBrand = profile.role === 'brand'
-  const brandAllowed = ['brandhome', 'mediakit', 'campaigns', 'brandcard', 'messages']
+  const brandAllowed = ['brandhome', 'mediakit', 'campaigns', 'brandcard', 'talent', 'messages']
   // Il preparatore vede solo fitness, performance dell'atleta e chat.
   const coachAllowed = ['dashboard', 'fitness', 'coach-profile', 'coach-office', 'performance', 'messages', 'access-requests', 'my-team']
   const isCoach = profile.role === 'preparatore'
@@ -81,6 +82,7 @@ export default function App() {
       case 'mediakit': return <MediaKit />
       case 'campaigns': return <BrandCampaigns />
       case 'brandcard': return <BrandCard goto={setRoute} />
+      case 'talent': return <TalentSearch goto={setRoute} />
       case 'dashboard': return profile.role === 'preparatore' ? <FitnessCoachHome goto={setRoute} /> : <Dashboard goto={setRoute} />
       case 'performance': return <Performance goto={setRoute} />
       case 'profile': return <Profile />

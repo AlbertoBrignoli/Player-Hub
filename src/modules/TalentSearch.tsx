@@ -49,7 +49,7 @@ export default function TalentSearch({ goto }: { goto?: (r: string) => void }) {
         supabase.from('crm_brands').select('id, name').limit(1).maybeSingle(),
         supabase.from('cp_brand_search').select('*').limit(1).maybeSingle(),
         supabase.from('cp_brand_categories').select('*').eq('active', true).order('sort'),
-        supabase.from('player').select('api_player_id, name, photo_url, age, position, team_name').not('api_player_id', 'is', null),
+        supabase.from('cp_roster_public').select('api_player_id, name, photo_url, age, position, team_name').not('api_player_id', 'is', null),
         supabase.from('cp_preferences_public').select('*'),
       ])
       setBrand(b.data || null)

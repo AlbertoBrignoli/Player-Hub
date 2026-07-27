@@ -52,6 +52,7 @@ export const BRAND_NAV: { group: string; items: NavDef[] }[] = [
     { key: 'brandhome', label: 'Home', icon: 'grid' },
     { key: 'mediakit', label: 'Media Kit', icon: 'activity' },
     { key: 'campaigns', label: 'Campagne', icon: 'image' },
+    { key: 'talent', label: 'Ricerca talent', icon: 'star' },
     { key: 'brandcard', label: 'La mia scheda', icon: 'award' },
     { key: 'messages', label: 'Messaggi', icon: 'message' },
   ]},
@@ -175,6 +176,7 @@ const TITLES: Record<string, { t: string; s: string }> = {
   mediakit: { t: 'Media Kit', s: "I numeri dell'atleta" },
   campaigns: { t: 'Campagne', s: 'Proponi contenuti e carica lo shooting' },
   brandcard: { t: 'La mia scheda', s: 'Dati e referente del brand' },
+  talent: { t: 'Ricerca talent', s: 'Trova gli atleti del roster più in linea con il tuo brand' },
 }
 
 export default function Shell({ route, setRoute, right, children }: {
