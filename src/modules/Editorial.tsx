@@ -55,7 +55,7 @@ export default function Editorial() {
   const { rows, loading, reload } = useCollection<EditorialEntry>('crm_editorial', { orderBy: 'entry_date', ascending: true, match: { player_id: athleteId } })
   const today = new Date()
   const [ym, setYm] = useState<[number, number]>([today.getFullYear(), today.getMonth()])
-  const [view, setView] = useState<'cal' | 'lista'>('cal')
+  const [view, setView] = useState<'cal' | 'lista' | 'pubblicati'>('cal')
   const [openEntry, setOpenEntry] = useState<EditorialEntry | null>(null)
   const [creating, setCreating] = useState(false)
   const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 880px)').matches)
@@ -111,6 +111,7 @@ export default function Editorial() {
           <div className="pill-tabs">
             <button className={`pill-tab ${view === 'cal' ? 'active' : ''}`} onClick={() => setView('cal')}>Calendario</button>
             <button className={`pill-tab ${view === 'lista' ? 'active' : ''}`} onClick={() => setView('lista')}>Lista</button>
+            <button className={`pill-tab ${view === 'pubblicati' ? 'active' : ''}`} onClick={() => setView('pubblicati')}>Pubblicati</button>
           </div>
           <button className="btn btn-primary" onClick={() => setCreating(true)}>
             <Icon name="plus" size={14} /> {isTeam ? 'Contenuto' : 'Proponi contenuto'}
@@ -163,6 +164,9 @@ export default function Editorial() {
             })}
           </div>
         </div>
+      ) : view === 'pubblicati' ? (
+        <EntryList title="Pubblicati ✓" entries={listEntries.filter(e => e.status === 'pubblicato').reverse()}
+          onOpen={setOpenEntry} empty="Ancora nessun contenuto pubblicato. Confermando un post come pubblicato, finisce qui." />
       ) : (
         <div className="grid g2">
           <EntryList title="In arrivo" entries={upcoming} onOpen={setOpenEntry} empty="Niente in programma." />
@@ -468,6 +472,20 @@ function EntryModal({ entry, onClose, onChanged }: {
     onClose(); onChanged()
   }
 
+  // Conferma pubblicazione: segna il contenuto come pubblicato, sposta le grafiche
+  // finali nella cartella "Pubblicati" della Media e avvisa la controparte (per il
+  // team è il segnale che il lavoro è andato a buon fine).
+  async function publish() {
+    if (approvate.length === 0) { toast('Per confermare la pubblicazione serve prima il materiale.', 'err'); return }
+    const { error } = await updateRow('crm_editorial', entry.id, { status: 'pubblicato' })
+    if (error) { setErr(error.message); return }
+    await supabase.from('crm_media').update({ status: 'pubblicata', folder: 'Pubblicati' })
+      .eq('editorial_id', entry.id).eq('kind', 'grafica')
+    notify(isTeam ? 'player' : 'team', `Pubblicato: ${entry.title}`,
+      'Contenuto confermato come pubblicato — lavoro completato ✓', 'editorial', athleteId)
+    toast('Segnato come pubblicato ✓'); onChanged()
+  }
+
   return (
     <Modal title={entry.title} onClose={onClose} wide
       footer={
@@ -481,7 +499,15 @@ function EntryModal({ entry, onClose, onChanged }: {
             </Select>
             {isAdmin && entry.type !== 'partita' && <ConfirmButton onConfirm={removeEntry}>Elimina</ConfirmButton>}
           </div>
-          <button className="btn" onClick={onClose}>Chiudi</button>
+          <div className="flex gap">
+            {entry.status !== 'pubblicato' && (
+              <button className="btn btn-primary" onClick={publish} disabled={approvate.length === 0}
+                title={approvate.length === 0 ? 'Serve prima il materiale' : 'Conferma che il post è stato pubblicato'}>
+                <Icon name="check" size={14} /> Conferma pubblicato
+              </button>
+            )}
+            <button className="btn" onClick={onClose}>Chiudi</button>
+          </div>
         </div>
       }>
       <div className="grid" style={{ gap: 14 }}>
