@@ -262,6 +262,7 @@ function EntryModal({ entry, onClose, onChanged }: {
   const [brandName, setBrandName] = useState<string | null>(null)
   const [hCopied, setHCopied] = useState(false)
   const [pickerOpen, setPickerOpen] = useState(false)
+  const [igOpen, setIgOpen] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const materialRef = useRef<HTMLInputElement>(null)
   const mi = entry.match_info
@@ -500,6 +501,11 @@ function EntryModal({ entry, onClose, onChanged }: {
             {isAdmin && entry.type !== 'partita' && <ConfirmButton onConfirm={removeEntry}>Elimina</ConfirmButton>}
           </div>
           <div className="flex gap">
+            {approvate.length > 0 && (
+              <button className="btn" onClick={() => setIgOpen(true)} title="Copia la caption e scarica le foto in ordine">
+                <Icon name="image" size={14} /> Prepara per Instagram
+              </button>
+            )}
             {entry.status !== 'pubblicato' && (
               <button className="btn btn-primary" onClick={publish} disabled={approvate.length === 0}
                 title={approvate.length === 0 ? 'Serve prima il materiale' : 'Conferma che il post è stato pubblicato'}>
@@ -662,6 +668,87 @@ function EntryModal({ entry, onClose, onChanged }: {
           excludeSourceIds={media.filter(m => m.source_media_id).map(m => m.source_media_id as string)}
           onClose={() => setPickerOpen(false)} onConfirm={linkFromMedia} />
       )}
+      {igOpen && <InstagramExport caption={copy} title={entry.title} photos={approvate} urls={urls} onClose={() => setIgOpen(false)} />}
+    </Modal>
+  )
+}
+
+// Stopgap "Pronto per Instagram": copia la caption e permette di scaricare le foto
+// già nell'ordine del carosello (niente pubblicazione automatica via API Meta).
+function InstagramExport({ caption, title, photos, urls, onClose }: {
+  caption: string; title: string; photos: MediaItem[]; urls: Record<string, string>; onClose: () => void
+}) {
+  const [copied, setCopied] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const isTouch = typeof window !== 'undefined' && window.matchMedia('(hover: none)').matches
+  const base = (title || 'post').replace(/[^\w\- ]/g, '').trim().replace(/\s+/g, '-') || 'post'
+
+  async function copyCaption() {
+    try { await navigator.clipboard.writeText(caption || ''); setCopied(true); setTimeout(() => setCopied(false), 2000); toast('Caption copiata') }
+    catch { toast('Copia non riuscita', 'err') }
+  }
+
+  async function downloadOne(m: MediaItem, i: number) {
+    const url = urls[m.storage_path]; if (!url) return
+    const ext = (m.file_name?.split('.').pop() || 'jpg').toLowerCase()
+    const r = await fetch(url); const blob = await r.blob()
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = `${String(i + 1).padStart(2, '0')}-${base}.${ext}`
+    document.body.appendChild(a); a.click(); a.remove()
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000)
+  }
+
+  async function downloadAll() {
+    setBusy(true)
+    for (let i = 0; i < photos.length; i++) { await downloadOne(photos[i], i); await new Promise(r => setTimeout(r, 500)) }
+    setBusy(false); toast('Foto scaricate in ordine')
+  }
+
+  return (
+    <Modal title="Pronto per Instagram" onClose={onClose} wide>
+      <div className="grid" style={{ gap: 16 }}>
+        <div className="faint" style={{ fontSize: 12.5 }}>
+          Copia la caption, salva le foto <b style={{ color: 'var(--text)' }}>nell'ordine 1→{photos.length}</b>, poi apri Instagram e crea il carosello incollando la caption.
+        </div>
+
+        {/* 1) caption */}
+        <div>
+          <div className="flex between" style={{ alignItems: 'center', marginBottom: 6 }}>
+            <div style={{ fontWeight: 700, fontSize: 13 }}>1 · Caption</div>
+            <button className="btn btn-primary btn-sm" onClick={copyCaption}>{copied ? 'Copiata ✓' : 'Copia caption'}</button>
+          </div>
+          <div style={{ whiteSpace: 'pre-wrap', fontSize: 13, background: 'var(--card-dark, #101015)', border: '1px solid var(--border)',
+            borderRadius: 12, padding: 12, maxHeight: 160, overflowY: 'auto' }}>{caption || <span className="faint">Nessun testo nel copy.</span>}</div>
+        </div>
+
+        {/* 2) foto in ordine */}
+        <div>
+          <div className="flex between" style={{ alignItems: 'center', marginBottom: 6 }}>
+            <div style={{ fontWeight: 700, fontSize: 13 }}>2 · Foto in ordine ({photos.length})</div>
+            {!isTouch && <button className="btn btn-sm" disabled={busy} onClick={downloadAll}>{busy ? 'Scarico…' : 'Scarica tutte'}</button>}
+          </div>
+          {isTouch && <div className="faint" style={{ fontSize: 12, marginBottom: 8 }}>Su telefono: tieni premuto ogni foto → <b style={{ color: 'var(--text)' }}>Aggiungi a Foto</b>, nell'ordine 1→{photos.length}.</div>}
+          <div className="grid" style={{ gap: 10 }}>
+            {photos.map((m, i) => (
+              <div key={m.id} className="flex gap" style={{ alignItems: 'center', gap: 12,
+                border: '1px solid var(--border)', borderRadius: 12, padding: 8 }}>
+                <div style={{ minWidth: 26, height: 26, borderRadius: 8, background: 'var(--accent, #C6FF3A)', color: '#0b0b0e',
+                  fontWeight: 800, fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{i + 1}</div>
+                {urls[m.storage_path]
+                  ? <img src={urls[m.storage_path]} alt="" style={{ width: 64, height: 64, borderRadius: 8, objectFit: 'cover' }} />
+                  : <div style={{ width: 64, height: 64, borderRadius: 8, background: 'var(--surface-2)' }} />}
+                <div className="row-main" style={{ minWidth: 0 }}>
+                  <div className="row-title" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.file_name || `Foto ${i + 1}`}</div>
+                </div>
+                {!isTouch && <button className="btn btn-sm" onClick={() => downloadOne(m, i)}>Scarica</button>}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="faint" style={{ fontSize: 12 }}>3 · Apri Instagram → nuovo post → seleziona le foto in ordine → incolla la caption.</div>
+      </div>
     </Modal>
   )
 }
