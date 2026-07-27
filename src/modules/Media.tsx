@@ -170,8 +170,14 @@ export default function Media() {
   async function approve(ids: string[]) {
     if (!ids.length) return
     const entry = targetEntry ? entryById.get(targetEntry) : null
+    // Selezione legata a una proposta editoriale: la cartella prende il nome
+    // dal post (es. "POST Recap Pre Season") cosi' la libreria resta ordinata.
     await Promise.all(ids.map(id =>
-      updateRow('crm_media', id, { status: 'approvata', editorial_id: targetEntry || null })))
+      updateRow('crm_media', id, {
+        status: 'approvata',
+        editorial_id: targetEntry || null,
+        ...(entry ? { folder: `POST ${entry.title}` } : {}),
+      })))
     notify('team', `${ids.length} foto approvat${ids.length > 1 ? 'e' : 'a'} da ${profile?.full_name || 'Lorenzo'}`,
       entry
         ? `Per "${entry.title}" del ${fmtDate(entry.entry_date)}: il materiale è dentro la box, pronto per la grafica.`
