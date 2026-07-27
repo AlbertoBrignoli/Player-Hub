@@ -1,8 +1,10 @@
 // Ingest foto InTime nel Player Hub, in due passi per evitare i limiti di
 // payload/CPU delle Edge Function con i JPEG grossi (fino a 20+ MB):
-//   1) {action:"prepare", code}        -> signed upload URL per lo storage
+//   1) {action:"prepare", code, player_id}  -> signed upload URL (skip se gia' ingerita)
 //      (il client fa PUT dei byte direttamente su storage, non passa di qui)
-//   2) {action:"confirm", code, note}  -> riga in crm_media ("da_approvare")
+//   2) {action:"confirm", code, note, folder, player_id} -> riga crm_media
+//      ("da_approvare") + registro intime_synced (code, player_id)
+// player_id e' l'api_player_id della tabella player (default Pirola 134431).
 // Auth via header x-intime-secret (secret in public.cp_secrets).
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
@@ -32,16 +34,17 @@ Deno.serve(async (req: Request) => {
     return json({ error: "unauthorized" }, 401);
   }
   try {
-    const { action, code, note, folder } = await req.json();
+    const { action, code, note, folder, player_id } = await req.json();
     if (!code) return json({ error: "code obbligatorio" }, 400);
+    const playerId = Number(player_id) || 134431;
     const storagePath = `intime/${code}.jpg`;
 
-    // Gia' in crm_media oppure gia' ingerita in passato (registro
+    // Gia' presente per QUESTO giocatore (riga crm_media o registro
     // intime_synced, che sopravvive alla pulizia mensile) -> skip.
-    const { data: existing } = await supa
-      .from("crm_media").select("id").eq("storage_path", storagePath).limit(1);
-    const { data: ledger } = await supa
-      .from("intime_synced").select("code").eq("code", String(code)).limit(1);
+    const { data: existing } = await supa.from("crm_media").select("id")
+      .eq("storage_path", storagePath).eq("player_id", playerId).limit(1);
+    const { data: ledger } = await supa.from("intime_synced").select("code")
+      .eq("code", String(code)).eq("player_id", playerId).limit(1);
     const already = (existing && existing.length) || (ledger && ledger.length);
 
     if (action === "prepare") {
@@ -63,9 +66,10 @@ Deno.serve(async (req: Request) => {
         folder: folder || "INTIME",
         uploaded_role: "admin",
         note: note ?? null,
+        player_id: playerId,
       });
       if (insErr) return json({ error: `db: ${insErr.message}` }, 500);
-      await supa.from("intime_synced").upsert({ code: String(code) });
+      await supa.from("intime_synced").upsert({ code: String(code), player_id: playerId });
       return json({ status: "ok", code });
     }
 

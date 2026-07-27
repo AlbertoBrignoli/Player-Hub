@@ -57,6 +57,37 @@ const UPLOAD_EXISTING = flag('upload-existing');
 const LIMIT = parseInt(opt('limit', '0'), 10) || Infinity;
 const MAX_PAGES = parseInt(opt('pages', '0'), 10) || Infinity;
 const RAW_KEYWORD = opt('keyword', env.INTIME_KEYWORD || 'ΠΙΡΟΛΑ');
+// api_player_id della tabella player nel Hub (default: Lorenzo Pirola)
+const PLAYER_ID = parseInt(opt('player-id', env.INTIME_PLAYER_ID || '134431'), 10);
+
+// Cartella dal riferimento partita nella didascalia greca (allineata alla
+// Edge Function intime-sync).
+const TEAMS = {
+  'ΟΛΥΜΠΙΑΚΟΣ': 'Olympiacos', 'ΠΑΟΚ': 'PAOK', 'ΑΕΚ': 'AEK',
+  'ΠΑΝΑΘΗΝΑΙΚΟΣ': 'Panathinaikos', 'ΠΑΝΑΘΗΝΑΪΚΟΣ': 'Panathinaikos',
+  'ΑΡΗΣ': 'Aris', 'ΑΝΤΒΕΡΠ': 'Anversa', 'ΑΓΙΑΞ': 'Ajax', 'ΛΕΟΥΒΕΝ': 'Leuven',
+  'ΡΑΚΟΒ': 'Raków', 'ΦΟΡΤΟΥΝΑ ΣΙΤΑΡΝΤ': 'Fortuna Sittard',
+  'ΡΕΑΛ ΜΑΔΡΙΤΗΣ': 'Real Madrid', 'ΜΠΑΡΤΣΕΛΟΝΑ': 'Barcellona',
+  'ΑΣΤΕΡΑΣ ΤΡΙΠΟΛΗΣ': 'Asteras Tripolis', 'ΑΣΤΕΡΑΣ': 'Asteras Tripolis',
+  'ΑΤΡΟΜΗΤΟΣ': 'Atromitos', 'ΒΟΛΟΣ': 'Volos', 'ΛΑΜΙΑ': 'Lamia',
+  'ΛΕΒΑΔΕΙΑΚΟΣ': 'Levadiakos', 'ΚΗΦΙΣΙΑ': 'Kifisia',
+  'ΠΑΝΣΕΡΡΑΪΚΟΣ': 'Panserraikos', 'ΠΑΝΑΙΤΩΛΙΚΟΣ': 'Panetolikos',
+  'ΟΦΗ': 'OFI', 'ΚΑΛΑΜΑΤΑ': 'Kalamata', 'ΗΡΑΚΛΗΣ': 'Iraklis',
+  'ΣΑΜΣΟΥΝΣΠΟΡ': 'Samsunspor', 'ΖΒΟΛΕ': 'PEC Zwolle', 'ΤΣΒΟΛΕ': 'PEC Zwolle', 'ΝΕΚ': 'NEC Nijmegen',
+};
+function deriveFolder(caption) {
+  const c = (caption || '').toUpperCase();
+  if (c.includes('ΠΡΟΕΤΟΙΜΑΣ')) return 'Ritiro 2026 2027';
+  const m = c.match(/([Ά-ώ]+(?: [Ά-ώ]+)?) - ([Ά-ώ]+(?: [Ά-ώ]+)?)/);
+  if (m) {
+    const lw = m[1].trim().split(/\s+/), rw = m[2].trim().split(/\s+/);
+    let left = null, right = null;
+    for (let n = Math.min(2, lw.length); n >= 1 && !left; n--) left = TEAMS[lw.slice(-n).join(' ')] || null;
+    for (let n = Math.min(2, rw.length); n >= 1 && !right; n--) right = TEAMS[rw.slice(0, n).join(' ')] || null;
+    if (left && right) return `${left} - ${right}`;
+  }
+  return 'INTIME';
+}
 
 // ---------- iso-8859-7 ----------
 // L'archivio indicizza le keyword greche in maiuscolo senza accenti:
@@ -197,39 +228,6 @@ function ingestCfg() {
   return { fn: `${url.replace(/\/$/, '')}/functions/v1/intime-ingest`, secret };
 }
 
-// Cartella di destinazione derivata dalla didascalia InTime: le foto di
-// partita finiscono in "Squadra1 - Squadra2" (nomi come nelle cartelle gia'
-// usate nel Player Hub), quelle di allenamento nel ritiro, il resto in INTIME.
-const TEAMS = {
-  'ΟΛΥΜΠΙΑΚΟΣ': 'Olympiacos', 'ΠΑΟΚ': 'PAOK', 'ΑΕΚ': 'AEK',
-  'ΠΑΝΑΘΗΝΑΙΚΟΣ': 'Panathinaikos', 'ΠΑΝΑΘΗΝΑΪΚΟΣ': 'Panathinaikos',
-  'ΑΡΗΣ': 'Aris', 'ΑΝΤΒΕΡΠ': 'Anversa', 'ΑΓΙΑΞ': 'Ajax', 'ΛΕΟΥΒΕΝ': 'Leuven',
-  'ΡΑΚΟΒ': 'Raków', 'ΦΟΡΤΟΥΝΑ ΣΙΤΑΡΝΤ': 'Fortuna Sittard',
-  'ΡΕΑΛ ΜΑΔΡΙΤΗΣ': 'Real Madrid', 'ΜΠΑΡΤΣΕΛΟΝΑ': 'Barcellona',
-  'ΑΣΤΕΡΑΣ ΤΡΙΠΟΛΗΣ': 'Asteras Tripolis', 'ΑΤΡΟΜΗΤΟΣ': 'Atromitos',
-  'ΒΟΛΟΣ': 'Volos', 'ΛΑΜΙΑ': 'Lamia', 'ΛΕΒΑΔΕΙΑΚΟΣ': 'Levadiakos',
-  'ΚΗΦΙΣΙΑ': 'Kifisia', 'ΠΑΝΣΕΡΡΑΪΚΟΣ': 'Panserraikos',
-  'ΠΑΝΑΙΤΩΛΙΚΟΣ': 'Panetolikos', 'ΟΦΗ': 'OFI', 'ΓΙΟΥΒΕΝΤΟΥΣ': 'Juventus',
-  'ΜΙΛΑΝ': 'Milan', 'ΙΝΤΕΡ': 'Inter', 'ΝΑΠΟΛΙ': 'Napoli', 'ΡΟΜΑ': 'Roma',
-  'ΛΑΤΣΙΟ': 'Lazio', 'ΑΡΣΕΝΑΛ': 'Arsenal', 'ΛΙΒΕΡΠΟΥΛ': 'Liverpool',
-  'ΤΣΕΛΣΙ': 'Chelsea', 'ΜΠΑΓΕΡΝ': 'Bayern', 'ΜΠΑΓΙΕΡΝ': 'Bayern',
-  'ΠΟΡΤΟ': 'Porto', 'ΜΠΕΝΦΙΚΑ': 'Benfica', 'ΣΠΟΡΤΙΝΓΚ': 'Sporting',
-};
-function deriveFolder(caption) {
-  const c = (caption || '').toUpperCase();
-  if (c.includes('ΠΡΟΕΤΟΙΜΑΣΙΑ')) return 'Ritiro 2026 2027';
-  const m = c.match(/([Ά-ώ]+(?: [Ά-ώ]+)?) - ([Ά-ώ]+(?: [Ά-ώ]+)?)/);
-  if (m) {
-    // lato sinistro: ultime 1-2 parole prima del "-" (prima ci sono i nomi
-    // dei giocatori); lato destro: prime 1-2 parole dopo.
-    const lw = m[1].trim().split(/\s+/), rw = m[2].trim().split(/\s+/);
-    let left = null, right = null;
-    for (let n = Math.min(2, lw.length); n >= 1 && !left; n--) left = TEAMS[lw.slice(-n).join(' ')] || null;
-    for (let n = Math.min(2, rw.length); n >= 1 && !right; n--) right = TEAMS[rw.slice(0, n).join(' ')] || null;
-    if (left && right) return `${left} - ${right}`;
-  }
-  return 'INTIME';
-}
 
 async function callIngest(sb, payload) {
   const res = await fetch(sb.fn, {
@@ -245,7 +243,7 @@ async function callIngest(sb, payload) {
 // Upload in due passi: prepare -> PUT diretto sullo storage (signed URL,
 // nessun limite di payload della funzione) -> confirm (riga crm_media).
 async function uploadToHub(sb, photo, buf) {
-  const prep = await callIngest(sb, { action: 'prepare', code: photo.code });
+  const prep = await callIngest(sb, { action: 'prepare', code: photo.code, player_id: PLAYER_ID });
   if (prep.status === 'skip') return 'skip';
   const put = await fetch(prep.uploadUrl, {
     method: 'PUT',
@@ -256,6 +254,7 @@ async function uploadToHub(sb, photo, buf) {
   const note = [photo.caption, photo.photographer, photo.shotAt].filter(Boolean).join(' — ');
   const conf = await callIngest(sb, {
     action: 'confirm', code: photo.code, note, folder: deriveFolder(photo.caption),
+    player_id: PLAYER_ID,
   });
   return conf.status; // 'ok' | 'skip'
 }

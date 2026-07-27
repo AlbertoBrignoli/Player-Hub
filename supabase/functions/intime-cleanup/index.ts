@@ -1,10 +1,9 @@
-// Pulizia mensile delle foto InTime dal Player Hub (schedulata via pg_cron).
-// Le foto InTime si riconoscono dallo storage path "intime/<code>.jpg"
-// (le cartelle ora hanno i nomi partita, quindi folder non basta).
-// Elimina righe + file piu' vecchi di N giorni (default 30) SOLO se non
-// revisionati (da_approvare/scartata): selezioni, approvate e pubblicate
-// restano. Un file condiviso con una riga superstite non viene rimosso.
-// L'archivio completo resta in locale su Mac (player-crm/photos-intime).
+// Pulizia mensile delle foto InTime dal Player Hub (schedulata via pg_cron):
+// elimina le righe crm_media con file intime/* piu' vecchie di N giorni
+// (default 30) ancora in stato "da_approvare" o "scartata" — le foto
+// approvate/da pubblicare/pubblicate restano. Un file storage viene rimosso
+// solo quando NESSUNA riga superstite lo referenzia (le foto sono condivise
+// tra giocatori). L'archivio completo resta in locale sul Mac.
 // Auth via header x-intime-secret (secret in public.cp_secrets).
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
@@ -40,37 +39,35 @@ Deno.serve(async (req: Request) => {
   const { data: rows, error } = await supa.from("crm_media")
     .select("id,storage_path")
     .like("storage_path", "intime/%")
-    .in("status", ["da_approvare", "scartata"])
-    .lt("created_at", cutoff);
+    .lt("created_at", cutoff)
+    .in("status", ["da_approvare", "scartata"]);
   if (error) return json({ error: `select: ${error.message}` }, 500);
 
   const ids = (rows ?? []).map((r) => r.id);
-  const candidatePaths = [...new Set((rows ?? []).map((r) => r.storage_path))];
+  const paths = [...new Set((rows ?? []).map((r) => r.storage_path).filter(Boolean))];
 
+  // 1) elimina le righe
   for (let i = 0; i < ids.length; i += 200) {
     const { error: delErr } = await supa.from("crm_media")
       .delete().in("id", ids.slice(i, i + 200));
     if (delErr) return json({ error: `delete rows: ${delErr.message}` }, 500);
   }
 
-  // Rimuove i file solo se nessuna riga superstite li referenzia ancora
-  // (una selezione editoriale duplica la riga sullo stesso file).
+  // 2) elimina solo i file che nessuna riga superstite referenzia
   const stillUsed = new Set<string>();
-  for (let i = 0; i < candidatePaths.length; i += 200) {
-    const { data: refs } = await supa.from("crm_media")
-      .select("storage_path").in("storage_path", candidatePaths.slice(i, i + 200));
-    for (const r of refs ?? []) stillUsed.add(r.storage_path);
+  for (let i = 0; i < paths.length; i += 200) {
+    const { data } = await supa.from("crm_media")
+      .select("storage_path").in("storage_path", paths.slice(i, i + 200));
+    for (const r of data ?? []) stillUsed.add(r.storage_path);
   }
-  const toRemove = candidatePaths.filter((p) => !stillUsed.has(p));
-  let filesRemoved = 0;
-  for (let i = 0; i < toRemove.length; i += 100) {
-    const batch = toRemove.slice(i, i + 100);
-    const { error: rmErr } = await supa.storage.from("crm-media").remove(batch);
-    if (rmErr) return json({ error: `storage remove: ${rmErr.message}`, filesRemoved }, 500);
-    filesRemoved += batch.length;
+  const removable = paths.filter((p) => !stillUsed.has(p));
+  for (let i = 0; i < removable.length; i += 100) {
+    const { error: rmErr } = await supa.storage.from("crm-media")
+      .remove(removable.slice(i, i + 100));
+    if (rmErr) return json({ error: `storage remove: ${rmErr.message}` }, 500);
   }
 
-  // Oggetti orfani in storage (senza riga crm_media), piu' vecchi del cutoff
+  // 3) oggetti orfani in storage (senza alcuna riga), piu' vecchi del cutoff
   const { data: objects } = await supa.storage.from("crm-media")
     .list("intime", { limit: 1000 });
   const orphanPaths: string[] = [];
@@ -88,15 +85,14 @@ Deno.serve(async (req: Request) => {
   }
 
   const { count: remaining } = await supa.from("crm_media")
-    .select("id", { count: "exact", head: true })
-    .like("storage_path", "intime/%");
+    .select("id", { count: "exact", head: true }).like("storage_path", "intime/%");
 
   return json({
     status: "ok",
     days,
     rowsDeleted: ids.length,
-    filesRemoved,
+    filesDeleted: removable.length,
     orphansDeleted: orphanPaths.length,
-    remaining: remaining ?? 0,
+    remainingRows: remaining ?? 0,
   });
 });
