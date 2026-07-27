@@ -12,6 +12,7 @@ import FitnessCoachHome from './modules/FitnessCoachHome'
 import FitnessCoachProfile from './modules/FitnessCoachProfile'
 import Contracts from './modules/Contracts'
 import Documents from './modules/Documents'
+import InsuranceDocuments from './modules/InsuranceDocuments'
 import Editorial from './modules/Editorial'
 import Media from './modules/Media'
 import Sponsors from './modules/Sponsors'
@@ -99,7 +100,7 @@ export default function App() {
       case 'tax-profile': return <TaxAdvisorProfile />
       case 'agent-profile': return <AgentProfile />
       case 'contracts': return <Contracts />
-      case 'documents': return <Documents />
+      case 'documents': return isInsurer ? <InsuranceDocuments /> : <Documents />
       case 'editorial': return <Editorial />
       case 'media': return <Media />
       case 'sponsors': return <Sponsors />
