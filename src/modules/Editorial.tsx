@@ -67,6 +67,37 @@ export default function Editorial() {
     return () => mq.removeEventListener('change', h)
   }, [])
 
+  // Anteprima per ogni contenuto: la grafica finale se c'è, altrimenti una foto approvata.
+  // Serve a far capire a colpo d'occhio che c'è materiale da vedere, senza aprire.
+  const [previews, setPreviews] = useState<Record<string, string>>({})
+  useEffect(() => {
+    let alive = true
+    ;(async () => {
+      const ids = rows.map(r => r.id)
+      if (!ids.length) { setPreviews({}); return }
+      const { data } = await supabase.from('crm_media')
+        .select('editorial_id, kind, status, storage_path, file_name')
+        .in('editorial_id', ids).in('kind', ['grafica', 'foto'])
+      if (!data) return
+      const best: Record<string, { path: string; score: number }> = {}
+      for (const m of data as any[]) {
+        if (!m.storage_path || !isImageFile(m.file_name)) continue
+        const score = m.kind === 'grafica' ? 3 : (m.status === 'approvata' ? 2 : 1)
+        const cur = best[m.editorial_id]
+        if (!cur || score > cur.score) best[m.editorial_id] = { path: m.storage_path, score }
+      }
+      const paths = [...new Set(Object.values(best).map(b => b.path))]
+      if (!paths.length) { if (alive) setPreviews({}); return }
+      const { data: signed } = await supabase.storage.from(BUCKET).createSignedUrls(paths, 3600)
+      const byPath: Record<string, string> = {}
+      ;(signed || []).forEach((s: any) => { if (s.signedUrl && s.path) byPath[s.path] = s.signedUrl })
+      const map: Record<string, string> = {}
+      for (const [eid, b] of Object.entries(best)) if (byPath[b.path]) map[eid] = byPath[b.path]
+      if (alive) setPreviews(map)
+    })()
+    return () => { alive = false }
+  }, [rows])
+
   const byDate = useMemo(() => {
     const m = new Map<string, EditorialEntry[]>()
     rows.forEach(e => {
@@ -140,7 +171,7 @@ export default function Editorial() {
                 </div>
                 <div className="agenda-items">
                   {(byDate.get(day) || []).map(e => (
-                    <EntryChip key={e.id} e={e} onOpen={setOpenEntry} full />
+                    <EntryChip key={e.id} e={e} onOpen={setOpenEntry} preview={previews[e.id]} full />
                   ))}
                 </div>
               </div>
@@ -158,7 +189,7 @@ export default function Editorial() {
               return (
                 <div key={i} className={`cal-cell ${!day ? 'cal-empty' : ''} ${day === todayKey ? 'cal-today' : ''}`}>
                   {day && <div className="cal-daynum">{Number(day.slice(8))}</div>}
-                  {entries.map(e => <EntryChip key={e.id} e={e} onOpen={setOpenEntry} />)}
+                  {entries.map(e => <EntryChip key={e.id} e={e} onOpen={setOpenEntry} preview={previews[e.id]} />)}
                 </div>
               )
             })}
@@ -188,7 +219,7 @@ export default function Editorial() {
 
 // Chip nel calendario: per le partite una mini-card che si legge senza aprire,
 // per gli altri contenuti il chip compatto.
-function EntryChip({ e, onOpen, full }: { e: EditorialEntry; onOpen: (e: EditorialEntry) => void; full?: boolean }) {
+function EntryChip({ e, onOpen, preview, full }: { e: EditorialEntry; onOpen: (e: EditorialEntry) => void; preview?: string; full?: boolean }) {
   if (e.type === 'partita' && e.match_info) {
     const mi = e.match_info
     const home = mi.venue === 'Home'
@@ -206,11 +237,32 @@ function EntryChip({ e, onOpen, full }: { e: EditorialEntry; onOpen: (e: Editori
       </button>
     )
   }
+  const st = STATUSES[e.status]
+  const toneColor = (t?: string) => t === 'green' ? '#3ECF8E' : t === 'gold' ? '#E5A400' : t === 'blue' ? '#4A9EE8' : t === 'accent' ? '#E1306C' : 'var(--text-dim)'
+  const accent = toneColor(st?.tone)
   return (
-    <button className={`cal-chip cal-${e.status} ${full ? 'cal-w-full' : ''}`} onClick={() => onOpen(e)} title={`${e.title} · Instagram`}>
-      <Icon name="instagram" size={11} style={{ verticalAlign: '-1.5px', marginRight: 3,
-        color: e.status === 'pubblicato' ? '#E1306C' : 'currentColor', opacity: e.status === 'pubblicato' ? 1 : 0.55 }} />
-      <Icon name={TYPES[e.type]?.icon || 'file'} size={11} style={{ verticalAlign: '-1.5px', marginRight: 4 }} />{e.title}
+    <button className={`cal-chip-rich ${full ? 'cal-w-full' : ''}`} onClick={() => onOpen(e)} title={`${e.title} · Instagram`}
+      style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', padding: '6px 8px',
+        borderRadius: 10, cursor: 'pointer', background: 'var(--card)', border: '1px solid var(--border)', borderLeft: `3px solid ${accent}`, color: 'var(--text)' }}>
+      <div style={{ position: 'relative', width: 40, height: 40, borderRadius: 8, overflow: 'hidden', flexShrink: 0,
+        background: 'var(--surface-2, #17171d)', display: 'grid', placeItems: 'center', color: 'var(--text-dim)' }}>
+        {preview
+          ? <img src={preview} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          : <Icon name={TYPES[e.type]?.icon || 'image'} size={16} strokeWidth={1.5} />}
+        <span style={{ position: 'absolute', bottom: -1, right: -1, width: 15, height: 15, borderRadius: 5,
+          background: 'rgba(0,0,0,.7)', display: 'grid', placeItems: 'center' }}>
+          <Icon name="instagram" size={9} style={{ color: e.status === 'pubblicato' ? '#E1306C' : '#fff' }} />
+        </span>
+      </div>
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <div style={{ fontSize: 11.5, fontWeight: 700, lineHeight: 1.2, display: '-webkit-box',
+          WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{e.title}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 3 }}>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: accent, flexShrink: 0 }} />
+          <span style={{ fontSize: 9.5, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: 0.3, fontWeight: 700 }}>{st?.label}</span>
+          {preview && <><span style={{ color: 'var(--text-dim)', fontSize: 9.5 }}>·</span><Icon name="image" size={10} style={{ color: 'var(--text-dim)' }} /></>}
+        </div>
+      </div>
     </button>
   )
 }
