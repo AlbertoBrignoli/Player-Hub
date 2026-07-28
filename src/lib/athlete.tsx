@@ -6,6 +6,7 @@ export interface AthleteLite {
   api_player_id: number
   name: string | null
   photo_url?: string | null
+  timezone?: string | null
 }
 
 interface AthleteState {
@@ -13,6 +14,7 @@ interface AthleteState {
   athletes: AthleteLite[]           // elenco visibile (RLS: player = solo il suo)
   loading: boolean
   canSwitch: boolean                // true solo per team con >1 atleta
+  athleteTz: string                 // fuso orario dello stadio dell'atleta (es. Europe/Athens)
   setAthleteId: (id: number) => void
 }
 
@@ -33,7 +35,7 @@ export function AthleteProvider({ children }: { children: React.ReactNode }) {
       // RLS: il player vede solo il proprio atleta; admin/creator vedono tutti.
       const { data } = await supabase
         .from('player')
-        .select('api_player_id, name, photo_url')
+        .select('api_player_id, name, photo_url, timezone')
         .not('api_player_id', 'is', null)
         .order('name', { ascending: true })
       if (!mounted) return
@@ -47,9 +49,10 @@ export function AthleteProvider({ children }: { children: React.ReactNode }) {
   }, [profile?.id, profile?.player_api_id])
 
   const canSwitch = (role === 'admin' || role === 'creator' || role === 'preparatore' || role === 'brand' || role === 'agente') && athletes.length > 1
+  const athleteTz = athletes.find(a => a.api_player_id === athleteId)?.timezone || 'Europe/Rome'
 
   return (
-    <Ctx.Provider value={{ athleteId, athletes, loading, canSwitch, setAthleteId }}>
+    <Ctx.Provider value={{ athleteId, athletes, loading, canSwitch, athleteTz, setAthleteId }}>
       {children}
     </Ctx.Provider>
   )

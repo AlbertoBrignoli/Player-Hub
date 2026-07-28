@@ -7,7 +7,7 @@ import { notify } from '../lib/notify'
 import { toast } from '../lib/toast'
 import { Modal, Field, Input, Select, Textarea, Badge, Empty, Spinner, ConfirmButton } from '../components/ui'
 import Icon from '../components/Icon'
-import { fmtDate, fmtDateTime, isImageFile, fileExt } from '../lib/format'
+import { fmtDate, fmtDateTime, fmtMatchTime, fmtMatchDateTime, isImageFile, fileExt } from '../lib/format'
 import type { EditorialEntry, MediaItem } from '../lib/types'
 
 const BUCKET = 'crm-media'
@@ -51,7 +51,7 @@ const DOW = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom']
 
 export default function Editorial() {
   const { isTeam } = useAuth()
-  const { athleteId } = useAthlete()
+  const { athleteId, athleteTz } = useAthlete()
   const { rows, loading, reload } = useCollection<EditorialEntry>('crm_editorial', { orderBy: 'entry_date', ascending: true, match: { player_id: athleteId } })
   const today = new Date()
   const [ym, setYm] = useState<[number, number]>([today.getFullYear(), today.getMonth()])
@@ -171,7 +171,7 @@ export default function Editorial() {
                 </div>
                 <div className="agenda-items">
                   {(byDate.get(day) || []).map(e => (
-                    <EntryChip key={e.id} e={e} onOpen={setOpenEntry} preview={previews[e.id]} full />
+                    <EntryChip key={e.id} e={e} onOpen={setOpenEntry} preview={previews[e.id]} tz={athleteTz} full />
                   ))}
                 </div>
               </div>
@@ -189,7 +189,7 @@ export default function Editorial() {
               return (
                 <div key={i} className={`cal-cell ${!day ? 'cal-empty' : ''} ${day === todayKey ? 'cal-today' : ''}`}>
                   {day && <div className="cal-daynum">{Number(day.slice(8))}</div>}
-                  {entries.map(e => <EntryChip key={e.id} e={e} onOpen={setOpenEntry} preview={previews[e.id]} />)}
+                  {entries.map(e => <EntryChip key={e.id} e={e} onOpen={setOpenEntry} preview={previews[e.id]} tz={athleteTz} />)}
                 </div>
               )
             })}
@@ -219,11 +219,11 @@ export default function Editorial() {
 
 // Chip nel calendario: per le partite una mini-card che si legge senza aprire,
 // per gli altri contenuti il chip compatto.
-function EntryChip({ e, onOpen, preview, full }: { e: EditorialEntry; onOpen: (e: EditorialEntry) => void; preview?: string; full?: boolean }) {
+function EntryChip({ e, onOpen, preview, tz, full }: { e: EditorialEntry; onOpen: (e: EditorialEntry) => void; preview?: string; tz?: string; full?: boolean }) {
   if (e.type === 'partita' && e.match_info) {
     const mi = e.match_info
     const home = mi.venue === 'Home'
-    const time = mi.kickoff ? new Date(mi.kickoff).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : ''
+    const time = mi.kickoff ? fmtMatchTime(mi.kickoff, tz) : ''
     const played = mi.status === 'FT' && mi.team_score != null
     const score = played ? (home ? `${mi.team_score}–${mi.opponent_score}` : `${mi.opponent_score}–${mi.team_score}`) : null
     return (
@@ -308,7 +308,7 @@ function EntryModal({ entry, onClose, onChanged }: {
   entry: EditorialEntry; onClose: () => void; onChanged: () => void
 }) {
   const { profile, isAdmin, isTeam, session } = useAuth()
-  const { athleteId } = useAthlete()
+  const { athleteId, athleteTz } = useAthlete()
   const [copy, setCopy] = useState(entry.copy_text || '')
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -604,7 +604,7 @@ function EntryModal({ entry, onClose, onChanged }: {
               <Info k="Match" v={`${mi.home_team ?? '—'} vs ${mi.away_team ?? '—'}`} />
               <Info k="Competizione" v={mi.league} />
               <Info k="Giornata" v={mi.round} />
-              <Info k="Calcio d'inizio" v={mi.kickoff ? fmtDateTime(mi.kickoff) : null} />
+              <Info k="Calcio d'inizio" v={mi.kickoff ? fmtMatchDateTime(mi.kickoff, athleteTz) : null} />
               <Info k="Stadio" v={mi.stadium} />
               <Info k="Casa/Trasferta" v={mi.venue === 'Home' ? 'In casa' : mi.venue === 'Away' ? 'Trasferta' : mi.venue} />
               {mi.status === 'FT' && <Info k="Risultato" v={`${mi.team_score ?? '—'}–${mi.opponent_score ?? '—'}`} />}

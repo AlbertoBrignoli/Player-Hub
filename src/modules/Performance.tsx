@@ -4,14 +4,14 @@ import { useAthlete } from '../lib/athlete'
 import { Spinner, Stat, Badge, Empty, Select } from '../components/ui'
 import { SeasonBlock, LastMatchGrid } from '../components/statbits'
 import Icon from '../components/Icon'
-import { fmtDate, fmtDateTime, seasonOf } from '../lib/format'
+import { fmtDate, fmtDateTime, fmtMatchDateTime, seasonOf } from '../lib/format'
 import type { Player, Match, SeasonStat, StatsMatch } from '../lib/types'
 
 interface News { id: string; title: string; source: string | null; url: string | null; published_at: string | null }
 
 export default function Performance({ goto }: { goto?: (r: string) => void }) {
   void goto
-  const { athleteId } = useAthlete()
+  const { athleteId, athleteTz } = useAthlete()
   const [loading, setLoading] = useState(true)
   const [player, setPlayer] = useState<Player | null>(null)
   const [matches, setMatches] = useState<Match[]>([])
@@ -105,7 +105,7 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
             <div style={{ fontSize: 17, fontWeight: 750 }}>{nextMatch.home_team} vs {nextMatch.away_team}</div>
             <div className="muted" style={{ marginTop: 4 }}>{nextMatch.league}{nextMatch.round ? ` · ${nextMatch.round}` : ''}</div>
             <div className="flex gap wrap" style={{ marginTop: 10, gap: 8 }}>
-              <Badge tone="accent">{fmtDateTime(nextMatch.match_date)}</Badge>
+              <Badge tone="accent">{fmtMatchDateTime(nextMatch.match_date, athleteTz)}</Badge>
               <Badge>{nextMatch.venue === 'Home' ? 'In casa' : 'Trasferta'}</Badge>
             </div>
           </div>

@@ -6,7 +6,7 @@ import { Spinner, Badge } from '../components/ui'
 import Icon from '../components/Icon'
 import ReferentiCard from '../components/ReferentiCard'
 import { useIsMobile } from '../lib/useIsMobile'
-import { fmtDate, fmtDateTime, daysUntil, isImageFile } from '../lib/format'
+import { fmtDate, fmtDateTime, fmtMatchTime, fmtMatchDateTime, daysUntil, isImageFile } from '../lib/format'
 import type { Player, EventItem, Contract, Match, StatsMatch, EditorialEntry, MediaItem } from '../lib/types'
 
 const BUCKET = 'crm-media'
@@ -33,7 +33,7 @@ function TeamVs({ m, size = 24 }: { m: Match; size?: number }) {
 
 export default function Dashboard({ goto }: { goto: (r: string) => void }) {
   const { profile } = useAuth()
-  const { athleteId } = useAthlete()
+  const { athleteId, athleteTz } = useAthlete()
   const isMobile = useIsMobile()
   const [loading, setLoading] = useState(true)
   const [player, setPlayer] = useState<Player | null>(null)
@@ -120,7 +120,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
     const d = new Date(nextMatch.match_date)
     matchMeta = [
       `${d.getDate().toString().padStart(2, '0')} ${MESI[d.getMonth()].slice(0, 3).toUpperCase()}`,
-      d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
+      fmtMatchTime(nextMatch.match_date, athleteTz),
       nextMatch.venue === 'Home' ? 'IN CASA' : 'TRASFERTA',
     ]
   }
@@ -272,7 +272,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
               <div style={{ fontSize: 17, fontWeight: 750 }}><TeamVs m={nextMatch} size={22} /></div>
               <div className="muted" style={{ marginTop: 4 }}>{nextMatch.league}{nextMatch.round ? ` · ${nextMatch.round}` : ''}</div>
               <div className="flex gap wrap" style={{ marginTop: 10, gap: 8 }}>
-                <Badge tone="accent">{fmtDateTime(nextMatch.match_date)}</Badge>
+                <Badge tone="accent">{fmtMatchDateTime(nextMatch.match_date, athleteTz)}</Badge>
                 <Badge>{nextMatch.venue === 'Home' ? 'In casa' : 'Trasferta'}</Badge>
               </div>
             </div>

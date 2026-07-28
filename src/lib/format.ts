@@ -57,3 +57,21 @@ export function seasonOf(d: string | Date) {
   const y = dt.getMonth() >= 6 ? dt.getFullYear() : dt.getFullYear() - 1
   return `${y}/${String((y + 1) % 100).padStart(2, '0')}`
 }
+
+// Orari partita nel fuso dello STADIO (non del dispositivo): cosi tutti vedono
+// lo stesso orario locale della partita (es. 20:00 in Grecia).
+export function fmtMatchDateTime(d: string | null | undefined, tz?: string | null) {
+  if (!d) return '—'
+  try {
+    return new Date(d).toLocaleString('it-IT', {
+      day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
+      timeZone: tz || 'Europe/Rome',
+    })
+  } catch { return '—' }
+}
+export function fmtMatchTime(d: string | null | undefined, tz?: string | null) {
+  if (!d) return ''
+  try {
+    return new Date(d).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', timeZone: tz || 'Europe/Rome' })
+  } catch { return '' }
+}
