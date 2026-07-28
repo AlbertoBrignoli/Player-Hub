@@ -18,6 +18,19 @@ const CHIP: Record<string, { l: string; c: string }> = {
 }
 const MESI = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre']
 
+// Due squadre con logo (da API-Football) affiancate: [logo] Casa — [logo] Trasferta
+function TeamVs({ m, size = 24 }: { m: Match; size?: number }) {
+  const Logo = ({ src }: { src: string | null }) =>
+    src ? <img src={src} alt="" style={{ height: size, width: size, objectFit: 'contain', flexShrink: 0 }} /> : null
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+      <Logo src={m.home_logo} /><span>{m.home_team}</span>
+      <span style={{ opacity: .45 }}>—</span>
+      <Logo src={m.away_logo} /><span>{m.away_team}</span>
+    </span>
+  )
+}
+
 export default function Dashboard({ goto }: { goto: (r: string) => void }) {
   const { profile } = useAuth()
   const { athleteId } = useAthlete()
@@ -160,7 +173,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
             <div className="ed-hero-scrim" />
             <div className="ed-hero-body" style={{ textAlign: 'left' }}>
               <div className="ed-livepill"><span className="ed-livedot" /><span>Prossima · {matchWhen}</span></div>
-              <div className="ed-hero-title">{nextMatch.home_team} — {nextMatch.away_team}</div>
+              <div className="ed-hero-title"><TeamVs m={nextMatch} size={26} /></div>
               <div className="ed-hero-meta">
                 {matchMeta.map((x, i) => <span key={i} style={{ display: 'contents' }}>{i > 0 && <span className="sep">|</span>}<span>{x}</span></span>)}
               </div>
@@ -256,7 +269,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
           </div>
           {nextMatch ? (
             <div>
-              <div style={{ fontSize: 17, fontWeight: 750 }}>{nextMatch.home_team} vs {nextMatch.away_team}</div>
+              <div style={{ fontSize: 17, fontWeight: 750 }}><TeamVs m={nextMatch} size={22} /></div>
               <div className="muted" style={{ marginTop: 4 }}>{nextMatch.league}{nextMatch.round ? ` · ${nextMatch.round}` : ''}</div>
               <div className="flex gap wrap" style={{ marginTop: 10, gap: 8 }}>
                 <Badge tone="accent">{fmtDateTime(nextMatch.match_date)}</Badge>

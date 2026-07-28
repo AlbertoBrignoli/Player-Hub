@@ -82,6 +82,8 @@ export interface Match {
   round: string | null
   home_team: string | null
   away_team: string | null
+  home_logo: string | null
+  away_logo: string | null
   opponent: string | null
   venue: string | null
   status: string | null
