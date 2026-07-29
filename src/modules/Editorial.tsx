@@ -320,6 +320,7 @@ function EntryModal({ entry, onClose, onChanged }: {
   const [hCopied, setHCopied] = useState(false)
   const [pickerOpen, setPickerOpen] = useState(false)
   const [igOpen, setIgOpen] = useState(false)
+  const [genBusy, setGenBusy] = useState<'pre' | 'post' | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const materialRef = useRef<HTMLInputElement>(null)
   const mi = entry.match_info
@@ -525,6 +526,26 @@ function EntryModal({ entry, onClose, onChanged }: {
     onChanged()
   }
 
+  // Storia Instagram generata dal server (foto dalla Media + statistiche):
+  // la stessa routine gira da sola via cron, qui si può (ri)generare al volo.
+  async function generateStory(kind: 'pre' | 'post') {
+    setGenBusy(kind)
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-story', {
+        body: { editorial_id: entry.id, type: kind },
+      })
+      if (error) throw error
+      if (data?.error) throw new Error(String(data.error))
+      if (data?.skipped) { toast(String(data.skipped)); return }
+      toast(`Storia ${kind === 'pre' ? 'pre' : 'post'}-match generata ✓`)
+      loadMedia(); onChanged()
+    } catch (e: any) {
+      toast(e?.message || 'Generazione non riuscita', 'err')
+    } finally {
+      setGenBusy(null)
+    }
+  }
+
   async function removeEntry() {
     await deleteRow('crm_editorial', entry.id)
     onClose(); onChanged()
@@ -608,6 +629,21 @@ function EntryModal({ entry, onClose, onChanged }: {
               <Info k="Stadio" v={mi.stadium} />
               <Info k="Casa/Trasferta" v={mi.venue === 'Home' ? 'In casa' : mi.venue === 'Away' ? 'Trasferta' : mi.venue} />
               {mi.status === 'FT' && <Info k="Risultato" v={`${mi.team_score ?? '—'}–${mi.opponent_score ?? '—'}`} />}
+            </div>
+            <div className="flex gap wrap" style={{ marginTop: 12 }}>
+              <button className="btn btn-sm" disabled={genBusy !== null} onClick={() => generateStory('pre')}
+                title="Storia 1080×1920 con foto dalla Media e info partita — si genera anche da sola 24h prima del kickoff">
+                <Icon name="image" size={13} /> {genBusy === 'pre' ? 'Genero…' : 'Genera storia pre-match'}
+              </button>
+              {mi.status === 'FT' && (
+                <button className="btn btn-sm" disabled={genBusy !== null} onClick={() => generateStory('post')}
+                  title="Storia 1080×1920 con risultato e statistiche personali — si genera da sola quando arrivano le statistiche">
+                  <Icon name="activity" size={13} /> {genBusy === 'post' ? 'Genero…' : 'Genera storia post-match'}
+                </button>
+              )}
+              <span className="faint" style={{ fontSize: 11.5, alignSelf: 'center' }}>
+                Le storie si creano da sole: pre-match 24h prima, post-match con le statistiche. Qui puoi rigenerarle.
+              </span>
             </div>
           </div>
         )}
