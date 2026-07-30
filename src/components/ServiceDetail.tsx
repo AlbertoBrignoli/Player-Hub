@@ -84,7 +84,7 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
   service: Service; playerId: number | null; canRequest: boolean
   onBack: () => void; onSent: () => void
 }) {
-  const { lang } = useLang()
+  const { lang, t } = useLang()
   const L = (f: string) => (lang === 'en' && service.i18n?.en?.[f] != null) ? service.i18n.en[f] : (service as any)[f]
   const accent = accentOf(service)
   const schema = service.form_schema || []
@@ -129,17 +129,17 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
             justifyContent: 'center', animation: 'auviPop .35s ease' }}>
             <Icon name="check" size={30} />
           </div>
-          <div style={{ fontSize: 21, fontWeight: 900, marginTop: 16 }}>Richiesta inviata</div>
+          <div style={{ fontSize: 21, fontWeight: 900, marginTop: 16 }}>{t("Richiesta inviata")}</div>
           <div style={{ fontSize: 13, color: T.dim, marginTop: 4 }}>
-            {service.partner_name ? `Ci occupiamo noi di attivare ${service.partner_name}.` : 'Ci pensiamo noi da qui.'}
+            {service.partner_name ? `Ci occupiamo noi di attivare ${service.partner_name}.` : t('Ci pensiamo noi da qui.')}
           </div>
         </div>
 
         <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 16, padding: 18 }}>
           {[
-            { t: 'Richiesta inviata', s: 'Le risposte sono arrivate al tuo advisor', done: true },
-            { t: 'Il tuo advisor ti scrive', s: 'Entro 24 ore', done: false },
-            { t: 'Attivazione partner', s: service.partner_name || 'Professionista selezionato da AUVI', done: false },
+            { t: 'Richiesta inviata', s: t('Le risposte sono arrivate al tuo advisor'), done: true },
+            { t: t('Il tuo advisor ti scrive'), s: t('Entro 24 ore'), done: false },
+            { t: t('Attivazione partner'), s: service.partner_name || t('Professionista selezionato da AUVI'), done: false },
           ].map((r, i, arr) => (
             <div key={i} className="flex gap" style={{ gap: 12, alignItems: 'flex-start' }}>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -160,7 +160,7 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
 
         {given.length > 0 && (
           <div style={{ background: T.cardDark, border: `1px solid ${T.border}`, borderRadius: 16, padding: 18 }}>
-            <div style={{ ...kicker, fontSize: 10, color: accent, marginBottom: 12 }}>Riepilogo per il partner</div>
+            <div style={{ ...kicker, fontSize: 10, color: accent, marginBottom: 12 }}>{t("Riepilogo per il partner")}</div>
             <div className="grid" style={{ gap: 10 }}>
               {given.map(f => (
                 <div key={f.key}>
@@ -195,7 +195,7 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
         </button>
 
         <div>
-          <div style={{ ...kicker, fontSize: 10, color: accent }}>Questionario · 3 minuti</div>
+          <div style={{ ...kicker, fontSize: 10, color: accent }}>{t("Questionario · 3 minuti")}</div>
           <div style={{ fontSize: 20, fontWeight: 900, marginTop: 4 }}>{L('title')}</div>
         </div>
 
@@ -261,7 +261,7 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
         <button onClick={next} disabled={busy}
           style={{ padding: '14px 18px', borderRadius: 999, border: 'none', cursor: 'pointer',
             background: T.text, color: '#0b0b0e', fontWeight: 800, fontSize: 14 }}>
-          {busy ? 'Invio…' : last ? 'Invia richiesta' : 'Continua'}
+          {busy ? t('Invio…') : last ? t('Invia richiesta') : t('Continua')}
         </button>
         <div style={{ fontSize: 11.5, color: T.muted, textAlign: 'center' }}>
           Le risposte vanno solo al tuo advisor e al partner.
@@ -297,7 +297,7 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
         )}
         <div style={{ position: 'relative' }}>
           <div style={{ ...kicker, fontSize: 10, opacity: .85, color: accent }}>
-            Servizio AUVI · {service.verified ? 'Partner verificato' : 'Su richiesta'}
+            {t('Servizio AUVI')} · {service.verified ? t('Partner verificato') : t('Su richiesta')}
           </div>
           {service.logo_url ? (
             <div style={{ marginTop: 12 }}>
@@ -333,7 +333,7 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
 
       {service.about && (
         <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 16, padding: 18 }}>
-          <div style={{ ...kicker, fontSize: 10.5, color: accent, marginBottom: 8 }}>Il metodo</div>
+          <div style={{ ...kicker, fontSize: 10.5, color: accent, marginBottom: 8 }}>{t("Il metodo")}</div>
           <div style={{ fontSize: 13.5, lineHeight: 1.6 }}>{L('about')}</div>
         </div>
       )}
@@ -347,9 +347,9 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
       )}
 
       {/* pilastri a scorrimento orizzontale */}
-      {service.highlights && service.highlights.length > 0 && (
+      {(L('highlights') || service.highlights) && (L('highlights') || service.highlights).length > 0 && (
         <div className="flex gap" style={{ gap: 12, overflowX: 'auto', paddingBottom: 4 }}>
-          {service.highlights.map((h, i) => (
+          {(L('highlights') || service.highlights).map((h: any, i: number) => (
             <div key={i} style={{ flex: '0 0 75%', maxWidth: 300, background: T.card,
               border: `1px solid ${T.border}`, borderRadius: 14, padding: 16 }}>
               <div style={{ ...kicker, fontSize: 10, color: accent }}>{h.title}</div>
@@ -362,7 +362,7 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
       {/* cosa include */}
       {(L('includes') || service.includes) && (L('includes') || service.includes).length > 0 && (
         <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 16, padding: 18 }}>
-          <div style={{ ...kicker, fontSize: 10.5, color: accent, marginBottom: 12 }}>Cosa include</div>
+          <div style={{ ...kicker, fontSize: 10.5, color: accent, marginBottom: 12 }}>{t("Cosa include")}</div>
           <div className="grid" style={{ gap: 10 }}>
             {(L('includes') || service.includes).map((it: string, i: number) => (
               <div key={i} className="flex gap" style={{ gap: 10, alignItems: 'flex-start' }}>
@@ -396,7 +396,7 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
       {/* contatti */}
       {(service.contact_email || service.contact_phone || service.partner_website) && (
         <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 16, padding: 18 }}>
-          <div style={{ ...kicker, fontSize: 10.5, color: T.muted, marginBottom: 10 }}>Contatti</div>
+          <div style={{ ...kicker, fontSize: 10.5, color: T.muted, marginBottom: 10 }}>{t("Contatti")}</div>
           <div className="flex gap" style={{ flexWrap: 'wrap', gap: 10 }}>
             {service.partner_website && (
               <a className="btn btn-ghost btn-sm" href={service.partner_website} target="_blank" rel="noreferrer">
@@ -427,10 +427,10 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
           <button onClick={() => { setStep(0); setMode('form') }}
             style={{ width: '100%', padding: '15px 18px', borderRadius: 999, border: 'none', cursor: 'pointer',
               background: T.text, color: '#0b0b0e', fontWeight: 800, fontSize: 15 }}>
-            Compila il questionario
+            {t('Compila il questionario')}
           </button>
           <div style={{ fontSize: 11.5, color: T.muted, textAlign: 'center', marginTop: 8 }}>
-            ◷ circa 3 minuti · il partner costruisce il pacchetto su di te · nessun impegno
+            ◷ {t('circa 3 minuti · il partner costruisce il pacchetto su di te · nessun impegno')}
           </div>
         </div>
       )}
