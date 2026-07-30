@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../auth/AuthContext'
 import { useAthlete } from '../lib/athlete'
+import { useLang } from '../lib/i18n'
 import { useCollection, insertRow, updateRow, deleteRow } from '../lib/useData'
 import { notify } from '../lib/notify'
 import { toast } from '../lib/toast'
@@ -52,6 +53,7 @@ const DOW = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom']
 export default function Editorial() {
   const { isTeam } = useAuth()
   const { athleteId, athleteTz } = useAthlete()
+  const { t } = useLang()
   const { rows, loading, reload } = useCollection<EditorialEntry>('crm_editorial', { orderBy: 'entry_date', ascending: true, match: { player_id: athleteId } })
   const today = new Date()
   const [ym, setYm] = useState<[number, number]>([today.getFullYear(), today.getMonth()])
@@ -134,18 +136,18 @@ export default function Editorial() {
       <div className="card flex between wrap gap">
         <div className="flex gap" style={{ alignItems: 'center' }}>
           <button className="btn btn-sm" onClick={prevMonth}>‹</button>
-          <div style={{ fontWeight: 750, fontSize: 16, minWidth: 150, textAlign: 'center' }}>{MONTHS[month]} {year}</div>
+          <div style={{ fontWeight: 750, fontSize: 16, minWidth: 150, textAlign: 'center' }}>{t(MONTHS[month])} {year}</div>
           <button className="btn btn-sm" onClick={nextMonth}>›</button>
-          <button className="btn btn-ghost btn-sm" onClick={() => setYm([today.getFullYear(), today.getMonth()])}>Oggi</button>
+          <button className="btn btn-ghost btn-sm" onClick={() => setYm([today.getFullYear(), today.getMonth()])}>{t('Oggi')}</button>
         </div>
         <div className="flex gap">
           <div className="pill-tabs">
-            <button className={`pill-tab ${view === 'cal' ? 'active' : ''}`} onClick={() => setView('cal')}>Calendario</button>
-            <button className={`pill-tab ${view === 'lista' ? 'active' : ''}`} onClick={() => setView('lista')}>Lista</button>
-            <button className={`pill-tab ${view === 'pubblicati' ? 'active' : ''}`} onClick={() => setView('pubblicati')}>Pubblicati</button>
+            <button className={`pill-tab ${view === 'cal' ? 'active' : ''}`} onClick={() => setView('cal')}>{t('Calendario')}</button>
+            <button className={`pill-tab ${view === 'lista' ? 'active' : ''}`} onClick={() => setView('lista')}>{t('Lista')}</button>
+            <button className={`pill-tab ${view === 'pubblicati' ? 'active' : ''}`} onClick={() => setView('pubblicati')}>{t('Pubblicati')}</button>
           </div>
           <button className="btn btn-primary" onClick={() => setCreating(true)}>
-            <Icon name="plus" size={14} /> {isTeam ? 'Contenuto' : 'Proponi contenuto'}
+            <Icon name="plus" size={14} /> {isTeam ? t('Contenuto') : 'Proponi contenuto'}
           </button>
         </div>
       </div>
@@ -162,11 +164,11 @@ export default function Editorial() {
         <div className="grid" style={{ gap: 10 }}>
           {(() => {
             const days = cells.filter((d): d is string => !!d && (byDate.get(d) || []).length > 0)
-            if (days.length === 0) return <div className="card"><div className="faint" style={{ padding: '8px 0' }}>Nessun contenuto in {MONTHS[month]}.</div></div>
+            if (days.length === 0) return <div className="card"><div className="faint" style={{ padding: '8px 0' }}>{t('Nessun contenuto in')} {t(MONTHS[month])}.</div></div>
             return days.map(day => (
               <div className="card agenda-day" key={day}>
                 <div className={`agenda-date ${day === todayKey ? 'agenda-today' : ''}`}>
-                  <div className="agenda-dow">{DOW[(new Date(day + 'T12:00').getDay() + 6) % 7]}</div>
+                  <div className="agenda-dow">{t(DOW[(new Date(day + 'T12:00').getDay() + 6) % 7])}</div>
                   <div className="agenda-num">{Number(day.slice(8))}</div>
                 </div>
                 <div className="agenda-items">
@@ -181,7 +183,7 @@ export default function Editorial() {
       ) : view === 'cal' ? (
         <div className="card" style={{ padding: 12 }}>
           <div className="cal-grid cal-head">
-            {DOW.map(d => <div key={d} className="cal-dow">{d}</div>)}
+            {DOW.map(d => <div key={d} className="cal-dow">{t(d)}</div>)}
           </div>
           <div className="cal-grid">
             {cells.map((day, i) => {
@@ -196,12 +198,12 @@ export default function Editorial() {
           </div>
         </div>
       ) : view === 'pubblicati' ? (
-        <EntryList title="Pubblicati ✓" entries={listEntries.filter(e => e.status === 'pubblicato').reverse()}
+        <EntryList title={t('Pubblicati ✓')} entries={listEntries.filter(e => e.status === 'pubblicato').reverse()}
           onOpen={setOpenEntry} empty="Ancora nessun contenuto pubblicato. Confermando un post come pubblicato, finisce qui." />
       ) : (
         <div className="grid g2">
-          <EntryList title="In arrivo" entries={upcoming} onOpen={setOpenEntry} empty="Niente in programma." />
-          <EntryList title="Archivio" entries={past} onOpen={setOpenEntry} empty="Ancora nessun contenuto passato." />
+          <EntryList title={t('In arrivo')} entries={upcoming} onOpen={setOpenEntry} empty={t('Niente in programma.')} />
+          <EntryList title={t('Archivio')} entries={past} onOpen={setOpenEntry} empty={t('Ancora nessun contenuto passato.')} />
         </div>
       )}
 
@@ -220,6 +222,7 @@ export default function Editorial() {
 // Chip nel calendario: per le partite una mini-card che si legge senza aprire,
 // per gli altri contenuti il chip compatto.
 function EntryChip({ e, onOpen, preview, tz, full }: { e: EditorialEntry; onOpen: (e: EditorialEntry) => void; preview?: string; tz?: string; full?: boolean }) {
+  const { t } = useLang()
   if (e.type === 'partita' && e.match_info) {
     const mi = e.match_info
     const home = mi.venue === 'Home'
@@ -230,10 +233,10 @@ function EntryChip({ e, onOpen, preview, tz, full }: { e: EditorialEntry; onOpen
       <button className={`cal-match cal-${e.status} ${full ? 'cal-w-full' : ''}`} onClick={() => onOpen(e)} title={e.title}>
         <div className="cal-match-top">
           <span className="cal-league"><Icon name="instagram" size={10} style={{ verticalAlign: '-1px', marginRight: 3, color: e.status === 'pubblicato' ? '#E1306C' : 'currentColor', opacity: e.status === 'pubblicato' ? 1 : 0.55 }} />{shortLeague(mi.league)}</span>
-          <span>{home ? 'CASA' : 'TRASF'} · {score || time}</span>
+          <span>{home ? t('CASA') : t('TRASF')} · {score || time}</span>
         </div>
         <div className="cal-match-teams">{mi.home_team}<br />{mi.away_team}</div>
-        <div className="cal-match-state">{STATUSES[e.status]?.label}</div>
+        <div className="cal-match-state">{t(STATUSES[e.status]?.label || '')}</div>
       </button>
     )
   }
@@ -259,7 +262,7 @@ function EntryChip({ e, onOpen, preview, tz, full }: { e: EditorialEntry; onOpen
           WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{e.title}</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 3 }}>
           <span style={{ width: 6, height: 6, borderRadius: '50%', background: accent, flexShrink: 0 }} />
-          <span style={{ fontSize: 9.5, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: 0.3, fontWeight: 700 }}>{st?.label}</span>
+          <span style={{ fontSize: 9.5, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: 0.3, fontWeight: 700 }}>{t(st?.label || '')}</span>
           {preview && <><span style={{ color: 'var(--text-dim)', fontSize: 9.5 }}>·</span><Icon name="image" size={10} style={{ color: 'var(--text-dim)' }} /></>}
         </div>
       </div>
