@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import { useAthlete } from '../lib/athlete'
+import { useLang } from '../lib/i18n'
 import { useCollection, insertRow, updateRow, deleteRow } from '../lib/useData'
 import { Modal, Field, Input, Textarea, Select, Badge, Empty, Spinner, Stat, ConfirmButton } from '../components/ui'
 import Icon from '../components/Icon'
@@ -10,6 +11,7 @@ import type { Sponsor } from '../lib/types'
 const empty = (): Partial<Sponsor> => ({ brand: '', type: 'sponsor', currency: 'EUR', status: 'active', deliverables: [] })
 
 export default function Sponsors() {
+  const { t } = useLang()
   const { athleteId } = useAthlete()
   const { isAdmin } = useAuth()
   const { rows, loading, reload } = useCollection<Sponsor>('crm_sponsors', { orderBy: 'created_at', match: { player_id: athleteId } })
@@ -29,9 +31,9 @@ export default function Sponsors() {
   return (
     <div className="grid" style={{ gap: 16 }}>
       <div className="grid g3">
-        <Stat icon={<Icon name="award" size={13} />} label="Sponsor attivi" value={active.length} />
-        <Stat icon={<Icon name="briefcase" size={13} />} label="Valore complessivo" value={fmtMoney(totalValue)} tone="var(--accent)" />
-        <Stat icon={<Icon name="pin" size={13} />} label="In trattativa" value={rows.filter(r => r.status === 'negotiation').length} tone="var(--gold)" />
+        <Stat icon={<Icon name="award" size={13} />} label={t("Sponsor attivi")} value={active.length} />
+        <Stat icon={<Icon name="briefcase" size={13} />} label={t("Valore complessivo")} value={fmtMoney(totalValue)} tone="var(--accent)" />
+        <Stat icon={<Icon name="pin" size={13} />} label={t("In trattativa")} value={rows.filter(r => r.status === 'negotiation').length} tone="var(--gold)" />
       </div>
 
       <div className="flex between">
@@ -49,13 +51,13 @@ export default function Sponsors() {
                 <div className="flex between" style={{ alignItems: 'flex-start' }}>
                   <div>
                     <div style={{ fontWeight: 700, fontSize: 15 }}>{s.brand}</div>
-                    <div className="muted" style={{ fontSize: 12.5 }}>{typeLabel(s.type)}{s.contact ? ` · ${s.contact}` : ''}</div>
+                    <div className="muted" style={{ fontSize: 12.5 }}>{t(typeLabel(s.type))}{s.contact ? ` · ${s.contact}` : ''}</div>
                   </div>
-                  <Badge tone={s.status === 'active' ? 'green' : s.status === 'negotiation' ? 'gold' : 'red'}>{statusLabel(s.status)}</Badge>
+                  <Badge tone={s.status === 'active' ? 'green' : s.status === 'negotiation' ? 'gold' : 'red'}>{t(statusLabel(s.status))}</Badge>
                 </div>
                 <div className="flex between" style={{ margin: '12px 0' }}>
-                  <div><div className="faint" style={{ fontSize: 11 }}>Valore</div><b style={{ fontSize: 16 }}>{fmtMoney(s.value, s.currency)}</b></div>
-                  <div className="right"><div className="faint" style={{ fontSize: 11 }}>Periodo</div><div style={{ fontSize: 12.5 }}>{fmtDate(s.start_date)} → {fmtDate(s.end_date)}</div></div>
+                  <div><div className="faint" style={{ fontSize: 11 }}>{t('Valore')}</div><b style={{ fontSize: 16 }}>{fmtMoney(s.value, s.currency)}</b></div>
+                  <div className="right"><div className="faint" style={{ fontSize: 11 }}>{t('Periodo')}</div><div style={{ fontSize: 12.5 }}>{fmtDate(s.start_date)} → {fmtDate(s.end_date)}</div></div>
                 </div>
                 {dl.length > 0 && (
                   <div>
@@ -76,8 +78,8 @@ export default function Sponsors() {
                 {s.notes && <div className="faint" style={{ fontSize: 12.5, marginTop: 10 }}>{s.notes}</div>}
                 {isAdmin && (
                   <div className="flex gap" style={{ marginTop: 14 }}>
-                    <button className="btn btn-sm" onClick={() => setEdit(s)}>Modifica</button>
-                    <ConfirmButton onConfirm={async () => { await deleteRow('crm_sponsors', s.id); reload() }}>Elimina</ConfirmButton>
+                    <button className="btn btn-sm" onClick={() => setEdit(s)}>{t('Modifica')}</button>
+                    <ConfirmButton onConfirm={async () => { await deleteRow('crm_sponsors', s.id); reload() }}>{t('Elimina')}</ConfirmButton>
                   </div>
                 )}
               </div>
@@ -92,6 +94,7 @@ export default function Sponsors() {
 }
 
 function SponsorForm({ value, onClose, onSaved }: { value: Partial<Sponsor>; onClose: () => void; onSaved: () => void }) {
+  const { t } = useLang()
   const { athleteId } = useAthlete()
   const [f, setF] = useState<Partial<Sponsor>>({ ...value, deliverables: value.deliverables || [] })
   const [busy, setBusy] = useState(false)
@@ -113,32 +116,32 @@ function SponsorForm({ value, onClose, onSaved }: { value: Partial<Sponsor>; onC
   return (
     <Modal title={f.id ? 'Modifica sponsor' : 'Nuovo sponsor'} onClose={onClose}
       footer={<>
-        <button className="btn btn-ghost" onClick={onClose}>Annulla</button>
+        <button className="btn btn-ghost" onClick={onClose}>{t('Annulla')}</button>
         <button className="btn btn-primary" disabled={busy || !f.brand} onClick={save}>{busy ? 'Salvo…' : 'Salva'}</button>
       </>}>
       <div className="row2">
-        <Field label="Brand"><Input value={f.brand || ''} onChange={e => set('brand', e.target.value)} /></Field>
-        <Field label="Tipo"><Select value={f.type} onChange={e => set('type', e.target.value)}>
-          <option value="sponsor">Sponsor</option><option value="endorsement">Endorsement</option><option value="collaborazione">Collaborazione</option>
+        <Field label={t("Brand")}><Input value={f.brand || ''} onChange={e => set('brand', e.target.value)} /></Field>
+        <Field label={t("Tipo")}><Select value={f.type} onChange={e => set('type', e.target.value)}>
+          <option value="sponsor">{t('Sponsor')}</option><option value="endorsement">{t('Endorsement')}</option><option value="collaborazione">{t('Collaborazione')}</option>
         </Select></Field>
       </div>
       <div className="row2">
-        <Field label="Valore"><Input type="number" value={f.value ?? ''} onChange={e => set('value', e.target.value)} /></Field>
-        <Field label="Stato"><Select value={f.status} onChange={e => set('status', e.target.value)}>
-          <option value="active">Attivo</option><option value="negotiation">In trattativa</option><option value="expired">Concluso</option>
+        <Field label={t("Valore")}><Input type="number" value={f.value ?? ''} onChange={e => set('value', e.target.value)} /></Field>
+        <Field label={t("Stato")}><Select value={f.status} onChange={e => set('status', e.target.value)}>
+          <option value="active">{t('Attivo')}</option><option value="negotiation">{t('In trattativa')}</option><option value="expired">{t('Concluso')}</option>
         </Select></Field>
       </div>
       <div className="row2">
-        <Field label="Inizio"><Input type="date" value={f.start_date || ''} onChange={e => set('start_date', e.target.value)} /></Field>
-        <Field label="Fine"><Input type="date" value={f.end_date || ''} onChange={e => set('end_date', e.target.value)} /></Field>
+        <Field label={t("Inizio")}><Input type="date" value={f.start_date || ''} onChange={e => set('start_date', e.target.value)} /></Field>
+        <Field label={t("Fine")}><Input type="date" value={f.end_date || ''} onChange={e => set('end_date', e.target.value)} /></Field>
       </div>
-      <Field label="Referente / Contatto"><Input value={f.contact || ''} onChange={e => set('contact', e.target.value)} /></Field>
+      <Field label={t("Referente / Contatto")}><Input value={f.contact || ''} onChange={e => set('contact', e.target.value)} /></Field>
 
       <div className="field">
-        <label>Deliverable</label>
+        <label>{t('Deliverable')}</label>
         {dl.map((d, i) => (
           <div className="flex gap" key={i} style={{ marginBottom: 6 }}>
-            <Input placeholder="es. 2 post Instagram" value={d.title} onChange={e => { const n = [...dl]; n[i] = { ...n[i], title: e.target.value }; set('deliverables', n) }} />
+            <Input placeholder={t("es. 2 post Instagram")} value={d.title} onChange={e => { const n = [...dl]; n[i] = { ...n[i], title: e.target.value }; set('deliverables', n) }} />
             <Input type="date" style={{ maxWidth: 150 }} value={d.due_date || ''} onChange={e => { const n = [...dl]; n[i] = { ...n[i], due_date: e.target.value }; set('deliverables', n) }} />
             <button className="btn btn-ghost btn-sm" onClick={() => set('deliverables', dl.filter((_, x) => x !== i))}>×</button>
           </div>
@@ -146,7 +149,7 @@ function SponsorForm({ value, onClose, onSaved }: { value: Partial<Sponsor>; onC
         <button className="btn btn-sm" onClick={() => set('deliverables', [...dl, { title: '', done: false }])}>+ Aggiungi deliverable</button>
       </div>
 
-      <Field label="Note"><Textarea value={f.notes || ''} onChange={e => set('notes', e.target.value)} /></Field>
+      <Field label={t("Note")}><Textarea value={f.notes || ''} onChange={e => set('notes', e.target.value)} /></Field>
     </Modal>
   )
 }

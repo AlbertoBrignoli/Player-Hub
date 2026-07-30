@@ -311,6 +311,7 @@ function EntryModal({ entry, onClose, onChanged }: {
   entry: EditorialEntry; onClose: () => void; onChanged: () => void
 }) {
   const { profile, isAdmin, isTeam, session } = useAuth()
+  const { t } = useLang()
   const { athleteId, athleteTz } = useAthlete()
   const [copy, setCopy] = useState(entry.copy_text || '')
   const [saving, setSaving] = useState(false)
@@ -593,7 +594,7 @@ function EntryModal({ entry, onClose, onChanged }: {
                 <Icon name="check" size={14} /> Conferma pubblicato
               </button>
             )}
-            <button className="btn" onClick={onClose}>Chiudi</button>
+            <button className="btn" onClick={onClose}>{t('Chiudi')}</button>
           </div>
         </div>
       }>
@@ -603,7 +604,7 @@ function EntryModal({ entry, onClose, onChanged }: {
           <Badge>{TYPES[entry.type]?.label || entry.type}</Badge>
           {entry.theme && <Badge>{THEMES[entry.theme] || entry.theme}</Badge>}
           {brandName && <Badge tone="red">Contenuto {brandName}</Badge>}
-          {entry.requested_by && <Badge tone="accent">Proposto dal giocatore</Badge>}
+          {entry.requested_by && <Badge tone="accent">{t('Proposto dal giocatore')}</Badge>}
           <span className="faint" style={{ fontSize: 12.5 }}>{fmtDate(entry.entry_date)}</span>
         </div>
         {approvate.length === 0 && entry.status !== 'pubblicato' && (
@@ -616,22 +617,22 @@ function EntryModal({ entry, onClose, onChanged }: {
 
         {entry.brief && (
           <div className="card" style={{ background: 'var(--bg-2)' }}>
-            <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.8px', fontWeight: 700, marginBottom: 4 }}>Brief</div>
+            <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.8px', fontWeight: 700, marginBottom: 4 }}>{t('Brief')}</div>
             <div style={{ fontSize: 13.5 }}>{entry.brief}</div>
           </div>
         )}
 
         {mi && (
           <div className="card" style={{ background: 'var(--bg-2)' }}>
-            <div className="card-head"><div className="card-title">Info partita per le grafiche</div></div>
+            <div className="card-head"><div className="card-title">{t('Info partita per le grafiche')}</div></div>
             <div className="grid g3" style={{ gap: 10 }}>
-              <Info k="Match" v={`${mi.home_team ?? '—'} vs ${mi.away_team ?? '—'}`} />
-              <Info k="Competizione" v={mi.league} />
-              <Info k="Giornata" v={mi.round} />
-              <Info k="Calcio d'inizio" v={mi.kickoff ? fmtMatchDateTime(mi.kickoff, athleteTz) : null} />
-              <Info k="Stadio" v={mi.stadium} />
-              <Info k="Casa/Trasferta" v={mi.venue === 'Home' ? 'In casa' : mi.venue === 'Away' ? 'Trasferta' : mi.venue} />
-              {mi.status === 'FT' && <Info k="Risultato" v={`${mi.team_score ?? '—'}–${mi.opponent_score ?? '—'}`} />}
+              <Info k={t("Match")} v={`${mi.home_team ?? '—'} vs ${mi.away_team ?? '—'}`} />
+              <Info k={t("Competizione")} v={mi.league} />
+              <Info k={t("Giornata")} v={mi.round} />
+              <Info k={t("Calcio d'inizio")} v={mi.kickoff ? fmtMatchDateTime(mi.kickoff, athleteTz) : null} />
+              <Info k={t("Stadio")} v={mi.stadium} />
+              <Info k={t("Casa/Trasferta")} v={mi.venue === 'Home' ? t('In casa') : mi.venue === 'Away' ? t('Trasferta') : mi.venue} />
+              {mi.status === 'FT' && <Info k={t("Risultato")} v={`${mi.team_score ?? '—'}–${mi.opponent_score ?? '—'}`} />}
             </div>
             <div className="flex gap wrap" style={{ marginTop: 12 }}>
               <button className="btn btn-sm" disabled={genBusy !== null} onClick={() => generateStory('pre')}
@@ -653,15 +654,15 @@ function EntryModal({ entry, onClose, onChanged }: {
 
         <div>
           <div className="flex between" style={{ marginBottom: 6 }}>
-            <div style={{ fontWeight: 650 }}>Copy</div>
+            <div style={{ fontWeight: 650 }}>{t('Copy')}</div>
             <div className="flex gap">
-              <button className="btn btn-sm" onClick={copyToClipboard} disabled={!copy}>{copied ? 'Copiato ✓' : 'Copia'}</button>
-              <button className="btn btn-sm" onClick={downloadCopy} disabled={!copy}>Scarica .txt</button>
+              <button className="btn btn-sm" onClick={copyToClipboard} disabled={!copy}>{copied ? t('Copiato ✓') : t('Copia')}</button>
+              <button className="btn btn-sm" onClick={downloadCopy} disabled={!copy}>{t('Scarica .txt')}</button>
               <button className="btn btn-primary btn-sm" disabled={saving} onClick={saveCopy}>{saving ? 'Salvo…' : 'Salva copy'}</button>
             </div>
           </div>
           <Textarea rows={5} value={copy} onChange={e => setCopy(e.target.value)}
-            placeholder="Scrivi qui il copy del post: didascalia, hashtag, tag…" />
+            placeholder={t("Scrivi qui il copy del post: didascalia, hashtag, tag…")} />
           <div className="faint" style={{ fontSize: 11.5, marginTop: 4 }}>Copy modificabile da entrambi: il team lo prepara, tu lo approvi o lo ritocchi.</div>
         </div>
 
@@ -709,14 +710,14 @@ function EntryModal({ entry, onClose, onChanged }: {
                     {/* frecce per ordinare il carosello */}
                     {approvate.length > 1 && (
                       <div style={{ position: 'absolute', bottom: 6, left: 6, display: 'flex', gap: 4 }}>
-                        <button title="Sposta prima" disabled={i === 0} onClick={() => moveMaterial(i, -1)}
+                        <button title={t("Sposta prima")} disabled={i === 0} onClick={() => moveMaterial(i, -1)}
                           style={moveBtn(i === 0)}><span style={{ display: 'inline-flex', transform: 'rotate(180deg)' }}><Icon name="chevron-right" size={13} /></span></button>
-                        <button title="Sposta dopo" disabled={i === approvate.length - 1} onClick={() => moveMaterial(i, 1)}
+                        <button title={t("Sposta dopo")} disabled={i === approvate.length - 1} onClick={() => moveMaterial(i, 1)}
                           style={moveBtn(i === approvate.length - 1)}><Icon name="chevron-right" size={13} /></button>
                       </div>
                     )}
                     {(isAdmin || m.uploaded_by === session?.user.id) && (
-                      <button className="asset-del" title="Rimuovi" onClick={() => removeAsset(m)}><Icon name="x" size={12} /></button>
+                      <button className="asset-del" title={t("Rimuovi")} onClick={() => removeAsset(m)}><Icon name="x" size={12} /></button>
                     )}
                   </div>
                 ))}
@@ -726,7 +727,7 @@ function EntryModal({ entry, onClose, onChanged }: {
 
         <div>
           <div className="flex between" style={{ marginBottom: 6 }}>
-            <div style={{ fontWeight: 650 }}>Grafiche pronte</div>
+            <div style={{ fontWeight: 650 }}>{t('Grafiche pronte')}</div>
             {isTeam && (
               <>
                 <button className="btn btn-primary btn-sm" disabled={uploading} onClick={() => fileRef.current?.click()}>
@@ -749,7 +750,7 @@ function EntryModal({ entry, onClose, onChanged }: {
                       <div className="row-title">{m.file_name}</div>
                       <div className="row-sub">{fmtDateTime(m.created_at)}</div>
                     </div>
-                    <button className="btn btn-sm" onClick={() => openAsset(m)}>Scarica</button>
+                    <button className="btn btn-sm" onClick={() => openAsset(m)}>{t('Scarica')}</button>
                     {isAdmin && <ConfirmButton onConfirm={() => removeAsset(m)}>×</ConfirmButton>}
                   </div>
                 ))}
@@ -775,6 +776,7 @@ function EntryModal({ entry, onClose, onChanged }: {
 function InstagramExport({ caption, title, photos, urls, onClose }: {
   caption: string; title: string; photos: MediaItem[]; urls: Record<string, string>; onClose: () => void
 }) {
+  const { t } = useLang()
   const [copied, setCopied] = useState(false)
   const [busy, setBusy] = useState(false)
   const [files, setFiles] = useState<File[]>([])
@@ -804,7 +806,7 @@ function InstagramExport({ caption, title, photos, urls, onClose }: {
     typeof navigator !== 'undefined' && !!navigator.canShare && (() => { try { return navigator.canShare({ files }) } catch { return false } })()
 
   async function copyCaption() {
-    try { await navigator.clipboard.writeText(caption || ''); setCopied(true); setTimeout(() => setCopied(false), 2000); toast('Caption copiata') }
+    try { await navigator.clipboard.writeText(caption || ''); setCopied(true); setTimeout(() => setCopied(false), 2000); toast(t('Caption copiata')) }
     catch { toast('Copia non riuscita', 'err') }
   }
 
@@ -823,11 +825,11 @@ function InstagramExport({ caption, title, photos, urls, onClose }: {
       setTimeout(() => URL.revokeObjectURL(a.href), 4000)
       await new Promise(r => setTimeout(r, 400))
     }
-    setBusy(false); toast('Foto scaricate in ordine')
+    setBusy(false); toast(t('Foto scaricate in ordine'))
   }
 
   return (
-    <Modal title="Pronto per Instagram" onClose={onClose} wide>
+    <Modal title={t("Pronto per Instagram")} onClose={onClose} wide>
       <div className="grid" style={{ gap: 16 }}>
         <div className="faint" style={{ fontSize: 12.5 }}>
           1) Copia la caption · 2) Salva le foto (escono <b style={{ color: 'var(--text)' }}>in ordine 1→{photos.length}</b>) · 3) Apri Instagram, carica le foto, incolla la caption. 30 secondi.
@@ -836,7 +838,7 @@ function InstagramExport({ caption, title, photos, urls, onClose }: {
         {/* azioni principali */}
         <div className="flex gap wrap" style={{ gap: 10 }}>
           <button className="btn btn-primary" onClick={copyCaption} disabled={!caption}>
-            <Icon name="copy" size={14} /> {copied ? 'Caption copiata ✓' : 'Copia caption'}
+            <Icon name="copy" size={14} /> {copied ? t('Caption copiata ✓') : t('Copia caption')}
           </button>
           <button className="btn btn-primary" onClick={savePhotos} disabled={preparing || busy || files.length === 0}>
             <Icon name="image" size={14} /> {preparing ? 'Preparo le foto…' : busy ? 'Scarico…' : canShareFiles ? `Salva ${files.length} foto sul telefono` : `Scarica ${files.length} foto`}
@@ -846,7 +848,7 @@ function InstagramExport({ caption, title, photos, urls, onClose }: {
 
         {/* anteprima ordine */}
         <div>
-          <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 6 }}>Ordine del carosello</div>
+          <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 6 }}>{t('Ordine del carosello')}</div>
           <div className="grid" style={{ gap: 8 }}>
             {photos.map((m, i) => (
               <div key={m.id} className="flex gap" style={{ alignItems: 'center', gap: 12, border: '1px solid var(--border)', borderRadius: 12, padding: 8 }}>
@@ -952,6 +954,7 @@ function MediaPicker({ athleteId, excludeSourceIds, onClose, onConfirm }: {
   onClose: () => void
   onConfirm: (items: MediaItem[]) => void | Promise<void>
 }) {
+  const { t } = useLang()
   const [items, setItems] = useState<MediaItem[]>([])
   const [urls, setUrls] = useState<Record<string, string>>({})
   const [sel, setSel] = useState<Set<string>>(new Set())
