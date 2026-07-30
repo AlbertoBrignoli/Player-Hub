@@ -8,6 +8,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import { useAthlete } from '../lib/athlete'
+import { useLang } from '../lib/i18n'
 import { supabase, AGENCY_NAME } from '../lib/supabase'
 import { Modal, Field, Input, Textarea, Select, Badge, Empty, Spinner, Stat, ConfirmButton } from '../components/ui'
 import Icon from '../components/Icon'
@@ -38,6 +39,7 @@ const fmtN = (n: any) => (n == null || n === '' ? '—' : Number(n).toLocaleStri
 
 // ═════════════════════════════════════════════════════════════════════════════
 export default function Commercial() {
+  const { t: tr } = useLang()
   const { isAdmin, role, profile: user } = useAuth()
   const { athleteId } = useAthlete()
   const [tab, setTab] = useState('overview')
@@ -124,10 +126,10 @@ export default function Commercial() {
   if (wizard && prof) return <Onboarding profile={prof} save={saveProf} onDone={() => { setWizard(false); reload() }} onLater={() => setWizard(false)} />
 
   const TABS = [
-    { id: 'overview', l: 'Overview' }, { id: 'valore', l: 'Il mio valore' }, { id: 'brandfit', l: 'Brand Fit' },
-    { id: 'mediakit', l: 'Media Kit' }, { id: 'opportunita', l: `Opportunità${activeOpps.length ? ` · ${activeOpps.length}` : ''}` },
-    { id: 'collaborazioni', l: 'Collaborazioni' }, { id: 'performance', l: 'Performance' }, { id: 'dati', l: 'Dati e preferenze' },
-    ...(isAdmin ? [{ id: 'admin', l: 'Gestione AUVI' }] : []),
+    { id: 'overview', l: tr('Overview') }, { id: 'valore', l: tr('Il mio valore') }, { id: 'brandfit', l: tr('Brand Fit') },
+    { id: 'mediakit', l: tr('Media Kit') }, { id: 'opportunita', l: `${tr('Opportunità')}${activeOpps.length ? ` · ${activeOpps.length}` : ''}` },
+    { id: 'collaborazioni', l: tr('Collaborazioni') }, { id: 'performance', l: tr('Performance') }, { id: 'dati', l: tr('Dati e preferenze') },
+    ...(isAdmin ? [{ id: 'admin', l: tr('Gestione AUVI') }] : []),
   ]
 
   return (
@@ -144,7 +146,7 @@ export default function Commercial() {
           <div className="flex gap" style={{ alignItems: 'center' }}>
             <span style={{ color: 'var(--gold)' }}><Icon name="star" size={20} /></span>
             <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 700 }}>Completa l'onboarding commerciale</div>
+              <div style={{ fontWeight: 700 }}>{tr("Completa l'onboarding commerciale")}</div>
               <div className="muted" style={{ fontSize: 12.5 }}>Pochi minuti: punteggio e compatibilità con i brand diventeranno molto più precisi.</div>
             </div>
             <Icon name="chevron-right" size={18} />
@@ -167,6 +169,7 @@ export default function Commercial() {
 
 // ── Piccoli componenti condivisi ─────────────────────────────────────────────
 function ScoreRing({ value, size = 128 }: { value: number; size?: number }) {
+  const { t: tr } = useLang()
   const stroke = 10, r = (size - stroke) / 2, circ = 2 * Math.PI * r
   return (
     <svg width={size} height={size} style={{ display: 'block', flexShrink: 0 }}>
@@ -180,10 +183,12 @@ function ScoreRing({ value, size = 128 }: { value: number; size?: number }) {
   )
 }
 function TrendPill({ delta, label }: { delta: number | null; label: string }) {
+  const { t: tr } = useLang()
   if (delta === null) return null
   return <Badge tone={delta >= 0 ? 'green' : 'red'}>{delta >= 0 ? '+' : ''}{delta} pt · {label}</Badge>
 }
 function ProgressRow({ name, pct, onClick, open }: { name: string; pct: number; onClick?: () => void; open?: boolean }) {
+  const { t: tr } = useLang()
   return (
     <div className="flex gap" style={{ alignItems: 'center', padding: '8px 0', cursor: onClick ? 'pointer' : 'default' }} onClick={onClick}>
       <div style={{ width: 130, fontWeight: 600, fontSize: 13.5 }}>{name}</div>
@@ -196,13 +201,14 @@ function ProgressRow({ name, pct, onClick, open }: { name: string; pct: number; 
 
 // ── OVERVIEW ──────────────────────────────────────────────────────────────────
 function Overview({ score, snaps, topFits, activeOpps, recos, goto }: any) {
+  const { t: tr } = useLang()
   return (<>
     <div className="grid g2">
       <div className="card">
         <div className="flex gap" style={{ alignItems: 'center', gap: 20 }}>
           <ScoreRing value={score.total} />
           <div>
-            <div className="faint" style={{ fontSize: 11, letterSpacing: '.08em', textTransform: 'uppercase' }}>Commercial Score</div>
+            <div className="faint" style={{ fontSize: 11, letterSpacing: '.08em', textTransform: 'uppercase' }}>{tr('Commercial Score')}</div>
             <div style={{ fontWeight: 700, fontSize: 16, margin: '4px 0 10px' }}>{score.level}</div>
             <div className="flex gap" style={{ flexWrap: 'wrap' }}>
               <TrendPill delta={trendOf(snaps, score.total, 30)} label="30gg" />
@@ -212,7 +218,7 @@ function Overview({ score, snaps, topFits, activeOpps, recos, goto }: any) {
         </div>
       </div>
       <div className="card">
-        <div className="faint" style={{ fontSize: 11, letterSpacing: '.08em', textTransform: 'uppercase' }}>Valore commerciale indicativo</div>
+        <div className="faint" style={{ fontSize: 11, letterSpacing: '.08em', textTransform: 'uppercase' }}>{tr('Valore commerciale indicativo')}</div>
         <div style={{ fontFamily: 'var(--font-display)', fontSize: 30, fontWeight: 700, margin: '8px 0 2px' }}>
           {fmtMoney(score.valueLo)} – {fmtMoney(score.valueHi)}
           <span className="muted" style={{ fontSize: 14, fontFamily: 'var(--font)', fontWeight: 500 }}> /anno</span>
@@ -224,7 +230,7 @@ function Overview({ score, snaps, topFits, activeOpps, recos, goto }: any) {
     <div className="grid g2">
       <div className="card">
         <div className="flex between" style={{ marginBottom: 10 }}>
-          <div style={{ fontWeight: 700 }}>Completezza del profilo</div>
+          <div style={{ fontWeight: 700 }}>{tr('Completezza del profilo')}</div>
           <span style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: score.components.readiness.score >= 70 ? 'var(--green)' : 'var(--gold)' }}>{score.components.readiness.score}%</span>
         </div>
         <div className="bar"><span style={{ width: `${score.components.readiness.score}%` }} /></div>
@@ -233,15 +239,15 @@ function Overview({ score, snaps, topFits, activeOpps, recos, goto }: any) {
         </div>
       </div>
       <div className="card">
-        <div style={{ fontWeight: 700, marginBottom: 6 }}>Categorie più compatibili</div>
+        <div style={{ fontWeight: 700, marginBottom: 6 }}>{tr('Categorie più compatibili')}</div>
         {topFits.slice(0, 4).map((f: any) => <ProgressRow key={f.key} name={f.name} pct={f.pct} />)}
-        <button className="btn btn-sm" style={{ marginTop: 6 }} onClick={() => goto('brandfit')}>Vedi tutte</button>
+        <button className="btn btn-sm" style={{ marginTop: 6 }} onClick={() => goto('brandfit')}>{tr('Vedi tutte')}</button>
       </div>
     </div>
 
     <div className="grid g2">
       <div className="card">
-        <div style={{ fontWeight: 700, marginBottom: 10 }}>Opportunità attive</div>
+        <div style={{ fontWeight: 700, marginBottom: 10 }}>{tr('Opportunità attive')}</div>
         {activeOpps.length === 0
           ? <div className="muted" style={{ fontSize: 12.5 }}>Nessuna opportunità attiva. Completa il profilo per aumentare le possibilità di riceverne.</div>
           : activeOpps.slice(0, 4).map((o: any) => (
@@ -250,12 +256,12 @@ function Overview({ score, snaps, topFits, activeOpps, recos, goto }: any) {
                 <div style={{ fontWeight: 600, fontSize: 13.5 }}>{o.brand_name}</div>
                 <div className="faint" style={{ fontSize: 11.5 }}>{o.category_key || ''}</div>
               </div>
-              <Badge tone={OPP_STATUS[o.status]?.tone}>{OPP_STATUS[o.status]?.label || o.status}</Badge>
+              <Badge tone={OPP_STATUS[o.status]?.tone}>{tr(OPP_STATUS[o.status]?.label || o.status)}</Badge>
             </div>
           ))}
       </div>
       <div className="card">
-        <div style={{ fontWeight: 700, marginBottom: 10 }}>Azioni consigliate</div>
+        <div style={{ fontWeight: 700, marginBottom: 10 }}>{tr('Azioni consigliate')}</div>
         {recos.length === 0 && <div className="muted" style={{ fontSize: 12.5 }}>Profilo in ottima forma, nessuna azione urgente.</div>}
         {recos.slice(0, 4).map((r: Reco, i: number) => (
           <div key={i} className="flex gap" style={{ alignItems: 'center', padding: '7px 0', cursor: 'pointer' }} onClick={() => goto(r.section)}>
@@ -271,11 +277,12 @@ function Overview({ score, snaps, topFits, activeOpps, recos, goto }: any) {
 
 // ── IL MIO VALORE ─────────────────────────────────────────────────────────────
 function Valore({ score, snaps, recos, relBand, goto }: any) {
+  const { t: tr } = useLang()
   const [open, setOpen] = useState<string | null>(null)
   const relLabel = relBand === null ? null : relBand >= 90 ? 'Ottima' : relBand >= 75 ? 'Molto buona' : relBand >= 60 ? 'Buona' : 'In costruzione'
   return (<>
     <div className="card">
-      <div style={{ fontWeight: 700, marginBottom: 6 }}>Le componenti del tuo punteggio</div>
+      <div style={{ fontWeight: 700, marginBottom: 6 }}>{tr('Le componenti del tuo punteggio')}</div>
       <div className="muted" style={{ fontSize: 12.5, marginBottom: 10 }}>Ogni area mostra i dati usati per il calcolo e cosa manca. I pesi sono definiti da {AGENCY_NAME}.</div>
       {COMP_META.map(m => {
         const c = score.components[m.key]
@@ -314,8 +321,8 @@ function Valore({ score, snaps, recos, relBand, goto }: any) {
       })}
     </div>
     <div className="card">
-      <div style={{ fontWeight: 700, marginBottom: 10 }}>Come aumentare il tuo valore</div>
-      {recos.length === 0 && <div className="muted" style={{ fontSize: 12.5 }}>Hai completato tutte le azioni consigliate.</div>}
+      <div style={{ fontWeight: 700, marginBottom: 10 }}>{tr('Come aumentare il tuo valore')}</div>
+      {recos.length === 0 && <div className="muted" style={{ fontSize: 12.5 }}>{tr('Hai completato tutte le azioni consigliate.')}</div>}
       {recos.map((r: Reco, i: number) => (
         <div key={i} className="flex gap" style={{ alignItems: 'center', padding: '10px 0', borderBottom: i < recos.length - 1 ? '1px solid var(--border)' : 'none' }}>
           <Badge tone="gold">+{r.impact} pt</Badge>
@@ -324,7 +331,7 @@ function Valore({ score, snaps, recos, relBand, goto }: any) {
             <div className="faint" style={{ fontSize: 12 }}>{r.cta}</div>
           </div>
           <span className="faint" style={{ fontSize: 11, textTransform: 'uppercase', color: r.priority === 'alta' ? 'var(--red)' : r.priority === 'media' ? 'var(--gold)' : undefined }}>{r.priority}</span>
-          <button className="btn btn-sm" onClick={() => goto(r.section)}>Vai</button>
+          <button className="btn btn-sm" onClick={() => goto(r.section)}>{tr('Vai')}</button>
         </div>
       ))}
     </div>
@@ -333,10 +340,11 @@ function Valore({ score, snaps, recos, relBand, goto }: any) {
 
 // ── BRAND FIT ─────────────────────────────────────────────────────────────────
 function BrandFit({ topFits, excluded }: any) {
+  const { t: tr } = useLang()
   const [open, setOpen] = useState<string | null>(null)
   return (<>
     <div className="card">
-      <div style={{ fontWeight: 700, marginBottom: 4 }}>Compatibilità per categoria</div>
+      <div style={{ fontWeight: 700, marginBottom: 4 }}>{tr('Compatibilità per categoria')}</div>
       <div className="muted" style={{ fontSize: 12.5, marginBottom: 12 }}>Percentuali derivate da regole tracciabili: preferenze, interessi, audience, territori e contenuti. Più il profilo è completo, più il matching è preciso.</div>
       {topFits.map((f: any) => (
         <div key={f.key} style={{ borderBottom: '1px solid var(--border)' }}>
@@ -350,7 +358,7 @@ function BrandFit({ topFits, excluded }: any) {
       ))}
       {excluded.length > 0 && (
         <div style={{ marginTop: 14 }}>
-          <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 8 }}>Categorie escluse da te</div>
+          <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 8 }}>{tr('Categorie escluse da te')}</div>
           <div className="flex gap" style={{ flexWrap: 'wrap' }}>{excluded.map((f: any) => <Badge key={f.key} tone="red">{f.name}</Badge>)}</div>
         </div>
       )}
@@ -365,6 +373,7 @@ function BrandFit({ topFits, excluded }: any) {
 
 // ── MEDIA KIT ─────────────────────────────────────────────────────────────────
 function MediaKitTab({ player, prof, topFits, collabs, cats, saveProf }: any) {
+  const { t: tr } = useLang()
   const { isAdmin } = useAuth()
   const [lang, setLang] = useState(prof?.media_kit?.lang || 'it')
   const [target, setTarget] = useState(prof?.media_kit?.target_category || '')
@@ -385,18 +394,18 @@ function MediaKitTab({ player, prof, topFits, collabs, cats, saveProf }: any) {
 
   return (<>
     <div className="card">
-      <div style={{ fontWeight: 700, marginBottom: 4 }}>Media Kit dinamico</div>
+      <div style={{ fontWeight: 700, marginBottom: 4 }}>{tr('Media Kit dinamico')}</div>
       <div className="muted" style={{ fontSize: 12.5, marginBottom: 14 }}>Generato automaticamente dai dati del profilo: sempre aggiornato, personalizzabile per lingua e categoria di brand.</div>
       <div className="row2">
-        <Field label="Versione"><Select value={version} onChange={e => setVersion(e.target.value as any)}>
+        <Field label={tr("Versione")}><Select value={version} onChange={e => setVersion(e.target.value as any)}>
           <option value="completo">Completa — numeri e dettagli (uso interno / su richiesta)</option>
           <option value="teaser">Teaser — per incuriosire il brand (senza numeri sensibili)</option>
         </Select></Field>
-        <Field label="Lingua"><Select value={lang} onChange={e => setLang(e.target.value)}><option value="it">Italiano</option><option value="en">English</option></Select></Field>
+        <Field label={tr("Lingua")}><Select value={lang} onChange={e => setLang(e.target.value)}><option value="it">Italiano</option><option value="en">English</option></Select></Field>
       </div>
       <div className="row2">
-        <Field label="Personalizza per categoria"><Select value={target} onChange={e => setTarget(e.target.value)}>
-          <option value="">Generico</option>
+        <Field label={tr("Personalizza per categoria")}><Select value={target} onChange={e => setTarget(e.target.value)}>
+          <option value="">{tr('Generico')}</option>
           {cats.map((c: any) => <option key={c.key} value={c.key}>{c.name}</option>)}
         </Select></Field>
         <div />
@@ -404,7 +413,7 @@ function MediaKitTab({ player, prof, topFits, collabs, cats, saveProf }: any) {
       {version === 'teaser' && <div className="faint" style={{ fontSize: 11.5, marginBottom: 10 }}>Il teaser mostra fascia follower, categorie affini e highlights — niente engagement, reach, demografia o storico campagne.</div>}
       <div className="flex gap">
         <button className="btn btn-primary" disabled={busy} onClick={gen}>
-          <Icon name="download" size={15} /> {busy ? 'Generazione…' : done ? 'PDF scaricato' : `Genera PDF ${version === 'teaser' ? 'teaser' : 'completo'}`}
+          <Icon name="download" size={15} /> {busy ? tr('Generazione…') : done ? 'PDF scaricato' : `Genera PDF ${version === 'teaser' ? 'teaser' : 'completo'}`}
         </button>
       </div>
       {prof?.media_kit?.generated_at && <div className="faint" style={{ fontSize: 11.5, marginTop: 10 }}>Ultimo aggiornamento: {fmtDateTime(prof.media_kit.generated_at)}</div>}
@@ -413,7 +422,7 @@ function MediaKitTab({ player, prof, topFits, collabs, cats, saveProf }: any) {
 
     {/* Anteprima */}
     <div className="card">
-      <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 12 }}>Anteprima</div>
+      <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 12 }}>{tr('Anteprima')}</div>
       <div className="flex gap" style={{ alignItems: 'center', marginBottom: 14 }}>
         {player?.photo_url && <img src={player.photo_url} alt="" style={{ width: 56, height: 56, borderRadius: 14, objectFit: 'cover', border: '1px solid var(--border)' }} />}
         <div>
@@ -572,6 +581,7 @@ async function makePdf(player: any, prof: any, topFits: any[], collabs: any[], c
 
 // ── OPPORTUNITÀ ───────────────────────────────────────────────────────────────
 function Opportunita({ opps, cats, role, userName, reload }: any) {
+  const { t: tr } = useLang()
   const [sel, setSel] = useState<any>(null)
   return (<>
     {opps.length === 0 && <div className="card"><Empty icon={<Icon name="briefcase" size={30} strokeWidth={1.4} />} title="Nessuna opportunità al momento" hint="Quando AUVI riceverà proposte commerciali compatibili con il tuo profilo, le troverai qui." /></div>}
@@ -586,7 +596,7 @@ function Opportunita({ opps, cats, role, userName, reload }: any) {
                 {o.deadline ? ` · scade ${fmtDate(o.deadline)}` : ''}
               </div>
             </div>
-            <Badge tone={OPP_STATUS[o.status]?.tone}>{OPP_STATUS[o.status]?.label || o.status}</Badge>
+            <Badge tone={OPP_STATUS[o.status]?.tone}>{tr(OPP_STATUS[o.status]?.label || o.status)}</Badge>
           </div>
           {o.description && <div className="muted" style={{ fontSize: 12.5, marginTop: 10, lineHeight: 1.55 }}>{o.description.length > 130 ? o.description.slice(0, 130) + '…' : o.description}</div>}
         </div>
@@ -597,6 +607,7 @@ function Opportunita({ opps, cats, role, userName, reload }: any) {
 }
 
 function OppModal({ opp, cats, role, userName, onClose, reload }: any) {
+  const { t: tr } = useLang()
   const [events, setEvents] = useState<any[]>([])
   const [note, setNote] = useState('')
   const [busy, setBusy] = useState(false)
@@ -625,22 +636,22 @@ function OppModal({ opp, cats, role, userName, onClose, reload }: any) {
     <Modal title={opp.brand_name} onClose={onClose} wide>
       <div className="flex between" style={{ marginBottom: 14 }}>
         <div className="muted" style={{ fontSize: 12.5 }}>{cat?.name || ''}</div>
-        <Badge tone={OPP_STATUS[opp.status]?.tone}>{OPP_STATUS[opp.status]?.label || opp.status}</Badge>
+        <Badge tone={OPP_STATUS[opp.status]?.tone}>{tr(OPP_STATUS[opp.status]?.label || opp.status)}</Badge>
       </div>
-      {row('Descrizione', opp.description)}
-      {(opp.fee_lo || opp.fee_hi) && row('Compenso indicativo', `${opp.fee_lo ? fmtMoney(Number(opp.fee_lo)) : ''}${opp.fee_hi ? ` – ${fmtMoney(Number(opp.fee_hi))}` : ''}${opp.fee_note ? ` (${opp.fee_note})` : ''}`)}
-      {opp.activities?.length > 0 && row('Attività richieste', opp.activities.join(' · '))}
-      {row('Durata', opp.duration)}
-      {row('Territorio', opp.territory)}
-      {row('Esclusività', opp.exclusivity)}
-      {opp.deadline && row('Scadenza', fmtDate(opp.deadline))}
-      {row('Referente AUVI', opp.referente)}
-      {opp.materials_requested?.length > 0 && row('Materiali richiesti', opp.materials_requested.join(' · '))}
+      {row(tr('Descrizione'), opp.description)}
+      {(opp.fee_lo || opp.fee_hi) && row(tr('Compenso indicativo'), `${opp.fee_lo ? fmtMoney(Number(opp.fee_lo)) : ''}${opp.fee_hi ? ` – ${fmtMoney(Number(opp.fee_hi))}` : ''}${opp.fee_note ? ` (${opp.fee_note})` : ''}`)}
+      {opp.activities?.length > 0 && row(tr('Attività richieste'), opp.activities.join(' · '))}
+      {row(tr('Durata'), opp.duration)}
+      {row(tr('Territorio'), opp.territory)}
+      {row(tr('Esclusività'), opp.exclusivity)}
+      {opp.deadline && row(tr('Scadenza'), fmtDate(opp.deadline))}
+      {row(tr('Referente AUVI'), opp.referente)}
+      {opp.materials_requested?.length > 0 && row(tr('Materiali richiesti'), opp.materials_requested.join(' · '))}
       {opp.athlete_response && (
         <div className="card" style={{ padding: 12, marginBottom: 12 }}>
           <span className="muted" style={{ fontSize: 12.5 }}>Risposta dell'atleta: </span>
           <b style={{ color: opp.athlete_response === 'interesse' ? 'var(--green)' : opp.athlete_response === 'rifiuto' ? 'var(--red)' : 'var(--blue)' }}>
-            {opp.athlete_response === 'interesse' ? 'Interesse confermato' : opp.athlete_response === 'rifiuto' ? 'Non interessato' : 'Richiesta informazioni'}
+            {opp.athlete_response === 'interesse' ? tr('Interesse confermato') : opp.athlete_response === 'rifiuto' ? tr('Non interessato') : tr('Richiesta informazioni')}
           </b>
           {opp.athlete_note ? <span className="muted" style={{ fontSize: 12.5 }}> — "{opp.athlete_note}"</span> : null}
         </div>
@@ -674,6 +685,7 @@ function OppModal({ opp, cats, role, userName, onClose, reload }: any) {
 
 // ── COLLABORAZIONI ────────────────────────────────────────────────────────────
 function Collaborazioni({ collabs, perf, cats, role, reload }: any) {
+  const { t: tr } = useLang()
   const [sel, setSel] = useState<any>(null)
   return (<>
     {collabs.length === 0 && <div className="card"><Empty icon={<Icon name="award" size={30} strokeWidth={1.4} />} title="Nessuna collaborazione registrata" hint="Le campagne concluse con i brand costruiranno qui il tuo storico commerciale." /></div>}
@@ -701,6 +713,7 @@ function Collaborazioni({ collabs, perf, cats, role, reload }: any) {
 }
 
 function CollabModal({ collab, p, cats, role, onClose, reload }: any) {
+  const { t: tr } = useLang()
   const [fb, setFb] = useState(collab.athlete_feedback || '')
   const [busy, setBusy] = useState(false)
   return (
@@ -708,7 +721,7 @@ function CollabModal({ collab, p, cats, role, onClose, reload }: any) {
       <div className="muted" style={{ fontSize: 12.5, marginBottom: 14 }}>{cats.find((c: any) => c.key === collab.category_key)?.name || ''} · {collab.status}</div>
       {collab.contract_value != null && (
         <div style={{ marginBottom: 14 }}>
-          <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em' }}>Valore contratto</div>
+          <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em' }}>{tr('Valore contratto')}</div>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 700, color: 'var(--green)' }}>{fmtMoney(Number(collab.contract_value))}</div>
         </div>
       )}
@@ -716,26 +729,26 @@ function CollabModal({ collab, p, cats, role, onClose, reload }: any) {
       {collab.notes && <div className="muted" style={{ fontSize: 12.5, marginBottom: 12 }}>{collab.notes}</div>}
       {p && (
         <div style={{ marginBottom: 14 }}>
-          <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 8 }}>Risultati della campagna</div>
+          <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 8 }}>{tr('Risultati della campagna')}</div>
           <div className="grid g3">
-            {p.reach != null && <Stat label="Reach" value={fmtN(p.reach)} />}
-            {p.impressions != null && <Stat label="Impression" value={fmtN(p.impressions)} />}
-            {p.engagement != null && <Stat label="Engagement" value={`${p.engagement}%`} />}
-            {p.views != null && <Stat label="Views" value={fmtN(p.views)} />}
-            {p.clicks != null && <Stat label="Click" value={fmtN(p.clicks)} />}
-            {p.posts_count != null && <Stat label="Contenuti" value={fmtN(p.posts_count)} />}
+            {p.reach != null && <Stat label={tr("Reach")} value={fmtN(p.reach)} />}
+            {p.impressions != null && <Stat label={tr("Impression")} value={fmtN(p.impressions)} />}
+            {p.engagement != null && <Stat label={tr("Engagement")} value={`${p.engagement}%`} />}
+            {p.views != null && <Stat label={tr("Views")} value={fmtN(p.views)} />}
+            {p.clicks != null && <Stat label={tr("Click")} value={fmtN(p.clicks)} />}
+            {p.posts_count != null && <Stat label={tr("Contenuti")} value={fmtN(p.posts_count)} />}
           </div>
         </div>
       )}
       {collab.brand_feedback && (
         <div className="card" style={{ padding: 12, marginBottom: 12 }}>
-          <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', marginBottom: 4 }}>Feedback del brand</div>
+          <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', marginBottom: 4 }}>{tr('Feedback del brand')}</div>
           <div style={{ fontSize: 13 }}>"{collab.brand_feedback}"</div>
         </div>
       )}
       {role === 'player' && (<>
-        <Field label="Il tuo feedback"><Textarea rows={2} value={fb} onChange={e => setFb(e.target.value)} placeholder="Com'è andata questa collaborazione?" /></Field>
-        <button className="btn btn-primary" disabled={busy} onClick={async () => { setBusy(true); await supabase.from('cp_collaborations').update({ athlete_feedback: fb }).eq('id', collab.id); setBusy(false); onClose(); reload() }}>Salva feedback</button>
+        <Field label={tr("Il tuo feedback")}><Textarea rows={2} value={fb} onChange={e => setFb(e.target.value)} placeholder={tr("Com'è andata questa collaborazione?")} /></Field>
+        <button className="btn btn-primary" disabled={busy} onClick={async () => { setBusy(true); await supabase.from('cp_collaborations').update({ athlete_feedback: fb }).eq('id', collab.id); setBusy(false); onClose(); reload() }}>{tr('Salva feedback')}</button>
       </>)}
     </Modal>
   )
@@ -743,17 +756,18 @@ function CollabModal({ collab, p, cats, role, onClose, reload }: any) {
 
 // ── PERFORMANCE ───────────────────────────────────────────────────────────────
 function PerformanceTab({ collabs, perf }: any) {
+  const { t: tr } = useLang()
   if (!perf.length) return <div className="card"><Empty icon={<Icon name="activity" size={30} strokeWidth={1.4} />} title="Ancora nessun dato di performance" hint="I risultati delle campagne verranno registrati da AUVI e alimenteranno il tuo Commercial Score." /></div>
   const sum = (k: string) => perf.reduce((s: number, p: any) => s + (Number(p[k]) || 0), 0)
   const ers = perf.map((p: any) => Number(p.engagement) || 0).filter((x: number) => x > 0)
   return (<>
     <div className="grid g3">
-      <Stat label="Reach totale" value={fmtN(sum('reach'))} />
-      <Stat label="Impression" value={fmtN(sum('impressions'))} />
-      <Stat label="ER medio" value={ers.length ? `${(ers.reduce((a: number, b: number) => a + b, 0) / ers.length).toFixed(1)}%` : '—'} />
+      <Stat label={tr("Reach totale")} value={fmtN(sum('reach'))} />
+      <Stat label={tr("Impression")} value={fmtN(sum('impressions'))} />
+      <Stat label={tr("ER medio")} value={ers.length ? `${(ers.reduce((a: number, b: number) => a + b, 0) / ers.length).toFixed(1)}%` : '—'} />
     </div>
     <div className="card">
-      <div style={{ fontWeight: 700, marginBottom: 10 }}>Per campagna</div>
+      <div style={{ fontWeight: 700, marginBottom: 10 }}>{tr('Per campagna')}</div>
       {perf.map((p: any) => {
         const c = collabs.find((x: any) => x.id === p.collaboration_id)
         return (
@@ -774,6 +788,7 @@ function PerformanceTab({ collabs, perf }: any) {
 
 // ── DATI E PREFERENZE ────────────────────────────────────────────────────────
 function DatiPreferenze({ prof, saveProf, openWizard }: any) {
+  const { t: tr } = useLang()
   const [aud, setAud] = useState<any>(prof?.audience || {})
   const [content, setContent] = useState<any>(prof?.content || {})
   const [sport, setSport] = useState<any>(prof?.sport || {})
@@ -792,35 +807,35 @@ function DatiPreferenze({ prof, saveProf, openWizard }: any) {
   )
   return (<>
     <div className="card">
-      <div style={{ fontWeight: 700, marginBottom: 4 }}>Audience — altri canali</div>
+      <div style={{ fontWeight: 700, marginBottom: 4 }}>{tr('Audience — altri canali')}</div>
       <div className="muted" style={{ fontSize: 12.5, marginBottom: 12 }}>Instagram è gestito da AUVI nel Media Kit; qui puoi aggiungere gli altri canali e i dati del pubblico. In futuro saranno sincronizzati dalle API.</div>
       {plat('tiktok', 'TikTok')}{plat('youtube', 'YouTube')}
       <div className="row2">
-        <Field label="Paesi principali audience"><Input placeholder="Es. Italia, Grecia, Spagna" value={(aud.geo || []).join(', ')} onChange={e => setAud({ ...aud, geo: e.target.value.split(',').map(x => x.trim()).filter(Boolean) })} /></Field>
-        <Field label="Fascia età prevalente"><Select value={aud.age_band || ''} onChange={e => setAud({ ...aud, age_band: e.target.value })}>
+        <Field label={tr("Paesi principali audience")}><Input placeholder={tr("Es. Italia, Grecia, Spagna")} value={(aud.geo || []).join(', ')} onChange={e => setAud({ ...aud, geo: e.target.value.split(',').map(x => x.trim()).filter(Boolean) })} /></Field>
+        <Field label={tr("Fascia età prevalente")}><Select value={aud.age_band || ''} onChange={e => setAud({ ...aud, age_band: e.target.value })}>
           <option value="">—</option><option>13-17</option><option>18-24</option><option>25-34</option><option>35-44</option><option>45+</option>
         </Select></Field>
       </div>
       <div className="row2">
-        <Field label="Genere prevalente"><Select value={aud.gender_split || ''} onChange={e => setAud({ ...aud, gender_split: e.target.value })}>
-          <option value="">—</option><option>Prevalenza uomini</option><option>Prevalenza donne</option><option>Bilanciato</option>
+        <Field label={tr("Genere prevalente")}><Select value={aud.gender_split || ''} onChange={e => setAud({ ...aud, gender_split: e.target.value })}>
+          <option value="">—</option><option>{tr('Prevalenza uomini')}</option><option>{tr('Prevalenza donne')}</option><option>{tr('Bilanciato')}</option>
         </Select></Field>
-        <Field label="Follower reali stimati %"><Input type="number" placeholder="Es. 92" value={aud.authenticity || ''} onChange={e => setAud({ ...aud, authenticity: e.target.value ? Number(e.target.value) : null })} /></Field>
+        <Field label={tr("Follower reali stimati %")}><Input type="number" placeholder="Es. 92" value={aud.authenticity || ''} onChange={e => setAud({ ...aud, authenticity: e.target.value ? Number(e.target.value) : null })} /></Field>
       </div>
     </div>
     <div className="card">
-      <div style={{ fontWeight: 700, marginBottom: 10 }}>Contenuti & sport</div>
+      <div style={{ fontWeight: 700, marginBottom: 10 }}>{tr('Contenuti & sport')}</div>
       <div className="flex gap" style={{ flexWrap: 'wrap', marginBottom: 12 }}>
         {toggle(content, setContent, 'shooting_available', 'Disponibile per shooting professionali')}
         {toggle(content, setContent, 'lifestyle', 'Pubblico contenuti lifestyle')}
       </div>
       <div className="row2">
-        <Field label="Nazionale (se convocato)"><Input placeholder="Es. Italia U21" value={sport.national || ''} onChange={e => setSport({ ...sport, national: e.target.value })} /></Field>
-        <Field label="Competizioni internazionali"><Input placeholder="Es. Youth League" value={sport.competitions || ''} onChange={e => setSport({ ...sport, competitions: e.target.value })} /></Field>
+        <Field label={tr("Nazionale (se convocato)")}><Input placeholder={tr("Es. Italia U21")} value={sport.national || ''} onChange={e => setSport({ ...sport, national: e.target.value })} /></Field>
+        <Field label={tr("Competizioni internazionali")}><Input placeholder={tr("Es. Youth League")} value={sport.competitions || ''} onChange={e => setSport({ ...sport, competitions: e.target.value })} /></Field>
       </div>
     </div>
     <div className="card">
-      <div style={{ fontWeight: 700, marginBottom: 6 }}>Preferenze commerciali</div>
+      <div style={{ fontWeight: 700, marginBottom: 6 }}>{tr('Preferenze commerciali')}</div>
       <div className="muted" style={{ fontSize: 12.5, marginBottom: 10 }}>Valori, categorie, disponibilità, territori e storico si modificano dall'onboarding guidato.</div>
       <button className="btn" onClick={openWizard}><Icon name="edit" size={14} /> Modifica le preferenze</button>
     </div>
@@ -834,6 +849,7 @@ function DatiPreferenze({ prof, saveProf, openWizard }: any) {
 
 // ── ONBOARDING (5 step, salvabile in più momenti) ────────────────────────────
 function Onboarding({ profile, save, onDone, onLater }: any) {
+  const { t: tr } = useLang()
   const [step, setStep] = useState(Math.min(profile?.onboarding_step || 0, 4))
   const [ident, setIdent] = useState<any>(profile?.identity || {})
   const [liked, setLiked] = useState<string[]>(profile?.categories_liked || [])
@@ -942,6 +958,7 @@ function Onboarding({ profile, save, onDone, onLater }: any) {
 // GESTIONE AUVI (solo admin): opportunità, collaborazioni, valutazioni, pesi
 // ═════════════════════════════════════════════════════════════════════════════
 function AdminPanel({ athleteId, cfg, cats, opps, collabs, perf, userName, reload }: any) {
+  const { t: tr } = useLang()
   const [sub, setSub] = useState('opportunita')
   return (
     <div className="grid" style={{ gap: 16 }}>
@@ -961,6 +978,7 @@ function AdminPanel({ athleteId, cfg, cats, opps, collabs, perf, userName, reloa
 }
 
 function AdminOpps({ athleteId, cats, opps, userName, reload }: any) {
+  const { t: tr } = useLang()
   const [edit, setEdit] = useState<any>(null)
   const [privFor, setPrivFor] = useState<any>(null)
 
@@ -1000,6 +1018,7 @@ function AdminOpps({ athleteId, cats, opps, userName, reload }: any) {
 }
 
 function OppForm({ athleteId, cats, value, userName, onClose, onSaved }: any) {
+  const { t: tr } = useLang()
   const [f, setF] = useState<any>({ referente: userName, ...value, activities_txt: (value.activities || []).join(', '), materials_txt: (value.materials_requested || []).join(', ') })
   const [busy, setBusy] = useState(false)
   const set = (k: string, v: any) => setF((p: any) => ({ ...p, [k]: v }))
@@ -1027,28 +1046,29 @@ function OppForm({ athleteId, cats, value, userName, onClose, onSaved }: any) {
         <Field label="Brand *"><Input value={f.brand_name || ''} onChange={e => set('brand_name', e.target.value)} /></Field>
         <Field label="Categoria"><Select value={f.category_key || ''} onChange={e => set('category_key', e.target.value)}><option value="">—</option>{cats.map((c: any) => <option key={c.key} value={c.key}>{c.name}</option>)}</Select></Field>
       </div>
-      <Field label="Descrizione"><Textarea rows={2} value={f.description || ''} onChange={e => set('description', e.target.value)} /></Field>
+      <Field label={tr("Descrizione")}><Textarea rows={2} value={f.description || ''} onChange={e => set('description', e.target.value)} /></Field>
       <div className="row2">
         <Field label="Compenso da (€)"><Input type="number" value={f.fee_lo || ''} onChange={e => set('fee_lo', e.target.value)} /></Field>
         <Field label="Compenso a (€)"><Input type="number" value={f.fee_hi || ''} onChange={e => set('fee_hi', e.target.value)} /></Field>
       </div>
       <div className="row2">
-        <Field label="Durata"><Input placeholder="Es. 6 mesi" value={f.duration || ''} onChange={e => set('duration', e.target.value)} /></Field>
-        <Field label="Territorio"><Input placeholder="Es. Italia + Grecia" value={f.territory || ''} onChange={e => set('territory', e.target.value)} /></Field>
+        <Field label={tr("Durata")}><Input placeholder="Es. 6 mesi" value={f.duration || ''} onChange={e => set('duration', e.target.value)} /></Field>
+        <Field label={tr("Territorio")}><Input placeholder="Es. Italia + Grecia" value={f.territory || ''} onChange={e => set('territory', e.target.value)} /></Field>
       </div>
       <div className="row2">
-        <Field label="Esclusività"><Input placeholder="Es. categoria sportswear" value={f.exclusivity || ''} onChange={e => set('exclusivity', e.target.value)} /></Field>
-        <Field label="Scadenza"><Input type="date" value={f.deadline || ''} onChange={e => set('deadline', e.target.value)} /></Field>
+        <Field label={tr("Esclusività")}><Input placeholder="Es. categoria sportswear" value={f.exclusivity || ''} onChange={e => set('exclusivity', e.target.value)} /></Field>
+        <Field label={tr("Scadenza")}><Input type="date" value={f.deadline || ''} onChange={e => set('deadline', e.target.value)} /></Field>
       </div>
       <Field label="Attività richieste (separate da virgola)"><Input placeholder="2 reel, 4 stories, 1 evento" value={f.activities_txt || ''} onChange={e => set('activities_txt', e.target.value)} /></Field>
       <Field label="Materiali richiesti (separati da virgola)"><Input placeholder="foto HD, liberatoria" value={f.materials_txt || ''} onChange={e => set('materials_txt', e.target.value)} /></Field>
-      <Field label="Referente AUVI"><Input value={f.referente || ''} onChange={e => set('referente', e.target.value)} /></Field>
+      <Field label={tr("Referente AUVI")}><Input value={f.referente || ''} onChange={e => set('referente', e.target.value)} /></Field>
     </Modal>
   )
 }
 
 // Note riservate: vivono su cp_opportunity_private (RLS admin-only)
 function PrivateNotesModal({ opp, onClose }: any) {
+  const { t: tr } = useLang()
   const [f, setF] = useState<any>(null)
   const [busy, setBusy] = useState(false)
   useEffect(() => {
@@ -1073,6 +1093,7 @@ function PrivateNotesModal({ opp, onClose }: any) {
 }
 
 function AdminCollabs({ athleteId, cats, collabs, perf, reload }: any) {
+  const { t: tr } = useLang()
   const [edit, setEdit] = useState<any>(null)
   const [perfFor, setPerfFor] = useState<any>(null)
   return (<>
@@ -1099,6 +1120,7 @@ function AdminCollabs({ athleteId, cats, collabs, perf, reload }: any) {
 }
 
 function CollabForm({ athleteId, cats, value, onClose, onSaved }: any) {
+  const { t: tr } = useLang()
   const [f, setF] = useState<any>({ status: 'attiva', ...value, activities_txt: (value.activities || []).join(', ') })
   const [busy, setBusy] = useState(false)
   const set = (k: string, v: any) => setF((p: any) => ({ ...p, [k]: v }))
@@ -1130,13 +1152,14 @@ function CollabForm({ athleteId, cats, value, onClose, onSaved }: any) {
         <Field label="Fine"><Input type="date" value={f.period_end || ''} onChange={e => set('period_end', e.target.value)} /></Field>
       </div>
       <Field label="Attività (separate da virgola)"><Input value={f.activities_txt || ''} onChange={e => set('activities_txt', e.target.value)} /></Field>
-      <Field label="Feedback del brand"><Input value={f.brand_feedback || ''} onChange={e => set('brand_feedback', e.target.value)} /></Field>
+      <Field label={tr("Feedback del brand")}><Input value={f.brand_feedback || ''} onChange={e => set('brand_feedback', e.target.value)} /></Field>
       <Field label="Note"><Textarea rows={2} value={f.notes || ''} onChange={e => set('notes', e.target.value)} /></Field>
     </Modal>
   )
 }
 
 function PerfForm({ collab, existing, onClose, onSaved }: any) {
+  const { t: tr } = useLang()
   const [f, setF] = useState<any>(existing || {})
   const [busy, setBusy] = useState(false)
   const num = (k: string, label: string) => (
@@ -1160,12 +1183,13 @@ function PerfForm({ collab, existing, onClose, onSaved }: any) {
       <div className="row2">{num('clicks', 'Click')}{num('conversions', 'Conversioni')}</div>
       <div className="row2">{num('posts_count', 'N. contenuti')}{num('quality', 'Qualità (1-10)')}</div>
       <Field label="Consegne puntuali"><Select value={f.on_time == null ? '' : String(f.on_time)} onChange={e => setF({ ...f, on_time: e.target.value })}><option value="">—</option><option value="true">Sì</option><option value="false">No</option></Select></Field>
-      <Field label="Feedback del brand"><Input value={f.brand_feedback || ''} onChange={e => setF({ ...f, brand_feedback: e.target.value })} /></Field>
+      <Field label={tr("Feedback del brand")}><Input value={f.brand_feedback || ''} onChange={e => setF({ ...f, brand_feedback: e.target.value })} /></Field>
     </Modal>
   )
 }
 
 function AdminEval({ athleteId, reload }: any) {
+  const { t: tr } = useLang()
   const [f, setF] = useState<any>(null)
   const [busy, setBusy] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -1205,6 +1229,7 @@ function AdminEval({ athleteId, reload }: any) {
 }
 
 function AdminConfig({ cfg, reload }: any) {
+  const { t: tr } = useLang()
   const [w, setW] = useState<any>({ ...cfg.weights })
   const [bands, setBands] = useState<any[]>(cfg.value_bands || [])
   const [busy, setBusy] = useState(false)
@@ -1244,6 +1269,7 @@ function AdminConfig({ cfg, reload }: any) {
 // la Edge Function `sync-instagram` scopre l'account IG, rinnova il token
 // long-lived e aggiorna follower/ER/reach/demografia nel Commercial Profile.
 function AdminInstagram({ athleteId, reload }: any) {
+  const { t: tr } = useLang()
   const [acc, setAcc] = useState<any>(null)
   const [busy, setBusy] = useState(false)
   const [syncing, setSyncing] = useState(false)
@@ -1330,7 +1356,7 @@ function AdminInstagram({ athleteId, reload }: any) {
           {result.ok ? (
             <div className="grid g3">
               <Stat label="Follower" value={Number(result.followers).toLocaleString('it-IT')} sub={result.username ? `@${result.username}` : undefined} />
-              <Stat label="Engagement" value={result.er != null ? `${result.er}%` : '—'} />
+              <Stat label={tr("Engagement")} value={result.er != null ? `${result.er}%` : '—'} />
               <Stat label="Reach media/post" value={result.reach != null ? Number(result.reach).toLocaleString('it-IT') : '—'} />
               <Stat label="Paesi audience" value={(result.geo || []).join(', ') || '—'} />
               <Stat label="Fascia età" value={result.age_band || '—'} />
@@ -1356,6 +1382,7 @@ function AdminInstagram({ athleteId, reload }: any) {
 // affini e highlights scelti da AUVI. Niente numeri sensibili. Finché non è
 // pubblicato, il brand vede solo la fascia follower di base.
 function TeaserAdminCard({ player, prof, topFits }: any) {
+  const { t: tr } = useLang()
   const [f, setF] = useState<any>(null)
   const [busy, setBusy] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -1432,6 +1459,7 @@ function TeaserAdminCard({ player, prof, topFits }: any) {
 // Cosa cercano i brand nella piattaforma: il brief compilato in "Ricerca talent".
 // AUVI lo usa per proporre atleti on target (dentro e fuori dal roster).
 function AdminBrandSearches() {
+  const { t: tr } = useLang()
   const [rows, setRows] = useState<any[] | null>(null)
   useEffect(() => {
     ;(async () => {
