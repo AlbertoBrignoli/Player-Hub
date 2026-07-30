@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../auth/AuthContext'
 import { useAthlete } from '../lib/athlete'
+import { useLang } from '../lib/i18n'
 import { toast } from '../lib/toast'
 import { Modal, Field, Input, Empty, Spinner, ConfirmButton } from '../components/ui'
 import Icon from '../components/Icon'
@@ -19,6 +20,7 @@ type Athlete = { api_player_id: number; name: string; photo_url?: string | null 
 // la sua roba, mai i documenti generali dell'atleta.
 export default function InsuranceDocuments() {
   const { session } = useAuth()
+  const { t } = useLang()
   const { athletes } = useAthlete()
   const [atleta, setAtleta] = useState<Athlete | null>(null)
   const [stack, setStack] = useState<{ id: string; name: string }[]>([])
@@ -54,7 +56,7 @@ export default function InsuranceDocuments() {
     const { error } = await supabase.from('crm_documents').delete().eq('id', d.id)
     if (error) { toast(error.message, 'err'); return }
     if (d.file_path) await supabase.storage.from(BUCKET).remove([d.file_path])
-    toast('Documento eliminato'); load()
+    toast(t('Documento eliminato')); load()
   }
 
   async function delFolder(f: Folder) {
@@ -63,10 +65,10 @@ export default function InsuranceDocuments() {
       supabase.from('crm_doc_folders').select('id', { count: 'exact', head: true }).eq('parent_id', f.id),
       supabase.from('crm_documents').select('id', { count: 'exact', head: true }).eq('folder_id', f.id),
     ])
-    if ((nf || 0) > 0 || (ndoc || 0) > 0) { toast('Svuota prima la cartella per eliminarla.', 'err'); return }
+    if ((nf || 0) > 0 || (ndoc || 0) > 0) { toast(t('Svuota prima la cartella per eliminarla.'), 'err'); return }
     const { error } = await supabase.from('crm_doc_folders').delete().eq('id', f.id)
     if (error) { toast(error.message, 'err'); return }
-    toast('Cartella eliminata'); load()
+    toast(t('Cartella eliminata')); load()
   }
 
   // ---------- RADICE: gli atleti come cartelle ----------
@@ -74,11 +76,11 @@ export default function InsuranceDocuments() {
     return (
       <div className="grid" style={{ gap: 16 }}>
         <div className="card">
-          <div style={{ fontSize: 11, letterSpacing: 1.4, textTransform: 'uppercase', fontWeight: 800, color: ACCENT }}>Documenti</div>
+          <div style={{ fontSize: 11, letterSpacing: 1.4, textTransform: 'uppercase', fontWeight: 800, color: ACCENT }}>{t('Documenti')}</div>
           <div className="faint" style={{ fontSize: 12.5, marginTop: 2 }}>Una cartella per ogni tuo atleta. Solo i tuoi documenti assicurativi.</div>
         </div>
         {athletes.length === 0 ? (
-          <div className="card"><Empty icon={<Icon name="folder" size={30} strokeWidth={1.4} />} title="Nessun atleta" hint="Quando vieni collegato a un atleta, comparirà qui." /></div>
+          <div className="card"><Empty icon={<Icon name="folder" size={30} strokeWidth={1.4} />} title={t("Nessun atleta")} hint="Quando vieni collegato a un atleta, comparirà qui." /></div>
         ) : (
           <div className="grid" style={{ gap: 10 }}>
             {athletes.map(a => (
@@ -125,7 +127,7 @@ export default function InsuranceDocuments() {
       </div>
 
       {loading ? <Spinner /> : (folders.length === 0 && files.length === 0) ? (
-        <div className="card"><Empty icon={<Icon name="folder" size={30} strokeWidth={1.4} />} title="Cartella vuota" hint="Crea una sottocartella o carica un documento." /></div>
+        <div className="card"><Empty icon={<Icon name="folder" size={30} strokeWidth={1.4} />} title={t("Cartella vuota")} hint="Crea una sottocartella o carica un documento." /></div>
       ) : (
         <div className="card">
           <div className="list">
@@ -136,7 +138,7 @@ export default function InsuranceDocuments() {
                   <span style={{ color: ACCENT, display: 'inline-flex' }}><Icon name="folder" size={20} /></span>
                   <span className="row-title">{f.name}</span>
                 </button>
-                <ConfirmButton onConfirm={() => delFolder(f)}>Elimina</ConfirmButton>
+                <ConfirmButton onConfirm={() => delFolder(f)}>{t('Elimina')}</ConfirmButton>
               </div>
             ))}
             {files.map(d => (
@@ -148,7 +150,7 @@ export default function InsuranceDocuments() {
                   <div className="row-title">{d.name}</div>
                   <div className="row-sub">{humanSize(d.size)} · {fmtDate(d.created_at)}</div>
                 </div>
-                <button className="btn btn-sm" onClick={() => openFile(d)}>Apri</button>
+                <button className="btn btn-sm" onClick={() => openFile(d)}>{t('Apri')}</button>
                 <ConfirmButton onConfirm={() => delFile(d)}>Elimina</ConfirmButton>
               </div>
             ))}
@@ -159,7 +161,7 @@ export default function InsuranceDocuments() {
       {newFolderOpen && <NewFolder onClose={() => setNewFolderOpen(false)} onCreate={async (name) => {
         const { error } = await supabase.from('crm_doc_folders').insert({ player_id: atleta.api_player_id, parent_id: currentFolderId, name })
         if (error) { toast(error.message, 'err'); return }
-        setNewFolderOpen(false); toast('Cartella creata'); load()
+        setNewFolderOpen(false); toast(t('Cartella creata')); load()
       }} />}
 
       {uploadOpen && <UploadDialog
@@ -174,14 +176,15 @@ export default function InsuranceDocuments() {
 }
 
 function NewFolder({ onClose, onCreate }: { onClose: () => void; onCreate: (name: string) => void }) {
+  const { t } = useLang()
   const [name, setName] = useState('')
   return (
-    <Modal title="Nuova cartella" onClose={onClose}
+    <Modal title={t("Nuova cartella")} onClose={onClose}
       footer={<div className="flex gap" style={{ marginLeft: 'auto' }}>
-        <button className="btn" onClick={onClose}>Annulla</button>
-        <button className="btn btn-primary" disabled={!name.trim()} onClick={() => onCreate(name.trim())}>Crea</button>
+        <button className="btn" onClick={onClose}>{t('Annulla')}</button>
+        <button className="btn btn-primary" disabled={!name.trim()} onClick={() => onCreate(name.trim())}>{t('Crea')}</button>
       </div>}>
-      <Field label="Nome cartella"><Input value={name} onChange={e => setName(e.target.value)} placeholder="Es. Polizze, Sinistri, Quietanze…" autoFocus /></Field>
+      <Field label={t("Nome cartella")}><Input value={name} onChange={e => setName(e.target.value)} placeholder={t("Es. Polizze, Sinistri, Quietanze…")} autoFocus /></Field>
     </Modal>
   )
 }
@@ -189,6 +192,7 @@ function NewFolder({ onClose, onCreate }: { onClose: () => void; onCreate: (name
 function UploadDialog({ onClose, onDone, playerId, folderId, uid }: {
   onClose: () => void; onDone: () => void; playerId: number; folderId: string | null; uid: string | null
 }) {
+  const { t } = useLang()
   const [busy, setBusy] = useState(false)
   const [scadenza, setScadenza] = useState('')
   const [files, setFiles] = useState<File[]>([])
@@ -221,19 +225,19 @@ function UploadDialog({ onClose, onDone, playerId, folderId, uid }: {
   }
 
   return (
-    <Modal title="Carica documento" onClose={onClose}
+    <Modal title={t("Carica documento")} onClose={onClose}
       footer={<div className="flex gap" style={{ marginLeft: 'auto' }}>
         <button className="btn" onClick={onClose}>Annulla</button>
         <button className="btn btn-primary" disabled={busy || !files.length} onClick={carica}>{busy ? 'Carico…' : 'Carica'}</button>
       </div>}>
       <div className="grid" style={{ gap: 14 }}>
-        <Field label="File (puoi selezionarne più di uno)">
+        <Field label={t("File (puoi selezionarne più di uno)")}>
           <input type="file" multiple accept="image/*,application/pdf"
             onChange={e => setFiles(Array.from(e.target.files || []))}
             style={{ fontSize: 13 }} />
         </Field>
         {files.length > 0 && <div className="faint" style={{ fontSize: 12 }}>{files.length} file selezionat{files.length > 1 ? 'i' : 'o'}</div>}
-        <Field label="Data scadenza (facoltativa) — finisce nell'area Scadenze">
+        <Field label={t("Data scadenza (facoltativa) — finisce nell'area Scadenze")}>
           <Input type="date" value={scadenza} onChange={e => setScadenza(e.target.value)} />
         </Field>
       </div>

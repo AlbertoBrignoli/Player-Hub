@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../auth/AuthContext'
 import { useAthlete } from '../lib/athlete'
+import { useLang } from '../lib/i18n'
 import { Spinner, Field, Input, Textarea } from '../components/ui'
 import Icon from '../components/Icon'
 
@@ -17,6 +18,7 @@ type P = Record<string, any>
 
 export default function InsurerProfile() {
   const { session, role } = useAuth()
+  const { t } = useLang()
   const { athletes } = useAthlete()
   const [p, setP] = useState<P>({})
   const [loading, setLoading] = useState(true)
@@ -125,7 +127,7 @@ export default function InsurerProfile() {
             </div>
           )}
           <div>
-            <div style={{ ...kicker, fontSize: 10, color: 'var(--text-dim)' }}>Assistiti</div>
+            <div style={{ ...kicker, fontSize: 10, color: 'var(--text-dim)' }}>{t('Assistiti')}</div>
             <div style={{ fontSize: 22, fontWeight: 900, borderBottom: `2px solid ${ACCENT}`, display: 'inline-block' }}>
               {athletes.length}
             </div>
@@ -135,16 +137,16 @@ export default function InsurerProfile() {
 
       {/* --- dati personali --- */}
       <div className="card">
-        <div className="card-head"><div className="card-title">I miei contatti</div></div>
+        <div className="card-head"><div className="card-title">{t('I miei contatti')}</div></div>
         <div className="grid g2" style={{ gap: 10 }}>
-          <Field label="Nome e cognome"><Input value={p.name || ''} onChange={e => set('name', e.target.value)} /></Field>
-          <Field label="Ruolo"><Input value={p.title || ''} onChange={e => set('title', e.target.value)} placeholder="Es. Consulente assicurativo" /></Field>
-          <Field label="Email"><Input value={p.email || ''} onChange={e => set('email', e.target.value)} /></Field>
-          <Field label="Telefono"><Input value={p.phone || ''} onChange={e => set('phone', e.target.value)} /></Field>
-          <Field label="WhatsApp"><Input value={p.whatsapp || ''} onChange={e => set('whatsapp', e.target.value)} /></Field>
-          <Field label="Iscrizione RUI"><Input value={p.licence || ''} onChange={e => set('licence', e.target.value)} placeholder="Numero iscrizione" /></Field>
+          <Field label={t("Nome e cognome")}><Input value={p.name || ''} onChange={e => set('name', e.target.value)} /></Field>
+          <Field label={t("Ruolo")}><Input value={p.title || ''} onChange={e => set('title', e.target.value)} placeholder={t("Es. Consulente assicurativo")} /></Field>
+          <Field label={t("Email")}><Input value={p.email || ''} onChange={e => set('email', e.target.value)} /></Field>
+          <Field label={t("Telefono")}><Input value={p.phone || ''} onChange={e => set('phone', e.target.value)} /></Field>
+          <Field label={t("WhatsApp")}><Input value={p.whatsapp || ''} onChange={e => set('whatsapp', e.target.value)} /></Field>
+          <Field label={t("Iscrizione RUI")}><Input value={p.licence || ''} onChange={e => set('licence', e.target.value)} placeholder={t("Numero iscrizione")} /></Field>
         </div>
-        <Field label="Foto profilo">
+        <Field label={t("Foto profilo")}>
           <div className="flex gap" style={{ alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <button className="btn btn-sm" disabled={upl === 'photo_url'} onClick={() => photoRef.current?.click()}>
               <Icon name="upload" size={13} /> {upl === 'photo_url' ? 'Carico…' : 'Carica foto'}
@@ -158,22 +160,22 @@ export default function InsurerProfile() {
 
       {/* --- agenzia --- */}
       <div className="card">
-        <div className="card-head"><div className="card-title">Agenzia / Compagnia</div></div>
+        <div className="card-head"><div className="card-title">{t('Agenzia / Compagnia')}</div></div>
         <div className="faint" style={{ fontSize: 12, marginBottom: 12 }}>
           I dati dell'agenzia o compagnia per cui lavori: li vedono AUVI e gli atleti che segui.
         </div>
         <div className="grid g2" style={{ gap: 10 }}>
-          <Field label="Agenzia / Compagnia"><Input value={p.agency_name || ''} onChange={e => set('agency_name', e.target.value)} /></Field>
+          <Field label={t("Agenzia / Compagnia")}><Input value={p.agency_name || ''} onChange={e => set('agency_name', e.target.value)} /></Field>
           
-          <Field label="Sito web"><Input value={p.agency_website || ''} onChange={e => set('agency_website', e.target.value)} placeholder="https://…" /></Field>
+          <Field label={t("Sito web")}><Input value={p.agency_website || ''} onChange={e => set('agency_website', e.target.value)} placeholder="https://…" /></Field>
           
-          <Field label="Email agenzia"><Input value={p.agency_email || ''} onChange={e => set('agency_email', e.target.value)} /></Field>
-          <Field label="Telefono agenzia"><Input value={p.agency_phone || ''} onChange={e => set('agency_phone', e.target.value)} /></Field>
+          <Field label={t("Email agenzia")}><Input value={p.agency_email || ''} onChange={e => set('agency_email', e.target.value)} /></Field>
+          <Field label={t("Telefono agenzia")}><Input value={p.agency_phone || ''} onChange={e => set('agency_phone', e.target.value)} /></Field>
           
           
         </div>
-        <Field label="Sede"><Input value={p.agency_address || ''} onChange={e => set('agency_address', e.target.value)} placeholder="Via, città, paese" /></Field>
-        <Field label="Logo agenzia">
+        <Field label={t("Sede")}><Input value={p.agency_address || ''} onChange={e => set('agency_address', e.target.value)} placeholder={t("Via, città, paese")} /></Field>
+        <Field label={t("Logo agenzia")}>
           <div className="flex gap" style={{ alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <button className="btn btn-sm" disabled={upl === 'agency_logo_url'} onClick={() => logoRef.current?.click()}>
               <Icon name="upload" size={13} /> {upl === 'agency_logo_url' ? 'Carico…' : 'Carica logo'}

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../auth/AuthContext'
 import { useAthlete } from '../lib/athlete'
+import { useLang } from '../lib/i18n'
 import { Spinner, Empty } from '../components/ui'
 import Icon from '../components/Icon'
 import { fmtDate } from '../lib/format'
@@ -25,6 +26,7 @@ type Ath = {
 
 export default function InsurerHome({ goto }: { goto?: (r: string) => void }) {
   const { session } = useAuth()
+  const { t } = useLang()
   const { setAthleteId } = useAthlete()
   const [me, setMe] = useState<any>({})
   const [rows, setRows] = useState<Ath[]>([])
@@ -103,9 +105,9 @@ export default function InsurerHome({ goto }: { goto?: (r: string) => void }) {
         </div>
 
         <div className="flex gap" style={{ gap: 26, marginTop: 20, flexWrap: 'wrap' }}>
-          <Metric label="Atleti" value={String(rows.length)} />
-          {me.email && <Metric label="Email" value={me.email} small />}
-          {me.phone && <Metric label="Telefono" value={me.phone} small />}
+          <Metric label={t("Atleti")} value={String(rows.length)} />
+          {me.email && <Metric label={t("Email")} value={me.email} small />}
+          {me.phone && <Metric label={t("Telefono")} value={me.phone} small />}
         </div>
       </div>
 
@@ -114,7 +116,7 @@ export default function InsurerHome({ goto }: { goto?: (r: string) => void }) {
         <div className="flex between" style={{ alignItems: 'center', marginBottom: 12 }}>
           <div className="flex gap" style={{ alignItems: 'center', gap: 9 }}>
             <span style={{ width: 3, height: 15, background: ACCENT, borderRadius: 2 }} />
-            <span style={{ ...kicker, color: 'var(--text)' }}>Atleti seguiti</span>
+            <span style={{ ...kicker, color: 'var(--text)' }}>{t('Atleti seguiti')}</span>
           </div>
           <span className="faint" style={{ fontSize: 12 }}>
             {rows.length} {rows.length === 1 ? 'atleta' : 'atleti'}
@@ -123,8 +125,8 @@ export default function InsurerHome({ goto }: { goto?: (r: string) => void }) {
 
         {rows.length === 0 ? (
           <div className="card">
-            <Empty icon={<Icon name="user" size={30} strokeWidth={1.4} />} title="Nessun assistito"
-              hint="Chiedi ad AUVI di collegarti agli atleti." />
+            <Empty icon={<Icon name="user" size={30} strokeWidth={1.4} />} title={t("Nessun assistito")}
+              hint={t("Chiedi ad AUVI di collegarti agli atleti.")} />
           </div>
         ) : (
           <div className="grid g3" style={{ gap: 12 }}>
