@@ -76,7 +76,7 @@ function TrainerFitness() {
         </button>
       </div>
 
-      <TrainerSummary athletes={athletes} />
+      <TrainerSummary athletes={athletes} athleteId={athleteId} />
 
       <ProgramList title="Schede pubblicate" tone="published" items={pubblicate} onOpen={setEditing} />
       <ProgramList title="Schede in bozza" tone="draft" items={bozze} onOpen={setEditing} />
@@ -650,7 +650,7 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 const FEELING: Record<string, string> = { ottimo: '😀', bene: '🙂', normale: '😐', affaticato: '😕', pesante: '😣' }
 const STATUS_LABEL: Record<string, string> = { completato: 'Completato', parziale: 'Completato parzialmente', non_completato: 'Non completato', saltato: 'Saltato', programmato: 'Programmato' }
 
-function TrainerSummary({ athletes }: { athletes: { api_player_id: number; name: string | null }[] }) {
+function TrainerSummary({ athletes, athleteId }: { athletes: { api_player_id: number; name: string | null }[]; athleteId: number | null }) {
   const [rows, setRows] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   useEffect(() => {
@@ -659,17 +659,19 @@ function TrainerSummary({ athletes }: { athletes: { api_player_id: number; name:
       ;(data as any[] || []).forEach(f => {
         const pid = f.fitness_programs?.player_id
         if (!pid) return
+        // mostra solo il feedback dell'atleta selezionato
+        if (athleteId && pid !== athleteId) return
         const d = f.fitness_programs?.program_date || ''
         if (!byPlayer[pid] || (byPlayer[pid].fitness_programs?.program_date || '') < d) byPlayer[pid] = f
       })
       setRows(Object.values(byPlayer))
       setLoading(false)
     })
-  }, [])
+  }, [athleteId])
   if (loading || rows.length === 0) return null
   return (
     <div style={{ marginBottom: 22 }}>
-      <div style={label}>Riepilogo atleti</div>
+      <div style={label}>Ultimo feedback</div>
       <div className="card" style={{ padding: 6 }}>
         <div className="list">
           {rows.map(f => {
