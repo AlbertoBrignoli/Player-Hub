@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { toast } from '../lib/toast'
 import { useAuth } from '../auth/AuthContext'
 import { useAthlete } from '../lib/athlete'
+import { useLang } from '../lib/i18n'
 import { useCollection, insertRow, updateRow, deleteRow } from '../lib/useData'
 import { Modal, Field, Input, Textarea, Select, Empty, Spinner, ConfirmButton } from '../components/ui'
 import Icon from '../components/Icon'
@@ -101,6 +102,7 @@ async function openDoc(path: string) {
 export default function Insurance() {
   const { role, session } = useAuth()
   const { athleteId } = useAthlete()
+  const { t: tr } = useLang()
   // L'assicuratore vede lo "store" (Il broker · Proposte · Perché); l'atleta anche le sue polizze.
   const isInsurerRole = role === 'assicuratore'
   const AREAS = isInsurerRole ? STORE_AREAS : [...POLICY_AREAS, ...STORE_AREAS]
@@ -173,7 +175,7 @@ export default function Insurance() {
           {AREAS.map(a => (
             <button key={a.k} className={`pill-tab ${area === a.k ? 'active' : ''}`} onClick={() => setArea(a.k)}
               style={area === a.k ? { background: ACCENT, color: '#fff', borderColor: ACCENT } : undefined}>
-              <Icon name={a.icon} size={13} /> {a.l}
+              <Icon name={a.icon} size={13} /> {tr(a.l)}
             </button>
           ))}
         </div>
@@ -204,16 +206,16 @@ export default function Insurance() {
                     background: 'var(--bg-2)', border: '1px solid var(--border)', padding: '22px' }}>
         <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 5, background: ACCENT }} />
         <div style={{ ...kicker, color: ACCENT }}>
-          Assicurazioni · {AREAS.find(a => a.k === area)?.l}
+          Assicurazioni · {tr(AREAS.find(a => a.k === area)?.l || '')}
         </div>
         <div className="faint" style={{ fontSize: 12, marginTop: 3 }}>
-          {AREAS.find(a => a.k === area)?.hint}
+          {tr(AREAS.find(a => a.k === area)?.hint || '')}
         </div>
         <div className="flex gap" style={{ gap: 26, marginTop: 18, flexWrap: 'wrap' }}>
-          <Metric label="Polizze attive" value={String(stats.attive)} tone={ACCENT} />
-          <Metric label="In scadenza" value={String(stats.inScadenza)} tone={stats.inScadenza ? WARN : undefined} />
-          <Metric label="Scadute" value={String(stats.scadute)} tone={stats.scadute ? DANGER : undefined} />
-          {stats.premio > 0 && <Metric label="Premio totale" value={fmtMoney(stats.premio)} tone={ACCENT} />}
+          <Metric label={tr("Polizze attive")} value={String(stats.attive)} tone={ACCENT} />
+          <Metric label={tr("In scadenza")} value={String(stats.inScadenza)} tone={stats.inScadenza ? WARN : undefined} />
+          <Metric label={tr("Scadute")} value={String(stats.scadute)} tone={stats.scadute ? DANGER : undefined} />
+          {stats.premio > 0 && <Metric label={tr("Premio totale")} value={fmtMoney(stats.premio)} tone={ACCENT} />}
         </div>
       </div>
 
@@ -221,8 +223,8 @@ export default function Insurance() {
       {prossime.length > 0 && (
         <div className="card">
           <div className="flex between" style={{ alignItems: 'center', marginBottom: 12 }}>
-            <div style={{ ...kicker, color: 'var(--text-dim)' }}>Prossime scadenze</div>
-            <span className="faint" style={{ fontSize: 11.5 }}>Sono anche in agenda</span>
+            <div style={{ ...kicker, color: 'var(--text-dim)' }}>{tr('Prossime scadenze')}</div>
+            <span className="faint" style={{ fontSize: 11.5 }}>{tr('Sono anche in agenda')}</span>
           </div>
           <div className="grid" style={{ gap: 8 }}>
             {prossime.map(p => {
@@ -240,7 +242,7 @@ export default function Insurance() {
                   </div>
                   <div style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                     <div style={{ fontSize: 12.5, fontWeight: 700 }}>{fmtDate(p.expiry_date)}</div>
-                    {t && <div style={{ fontSize: 11, fontWeight: 800, color: t.c }}>{t.l}</div>}
+                    {t && <div style={{ fontSize: 11, fontWeight: 800, color: t.c }}>{tr(t.l)}</div>}
                   </div>
                 </div>
               )
@@ -254,7 +256,7 @@ export default function Insurance() {
         <div className="flex between" style={{ alignItems: 'center', marginBottom: 12 }}>
           <div className="flex gap" style={{ alignItems: 'center', gap: 9 }}>
             <span style={{ width: 3, height: 15, background: ACCENT, borderRadius: 2 }} />
-            <span style={{ ...kicker, color: 'var(--text)' }}>Le mie polizze</span>
+            <span style={{ ...kicker, color: 'var(--text)' }}>{tr('Le mie polizze')}</span>
           </div>
           {canManage && (
             <div className="flex gap" style={{ flexWrap: 'wrap' }}>
@@ -328,8 +330,8 @@ export default function Insurance() {
                         <button className="btn btn-sm" onClick={() => setPayFor(p)}>
                           <Icon name="plus" size={12} /> Pagamento
                         </button>
-                        <button className="btn btn-ghost btn-sm" onClick={() => setEdit(p)}>Modifica</button>
-                        <ConfirmButton onConfirm={async () => { await deleteRow('crm_insurance_policies', p.id); reload() }}>Elimina</ConfirmButton>
+                        <button className="btn btn-ghost btn-sm" onClick={() => setEdit(p)}>{tr('Modifica')}</button>
+                        <ConfirmButton onConfirm={async () => { await deleteRow('crm_insurance_policies', p.id); reload() }}>{tr('Elimina')}</ConfirmButton>
                       </div>
                     )}
                   </div>
@@ -359,6 +361,7 @@ export default function Insurance() {
 // Dashboard aggregata: costo annuo totale, ripartizione e mappa delle coperture.
 // I dati arrivano dai campi compilati: nessuna elaborazione automatica del PDF.
 function Overview({ rows, pays }: { rows: Policy[]; pays: Payment[] }) {
+  const { t: tr } = useLang()
   const attive = rows.filter(p => p.status !== 'disdetta')
 
   const totale = attive.reduce((s, p) => s + annualCost(p), 0)
@@ -422,7 +425,7 @@ function Overview({ rows, pays }: { rows: Policy[]; pays: Payment[] }) {
       <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 18,
                     background: 'var(--bg-2)', border: '1px solid var(--border)', padding: '22px' }}>
         <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 5, background: ACCENT }} />
-        <div style={{ ...kicker, color: ACCENT }}>Spesa assicurativa annua</div>
+        <div style={{ ...kicker, color: ACCENT }}>{tr('Spesa assicurativa annua')}</div>
         <div style={{ fontSize: 36, fontWeight: 900, letterSpacing: -1, marginTop: 6 }}>{fmtMoney(totale)}</div>
         <div className="faint" style={{ fontSize: 12, marginTop: 2 }}>
           su {attive.length} polizze · {fmtMoney(totale / 12)} al mese
@@ -451,9 +454,9 @@ function Overview({ rows, pays }: { rows: Policy[]; pays: Payment[] }) {
               <span className="faint" style={{ fontSize: 11.5 }}>{pays.length} pagamenti registrati</span>
             </div>
             <div className="flex gap" style={{ gap: 26, flexWrap: 'wrap', marginBottom: 12 }}>
-              <Metric label="Effettivo" value={fmtMoney(speso)} tone={OK} />
-              <Metric label="Previsto" value={fmtMoney(totale)} tone={ACCENT} />
-              <Metric label="Differenza" value={fmtMoney(speso - totale)} tone={speso > totale ? DANGER : OK} />
+              <Metric label={tr("Effettivo")} value={fmtMoney(speso)} tone={OK} />
+              <Metric label={tr("Previsto")} value={fmtMoney(totale)} tone={ACCENT} />
+              <Metric label={tr("Differenza")} value={fmtMoney(speso - totale)} tone={speso > totale ? DANGER : OK} />
             </div>
             <div style={{ height: 6, borderRadius: 3, background: 'var(--border)', overflow: 'hidden' }}>
               <div style={{ width: `${pct}%`, height: '100%', background: OK }} />
@@ -464,7 +467,7 @@ function Overview({ rows, pays }: { rows: Policy[]; pays: Payment[] }) {
 
       {/* ripartizione per categoria */}
       <div className="card">
-        <div style={{ ...kicker, color: 'var(--text-dim)', marginBottom: 12 }}>Dove vanno i soldi</div>
+        <div style={{ ...kicker, color: 'var(--text-dim)', marginBottom: 12 }}>{tr('Dove vanno i soldi')}</div>
         <div className="grid" style={{ gap: 9 }}>
           {perCat.map(([cat, costo]) => {
             const pct = totale > 0 ? Math.round((costo / totale) * 100) : 0
@@ -486,7 +489,7 @@ function Overview({ rows, pays }: { rows: Policy[]; pays: Payment[] }) {
       {/* per cosa sono coperto */}
       <div className="card">
         <div className="flex between" style={{ alignItems: 'center', marginBottom: 12 }}>
-          <div style={{ ...kicker, color: 'var(--text-dim)' }}>Per cosa sei coperto</div>
+          <div style={{ ...kicker, color: 'var(--text-dim)' }}>{tr('Per cosa sei coperto')}</div>
           <span className="faint" style={{ fontSize: 11.5 }}>{garanzie.length} garanzie</span>
         </div>
         {garanzie.length === 0 ? (
@@ -518,7 +521,7 @@ function Overview({ rows, pays }: { rows: Policy[]; pays: Payment[] }) {
 
       {/* esportazione per analisi AI */}
       <div className="card">
-        <div style={{ ...kicker, color: 'var(--text-dim)', marginBottom: 8 }}>Analisi con AI</div>
+        <div style={{ ...kicker, color: 'var(--text-dim)', marginBottom: 8 }}>{tr('Analisi con AI')}</div>
         <div className="faint" style={{ fontSize: 12.5, marginBottom: 12 }}>
           Copia il riepilogo completo delle tue polizze e incollalo in ChatGPT o Claude
           per farti spiegare coperture, sovrapposizioni e buchi di tutela.

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAthlete } from '../lib/athlete'
+import { useLang } from '../lib/i18n'
 import { toast } from '../lib/toast'
 import { Modal, Field, Input, Textarea, Select, Badge, Empty, Spinner, ConfirmButton } from '../components/ui'
 import Icon from '../components/Icon'
@@ -26,6 +27,7 @@ async function openPath(path: string) {
 
 // =================== PROPOSTE ===================
 export function OffersTab({ athleteId, isInsurer, canInterest, uid }: { athleteId: number | null; isInsurer: boolean; canInterest: boolean; uid: string | null }) {
+  const { t: tr } = useLang()
   const { athletes } = useAthlete()
   const [offers, setOffers] = useState<Offer[]>([])
   const [cat, setCat] = useState<'sport' | 'personale'>('sport')
@@ -46,12 +48,12 @@ export function OffersTab({ athleteId, isInsurer, canInterest, uid }: { athleteI
   async function interested(o: Offer) {
     const { error } = await supabase.rpc('crm_offer_interest', { p_offer_id: o.id })
     if (error) { toast(error.message, 'err'); return }
-    toast('Interesse inviato al tuo assicuratore')
+    toast(tr('Interesse inviato al tuo assicuratore'))
   }
   async function del(o: Offer) {
     const { error } = await supabase.from('crm_insurance_offers').delete().eq('id', o.id)
     if (error) { toast(error.message, 'err'); return }
-    toast('Proposta eliminata'); load()
+    toast(tr('Proposta eliminata')); load()
   }
 
   if (loading) return <Spinner />
@@ -60,7 +62,7 @@ export function OffersTab({ athleteId, isInsurer, canInterest, uid }: { athleteI
     <div className="grid" style={{ gap: 14 }}>
       <div className="card flex between wrap gap" style={{ alignItems: 'center' }}>
         <div>
-          <div style={{ fontSize: 11, letterSpacing: 1.4, textTransform: 'uppercase', fontWeight: 800, color: ACCENT }}>Proposte</div>
+          <div style={{ fontSize: 11, letterSpacing: 1.4, textTransform: 'uppercase', fontWeight: 800, color: ACCENT }}>{tr('Proposte')}</div>
           <div className="faint" style={{ fontSize: 12.5, marginTop: 2 }}>
             {isInsurer ? 'Proposte che i tuoi atleti vedono nella loro area. Aggiungile e gestiscile qui.'
                        : 'Soluzioni pensate per te dal tuo assicuratore. Apri, leggi e segnala se ti interessano.'}
@@ -96,7 +98,7 @@ export function OffersTab({ athleteId, isInsurer, canInterest, uid }: { athleteI
                 <div className="flex between" style={{ alignItems: 'flex-start', gap: 12 }}>
                   <div style={{ minWidth: 0 }}>
                     <div className="flex gap" style={{ alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
-                      <Badge>{typeLabel(o.type)}</Badge>
+                      <Badge>{tr(typeLabel(o.type))}</Badge>
                       {o.price_hint && <span style={{ fontSize: 12.5, fontWeight: 700, color: ACCENT }}>{o.price_hint}</span>}
                       {isInsurer && <span className="faint" style={{ fontSize: 11 }}>· {o.player_id ? (athletes.find(a => a.api_player_id === o.player_id)?.name || 'atleta') : 'tutti i tuoi atleti'}{o.active ? '' : ' · nascosta'}</span>}
                     </div>
@@ -108,7 +110,7 @@ export function OffersTab({ athleteId, isInsurer, canInterest, uid }: { athleteI
                   {o.brochure_path && <button className="btn btn-sm" onClick={() => openPath(o.brochure_path!)}><Icon name="file" size={13} /> {o.brochure_name || 'Brochure'}</button>}
                   {!isInsurer && canInterest && <button className="btn btn-primary btn-sm" onClick={() => interested(o)}><Icon name="check" size={13} /> Mi interessa</button>}
                   {isInsurer && <><button className="btn btn-sm" onClick={() => setEditing(o)}><Icon name="edit" size={13} /> Modifica</button>
-                    <ConfirmButton onConfirm={() => del(o)}>Elimina</ConfirmButton></>}
+                    <ConfirmButton onConfirm={() => del(o)}>{tr('Elimina')}</ConfirmButton></>}
                 </div>
               </div>
             ))}
@@ -123,6 +125,7 @@ export function OffersTab({ athleteId, isInsurer, canInterest, uid }: { athleteI
 }
 
 function OfferModal({ offer, uid, defaultCategory, onClose, onSaved }: { offer: Offer | null; uid: string | null; defaultCategory: 'sport' | 'personale'; onClose: () => void; onSaved: () => void }) {
+  const { t: tr } = useLang()
   const { athletes } = useAthlete()
   const [f, setF] = useState<any>(offer || { type: 'infortuni', category: defaultCategory, title: '', description: '', price_hint: '', player_id: null, active: true, brochure_path: null, brochure_name: null })
   const [busy, setBusy] = useState(false)
@@ -138,11 +141,11 @@ function OfferModal({ offer, uid, defaultCategory, onClose, onSaved }: { offer: 
     const up = await supabase.storage.from(BUCKET).upload(path, file, { upsert: false })
     setUploading(false)
     if (up.error) { toast(up.error.message, 'err'); return }
-    set('brochure_path', path); set('brochure_name', file.name); toast('Brochure caricata')
+    set('brochure_path', path); set('brochure_name', file.name); toast(tr('Brochure caricata'))
   }
 
   async function save() {
-    if (!f.title.trim()) { toast('Serve un titolo', 'err'); return }
+    if (!f.title.trim()) { toast(tr('Serve un titolo'), 'err'); return }
     setBusy(true)
     const payload = {
       insurer_id: uid, type: f.type, category: f.category || 'sport', title: f.title.trim(), description: f.description || null,
@@ -154,37 +157,37 @@ function OfferModal({ offer, uid, defaultCategory, onClose, onSaved }: { offer: 
       : await supabase.from('crm_insurance_offers').insert(payload)
     setBusy(false)
     if (res.error) { toast(res.error.message, 'err'); return }
-    toast(offer ? 'Proposta aggiornata' : 'Proposta creata'); onSaved()
+    toast(offer ? tr('Proposta aggiornata') : tr('Proposta creata')); onSaved()
   }
 
   return (
-    <Modal title={offer ? 'Modifica proposta' : 'Nuova proposta'} onClose={onClose}
+    <Modal title={offer ? tr('Modifica proposta') : tr('Nuova proposta')} onClose={onClose}
       footer={<div className="flex gap" style={{ marginLeft: 'auto' }}>
-        <button className="btn" onClick={onClose}>Annulla</button>
-        <button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? 'Salvo…' : 'Salva'}</button>
+        <button className="btn" onClick={onClose}>{tr('Annulla')}</button>
+        <button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? tr('Salvo…') : tr('Salva')}</button>
       </div>}>
       <div className="grid" style={{ gap: 12 }}>
         <div className="flex gap" style={{ gap: 10 }}>
-          <Field label="Categoria"><Select value={f.category || 'sport'} onChange={e => set('category', e.target.value)}>
-            <option value="sport">Sport</option><option value="personale">Personale</option>
+          <Field label={tr("Categoria")}><Select value={f.category || 'sport'} onChange={e => set('category', e.target.value)}>
+            <option value="sport">{tr('Sport')}</option><option value="personale">{tr('Personale')}</option>
           </Select></Field>
-          <Field label="Tipo"><Select value={f.type} onChange={e => set('type', e.target.value)}>{TYPES.map(t => <option key={t.k} value={t.k}>{t.l}</option>)}</Select></Field>
-          <Field label="Prezzo indicativo"><Input value={f.price_hint || ''} onChange={e => set('price_hint', e.target.value)} placeholder="es. da 15€/mese" /></Field>
+          <Field label={tr("Tipo")}><Select value={f.type} onChange={e => set('type', e.target.value)}>{TYPES.map(t => <option key={t.k} value={t.k}>{t.l}</option>)}</Select></Field>
+          <Field label={tr("Prezzo indicativo")}><Input value={f.price_hint || ''} onChange={e => set('price_hint', e.target.value)} placeholder={tr("es. da 15€/mese")} /></Field>
         </div>
-        <Field label="Titolo"><Input value={f.title} onChange={e => set('title', e.target.value)} placeholder="es. Polizza infortuni extra-professionale" /></Field>
-        <Field label="Descrizione / vantaggi"><Textarea value={f.description || ''} onChange={e => set('description', e.target.value)} rows={4} placeholder="Cosa copre, per chi è pensata, i vantaggi principali…" /></Field>
-        <Field label="Destinatario">
+        <Field label={tr("Titolo")}><Input value={f.title} onChange={e => set('title', e.target.value)} placeholder={tr("es. Polizza infortuni extra-professionale")} /></Field>
+        <Field label={tr("Descrizione / vantaggi")}><Textarea value={f.description || ''} onChange={e => set('description', e.target.value)} rows={4} placeholder={tr("Cosa copre, per chi è pensata, i vantaggi principali…")} /></Field>
+        <Field label={tr("Destinatario")}>
           <Select value={f.player_id ? String(f.player_id) : ''} onChange={e => set('player_id', e.target.value ? Number(e.target.value) : null)}>
-            <option value="">Tutti i miei atleti</option>
+            <option value="">{tr('Tutti i miei atleti')}</option>
             {athletes.map(a => <option key={a.api_player_id} value={a.api_player_id}>{a.name}</option>)}
           </Select>
         </Field>
         <div>
-          <div className="faint" style={{ fontSize: 12, marginBottom: 6 }}>Brochure (PDF/immagine, facoltativa)</div>
+          <div className="faint" style={{ fontSize: 12, marginBottom: 6 }}>{tr('Brochure (PDF/immagine, facoltativa)')}</div>
           <div className="flex gap" style={{ gap: 8, alignItems: 'center' }}>
-            <button className="btn btn-sm" disabled={uploading} onClick={() => fileRef.current?.click()}><Icon name="upload" size={13} /> {uploading ? 'Carico…' : f.brochure_path ? 'Sostituisci' : 'Carica'}</button>
-            {f.brochure_path && <><button className="btn btn-ghost btn-sm" onClick={() => openPath(f.brochure_path)}>Apri</button>
-              <button className="btn btn-ghost btn-sm" onClick={() => { set('brochure_path', null); set('brochure_name', null) }}>Rimuovi</button></>}
+            <button className="btn btn-sm" disabled={uploading} onClick={() => fileRef.current?.click()}><Icon name="upload" size={13} /> {uploading ? tr('Carico…') : f.brochure_path ? tr('Sostituisci') : tr('Carica')}</button>
+            {f.brochure_path && <><button className="btn btn-ghost btn-sm" onClick={() => openPath(f.brochure_path)}>{tr('Apri')}</button>
+              <button className="btn btn-ghost btn-sm" onClick={() => { set('brochure_path', null); set('brochure_name', null) }}>{tr('Rimuovi')}</button></>}
             <input ref={fileRef} type="file" accept="image/*,application/pdf" hidden onChange={uploadBrochure} />
           </div>
         </div>
@@ -200,6 +203,7 @@ function OfferModal({ offer, uid, defaultCategory, onClose, onSaved }: { offer: 
 export function EditorialTab({ slug, isInsurer, uid, defaultTitle, defaultBody }: {
   slug: string; isInsurer: boolean; uid: string | null; defaultTitle: string; defaultBody: string
 }) {
+  const { t: tr } = useLang()
   const [page, setPage] = useState<{ title: string; body: string } | null>(null)
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
@@ -223,7 +227,7 @@ export function EditorialTab({ slug, isInsurer, uid, defaultTitle, defaultBody }
       .upsert({ insurer_id: uid, slug, title: title.trim() || defaultTitle, body, updated_at: new Date().toISOString() }, { onConflict: 'insurer_id,slug' })
     setBusy(false)
     if (error) { toast(error.message, 'err'); return }
-    toast('Salvato'); setEditing(false); load()
+    toast(tr('Salvato')); setEditing(false); load()
   }
 
   if (loading) return <Spinner />
@@ -234,7 +238,7 @@ export function EditorialTab({ slug, isInsurer, uid, defaultTitle, defaultBody }
     return (
       <div className="card grid" style={{ gap: 12 }}>
         <Field label="Titolo"><Input value={title} onChange={e => setTitle(e.target.value)} /></Field>
-        <Field label="Testo"><Textarea value={body} onChange={e => setBody(e.target.value)} rows={14} /></Field>
+        <Field label={tr("Testo")}><Textarea value={body} onChange={e => setBody(e.target.value)} rows={14} /></Field>
         <div className="flex gap" style={{ marginLeft: 'auto' }}>
           <button className="btn" onClick={() => setEditing(false)}>Annulla</button>
           <button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? 'Salvo…' : 'Salva'}</button>
