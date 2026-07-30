@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import './Login.css'
+import { useLang } from '../lib/i18n'
 
 // Schermata di accesso Player Hub (design handoff) collegata all'auth reale:
 // email+password (signInWithPassword) e magic link (signInWithOtp).
@@ -26,6 +27,7 @@ function friendlyError(error: any): string {
 }
 
 export default function Login() {
+  const { t } = useLang()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPw, setShowPw] = useState(false)
@@ -87,14 +89,11 @@ export default function Login() {
           </header>
 
           <div className="ph-login__claimBlock">
-            <p className="ph-login__kicker">IL TUO SPAZIO RISERVATO</p>
+            <p className="ph-login__kicker">{t('IL TUO SPAZIO RISERVATO')}</p>
             <h1 className="ph-login__claim">Own your<br />image.</h1>
-            <p className="ph-login__reason">
-              Contratti, compensi, sponsor, agenda, servizi: tutto in un unico posto.
-              Tu pensi a giocare — Player Hub tiene insieme la tua carriera e la fa crescere.
-            </p>
+            <p className="ph-login__reason">{t('Contratti, compensi, sponsor, agenda, servizi: tutto in un unico posto. Tu pensi a giocare — Player Hub tiene insieme la tua carriera e la fa crescere.')}</p>
             <div className="ph-login__partners">
-              <p className="ph-login__partnersLabel">PARTNER NEL TUO HUB</p>
+              <p className="ph-login__partnersLabel">{t('PARTNER NEL TUO HUB')}</p>
               <ul className="ph-login__chips">
                 {PARTNERS.map((p) => (
                   <li key={p} className="ph-login__chip">{p}</li>
@@ -111,12 +110,12 @@ export default function Login() {
             <img src={AUVI_MARK} alt="" />
           </div>
 
-          <h2 className="ph-login__title">Bentornato.</h2>
-          <p className="ph-login__sub">Accedi al tuo Player Hub.</p>
+          <h2 className="ph-login__title">{t('Bentornato.')}</h2>
+          <p className="ph-login__sub">{t('Accedi al tuo Player Hub.')}</p>
 
           <form onSubmit={handleSubmit} className="ph-login__fields">
             <label className="ph-login__field">
-              <span className="ph-login__label">EMAIL</span>
+              <span className="ph-login__label">{t('EMAIL')}</span>
               <input
                 type="email"
                 autoComplete="email"
@@ -128,9 +127,9 @@ export default function Login() {
 
             <label className="ph-login__field">
               <span className="ph-login__label">
-                PASSWORD
+                {t('PASSWORD')}
                 <button type="button" className="ph-login__pwToggle" onClick={() => setShowPw((s) => !s)}>
-                  {showPw ? 'NASCONDI' : 'MOSTRA'}
+                  {showPw ? t('NASCONDI') : t('MOSTRA')}
                 </button>
               </span>
               <input
@@ -143,19 +142,19 @@ export default function Login() {
             </label>
 
             <button type="submit" className="ph-login__cta" disabled={sending}>
-              {sending ? 'Accesso in corso…' : 'Entra'}
+              {sending ? t('Accesso in corso…') : t('Entra')}
             </button>
 
             <button type="button" className="ph-login__link" onClick={handleMagicLink} disabled={sending}>
-              Primo accesso o password dimenticata →
+              {t('Primo accesso o password dimenticata →')}
             </button>
           </form>
 
           {notice && <p className="ph-login__notice" role="status">{notice}</p>}
 
           <footer className="ph-login__footer">
-            <p className="ph-login__invite"><span className="ph-login__dot" />Accesso su invito · solo indirizzi autorizzati</p>
-            <p className="ph-login__fine">Al primo accesso usa il link via email, poi imposta la password dalle Impostazioni.</p>
+            <p className="ph-login__invite"><span className="ph-login__dot" />{t('Accesso su invito · solo indirizzi autorizzati')}</p>
+            <p className="ph-login__fine">{t('Al primo accesso usa il link via email, poi imposta la password dalle Impostazioni.')}</p>
           </footer>
         </div>
       </section>

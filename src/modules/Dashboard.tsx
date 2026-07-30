@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../auth/AuthContext'
 import { useAthlete } from '../lib/athlete'
+import { useLang } from '../lib/i18n'
 import { Spinner, Badge } from '../components/ui'
 import Icon from '../components/Icon'
 import ReferentiCard from '../components/ReferentiCard'
@@ -34,6 +35,7 @@ function TeamVs({ m, size = 24 }: { m: Match; size?: number }) {
 export default function Dashboard({ goto }: { goto: (r: string) => void }) {
   const { profile } = useAuth()
   const { athleteId, athleteTz } = useAthlete()
+  const { t } = useLang()
   const isMobile = useIsMobile()
   const [loading, setLoading] = useState(true)
   const [player, setPlayer] = useState<Player | null>(null)
@@ -159,7 +161,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
         {lastMatch && (
           <button className="ed-strip" onClick={() => goto('performance')}>
             <div style={{ minWidth: 0 }}>
-              <div className="ed-kicker">Ultima partita</div>
+              <div className="ed-kicker">{t('Ultima partita')}</div>
               <div style={{ fontWeight: 700, fontSize: 14, marginTop: 5 }}>{lastMatch.match_name}</div>
               <div className="faint" style={{ fontSize: 11, marginTop: 2 }}>{fmtDate(lastMatch.match_date)} · {lastMatch.minutes}′ giocati · {lastMatch.competition}</div>
             </div>
@@ -182,14 +184,14 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
         )}
 
         <div>
-          <div className="ed-masthead"><div className="ed-masthead-t">Da fare ora</div><div className="ed-rule" /></div>
+          <div className="ed-masthead"><div className="ed-masthead-t">{t('Da fare ora')}</div><div className="ed-rule" /></div>
           <div className="grid" style={{ gap: 10 }}>
             {toApprove.length > 0 && (
               <button className="ed-action prio" onClick={() => goto('media')}>
                 <div className="ed-action-num">{toApprove.length}</div>
                 <div style={{ flex: 1 }}>
-                  <div className="ed-action-t">Foto da approvare</div>
-                  <div className="ed-action-s">Selezioni in attesa del tuo ok</div>
+                  <div className="ed-action-t">{t('Foto da approvare')}</div>
+                  <div className="ed-action-s">{t('Selezioni in attesa del tuo ok')}</div>
                 </div>
                 <span className="ed-chev">›</span>
               </button>
@@ -217,15 +219,15 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
 
         <div>
           <div className="ed-masthead">
-            <div className="ed-masthead-t quiet">In stagione</div><div className="ed-rule" />
-            <button className="ed-more" onClick={() => goto('performance')}>Dettagli →</button>
+            <div className="ed-masthead-t quiet">{t('In stagione')}</div><div className="ed-rule" />
+            <button className="ed-more" onClick={() => goto('performance')}>{t('Dettagli →')}</button>
           </div>
           <div className="ed-statcols">
-            <div className="ed-statcol"><div className="v">{presenze}</div><div className="l">Presenze</div></div>
+            <div className="ed-statcol"><div className="v">{presenze}</div><div className="l">{t('Presenze')}</div></div>
             <div className="ed-statdiv" />
-            <div className="ed-statcol"><div className="v" style={{ color: avgRating && avgRating >= 7 ? 'var(--green)' : undefined }}>{avgRating ? avgRating.toFixed(2) : '—'}</div><div className="l">Rating</div></div>
+            <div className="ed-statcol"><div className="v" style={{ color: avgRating && avgRating >= 7 ? 'var(--green)' : undefined }}>{avgRating ? avgRating.toFixed(2) : '—'}</div><div className="l">{t('Rating')}</div></div>
             <div className="ed-statdiv" />
-            <div className="ed-statcol"><div className="v">{goals}</div><div className="l">Gol</div></div>
+            <div className="ed-statcol"><div className="v">{goals}</div><div className="l">{t('Gol')}</div></div>
           </div>
         </div>
       </div>
@@ -264,8 +266,8 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
       <div className="grid g2">
         <div className="card">
           <div className="card-head">
-            <div className="card-title">Prossima partita</div>
-            <button className="btn btn-ghost btn-sm" onClick={() => goto('editorial')}>Calendario →</button>
+            <div className="card-title">{t('Prossima partita')}</div>
+            <button className="btn btn-ghost btn-sm" onClick={() => goto('editorial')}>{t('Calendario →')}</button>
           </div>
           {nextMatch ? (
             <div>
@@ -276,13 +278,13 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
                 <Badge>{nextMatch.venue === 'Home' ? 'In casa' : 'Trasferta'}</Badge>
               </div>
             </div>
-          ) : <div className="faint" style={{ padding: '8px 0' }}>Nessuna partita in programma al momento.</div>}
+          ) : <div className="faint" style={{ padding: '8px 0' }}>{t('Nessuna partita in programma al momento.')}</div>}
         </div>
 
         <div className="card">
           <div className="card-head">
-            <div className="card-title">Prossimo contenuto da pubblicare</div>
-            <button className="btn btn-ghost btn-sm" onClick={() => goto('editorial')}>Apri →</button>
+            <div className="card-title">{t('Prossimo contenuto da pubblicare')}</div>
+            <button className="btn btn-ghost btn-sm" onClick={() => goto('editorial')}>{t('Apri →')}</button>
           </div>
           {nextContent ? (
             <div>
