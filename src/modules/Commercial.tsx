@@ -841,7 +841,7 @@ function DatiPreferenze({ prof, saveProf, openWizard }: any) {
     </div>
     <div className="flex" style={{ justifyContent: 'flex-end' }}>
       <button className="btn btn-primary" disabled={busy} onClick={async () => { setBusy(true); await saveProf({ audience: aud, content, sport }); setBusy(false); setSaved(true); setTimeout(() => setSaved(false), 2500) }}>
-        {busy ? 'Salvo…' : saved ? 'Salvato' : 'Salva dati'}
+        {busy ? 'Salvo…' : saved  ? tr('Salvato') : 'Salva dati'}
       </button>
     </div>
   </>)
@@ -941,7 +941,7 @@ function Onboarding({ profile, save, onDone, onLater }: any) {
         </>)}
 
         <div className="flex between" style={{ marginTop: 20, paddingTop: 14, borderTop: '1px solid var(--border)' }}>
-          <button className="btn btn-ghost" disabled={busy} onClick={async () => { await persist(false, step); onLater() }}>Continua più tardi</button>
+          <button className="btn btn-ghost" disabled={busy} onClick={async () => { await persist(false, step); onLater() }}>{tr("Continua più tardi")}</button>
           <div className="flex gap">
             {step > 0 && <button className="btn" disabled={busy} onClick={() => setStep(step - 1)}>Indietro</button>}
             {step < 4
@@ -1040,27 +1040,27 @@ function OppForm({ athleteId, cats, value, userName, onClose, onSaved }: any) {
     setBusy(false); onSaved()
   }
   return (
-    <Modal title={f.id ? 'Modifica opportunità' : 'Nuova opportunità'} onClose={onClose} wide
+    <Modal title={f.id ? tr('Modifica opportunità') : tr('Nuova opportunità')} onClose={onClose} wide
       footer={<><button className="btn btn-ghost" onClick={onClose}>Annulla</button><button className="btn btn-primary" disabled={busy || !f.brand_name} onClick={save}>{busy ? 'Salvo…' : 'Salva'}</button></>}>
       <div className="row2">
-        <Field label="Brand *"><Input value={f.brand_name || ''} onChange={e => set('brand_name', e.target.value)} /></Field>
+        <Field label={tr("Brand *")}><Input value={f.brand_name || ''} onChange={e => set('brand_name', e.target.value)} /></Field>
         <Field label="Categoria"><Select value={f.category_key || ''} onChange={e => set('category_key', e.target.value)}><option value="">—</option>{cats.map((c: any) => <option key={c.key} value={c.key}>{c.name}</option>)}</Select></Field>
       </div>
       <Field label={tr("Descrizione")}><Textarea rows={2} value={f.description || ''} onChange={e => set('description', e.target.value)} /></Field>
       <div className="row2">
-        <Field label="Compenso da (€)"><Input type="number" value={f.fee_lo || ''} onChange={e => set('fee_lo', e.target.value)} /></Field>
-        <Field label="Compenso a (€)"><Input type="number" value={f.fee_hi || ''} onChange={e => set('fee_hi', e.target.value)} /></Field>
+        <Field label={tr("Compenso da (€)")}><Input type="number" value={f.fee_lo || ''} onChange={e => set('fee_lo', e.target.value)} /></Field>
+        <Field label={tr("Compenso a (€)")}><Input type="number" value={f.fee_hi || ''} onChange={e => set('fee_hi', e.target.value)} /></Field>
       </div>
       <div className="row2">
-        <Field label={tr("Durata")}><Input placeholder="Es. 6 mesi" value={f.duration || ''} onChange={e => set('duration', e.target.value)} /></Field>
-        <Field label={tr("Territorio")}><Input placeholder="Es. Italia + Grecia" value={f.territory || ''} onChange={e => set('territory', e.target.value)} /></Field>
+        <Field label={tr("Durata")}><Input placeholder={tr("Es. 6 mesi")} value={f.duration || ''} onChange={e => set('duration', e.target.value)} /></Field>
+        <Field label={tr("Territorio")}><Input placeholder={tr("Es. Italia + Grecia")} value={f.territory || ''} onChange={e => set('territory', e.target.value)} /></Field>
       </div>
       <div className="row2">
-        <Field label={tr("Esclusività")}><Input placeholder="Es. categoria sportswear" value={f.exclusivity || ''} onChange={e => set('exclusivity', e.target.value)} /></Field>
+        <Field label={tr("Esclusività")}><Input placeholder={tr("Es. categoria sportswear")} value={f.exclusivity || ''} onChange={e => set('exclusivity', e.target.value)} /></Field>
         <Field label={tr("Scadenza")}><Input type="date" value={f.deadline || ''} onChange={e => set('deadline', e.target.value)} /></Field>
       </div>
-      <Field label="Attività richieste (separate da virgola)"><Input placeholder="2 reel, 4 stories, 1 evento" value={f.activities_txt || ''} onChange={e => set('activities_txt', e.target.value)} /></Field>
-      <Field label="Materiali richiesti (separati da virgola)"><Input placeholder="foto HD, liberatoria" value={f.materials_txt || ''} onChange={e => set('materials_txt', e.target.value)} /></Field>
+      <Field label={tr("Attività richieste (separate da virgola)")}><Input placeholder={tr("2 reel, 4 stories, 1 evento")} value={f.activities_txt || ''} onChange={e => set('activities_txt', e.target.value)} /></Field>
+      <Field label={tr("Materiali richiesti (separati da virgola)")}><Input placeholder={tr("foto HD, liberatoria")} value={f.materials_txt || ''} onChange={e => set('materials_txt', e.target.value)} /></Field>
       <Field label={tr("Referente AUVI")}><Input value={f.referente || ''} onChange={e => set('referente', e.target.value)} /></Field>
     </Modal>
   )
@@ -1085,9 +1085,9 @@ function PrivateNotesModal({ opp, onClose }: any) {
     <Modal title={`Riservato — ${opp.brand_name}`} onClose={onClose}
       footer={<><button className="btn btn-ghost" onClick={onClose}>Chiudi</button><button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? 'Salvo…' : 'Salva'}</button></>}>
       <div className="muted" style={{ fontSize: 12, marginBottom: 12, color: 'var(--red)' }}>Questi dati sono su una tabella riservata (RLS admin-only): l'atleta non può leggerli in nessun caso.</div>
-      <Field label="Margine AUVI (€)"><Input type="number" value={f.margin ?? ''} onChange={e => setF({ ...f, margin: e.target.value })} /></Field>
-      <Field label="Note interne"><Textarea rows={3} value={f.internal_notes || ''} onChange={e => setF({ ...f, internal_notes: e.target.value })} /></Field>
-      <Field label="Note di trattativa"><Textarea rows={3} value={f.negotiation_notes || ''} onChange={e => setF({ ...f, negotiation_notes: e.target.value })} /></Field>
+      <Field label={tr("Margine AUVI (€)")}><Input type="number" value={f.margin ?? ''} onChange={e => setF({ ...f, margin: e.target.value })} /></Field>
+      <Field label={tr("Note interne")}><Textarea rows={3} value={f.internal_notes || ''} onChange={e => setF({ ...f, internal_notes: e.target.value })} /></Field>
+      <Field label={tr("Note di trattativa")}><Textarea rows={3} value={f.negotiation_notes || ''} onChange={e => setF({ ...f, negotiation_notes: e.target.value })} /></Field>
     </Modal>
   )
 }
@@ -1137,23 +1137,23 @@ function CollabForm({ athleteId, cats, value, onClose, onSaved }: any) {
     setBusy(false); onSaved()
   }
   return (
-    <Modal title={f.id ? 'Modifica collaborazione' : 'Nuova collaborazione'} onClose={onClose} wide
+    <Modal title={f.id ? tr('Modifica collaborazione') : tr('Nuova collaborazione')} onClose={onClose} wide
       footer={<><button className="btn btn-ghost" onClick={onClose}>Annulla</button><button className="btn btn-primary" disabled={busy || !f.brand_name} onClick={save}>{busy ? 'Salvo…' : 'Salva'}</button></>}>
       <div className="row2">
-        <Field label="Brand *"><Input value={f.brand_name || ''} onChange={e => set('brand_name', e.target.value)} /></Field>
+        <Field label={tr("Brand *")}><Input value={f.brand_name || ''} onChange={e => set('brand_name', e.target.value)} /></Field>
         <Field label="Categoria"><Select value={f.category_key || ''} onChange={e => set('category_key', e.target.value)}><option value="">—</option>{cats.map((c: any) => <option key={c.key} value={c.key}>{c.name}</option>)}</Select></Field>
       </div>
       <div className="row2">
-        <Field label="Valore contratto (€)"><Input type="number" value={f.contract_value ?? ''} onChange={e => set('contract_value', e.target.value)} /></Field>
-        <Field label="Stato"><Select value={f.status} onChange={e => set('status', e.target.value)}><option value="attiva">Attiva</option><option value="completata">Completata</option><option value="annullata">Annullata</option></Select></Field>
+        <Field label={tr("Valore contratto (€)")}><Input type="number" value={f.contract_value ?? ''} onChange={e => set('contract_value', e.target.value)} /></Field>
+        <Field label={tr("Stato")}><Select value={f.status} onChange={e => set('status', e.target.value)}><option value="attiva">{tr("Attiva")}</option><option value="completata">Completata</option><option value="annullata">{tr("Annullata")}</option></Select></Field>
       </div>
       <div className="row2">
         <Field label="Inizio"><Input type="date" value={f.period_start || ''} onChange={e => set('period_start', e.target.value)} /></Field>
         <Field label="Fine"><Input type="date" value={f.period_end || ''} onChange={e => set('period_end', e.target.value)} /></Field>
       </div>
-      <Field label="Attività (separate da virgola)"><Input value={f.activities_txt || ''} onChange={e => set('activities_txt', e.target.value)} /></Field>
+      <Field label={tr("Attività (separate da virgola)")}><Input value={f.activities_txt || ''} onChange={e => set('activities_txt', e.target.value)} /></Field>
       <Field label={tr("Feedback del brand")}><Input value={f.brand_feedback || ''} onChange={e => set('brand_feedback', e.target.value)} /></Field>
-      <Field label="Note"><Textarea rows={2} value={f.notes || ''} onChange={e => set('notes', e.target.value)} /></Field>
+      <Field label={tr("Note")}><Textarea rows={2} value={f.notes || ''} onChange={e => set('notes', e.target.value)} /></Field>
     </Modal>
   )
 }
@@ -1182,7 +1182,7 @@ function PerfForm({ collab, existing, onClose, onSaved }: any) {
       <div className="row2">{num('engagement', 'Engagement %')}{num('views', 'Views')}</div>
       <div className="row2">{num('clicks', 'Click')}{num('conversions', 'Conversioni')}</div>
       <div className="row2">{num('posts_count', 'N. contenuti')}{num('quality', 'Qualità (1-10)')}</div>
-      <Field label="Consegne puntuali"><Select value={f.on_time == null ? '' : String(f.on_time)} onChange={e => setF({ ...f, on_time: e.target.value })}><option value="">—</option><option value="true">Sì</option><option value="false">No</option></Select></Field>
+      <Field label={tr("Consegne puntuali")}><Select value={f.on_time == null ? '' : String(f.on_time)} onChange={e => setF({ ...f, on_time: e.target.value })}><option value="">—</option><option value="true">{tr("Sì")}</option><option value="false">No</option></Select></Field>
       <Field label={tr("Feedback del brand")}><Input value={f.brand_feedback || ''} onChange={e => setF({ ...f, brand_feedback: e.target.value })} /></Field>
     </Modal>
   )
@@ -1212,7 +1212,7 @@ function AdminEval({ athleteId, reload }: any) {
   }
   return (
     <div className="card">
-      <div style={{ fontWeight: 700, marginBottom: 4 }}>Valutazione riservata</div>
+      <div style={{ fontWeight: 700, marginBottom: 4 }}>{tr("Valutazione riservata")}</div>
       <div style={{ fontSize: 12, color: 'var(--red)', marginBottom: 14 }}>Tabella admin-only: l'atleta vede soltanto un'etichetta sintetica di affidabilità (Ottima / Molto buona / Buona / In costruzione).</div>
       <div className="row2">
         <Field label="Affidabilità (0-100)"><Input type="number" value={f.reliability ?? ''} onChange={e => setF({ ...f, reliability: e.target.value })} /></Field>
@@ -1222,8 +1222,8 @@ function AdminEval({ athleteId, reload }: any) {
         <Field label="Puntualità (0-100)"><Input type="number" value={f.punctuality ?? ''} onChange={e => setF({ ...f, punctuality: e.target.value })} /></Field>
         <Field label="Rating rischio"><Select value={f.risk_rating || ''} onChange={e => setF({ ...f, risk_rating: e.target.value })}><option value="">—</option><option value="basso">Basso</option><option value="medio">Medio</option><option value="alto">Alto</option></Select></Field>
       </div>
-      <Field label="Note interne"><Textarea rows={3} value={f.internal_notes || ''} onChange={e => setF({ ...f, internal_notes: e.target.value })} /></Field>
-      <button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? 'Salvo…' : saved ? 'Salvato' : 'Salva valutazione'}</button>
+      <Field label={tr("Note interne")}><Textarea rows={3} value={f.internal_notes || ''} onChange={e => setF({ ...f, internal_notes: e.target.value })} /></Field>
+      <button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? 'Salvo…' : saved  ? tr('Salvato') : 'Salva valutazione'}</button>
     </div>
   )
 }
@@ -1243,7 +1243,7 @@ function AdminConfig({ cfg, reload }: any) {
   }
   return (
     <div className="card">
-      <div style={{ fontWeight: 700, marginBottom: 4 }}>Pesi del Commercial Score</div>
+      <div style={{ fontWeight: 700, marginBottom: 4 }}>{tr("Pesi del Commercial Score")}</div>
       <div className="muted" style={{ fontSize: 12.5, marginBottom: 14 }}>La somma deve fare 100. I nuovi pesi si applicano subito al calcolo del punteggio.</div>
       <div className="grid g3">
         {COMP_META.map(m => (
@@ -1259,7 +1259,7 @@ function AdminConfig({ cfg, reload }: any) {
           <Input type="number" value={b.hi} onChange={e => setBands(bands.map((x, j) => j === i ? { ...x, hi: Number(e.target.value) } : x))} />
         </div>
       ))}
-      <button className="btn btn-primary" style={{ marginTop: 10 }} disabled={busy || total !== 100} onClick={save}>{busy ? 'Salvo…' : saved ? 'Salvato' : 'Salva configurazione'}</button>
+      <button className="btn btn-primary" style={{ marginTop: 10 }} disabled={busy || total !== 100} onClick={save}>{busy ? 'Salvo…' : saved  ? tr('Salvato') : 'Salva configurazione'}</button>
     </div>
   )
 }
@@ -1307,7 +1307,7 @@ function AdminInstagram({ athleteId, reload }: any) {
 
   return (
     <div className="card">
-      <div style={{ fontWeight: 700, marginBottom: 4 }}>Collegamento Instagram</div>
+      <div style={{ fontWeight: 700, marginBottom: 4 }}>{tr("Collegamento Instagram")}</div>
       <div className="muted" style={{ fontSize: 12.5, marginBottom: 12 }}>
         Sync diretto con la Graph API di Meta: follower, engagement, reach e demografia dell'audience
         entrano da soli nel Commercial Score. Aggiornamento automatico ogni notte alle 04:30.
@@ -1324,17 +1324,17 @@ function AdminInstagram({ athleteId, reload }: any) {
       {acc.last_sync_error && <div style={{ fontSize: 12.5, color: 'var(--red)', marginBottom: 12 }}>{acc.last_sync_error}</div>}
 
       <button className="btn btn-sm" style={{ marginBottom: 12 }} onClick={() => setShowGuide(!showGuide)}>
-        {showGuide ? 'Nascondi la guida' : 'Come ottengo App ID, Secret e Token?'}
+        {showGuide ? tr('Nascondi la guida') : tr('Come ottengo App ID, Secret e Token?')}
       </button>
       {showGuide && (
         <div className="muted" style={{ fontSize: 12.5, lineHeight: 1.8, marginBottom: 14, background: 'var(--surface)', borderRadius: 'var(--radius-sm)', padding: '12px 16px' }}>
-          <b style={{ color: 'var(--text)' }}>Prerequisito:</b> il profilo Instagram deve essere <b>Business o Creator</b> e collegato a una <b>Pagina Facebook</b>.<br />
+          <b style={{ color: 'var(--text)' }}>{tr("Prerequisito:")}</b> il profilo Instagram deve essere <b>{tr("Business o Creator")}</b> e collegato a una <b>{tr("Pagina Facebook")}</b>.<br />
           1. Vai su <b>developers.facebook.com</b> → My Apps → <b>Create App</b> (tipo "Business"). L'app può restare in Development Mode.<br />
           2. In <b>Settings → Basic</b> copia <b>App ID</b> e <b>App Secret</b>.<br />
           3. Apri <b>Tools → Graph API Explorer</b>, seleziona la tua app e aggiungi i permessi:
           <b> pages_show_list, pages_read_engagement, instagram_basic, instagram_manage_insights</b>.<br />
           4. Clicca <b>Generate Access Token</b>, fai login e seleziona la Pagina + l'account Instagram.<br />
-          5. Incolla i tre valori qui sotto e premi <b>Sincronizza ora</b>: al resto (account IG, token long-lived 60gg, rinnovo automatico) pensa il sistema.
+          5. Incolla i tre valori qui sotto e premi <b>{tr("Sincronizza ora")}</b>: al resto (account IG, token long-lived 60gg, rinnovo automatico) pensa il sistema.
         </div>
       )}
 
@@ -1342,12 +1342,12 @@ function AdminInstagram({ athleteId, reload }: any) {
         <Field label="App ID"><Input value={acc.app_id || ''} onChange={e => setAcc({ ...acc, app_id: e.target.value.trim() })} placeholder="Es. 1234567890" /></Field>
         <Field label="App Secret"><Input type="password" value={acc.app_secret || ''} onChange={e => setAcc({ ...acc, app_secret: e.target.value.trim() })} /></Field>
       </div>
-      <Field label="Access Token (dal Graph API Explorer)"><Textarea rows={3} value={acc.access_token || ''} onChange={e => setAcc({ ...acc, access_token: e.target.value.trim() })} placeholder="EAAB..." /></Field>
+      <Field label={tr("Access Token (dal Graph API Explorer)")}><Textarea rows={3} value={acc.access_token || ''} onChange={e => setAcc({ ...acc, access_token: e.target.value.trim() })} placeholder="EAAB..." /></Field>
 
       <div className="flex gap" style={{ flexWrap: 'wrap' }}>
-        <button className="btn" disabled={busy} onClick={save}>{busy ? 'Salvo…' : 'Salva credenziali'}</button>
+        <button className="btn" disabled={busy} onClick={save}>{busy ? tr('Salvo…') : tr('Salva credenziali')}</button>
         <button className="btn btn-primary" disabled={syncing || !acc.access_token} onClick={syncNow}>
-          {syncing ? 'Sincronizzazione…' : 'Sincronizza ora'}
+          {syncing ? tr('Sincronizzazione…') : tr('Sincronizza ora')}
         </button>
       </div>
 
@@ -1355,12 +1355,12 @@ function AdminInstagram({ athleteId, reload }: any) {
         <div style={{ marginTop: 14 }}>
           {result.ok ? (
             <div className="grid g3">
-              <Stat label="Follower" value={Number(result.followers).toLocaleString('it-IT')} sub={result.username ? `@${result.username}` : undefined} />
+              <Stat label={tr("Follower")} value={Number(result.followers).toLocaleString('it-IT')} sub={result.username ? `@${result.username}` : undefined} />
               <Stat label={tr("Engagement")} value={result.er != null ? `${result.er}%` : '—'} />
-              <Stat label="Reach media/post" value={result.reach != null ? Number(result.reach).toLocaleString('it-IT') : '—'} />
-              <Stat label="Paesi audience" value={(result.geo || []).join(', ') || '—'} />
-              <Stat label="Fascia età" value={result.age_band || '—'} />
-              <Stat label="Genere" value={result.gender_split || '—'} />
+              <Stat label={tr("Reach media/post")} value={result.reach != null ? Number(result.reach).toLocaleString('it-IT') : '—'} />
+              <Stat label={tr("Paesi audience")} value={(result.geo || []).join(', ') || '—'} />
+              <Stat label={tr("Fascia età")} value={result.age_band || '—'} />
+              <Stat label={tr("Genere")} value={result.gender_split || '—'} />
             </div>
           ) : (
             <div style={{ fontSize: 12.5, color: 'var(--red)' }}>Sync fallito: {result.error}</div>
@@ -1427,29 +1427,29 @@ function TeaserAdminCard({ player, prof, topFits }: any) {
   return (
     <div className="card">
       <div className="flex between" style={{ marginBottom: 4, flexWrap: 'wrap', gap: 8 }}>
-        <div style={{ fontWeight: 700 }}>Teaser per i brand</div>
-        <Badge tone={f.published ? 'green' : 'gold'}>{f.published ? 'Pubblicato — visibile ai brand' : 'Bozza — non visibile'}</Badge>
+        <div style={{ fontWeight: 700 }}>{tr("Teaser per i brand")}</div>
+        <Badge tone={f.published ? 'green' : 'gold'}>{f.published ? tr('Pubblicato — visibile ai brand') : tr('Bozza — non visibile')}</Badge>
       </div>
       <div className="muted" style={{ fontSize: 12.5, marginBottom: 14 }}>
         È l'unica vista commerciale che il brand vede in app: fascia follower, categorie affini e highlights.
         Engagement, reach, demografia e storico restano riservati — li condividi tu col PDF completo quando il brand si muove.
       </div>
-      <button className="btn btn-sm" style={{ marginBottom: 12 }} onClick={autofill}>Compila dai dati del profilo</button>
+      <button className="btn btn-sm" style={{ marginBottom: 12 }} onClick={autofill}>{tr("Compila dai dati del profilo")}</button>
       <div className="row2">
-        <Field label="Headline"><Input value={f.headline || ''} onChange={e => setF({ ...f, headline: e.target.value })} placeholder="Es. Portiere Serie A greca · profilo internazionale" /></Field>
-        <Field label="Fascia follower (mai il numero esatto)"><Input value={f.follower_band || ''} onChange={e => setF({ ...f, follower_band: e.target.value })} placeholder="Es. 65.000+" /></Field>
+        <Field label={tr("Headline")}><Input value={f.headline || ''} onChange={e => setF({ ...f, headline: e.target.value })} placeholder={tr("Es. Portiere Serie A greca · profilo internazionale")} /></Field>
+        <Field label={tr("Fascia follower (mai il numero esatto)")}><Input value={f.follower_band || ''} onChange={e => setF({ ...f, follower_band: e.target.value })} placeholder={tr("Es. 65.000+")} /></Field>
       </div>
-      <Field label="Categorie affini (max 3, separate da virgola)">
+      <Field label={tr("Categorie affini (max 3, separate da virgola)")}>
         <Input value={(f.top_categories || []).join(', ')} onChange={e => setF({ ...f, top_categories: e.target.value.split(',').map((x: string) => x.trim()).filter(Boolean).slice(0, 3) })} />
       </Field>
-      <Field label="Highlights (uno per riga)">
+      <Field label={tr("Highlights (uno per riga)")}>
         <Textarea rows={4} value={(f.highlights || []).join('\n')} onChange={e => setF({ ...f, highlights: e.target.value.split('\n') })} />
       </Field>
       <div className="flex gap" style={{ flexWrap: 'wrap' }}>
-        <button className="btn" disabled={busy} onClick={() => save()}>{busy ? 'Salvo…' : saved ? 'Salvato' : 'Salva bozza'}</button>
+        <button className="btn" disabled={busy} onClick={() => save()}>{busy ? 'Salvo…' : saved  ? tr('Salvato') : 'Salva bozza'}</button>
         {f.published
-          ? <button className="btn btn-danger" disabled={busy} onClick={() => save(false)}>Nascondi ai brand</button>
-          : <button className="btn btn-primary" disabled={busy} onClick={() => save(true)}>Pubblica per i brand</button>}
+          ? <button className="btn btn-danger" disabled={busy} onClick={() => save(false)}>{tr("Nascondi ai brand")}</button>
+          : <button className="btn btn-primary" disabled={busy} onClick={() => save(true)}>{tr("Pubblica per i brand")}</button>}
       </div>
     </div>
   )
