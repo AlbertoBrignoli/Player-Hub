@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { toast } from '../lib/toast'
 import { Input, Textarea } from '../components/ui'
 import Icon from '../components/Icon'
+import { useLang } from '../lib/i18n'
 
 // Scheda servizio (design handoff): hero + identità partner, metodo, pilastri,
 // cosa include, citazione, questionario a passi (per sezione) e conferma.
@@ -29,6 +30,7 @@ export type FieldDef = {
 }
 
 export type Service = {
+  i18n?: Record<string, Record<string, any>> | null
   id: string
   category: string
   title: string
@@ -82,6 +84,8 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
   service: Service; playerId: number | null; canRequest: boolean
   onBack: () => void; onSent: () => void
 }) {
+  const { lang } = useLang()
+  const L = (f: string) => (lang === 'en' && service.i18n?.en?.[f] != null) ? service.i18n.en[f] : (service as any)[f]
   const accent = accentOf(service)
   const schema = service.form_schema || []
   const steps = useMemo(() => toSteps(schema), [schema])
@@ -192,7 +196,7 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
 
         <div>
           <div style={{ ...kicker, fontSize: 10, color: accent }}>Questionario · 3 minuti</div>
-          <div style={{ fontSize: 20, fontWeight: 900, marginTop: 4 }}>{service.title}</div>
+          <div style={{ fontSize: 20, fontWeight: 900, marginTop: 4 }}>{L('title')}</div>
         </div>
 
         <div>
@@ -268,9 +272,9 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
 
   // ---------- DETTAGLIO ----------
   const hasForm = canRequest && schema.length > 0
-  const longDesc = service.desc_long || service.description
+  const longDesc = L('desc_long') || L('description')
   // Per i servizi AUVI il titolo grande è il nome del servizio; il partner (es. "AUVI Studio") resta come etichetta.
-  const heroName = service.category === 'AUVI Studio' ? service.title : (service.partner_name || service.title)
+  const heroName = service.category === 'AUVI Studio' ? L('title') : (service.partner_name || L('title'))
   return (
     <div className="grid" style={{ gap: 16, color: T.text }}>
       <button onClick={onBack}
@@ -320,7 +324,7 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
             </div>
           )}
           {service.hero_claim && (
-            <div style={{ ...kicker, fontSize: 10.5, marginTop: 6, color: accent }}>{service.hero_claim}</div>
+            <div style={{ ...kicker, fontSize: 10.5, marginTop: 6, color: accent }}>{L('hero_claim')}</div>
           )}
         </div>
       </div>
@@ -330,14 +334,14 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
       {service.about && (
         <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 16, padding: 18 }}>
           <div style={{ ...kicker, fontSize: 10.5, color: accent, marginBottom: 8 }}>Il metodo</div>
-          <div style={{ fontSize: 13.5, lineHeight: 1.6 }}>{service.about}</div>
+          <div style={{ fontSize: 13.5, lineHeight: 1.6 }}>{L('about')}</div>
         </div>
       )}
 
       {/* citazione */}
       {service.quote && (
         <div style={{ padding: '4px 4px 4px 16px', borderLeft: `3px solid ${accent}` }}>
-          <div style={{ fontSize: 16, fontStyle: 'italic', lineHeight: 1.5 }}>{service.quote}</div>
+          <div style={{ fontSize: 16, fontStyle: 'italic', lineHeight: 1.5 }}>{L('quote')}</div>
           {service.quote_by && <div style={{ fontSize: 12, color: T.muted, marginTop: 6 }}>— {service.quote_by}</div>}
         </div>
       )}
@@ -356,11 +360,11 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
       )}
 
       {/* cosa include */}
-      {service.includes && service.includes.length > 0 && (
+      {(L('includes') || service.includes) && (L('includes') || service.includes).length > 0 && (
         <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 16, padding: 18 }}>
           <div style={{ ...kicker, fontSize: 10.5, color: accent, marginBottom: 12 }}>Cosa include</div>
           <div className="grid" style={{ gap: 10 }}>
-            {service.includes.map((it, i) => (
+            {(L('includes') || service.includes).map((it: string, i: number) => (
               <div key={i} className="flex gap" style={{ gap: 10, alignItems: 'flex-start' }}>
                 <span style={{ width: 20, height: 20, borderRadius: '50%', flexShrink: 0, marginTop: 1,
                   border: `1.5px solid ${accent}`, color: accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -380,11 +384,11 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 800,
               color: T.green, background: `${T.green}1f`, border: `1px solid ${T.green}55`,
               padding: '4px 10px', borderRadius: 999 }}>
-              <Icon name="clock" size={12} /> {service.sla}
+              <Icon name="clock" size={12} /> {L('sla')}
             </span>
           )}
           {service.partner_note && (
-            <div style={{ fontSize: 12, color: T.dim, marginTop: service.sla ? 10 : 0, lineHeight: 1.5 }}>{service.partner_note}</div>
+            <div style={{ fontSize: 12, color: T.dim, marginTop: service.sla ? 10 : 0, lineHeight: 1.5 }}>{L('partner_note')}</div>
           )}
         </div>
       )}

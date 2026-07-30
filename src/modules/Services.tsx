@@ -64,8 +64,10 @@ function initials(s: string) {
   return s.trim().split(/\s+/).slice(0, 2).map(w => w[0] || '').join('').toUpperCase()
 }
 
+const svcField = (s: any, f: string, lang: string) => (lang === 'en' && s?.i18n?.en?.[f] != null) ? s.i18n.en[f] : s?.[f]
+
 export default function Services() {
-  const { t } = useLang()
+  const { t, lang } = useLang()
   const { role, isAdmin } = useAuth()
   const { athleteId, athletes } = useAthlete()
   const [services, setServices] = useState<Service[]>([])
@@ -239,12 +241,12 @@ export default function Services() {
                         <Icon name={s.icon} size={20} />
                       </div>
                       <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: 14, fontWeight: 800 }}>{s.title}</div>
+                        <div style={{ fontSize: 14, fontWeight: 800 }}>{svcField(s, 'title', lang)}</div>
                         {s.description && (
                           <div style={{
                             fontSize: 12, color: T.dim, marginTop: 2,
                             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 260,
-                          }}>{s.description}</div>
+                          }}>{svcField(s, 'description', lang)}</div>
                         )}
                       </div>
                     </div>
@@ -273,6 +275,7 @@ export default function Services() {
 
 // --- card partner verificato: foto (se c'è) + logo sovrapposto, altrimenti logo centrato ---
 function VerifiedCard({ s, onOpen }: { s: Service; onOpen: () => void }) {
+  const { lang } = useLang()
   const { t } = useLang()
   const accent = s.accent_color || `oklch(0.85 0.13 ${s.hue ?? 250})`
   return (
@@ -317,9 +320,9 @@ function VerifiedCard({ s, onOpen }: { s: Service; onOpen: () => void }) {
       <div style={{ padding: 16 }}>
         {s.hero_claim && (
           <div style={{ fontSize: 9, letterSpacing: 1.8, fontWeight: 800, textTransform: 'uppercase',
-            color: accent }}>{s.hero_claim}</div>
+            color: accent }}>{svcField(s, 'hero_claim', lang)}</div>
         )}
-        <div style={{ fontSize: 18, fontWeight: 800, marginTop: 4, letterSpacing: -0.3 }}>{s.title}</div>
+        <div style={{ fontSize: 18, fontWeight: 800, marginTop: 4, letterSpacing: -0.3 }}>{svcField(s, 'title', lang)}</div>
         {s.partner_name && (
           <div style={{ fontSize: 12.5, color: T.dim, marginTop: 2 }}>con {s.partner_name}</div>
         )}
@@ -330,6 +333,7 @@ function VerifiedCard({ s, onOpen }: { s: Service; onOpen: () => void }) {
 
 // --- hero AUVI Studio (foto atleta + servizi interni) ---
 function StudioHero({ studio, onOpen }: { studio: Service[]; onOpen: (s: Service) => void }) {
+  const { lang } = useLang()
   const { t } = useLang()
   const vidRef = useRef<HTMLVideoElement | null>(null)
   useEffect(() => { const v = vidRef.current; if (v) { v.muted = true; v.play().catch(() => {}) } }, [])
@@ -366,10 +370,10 @@ function StudioHero({ studio, onOpen }: { studio: Service[]; onOpen: (s: Service
                   style={{ width: 22, height: 22, objectFit: 'contain', filter: 'brightness(0)' }} />
               </div>
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 14.5, fontWeight: 700, color: T.text }}>{s.title}</div>
+                <div style={{ fontSize: 14.5, fontWeight: 700, color: T.text }}>{svcField(s, 'title', lang)}</div>
                 {s.description && (
                   <div style={{ fontSize: 12, color: T.dim, overflow: 'hidden', textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap', maxWidth: 260 }}>{s.description}</div>
+                    whiteSpace: 'nowrap', maxWidth: 260 }}>{svcField(s, 'description', lang)}</div>
                 )}
               </div>
             </div>
