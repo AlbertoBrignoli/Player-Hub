@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAthlete } from '../lib/athlete'
+import { useLang } from '../lib/i18n'
 import { Spinner, Stat, Badge, Empty, Select } from '../components/ui'
 import { SeasonBlock, LastMatchGrid } from '../components/statbits'
 import Icon from '../components/Icon'
@@ -12,6 +13,7 @@ interface News { id: string; title: string; source: string | null; url: string |
 export default function Performance({ goto }: { goto?: (r: string) => void }) {
   void goto
   const { athleteId, athleteTz } = useAthlete()
+  const { t } = useLang()
   const [loading, setLoading] = useState(true)
   const [player, setPlayer] = useState<Player | null>(null)
   const [matches, setMatches] = useState<Match[]>([])
@@ -126,7 +128,7 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
       {/* Ultime 5: andamento rating */}
       {last5.length > 0 && (
         <div className="card">
-          <div className="card-head"><div className="card-title">Ultime 5 · andamento rating</div><div className="card-hint">scala 0–10</div></div>
+          <div className="card-head"><div className="card-title">{t("Ultime 5 · andamento rating")}</div><div className="card-hint">scala 0–10</div></div>
           <div className="chart">
             {last5.map(m => {
               const r = Number(m.rating) || 0
@@ -151,10 +153,10 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
           </Select>
         </div>
         <div className="grid g4" style={{ gap: 10, marginBottom: seasonTech.length ? 14 : 0 }}>
-          <Stat icon={<Icon name="check" size={13} />} label="Presenze" value={played.length} sub={`${totMin}' giocati`} />
-          <Stat icon={<Icon name="star" size={13} />} label="Rating medio" value={avgRating ? avgRating.toFixed(2) : '—'} tone="var(--accent)" sub={`${ratings.length} valutazioni`} />
-          <Stat icon={<Icon name="ball" size={13} />} label="Gol" value={goals} />
-          <Stat icon={<Icon name="send" size={13} />} label="Assist" value={assists} />
+          <Stat icon={<Icon name="check" size={13} />} label={t("Presenze")} value={played.length} sub={`${totMin}' giocati`} />
+          <Stat icon={<Icon name="star" size={13} />} label={t("Rating medio")} value={avgRating ? avgRating.toFixed(2) : '—'} tone="var(--accent)" sub={`${ratings.length} valutazioni`} />
+          <Stat icon={<Icon name="ball" size={13} />} label={t("Gol")} value={goals} />
+          <Stat icon={<Icon name="send" size={13} />} label={t("Assist")} value={assists} />
         </div>
         {seasonTech.length === 0 ? (
           <div className="faint" style={{ padding: '6px 0' }}>
@@ -177,8 +179,8 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
           <div style={{ overflowX: 'auto' }}>
             <table className="table">
               <thead><tr>
-                <th>Data</th><th>Match</th><th>Comp.</th><th>Min.</th>
-                <th>Pass %</th><th>Avanti %</th><th>Lanci %</th><th>Duelli %</th><th>Aerei %</th><th>Azioni %</th><th>Int.</th><th>Rec.</th><th>xG</th>
+                <th>{t("Data")}</th><th>{t("Match")}</th><th>{t("Comp.")}</th><th>{t("Min.")}</th>
+                <th>{t("Pass %")}</th><th>{t("Avanti %")}</th><th>{t("Lanci %")}</th><th>{t("Duelli %")}</th><th>{t("Aerei %")}</th><th>{t("Azioni %")}</th><th>{t("Int.")}</th><th>{t("Rec.")}</th><th>xG</th>
               </tr></thead>
               <tbody>
                 {seasonTech.map(t => (
@@ -207,10 +209,10 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
       {/* Storico competizioni (API) */}
       {stats.length > 0 && (
         <div className="card">
-          <div className="card-head"><div className="card-title">Storico competizioni</div></div>
+          <div className="card-head"><div className="card-title">{t("Storico competizioni")}</div></div>
           <div style={{ overflowX: 'auto' }}>
             <table className="table">
-              <thead><tr><th>Stagione</th><th>Competizione</th><th>Pres.</th><th>Min.</th><th>Gol</th><th>Assist</th><th>Rating</th></tr></thead>
+              <thead><tr><th>{t("Stagione")}</th><th>{t("Competizione")}</th><th>{t("Pres.")}</th><th>{t("Min.")}</th><th>{t("Gol")}</th><th>{t("Assist")}</th><th>Rating</th></tr></thead>
               <tbody>
                 {stats.map(s => (
                   <tr key={s.id}>
@@ -227,7 +229,7 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
 
       {news.length > 0 && (
         <div className="card">
-          <div className="card-head"><div className="card-title">Rassegna stampa</div></div>
+          <div className="card-head"><div className="card-title">{t("Rassegna stampa")}</div></div>
           <div className="list">
             {news.map(n => (
               <a className="row" key={n.id} href={n.url || '#'} target="_blank" rel="noreferrer">
