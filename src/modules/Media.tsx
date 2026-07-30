@@ -29,7 +29,10 @@ export default function Media() {
   const [picked, setPicked] = useState<Set<string>>(new Set())
   const [targetEntry, setTargetEntry] = useState('')
   const [lightbox, setLightbox] = useState<number | null>(null)
-  const [brokenCovers, setBrokenCovers] = useState<Set<string>>(new Set())
+  // Anteprime robuste: prima la versione ridimensionata dal server (leggera),
+  // se non carica si ripiega sull'originale, poi sul segnaposto.
+  const [thumbFallback, setThumbFallback] = useState<Set<string>>(new Set()) // usa l'originale
+  const [broken, setBroken] = useState<Set<string>>(new Set())               // niente da mostrare
   const [uploadFolder, setUploadFolder] = useState('')
   const fotoRef = useRef<HTMLInputElement>(null)
   const graficaRef = useRef<HTMLInputElement>(null)
@@ -253,14 +256,27 @@ export default function Media() {
     pubblicata: { l: 'Pubblicata', tone: 'green' },
   }
 
+  // URL anteprima: versione ridotta via image transformation (stesso token
+  // della firma, endpoint /render/image/), altrimenti l'originale.
+  function previewUrl(path: string, w = 560): string | null {
+    const u = urls[path]
+    if (!u) return null
+    if (thumbFallback.has(path)) return u
+    return u.replace('/object/sign/', '/render/image/sign/') + `&width=${w}&quality=75`
+  }
+  function onThumbError(path: string) {
+    if (thumbFallback.has(path)) setBroken(s => new Set(s).add(path))
+    else setThumbFallback(s => new Set(s).add(path))
+  }
+
   // Copertina cartella: la foto più recente con anteprima disponibile; se il
   // browser non riesce a caricarla (onError) si passa alla successiva.
   function folderCover(f: string | null) {
     const candidates = rows.filter(m =>
       (f == null ? m.folder == null : m.folder === f) && m.status !== 'scartata' &&
-      isImageFile(m.file_name) && urls[m.storage_path] && !brokenCovers.has(m.storage_path))
+      isImageFile(m.file_name) && urls[m.storage_path] && !broken.has(m.storage_path))
     const item = candidates[candidates.length - 1]
-    return item ? { path: item.storage_path, url: urls[item.storage_path] } : null
+    return item ? { path: item.storage_path } : null
   }
 
   function renderCard(m: MediaItem, idx: number) {
@@ -271,8 +287,9 @@ export default function Media() {
     const st = STATUS_LABEL[m.status]
     const thumb = (
       <div style={{ position: 'relative' }}>
-        {isImageFile(m.file_name) && urls[m.storage_path]
-          ? <img className="media-thumb" src={urls[m.storage_path]} alt={m.file_name || ''} loading="lazy"
+        {isImageFile(m.file_name) && urls[m.storage_path] && !broken.has(m.storage_path)
+          ? <img className="media-thumb" src={previewUrl(m.storage_path)!} alt={m.file_name || ''}
+              onError={() => onThumbError(m.storage_path)}
               onClick={() => setLightbox(idx)} />
           : <div className="media-thumb media-ph" onClick={() => download(m)} style={{ cursor: 'pointer' }}>
               <div style={{ textAlign: 'center' }}>
@@ -427,8 +444,8 @@ export default function Media() {
                     </button>
                   )}
                   {cover
-                    ? <img className="folder-cover" src={cover.url} alt=""
-                        onError={() => setBrokenCovers(s => new Set(s).add(cover.path))} />
+                    ? <img className="folder-cover" src={previewUrl(cover.path, 640)!} alt=""
+                        onError={() => onThumbError(cover.path)} />
                     : <div className="folder-cover folder-cover-ph"><Icon name="folder" size={30} strokeWidth={1.3} /></div>}
                   <div className="folder-meta">
                     <div className="folder-name"><Icon name="folder" size={13} /> {f}</div>
@@ -444,8 +461,8 @@ export default function Media() {
               return (
               <button className="folder-card" onClick={() => setOpenFolder(NO_FOLDER)} type="button">
                 {noneCover
-                  ? <img className="folder-cover" src={noneCover.url} alt=""
-                      onError={() => setBrokenCovers(s => new Set(s).add(noneCover.path))} />
+                  ? <img className="folder-cover" src={previewUrl(noneCover.path, 640)!} alt=""
+                      onError={() => onThumbError(noneCover.path)} />
                   : <div className="folder-cover folder-cover-ph"><Icon name="image" size={30} strokeWidth={1.3} /></div>}
                 <div className="folder-meta">
                   <div className="folder-name"><Icon name="image" size={13} /> Senza cartella</div>
