@@ -75,6 +75,7 @@ const TEAMS: Record<string, string> = {
   "ΠΑΝΣΕΡΡΑΪΚΟΣ": "Panserraikos", "ΠΑΝΑΙΤΩΛΙΚΟΣ": "Panetolikos",
   "ΟΦΗ": "OFI", "ΚΑΛΑΜΑΤΑ": "Kalamata", "ΗΡΑΚΛΗΣ": "Iraklis",
   "ΣΑΜΣΟΥΝΣΠΟΡ": "Samsunspor", "ΖΒΟΛΕ": "PEC Zwolle", "ΤΣΒΟΛΕ": "PEC Zwolle", "ΝΕΚ": "NEC Nijmegen",
+  "ΝΤΕ ΧΡΑΑΦΣΧΑΠ": "De Graafschap", "ΧΡΑΑΦΣΧΑΠ": "De Graafschap", "ΚΑΜΠΟΥΡ": "Cambuur",
   "ΓΙΟΥΒΕΝΤΟΥΣ": "Juventus", "ΜΙΛΑΝ": "Milan", "ΙΝΤΕΡ": "Inter",
   "ΝΑΠΟΛΙ": "Napoli", "ΡΟΜΑ": "Roma", "ΛΑΤΣΙΟ": "Lazio",
   "ΑΡΣΕΝΑΛ": "Arsenal", "ΛΙΒΕΡΠΟΥΛ": "Liverpool", "ΤΣΕΛΣΙ": "Chelsea",

@@ -29,6 +29,7 @@ export default function Media() {
   const [picked, setPicked] = useState<Set<string>>(new Set())
   const [targetEntry, setTargetEntry] = useState('')
   const [lightbox, setLightbox] = useState<number | null>(null)
+  const [brokenCovers, setBrokenCovers] = useState<Set<string>>(new Set())
   const [uploadFolder, setUploadFolder] = useState('')
   const fotoRef = useRef<HTMLInputElement>(null)
   const graficaRef = useRef<HTMLInputElement>(null)
@@ -75,16 +76,22 @@ export default function Media() {
   const pubblicati = rows.filter(m => m.status === 'pubblicata')
   const entryById = new Map(entries.map(e => [e.id, e]))
 
-  // Anteprime firmate (bucket privato).
+  // Anteprime firmate (bucket privato). A blocchi: con librerie grandi una
+  // singola richiesta bulk può fallire e lasciare tutte le anteprime vuote.
   useEffect(() => {
-    const paths = rows.map(m => m.storage_path).filter(p => !urls[p])
+    let alive = true
+    const paths = [...new Set(rows.map(m => m.storage_path))].filter(p => !urls[p])
     if (!paths.length) return
-    supabase.storage.from(BUCKET).createSignedUrls(paths, 3600).then(({ data }) => {
-      if (!data) return
-      const next: Record<string, string> = {}
-      data.forEach(d => { if (d.signedUrl && d.path) next[d.path] = d.signedUrl })
-      setUrls(u => ({ ...u, ...next }))
-    })
+    ;(async () => {
+      for (let i = 0; i < paths.length; i += 60) {
+        const { data } = await supabase.storage.from(BUCKET).createSignedUrls(paths.slice(i, i + 60), 3600)
+        if (!alive || !data) continue
+        const next: Record<string, string> = {}
+        data.forEach(d => { if (d.signedUrl && d.path) next[d.path] = d.signedUrl })
+        setUrls(u => ({ ...u, ...next }))
+      }
+    })()
+    return () => { alive = false }
   }, [rows]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function newFolder() {
@@ -246,9 +253,14 @@ export default function Media() {
     pubblicata: { l: 'Pubblicata', tone: 'green' },
   }
 
+  // Copertina cartella: la foto più recente con anteprima disponibile; se il
+  // browser non riesce a caricarla (onError) si passa alla successiva.
   function folderCover(f: string | null) {
-    const item = rows.find(m => (f == null ? m.folder == null : m.folder === f) && isImageFile(m.file_name) && urls[m.storage_path])
-    return item ? urls[item.storage_path] : null
+    const candidates = rows.filter(m =>
+      (f == null ? m.folder == null : m.folder === f) && m.status !== 'scartata' &&
+      isImageFile(m.file_name) && urls[m.storage_path] && !brokenCovers.has(m.storage_path))
+    const item = candidates[candidates.length - 1]
+    return item ? { path: item.storage_path, url: urls[item.storage_path] } : null
   }
 
   function renderCard(m: MediaItem, idx: number) {
@@ -414,7 +426,10 @@ export default function Media() {
                       <Icon name="edit" size={14} />
                     </button>
                   )}
-                  {cover ? <img className="folder-cover" src={cover} alt="" loading="lazy" /> : <div className="folder-cover folder-cover-ph"><Icon name="folder" size={30} strokeWidth={1.3} /></div>}
+                  {cover
+                    ? <img className="folder-cover" src={cover.url} alt=""
+                        onError={() => setBrokenCovers(s => new Set(s).add(cover.path))} />
+                    : <div className="folder-cover folder-cover-ph"><Icon name="folder" size={30} strokeWidth={1.3} /></div>}
                   <div className="folder-meta">
                     <div className="folder-name"><Icon name="folder" size={13} /> {f}</div>
                     <div className="faint" style={{ fontSize: 11.5 }}>
@@ -424,15 +439,21 @@ export default function Media() {
                 </div>
               )
             })}
-            {senzaCartella.length > 0 && (
+            {senzaCartella.length > 0 && (() => {
+              const noneCover = folderCover(null)
+              return (
               <button className="folder-card" onClick={() => setOpenFolder(NO_FOLDER)} type="button">
-                {folderCover(null) ? <img className="folder-cover" src={folderCover(null)!} alt="" loading="lazy" /> : <div className="folder-cover folder-cover-ph"><Icon name="image" size={30} strokeWidth={1.3} /></div>}
+                {noneCover
+                  ? <img className="folder-cover" src={noneCover.url} alt=""
+                      onError={() => setBrokenCovers(s => new Set(s).add(noneCover.path))} />
+                  : <div className="folder-cover folder-cover-ph"><Icon name="image" size={30} strokeWidth={1.3} /></div>}
                 <div className="folder-meta">
                   <div className="folder-name"><Icon name="image" size={13} /> Senza cartella</div>
                   <div className="faint" style={{ fontSize: 11.5 }}>{senzaCartella.length} elementi</div>
                 </div>
               </button>
-            )}
+              )
+            })()}
             {(
               <button className="folder-card folder-new" onClick={newFolder}>
                 <div className="folder-cover folder-cover-ph"><Icon name="folder-plus" size={30} strokeWidth={1.3} /></div>
