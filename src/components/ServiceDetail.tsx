@@ -210,19 +210,19 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
 
         {cur && (
           <>
-            <div style={{ ...kicker, fontSize: 10, color: accent }}>{cur.title}</div>
+            <div style={{ ...kicker, fontSize: 10, color: accent }}>{t(cur.title)}</div>
             <div className="grid" style={{ gap: 18 }}>
               {cur.fields.map(f => (
                 <div key={f.key}>
-                  <div style={{ fontSize: 13.5, fontWeight: 700, marginBottom: 3 }}>{f.label}</div>
-                  {f.help && <div style={{ fontSize: 11.5, color: T.muted, marginBottom: 7 }}>{f.help}</div>}
+                  <div style={{ fontSize: 13.5, fontWeight: 700, marginBottom: 3 }}>{t(f.label)}</div>
+                  {f.help && <div style={{ fontSize: 11.5, color: T.muted, marginBottom: 7 }}>{t(f.help)}</div>}
 
                   {f.type === 'textarea' && (
-                    <Textarea rows={3} value={answers[f.key] || ''} placeholder={f.placeholder}
+                    <Textarea rows={3} value={answers[f.key] || ''} placeholder={f.placeholder ? t(f.placeholder) : undefined}
                       onChange={e => set(f.key, e.target.value)} />
                   )}
                   {f.type === 'text' && (
-                    <Input value={answers[f.key] || ''} placeholder={f.placeholder}
+                    <Input value={answers[f.key] || ''} placeholder={f.placeholder ? t(f.placeholder) : undefined}
                       onChange={e => set(f.key, e.target.value)} />
                   )}
                   {f.type === 'number' && (
@@ -234,14 +234,14 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
                   {f.type === 'radio' && (
                     <div className="flex gap" style={{ flexWrap: 'wrap', gap: 8 }}>
                       {(f.options || []).map(o => (
-                        <Chip key={o} on={answers[f.key] === o} accent={accent} onClick={() => set(f.key, o)}>{o}</Chip>
+                        <Chip key={o} on={answers[f.key] === o} accent={accent} onClick={() => set(f.key, o)}>{t(o)}</Chip>
                       ))}
                     </div>
                   )}
                   {f.type === 'multiselect' && (
                     <div className="flex gap" style={{ flexWrap: 'wrap', gap: 8 }}>
                       {(f.options || []).map(o => (
-                        <Chip key={o} on={(answers[f.key] || []).includes(o)} accent={accent} onClick={() => toggle(f.key, o)}>{o}</Chip>
+                        <Chip key={o} on={(answers[f.key] || []).includes(o)} accent={accent} onClick={() => toggle(f.key, o)}>{t(o)}</Chip>
                       ))}
                     </div>
                   )}
