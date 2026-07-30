@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { toast } from '../lib/toast'
 import { useAuth } from '../auth/AuthContext'
 import { useAthlete } from '../lib/athlete'
+import { useLang } from '../lib/i18n'
 import { Modal, Field, Textarea, Select, Empty, Spinner } from '../components/ui'
 import Icon from '../components/Icon'
 import { fmtDate } from '../lib/format'
@@ -64,6 +65,7 @@ function initials(s: string) {
 }
 
 export default function Services() {
+  const { t } = useLang()
   const { role, isAdmin } = useAuth()
   const { athleteId, athletes } = useAthlete()
   const [services, setServices] = useState<Service[]>([])
@@ -119,7 +121,7 @@ export default function Services() {
 
       {/* --- header --- */}
       <div>
-        <div style={{ ...kicker, color: T.muted, fontSize: 10, letterSpacing: 2.5 }}>Servizi AUVI</div>
+        <div style={{ ...kicker, color: T.muted, fontSize: 10, letterSpacing: 2.5 }}>{t('Servizi AUVI')}</div>
         <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: -0.6, marginTop: 4 }}>
           {isPlayer ? `Ciao, ${firstName}` : 'Servizi e richieste'}
         </div>
@@ -206,7 +208,7 @@ export default function Services() {
           {/* --- partner verificati --- */}
           {verificati.filter(inCat).length > 0 && (
             <section>
-              <div style={{ ...kicker, fontSize: 12, color: T.text, marginBottom: 12 }}>Partner verificati</div>
+              <div style={{ ...kicker, fontSize: 12, color: T.text, marginBottom: 12 }}>{t('Partner verificati')}</div>
               <div className="grid g3" style={{ gap: 12 }}>
                 {verificati.filter(inCat).map(s => (
                   <VerifiedCard key={s.id} s={s} onOpen={() => setOpen(s)} />
@@ -218,7 +220,7 @@ export default function Services() {
           {/* --- su richiesta --- */}
           {altri.filter(inCat).length > 0 && (
             <section>
-              <div style={{ ...kicker, fontSize: 12, color: T.text, marginBottom: 12 }}>Su richiesta</div>
+              <div style={{ ...kicker, fontSize: 12, color: T.text, marginBottom: 12 }}>{t('Su richiesta')}</div>
               <div className="grid" style={{ gap: 8 }}>
                 {altri.filter(inCat).map(s => (
                   <button key={s.id} onClick={() => setOpen(s)}
@@ -255,8 +257,8 @@ export default function Services() {
 
           {services.length === 0 && (
             <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 16, padding: 20 }}>
-              <Empty icon={<Icon name="star" size={30} strokeWidth={1.4} />} title="Nessun servizio"
-                hint="Il catalogo non è ancora stato popolato." />
+              <Empty icon={<Icon name="star" size={30} strokeWidth={1.4} />} title={t("Nessun servizio")}
+                hint={t("Il catalogo non è ancora stato popolato.")} />
             </div>
           )}
         </>
@@ -271,6 +273,7 @@ export default function Services() {
 
 // --- card partner verificato: foto (se c'è) + logo sovrapposto, altrimenti logo centrato ---
 function VerifiedCard({ s, onOpen }: { s: Service; onOpen: () => void }) {
+  const { t } = useLang()
   const accent = s.accent_color || `oklch(0.85 0.13 ${s.hue ?? 250})`
   return (
     <button onClick={onOpen}
@@ -327,6 +330,7 @@ function VerifiedCard({ s, onOpen }: { s: Service; onOpen: () => void }) {
 
 // --- hero AUVI Studio (foto atleta + servizi interni) ---
 function StudioHero({ studio, onOpen }: { studio: Service[]; onOpen: (s: Service) => void }) {
+  const { t } = useLang()
   const vidRef = useRef<HTMLVideoElement | null>(null)
   useEffect(() => { const v = vidRef.current; if (v) { v.muted = true; v.play().catch(() => {}) } }, [])
   return (
@@ -382,6 +386,7 @@ function RequestsView({ reqs, isPlayer, isAdmin, athleteName, onManage, onEmptyG
   reqs: Req[]; isPlayer: boolean; isAdmin: boolean
   athleteName: (r: Req) => string; onManage: (r: Req) => void; onEmptyGoStore: () => void
 }) {
+  const { t } = useLang()
   const [filter, setFilter] = useState<'tutte' | 'corso' | 'fatte'>('tutte')
   const active = (r: Req) => r.status === 'aperta' || r.status === 'in_carico'
   const list = reqs.filter(r =>
@@ -393,7 +398,7 @@ function RequestsView({ reqs, isPlayer, isAdmin, athleteName, onManage, onEmptyG
     return (
       <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 16, padding: 20 }}>
         <Empty icon={<Icon name="inbox" size={30} strokeWidth={1.4} />}
-          title="Nessuna richiesta"
+          title={t("Nessuna richiesta")}
           hint={isPlayer ? 'Apri lo Store e manda la tua prima richiesta.' : 'Non ci sono ancora richieste.'} />
         {isPlayer && (
           <div style={{ textAlign: 'center', marginTop: 12 }}>
@@ -469,7 +474,7 @@ function RequestsView({ reqs, isPlayer, isAdmin, athleteName, onManage, onEmptyG
 
               {isAdmin && r.status !== 'completata' && r.status !== 'annullata' && (
                 <div style={{ marginTop: 12 }}>
-                  <button className="btn btn-sm" onClick={() => onManage(r)}>Gestisci</button>
+                  <button className="btn btn-sm" onClick={() => onManage(r)}>{t('Gestisci')}</button>
                 </div>
               )}
             </div>
@@ -482,6 +487,7 @@ function RequestsView({ reqs, isPlayer, isAdmin, athleteName, onManage, onEmptyG
 
 // --- gestione richiesta (admin) ---
 function ManageForm({ req, onClose, onSaved }: { req: Req; onClose: () => void; onSaved: () => void }) {
+  const { t } = useLang()
   const [status, setStatus] = useState(req.status)
   const [note, setNote] = useState(req.internal_note || '')
   const [busy, setBusy] = useState(false)
@@ -494,14 +500,14 @@ function ManageForm({ req, onClose, onSaved }: { req: Req; onClose: () => void; 
     }).eq('id', req.id)
     setBusy(false)
     if (error) { toast(error.message, 'err'); return }
-    toast('Richiesta aggiornata')
+    toast(t('Richiesta aggiornata'))
     onSaved()
   }
 
   return (
     <Modal title={`Gestisci · ${req.service_title}`} onClose={onClose}
       footer={<>
-        <button className="btn btn-ghost" onClick={onClose}>Annulla</button>
+        <button className="btn btn-ghost" onClick={onClose}>{t('Annulla')}</button>
         <button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? 'Salvo…' : 'Salva'}</button>
       </>}>
       {req.message && (
@@ -509,17 +515,17 @@ function ManageForm({ req, onClose, onSaved }: { req: Req; onClose: () => void; 
           {req.message}
         </div>
       )}
-      <Field label="Stato">
+      <Field label={t("Stato")}>
         <Select value={status} onChange={e => setStatus(e.target.value)}>
-          <option value="aperta">Inviata</option>
-          <option value="in_carico">In lavorazione</option>
-          <option value="completata">Completata</option>
-          <option value="annullata">Annullata</option>
+          <option value="aperta">{t('Inviata')}</option>
+          <option value="in_carico">{t('In lavorazione')}</option>
+          <option value="completata">{t('Completata')}</option>
+          <option value="annullata">{t('Annullata')}</option>
         </Select>
       </Field>
-      <Field label="Messaggio per l'atleta">
+      <Field label={t("Messaggio per l'atleta")}>
         <Textarea rows={2} value={note} onChange={e => setNote(e.target.value)}
-          placeholder="Es. ho girato la richiesta al nostro partner, ti aggiorno entro domani" />
+          placeholder={t("Es. ho girato la richiesta al nostro partner, ti aggiorno entro domani")} />
       </Field>
     </Modal>
   )
