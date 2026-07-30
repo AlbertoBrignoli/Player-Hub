@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAthlete } from '../lib/athlete'
+import { useLang } from '../lib/i18n'
 import { useAuth } from '../auth/AuthContext'
 import { initials } from '../lib/format'
 import Icon from '../components/Icon'
@@ -32,6 +33,7 @@ const AREA_FOR: Record<string, string> = { agente: 'profile', assicuratore: 'ins
 
 export default function MyTeam({ goto }: { goto?: (r: string) => void }) {
   const { athletes, athleteId, setAthleteId } = useAthlete()
+  const { t } = useLang()
   const { isAdmin, role } = useAuth()
   const [rows, setRows] = useState<Member[]>([])
   const [loading, setLoading] = useState(true)
@@ -58,7 +60,7 @@ export default function MyTeam({ goto }: { goto?: (r: string) => void }) {
           <div style={{ fontSize: 11, letterSpacing: 1.4, textTransform: 'uppercase', fontWeight: 800, color: 'var(--text-dim)' }}>
             Il mio team
           </div>
-          <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: -0.3 }}>I miei giocatori</div>
+          <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: -0.3 }}>{t('I miei giocatori')}</div>
           <div style={{ fontSize: 12.5, color: 'var(--text-dim)', marginTop: 2 }}>
             Gli atleti che segui. Tocca un giocatore per aprire la sua area.
           </div>
@@ -66,7 +68,7 @@ export default function MyTeam({ goto }: { goto?: (r: string) => void }) {
         {athletes.length === 0 ? (
           <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: 20 }}>
             <Empty icon={<Icon name="users" size={30} strokeWidth={1.4} />}
-              title="Nessun giocatore ancora collegato"
+              title={t("Nessun giocatore ancora collegato")}
               hint="Quando vieni collegato a un atleta, comparirà qui." />
           </div>
         ) : (
@@ -115,8 +117,8 @@ export default function MyTeam({ goto }: { goto?: (r: string) => void }) {
 
       {/* AUVI Agency: l'advisor è sempre presente */}
       <div>
-        <div className="nav-label" style={{ paddingLeft: 2 }}>Advisor</div>
-        <MemberCard name="AUVI Agency" roleLabel="Il tuo advisor · gestione a 360°"
+        <div className="nav-label" style={{ paddingLeft: 2 }}>{t('Advisor')}</div>
+        <MemberCard name="AUVI Agency" roleLabel={t("Il tuo advisor · gestione a 360°")}
           icon="star" email="info@auviagency.com" accent="var(--accent, #C6FF3A)" />
       </div>
 
@@ -124,7 +126,7 @@ export default function MyTeam({ goto }: { goto?: (r: string) => void }) {
       {loading ? <Spinner /> : rows.length === 0 ? (
         <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: 20 }}>
           <Empty icon={<Icon name="users" size={30} strokeWidth={1.4} />}
-            title="Ancora nessun professionista collegato"
+            title={t("Ancora nessun professionista collegato")}
             hint={isAdmin
               ? 'Quando colleghi un preparatore, un procuratore, un assicuratore o un commercialista a questo atleta, compaiono qui.'
               : 'Il tuo team apparirà qui man mano che i professionisti vengono collegati.'} />
@@ -136,13 +138,13 @@ export default function MyTeam({ goto }: { goto?: (r: string) => void }) {
         </div>
       ) : (
         <div>
-          <div className="nav-label" style={{ paddingLeft: 2 }}>Il team</div>
+          <div className="nav-label" style={{ paddingLeft: 2 }}>{t('Il team')}</div>
           <div className="grid" style={{ gap: 10 }}>
             {rows.map((m, i) => {
               const r = ROLE[m.role] || { label: m.role, icon: 'user' as string, area: undefined }
               const showArea = !!r.area && (canOpenAll || role === m.role)
               return (
-                <MemberCard key={i} name={m.name} roleLabel={r.label} icon={r.icon}
+                <MemberCard key={i} name={m.name} roleLabel={t(r.label)} icon={r.icon}
                   title={m.title} agency={m.agency_name} photo={m.photo_url}
                   email={m.email} phone={m.phone} whatsapp={m.whatsapp}
                   area={showArea ? r.area : undefined}
@@ -168,6 +170,7 @@ function MemberCard({ name, roleLabel, icon, title, agency, photo, email, phone,
   email?: string | null; phone?: string | null; whatsapp?: string | null; accent?: string
   area?: Area; onArea?: () => void
 }) {
+  const { t } = useLang()
   const sub = [title, agency].filter(Boolean).join(' · ')
   return (
     <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden' }}>
@@ -210,7 +213,7 @@ function MemberCard({ name, roleLabel, icon, title, agency, photo, email, phone,
             background: 'var(--card-dark, #101015)', color: 'var(--text)' }}>
           <span className="flex gap" style={{ alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 700 }}>
             <span style={{ color: 'var(--text-dim)', display: 'inline-flex' }}><Icon name="folder" size={15} /></span>
-            {area.label}
+            {t(area.label)}
           </span>
           <span style={{ color: 'var(--text-dim)', display: 'inline-flex' }}><Icon name="chevron-right" size={18} /></span>
         </button>

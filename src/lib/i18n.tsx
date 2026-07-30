@@ -533,4 +533,11 @@ const EN: Record<string, string> = {
   'Richiesta aggiornata': 'Request updated',
   "Messaggio per l'atleta": 'Message for the athlete',
   'Es. ho girato la richiesta al nostro partner, ti aggiorno entro domani': "E.g. I forwarded your request to our partner, I'll update you by tomorrow",
+  'Advisor': 'Advisor',
+  'Il tuo advisor · gestione a 360°': 'Your advisor · 360° management',
+  'Ancora nessun professionista collegato': 'No professionals linked yet',
+  'Il team': 'The team',
+  'I miei giocatori': 'My players',
+  'Nessun giocatore ancora collegato': 'No players linked yet',
+  'Preparatore atletico': 'Athletic trainer',
 }
