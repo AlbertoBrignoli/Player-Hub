@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { toast } from '../lib/toast'
 import { useAuth } from '../auth/AuthContext'
 import { useAthlete } from '../lib/athlete'
+import { useLang } from '../lib/i18n'
 import { useCollection, insertRow, updateRow, deleteRow } from '../lib/useData'
 import { Modal, Field, Input, Textarea, Select, Empty, Spinner, ConfirmButton } from '../components/ui'
 import Icon from '../components/Icon'
@@ -48,6 +49,7 @@ const emptyEv = (type: string): Partial<EventItem> => ({ title: '', type, start_
 
 export default function Agenda({ goto }: { goto?: (r: string) => void }) {
   const { athleteId } = useAthlete()
+  const { t: tr } = useLang()
   const { isAdmin, role, session } = useAuth()
   const uid = session?.user.id
   const canAdd = isAdmin || role === 'player'
@@ -96,6 +98,7 @@ type SharedProps = {
 }
 
 function ListView({ rows, canEdit, onEdit, onDel, canConfirm, onConfirm, goto }: SharedProps) {
+  const { t: tr } = useLang()
   const now = Date.now()
   const upcoming = rows.filter(e => new Date(e.start_at).getTime() >= now - 3600000)
   const past = rows.filter(e => new Date(e.start_at).getTime() < now - 3600000).reverse()
@@ -104,8 +107,8 @@ function ListView({ rows, canEdit, onEdit, onDel, canConfirm, onConfirm, goto }:
   const tomorrow = dayKey(new Date(now + 86400000))
   const in7 = dayKey(new Date(now + 7 * 86400000))
   const groups: { label: string; items: EventItem[] }[] = [
-    { label: 'Oggi', items: [] }, { label: 'Domani', items: [] },
-    { label: 'Questa settimana', items: [] }, { label: 'Più avanti', items: [] },
+    { label: tr('Oggi'), items: [] }, { label: tr('Domani'), items: [] },
+    { label: tr('Questa settimana'), items: [] }, { label: tr('Più avanti'), items: [] },
   ]
   upcoming.forEach(e => {
     const k = localKey(e.start_at)
@@ -127,7 +130,7 @@ function ListView({ rows, canEdit, onEdit, onDel, canConfirm, onConfirm, goto }:
       ))}
       {past.length > 0 && (
         <div style={{ opacity: .55 }}>
-          <div style={sectionLabel}>Passati</div>
+          <div style={sectionLabel}>{tr('Passati')}</div>
           {past.slice(0, 5).map(card)}
         </div>
       )}
@@ -136,6 +139,7 @@ function ListView({ rows, canEdit, onEdit, onDel, canConfirm, onConfirm, goto }:
 }
 
 function CalendarView({ rows, canEdit, onEdit, onDel, canConfirm, onConfirm, goto }: SharedProps) {
+  const { t: tr } = useLang()
   const [cur, setCur] = useState(() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() } })
 
   const byDay: Record<string, EventItem[]> = {}
@@ -161,11 +165,11 @@ function CalendarView({ rows, canEdit, onEdit, onDel, canConfirm, onConfirm, got
       <div className="card" style={{ padding: 16 }}>
         <div className="flex between" style={{ alignItems: 'center', marginBottom: 12 }}>
           <button className="btn btn-sm" onClick={prev}>‹</button>
-          <div style={{ fontWeight: 700 }}>{MONTHS[cur.m]} {cur.y}</div>
+          <div style={{ fontWeight: 700 }}>{tr(MONTHS[cur.m])} {cur.y}</div>
           <button className="btn btn-sm" onClick={next}>›</button>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 4 }}>
-          {WD.map(w => <div key={w} style={{ textAlign: 'center', fontSize: 11, color: 'var(--text-dim)', padding: '4px 0' }}>{w}</div>)}
+          {WD.map(w => <div key={w} style={{ textAlign: 'center', fontSize: 11, color: 'var(--text-dim)', padding: '4px 0' }}>{tr(w)}</div>)}
           {cells.map((d, i) => {
             if (!d) return <div key={i} />
             const k = dayKey(d)
@@ -184,15 +188,16 @@ function CalendarView({ rows, canEdit, onEdit, onDel, canConfirm, onConfirm, got
         </div>
       </div>
 
-      <div style={sectionLabel}>Prossimi impegni</div>
+      <div style={sectionLabel}>{tr('Prossimi impegni')}</div>
       {next3.length === 0
-        ? <div className="faint" style={{ padding: '4px 6px' }}>Nessun impegno in programma.</div>
+        ? <div className="faint" style={{ padding: '4px 6px' }}>{tr('Nessun impegno in programma.')}</div>
         : next3.map(e => <EvCard key={e.id} e={e} canEdit={canEdit(e)} onEdit={() => onEdit(e)} onDel={() => onDel(e)} canConfirm={canConfirm(e)} onConfirm={ok => onConfirm(e, ok)} goto={goto} />)}
     </>
   )
 }
 
 function EvCard({ e, canEdit, onEdit, onDel, canConfirm, onConfirm, goto }: { e: EventItem; canEdit: boolean; onEdit: () => void; onDel: () => void; canConfirm: boolean; onConfirm: (ok: boolean) => void; goto?: (r: string) => void }) {
+  const { t: tr } = useLang()
   const req = e.request_status
   const t = typeOf(e.type)
   const isTraining = e.type === 'allenamento' && !!e.fitness_program_id
@@ -207,7 +212,7 @@ function EvCard({ e, canEdit, onEdit, onDel, canConfirm, onConfirm, goto }: { e:
       <div style={{ flex: 1, minWidth: 0 }}>
         <div className="flex between" style={{ alignItems: 'flex-start', gap: 10 }}>
           <div style={{ fontSize: 16.5, fontWeight: 800, lineHeight: 1.25 }}>{e.title}</div>
-          <span style={{ fontSize: 10.5, color: t.c, fontWeight: 700, whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: .6 }}>{t.l}</span>
+          <span style={{ fontSize: 10.5, color: t.c, fontWeight: 700, whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: .6 }}>{tr(t.l)}</span>
         </div>
         <div className="flex gap" style={{ alignItems: 'center', marginTop: 9, flexWrap: 'wrap' }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13.5, fontWeight: 600 }}>
@@ -217,7 +222,7 @@ function EvCard({ e, canEdit, onEdit, onDel, canConfirm, onConfirm, goto }: { e:
             <Icon name="clock" size={15} /> {time}
           </span>
         </div>
-        {e.location && <a className="faint" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.location)}`} target="_blank" rel="noreferrer" title="Apri in Maps" style={{ fontSize: 13, marginTop: 7, display: 'inline-flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}><Icon name="pin" size={13} /> {e.location} <span style={{ opacity: .7 }}>↗</span></a>}
+        {e.location && <a className="faint" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.location)}`} target="_blank" rel="noreferrer" title={tr("Apri in Maps")} style={{ fontSize: 13, marginTop: 7, display: 'inline-flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}><Icon name="pin" size={13} /> {e.location} <span style={{ opacity: .7 }}>↗</span></a>}
         {req && req !== 'confermata' && (
           <div style={{ marginTop: 9 }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700,
@@ -251,11 +256,11 @@ function EvCard({ e, canEdit, onEdit, onDel, canConfirm, onConfirm, goto }: { e:
         )}
         {(isTraining || canEdit || canConfirm) && (
           <div className="flex gap" style={{ marginTop: 12, flexWrap: 'wrap' }}>
-            {isTraining && goto && <button className="btn btn-sm" style={{ background: t.c, color: '#111', fontWeight: 700 }} onClick={() => goto('fitness')}>Apri scheda →</button>}
-            {canConfirm && <button className="btn btn-sm" style={{ background: '#3fb984', color: '#111', fontWeight: 800 }} onClick={() => onConfirm(true)}>Conferma</button>}
-            {canConfirm && <button className="btn btn-ghost btn-sm" onClick={() => onConfirm(false)}>Rifiuta</button>}
-            {canEdit && <button className="btn btn-ghost btn-sm" onClick={onEdit}>Modifica</button>}
-            {canEdit && <ConfirmButton onConfirm={onDel}>Elimina</ConfirmButton>}
+            {isTraining && goto && <button className="btn btn-sm" style={{ background: t.c, color: '#111', fontWeight: 700 }} onClick={() => goto('fitness')}>{tr('Apri scheda →')}</button>}
+            {canConfirm && <button className="btn btn-sm" style={{ background: '#3fb984', color: '#111', fontWeight: 800 }} onClick={() => onConfirm(true)}>{tr('Conferma')}</button>}
+            {canConfirm && <button className="btn btn-ghost btn-sm" onClick={() => onConfirm(false)}>{tr('Rifiuta')}</button>}
+            {canEdit && <button className="btn btn-ghost btn-sm" onClick={onEdit}>{tr('Modifica')}</button>}
+            {canEdit && <ConfirmButton onConfirm={onDel}>{tr('Elimina')}</ConfirmButton>}
           </div>
         )}
       </div>
@@ -266,6 +271,7 @@ function EvCard({ e, canEdit, onEdit, onDel, canConfirm, onConfirm, goto }: { e:
 function EventForm({ value, isAdmin, uid, athleteId, onClose, onSaved }: {
   value: Partial<EventItem>; isAdmin: boolean; uid?: string; athleteId: number | null; onClose: () => void; onSaved: () => void
 }) {
+  const { t: tr } = useLang()
   const [f, setF] = useState<Partial<EventItem>>({ ...value, start_at: value.start_at ? toLocal(value.start_at) : '' })
   const [busy, setBusy] = useState(false)
   const [atts, setAtts] = useState<EventAttachment[]>(value.attachments || [])
@@ -310,22 +316,22 @@ function EventForm({ value, isAdmin, uid, athleteId, onClose, onSaved }: {
   return (
     <Modal title={f.id ? 'Modifica impegno' : 'Nuovo impegno'} onClose={onClose}
       footer={<>
-        <button className="btn btn-ghost" onClick={onClose}>Annulla</button>
+        <button className="btn btn-ghost" onClick={onClose}>{tr('Annulla')}</button>
         <button className="btn btn-primary" disabled={busy || !f.title || !f.start_at} onClick={save}>{busy ? 'Salvo…' : 'Salva'}</button>
       </>}>
-      <Field label="Titolo"><Input value={f.title || ''} onChange={e => set('title', e.target.value)} placeholder="es. Transfer aeroporto" /></Field>
+      <Field label={tr("Titolo")}><Input value={f.title || ''} onChange={e => set('title', e.target.value)} placeholder={tr("es. Transfer aeroporto")} /></Field>
       <div className="row2">
-        <Field label="Tipo"><Select value={f.type} onChange={e => set('type', e.target.value)}>{types.map(k => <option key={k} value={k}>{typeOf(k).l}</option>)}</Select></Field>
-        <Field label="Luogo"><LuogoAutocomplete value={f.location || ''} onChange={v => set('location', v)} /></Field>
+        <Field label={tr("Tipo")}><Select value={f.type} onChange={e => set('type', e.target.value)}>{types.map(k => <option key={k} value={k}>{tr(typeOf(k).l)}</option>)}</Select></Field>
+        <Field label={tr("Luogo")}><LuogoAutocomplete value={f.location || ''} onChange={v => set('location', v)} /></Field>
       </div>
       <div className="row2">
-        <Field label="Inizio"><Input type="datetime-local" value={f.start_at as string || ''} onChange={e => set('start_at', e.target.value)} /></Field>
-        <Field label="Fine (facolt.)"><Input type="datetime-local" value={f.end_at as string || ''} onChange={e => set('end_at', e.target.value)} /></Field>
+        <Field label={tr("Inizio")}><Input type="datetime-local" value={f.start_at as string || ''} onChange={e => set('start_at', e.target.value)} /></Field>
+        <Field label={tr("Fine (facolt.)")}><Input type="datetime-local" value={f.end_at as string || ''} onChange={e => set('end_at', e.target.value)} /></Field>
       </div>
-      <Field label="Note"><Textarea value={f.notes || ''} onChange={e => set('notes', e.target.value)} /></Field>
+      <Field label={tr("Note")}><Textarea value={f.notes || ''} onChange={e => set('notes', e.target.value)} /></Field>
 
       <div style={{ marginTop: 4 }}>
-        <div style={{ fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: 'var(--text-dim)', fontWeight: 700, margin: '2px 0 8px' }}>Documenti allegati</div>
+        <div style={{ fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: 'var(--text-dim)', fontWeight: 700, margin: '2px 0 8px' }}>{tr('Documenti allegati')}</div>
         {atts.length > 0 && (
           <div className="grid" style={{ gap: 6, marginBottom: 8 }}>
             {atts.map(a => (
@@ -335,13 +341,13 @@ function EventForm({ value, isAdmin, uid, athleteId, onClose, onSaved }: {
                   <span style={{ fontSize: 13.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</span>
                   {a.size ? <span className="faint" style={{ fontSize: 12, whiteSpace: 'nowrap' }}>· {attSize(a.size)}</span> : null}
                 </span>
-                <button className="btn btn-ghost btn-sm" onClick={() => removeAtt(a)}>Rimuovi</button>
+                <button className="btn btn-ghost btn-sm" onClick={() => removeAtt(a)}>{tr('Rimuovi')}</button>
               </div>
             ))}
           </div>
         )}
         <button className="btn btn-sm" disabled={uploading} onClick={() => fileRef.current?.click()}>
-          <Icon name="upload" size={14} /> {uploading ? 'Carico…' : 'Aggiungi file'}
+          <Icon name="upload" size={14} /> {uploading ? tr('Carico…') : tr('Aggiungi file')}
         </button>
         <input ref={fileRef} type="file" multiple hidden onChange={onFiles} />
         <div className="faint" style={{ fontSize: 11.5, marginTop: 6 }}>Hotel, voli, biglietti, prenotazioni: l'atleta li apre e li scarica sul telefono.</div>

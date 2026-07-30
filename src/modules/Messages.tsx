@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../auth/AuthContext'
 import { useAthlete } from '../lib/athlete'
+import { useLang } from '../lib/i18n'
 import { Spinner, Empty } from '../components/ui'
 import Icon from '../components/Icon'
 import { fmtDateTime, initials } from '../lib/format'
@@ -15,6 +16,7 @@ const roleLabel = (r?: string | null) =>
   r === 'admin' ? 'Management' : r === 'preparatore' ? 'Preparatore' : r === 'brand' ? 'Brand' : 'Giocatore'
 
 export default function Messages() {
+  const { t: tr } = useLang()
   const { session, profile, isAdmin, role } = useAuth()
   const { athleteId, athletes, setAthleteId } = useAthlete()
   const [rows, setRows] = useState<Message[]>([])
@@ -38,22 +40,22 @@ export default function Messages() {
 
   // Canali disponibili in base al ruolo e all'atleta attivo.
   const chans: Chan[] = isBrand
-    ? brands.map(b => ({ key: `brand:${b.id}`, label: b.name, sub: 'Brand', icon: 'award', accent: b.accent_color, logo: b.logo_url }))
+    ? brands.map(b => ({ key: `brand:${b.id}`, label: b.name, sub: tr('Brand'), icon: 'award', accent: b.accent_color, logo: b.logo_url }))
     : isCoach
-      ? [{ key: 'fitness', label: 'Area Fitness', sub: 'Preparazione atletica', icon: 'dumbbell' }]
+      ? [{ key: 'fitness', label: tr('Area Fitness'), sub: tr('Preparazione atletica'), icon: 'dumbbell' }]
     : isAgent
-      ? [{ key: 'team', label: 'Gestione', sub: 'Management e procura', icon: 'briefcase' }]
+      ? [{ key: 'team', label: tr('Gestione'), sub: tr('Management e procura'), icon: 'briefcase' }]
     : isInsurer
-      ? [{ key: 'assicuratore', label: 'Assicurazioni', sub: 'Polizze e coperture', icon: 'lock' }]
+      ? [{ key: 'assicuratore', label: tr('Assicurazioni'), sub: tr('Polizze e coperture'), icon: 'lock' }]
     : isTax
-      ? [{ key: 'commercialista', label: 'Legale e fiscale', sub: 'Documenti e scadenze', icon: 'briefcase' }]
+      ? [{ key: 'commercialista', label: tr('Legale e fiscale'), sub: tr('Documenti e scadenze'), icon: 'briefcase' }]
       : [
-          { key: 'team', label: 'Alberto · Management', sub: 'AUVI Agency', icon: 'briefcase' },
-          ...(agentName ? [{ key: 'agente', label: agentName, sub: 'Procuratore', icon: 'briefcase' }] : []),
-          ...(insurerName ? [{ key: 'assicuratore', label: insurerName, sub: 'Assicuratore', icon: 'lock' }] : []),
-          ...(taxName ? [{ key: 'commercialista', label: taxName, sub: 'Commercialista', icon: 'briefcase' }] : []),
-          ...(hasCoach ? [{ key: 'fitness', label: coachName || 'Preparatore', sub: 'Preparazione atletica', icon: 'dumbbell' }] : []),
-          ...brands.map(b => ({ key: `brand:${b.id}`, label: b.name, sub: 'Partner ufficiale', icon: 'award', accent: b.accent_color, logo: b.logo_url })),
+          { key: 'team', label: tr('Alberto · Management'), sub: tr('AUVI Agency'), icon: 'briefcase' },
+          ...(agentName ? [{ key: 'agente', label: agentName, sub: tr('Procuratore'), icon: 'briefcase' }] : []),
+          ...(insurerName ? [{ key: 'assicuratore', label: insurerName, sub: tr('Assicuratore'), icon: 'lock' }] : []),
+          ...(taxName ? [{ key: 'commercialista', label: taxName, sub: tr('Commercialista'), icon: 'briefcase' }] : []),
+          ...(hasCoach ? [{ key: 'fitness', label: coachName || 'Preparatore', sub: tr('Preparazione atletica'), icon: 'dumbbell' }] : []),
+          ...brands.map(b => ({ key: `brand:${b.id}`, label: b.name, sub: tr('Partner ufficiale'), icon: 'award', accent: b.accent_color, logo: b.logo_url })),
         ]
 
   // Apertura diretta su un canale scelto altrove (es. card referenti in home).
@@ -210,12 +212,12 @@ export default function Messages() {
                   style={{ fontSize: 18, fontWeight: 900, letterSpacing: -0.2, lineHeight: 1.2,
                     background: 'transparent', border: 'none', color: 'var(--text)', cursor: 'pointer',
                     padding: 0, maxWidth: '100%', appearance: 'auto' }}>
-                  {!athleteId && <option value="">Scegli un giocatore…</option>}
+                  {!athleteId && <option value="">{tr(tr('Scegli un giocatore…'))}</option>}
                   {athletes.map(a => <option key={a.api_player_id} value={a.api_player_id}>{a.name}</option>)}
                 </select>
               ) : (
                 <div style={{ fontSize: 18, fontWeight: 900, letterSpacing: -0.2, lineHeight: 1.2 }}>
-                  {athlete?.name || 'Nessun atleta selezionato'}
+                  {athlete?.name || tr('Nessun atleta selezionato')}
                 </div>
               )}
               <div className="faint" style={{ fontSize: 11.5, marginTop: 1 }}>
@@ -237,7 +239,7 @@ export default function Messages() {
         )}
         <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
           {loading ? <Spinner /> : rows.length === 0 ? (
-            <Empty icon={<Icon name="message" size={30} strokeWidth={1.4} />} title="Nessun messaggio"
+            <Empty icon={<Icon name="message" size={30} strokeWidth={1.4} />} title={tr("Nessun messaggio")}
               hint={`Inizia la conversazione con ${toAthlete ? (athlete?.name || 'il giocatore') : (active?.label || 'il tuo referente')}.`} />
           ) : (
             <div className="chat">
@@ -247,7 +249,7 @@ export default function Messages() {
                   <div key={m.id} style={{ display: 'flex', flexDirection: 'column', alignItems: mine ? 'flex-end' : 'flex-start' }}>
                     {!mine && <div className="flex gap" style={{ marginBottom: 4, gap: 7 }}>
                       <div className="avatar" style={{ width: 22, height: 22, fontSize: 10 }}>{initials(m.sender_name)}</div>
-                      <span className="faint" style={{ fontSize: 11 }}>{m.sender_name} · {roleLabel(m.sender_role)}</span>
+                      <span className="faint" style={{ fontSize: 11 }}>{m.sender_name} · {tr(roleLabel(m.sender_role))}</span>
                     </div>}
                     <div className={`bubble ${mine ? 'bubble-out' : 'bubble-in'}`}>
                       {m.body}
@@ -263,7 +265,7 @@ export default function Messages() {
         <div className="flex gap" style={{ padding: 14, borderTop: '1px solid var(--border)' }}>
           <input className="input" placeholder={placeholder} value={text}
             onChange={e => setText(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }} />
-          <button className="btn btn-primary" disabled={busy || !text.trim()} onClick={send}>Invia</button>
+          <button className="btn btn-primary" disabled={busy || !text.trim()} onClick={send}>{tr('Invia')}</button>
         </div>
       </div>
     </div>
