@@ -4,6 +4,7 @@ import { useAthlete } from '../lib/athlete'
 import { supabase } from '../lib/supabase'
 import { initials } from '../lib/format'
 import NotificationBell from './NotificationBell'
+import { useLang, LangToggle } from '../lib/i18n'
 import Toaster from './Toaster'
 import Icon from './Icon'
 import { Modal, Field, Input } from './ui'
@@ -183,6 +184,7 @@ export default function Shell({ route, setRoute, right, children }: {
   route: string; setRoute: (r: string) => void; right?: React.ReactNode; children: React.ReactNode
 }) {
   const { profile, isAdmin, isBrand, role, signOut } = useAuth()
+  const { t: tr } = useLang()
   const { athletes, athleteId, setAthleteId, canSwitch } = useAthlete()
   const [open, setOpen] = useState(false)
   const [pwOpen, setPwOpen] = useState(false)
@@ -241,11 +243,11 @@ export default function Shell({ route, setRoute, right, children }: {
             if (!items.length) return null
             return (
               <React.Fragment key={g.group}>
-                <div className="nav-label">{g.group}</div>
+                <div className="nav-label">{tr(g.group)}</div>
                 {items.map(i => (
                   <button key={i.key} className={`nav-item ${route === i.key ? 'active' : ''}`}
                     onClick={() => { setRoute(i.key); setOpen(false) }}>
-                    <span className="nav-ico"><Icon name={i.icon} size={17} /></span>{i.label}
+                    <span className="nav-ico"><Icon name={i.icon} size={17} /></span>{tr(i.label)}
                   </button>
                 ))}
               </React.Fragment>
@@ -285,8 +287,8 @@ export default function Shell({ route, setRoute, right, children }: {
           <div className="flex gap">
             <button className="menu-btn" onClick={() => setOpen(true)}><Icon name="menu" size={17} /></button>
             <div>
-              <div className="page-title">{title.t}</div>
-              <div className="page-sub">{title.s}</div>
+              <div className="page-title">{tr(title.t)}</div>
+              <div className="page-sub">{tr(title.s)}</div>
             </div>
           </div>
           <div className="flex gap" style={{ alignItems: 'center' }}>
@@ -303,6 +305,7 @@ export default function Shell({ route, setRoute, right, children }: {
                 ))}
               </select>
             )}
+            <LangToggle />
             {right}<NotificationBell goto={setRoute} />
           </div>
         </div>
