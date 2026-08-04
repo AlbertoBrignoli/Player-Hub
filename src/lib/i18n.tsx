@@ -999,4 +999,6 @@ const EN: Record<string, string> = {
   'Water toys (seabob, moto d’acqua)': 'Water toys (seabob, jet ski)',
   'Weekend': 'Weekend',
   'Wi-Fi a bordo': 'Wi-Fi on board',
+  'Aggiungi': 'Add',
+  'Nessun impegno in questo giorno.': 'No events on this day.',
 }

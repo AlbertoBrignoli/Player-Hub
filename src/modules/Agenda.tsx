@@ -54,12 +54,12 @@ export default function Agenda({ goto }: { goto?: (r: string) => void }) {
   const uid = session?.user.id
   const canAdd = isAdmin || role === 'player'
   const { rows, loading, reload } = useCollection<EventItem>('crm_events', { orderBy: 'start_at', ascending: true, match: { player_id: athleteId } })
-  const [view, setView] = useState<'lista' | 'calendario'>('lista')
+  const [view, setView] = useState<'lista' | 'calendario'>('calendario')
   const [edit, setEdit] = useState<Partial<EventItem> | null>(null)
 
   if (loading) return <Spinner />
 
-  const canEdit = (e: EventItem) => isAdmin || e.created_by === uid
+  const canEdit = (e: EventItem) => isAdmin || e.created_by === uid || role === 'player'
   // Richieste dell'atleta: l'agenzia conferma o rifiuta.
   const canConfirm = (e: EventItem) => isAdmin && e.request_status === 'da_confermare'
   const onConfirm = async (e: EventItem, ok: boolean) => {
@@ -68,14 +68,15 @@ export default function Agenda({ goto }: { goto?: (r: string) => void }) {
     reload()
   }
   const onDel = async (e: EventItem) => { await deleteRow('crm_events', e.id); reload() }
-  const shared = { canEdit, onEdit: setEdit, onDel, canConfirm, onConfirm, goto }
+  const onAdd = (dayIso: string) => setEdit({ ...emptyEv('personale'), start_at: dayIso })
+  const shared = { canEdit, onEdit: setEdit, onDel, canConfirm, onConfirm, goto, onAdd }
 
   return (
     <div className="grid" style={{ gap: 8 }}>
       <div className="flex between" style={{ alignItems: 'center' }}>
         <div className="flex gap">
-          <button className={view === 'lista' ? 'btn btn-primary btn-sm' : 'btn btn-sm'} onClick={() => setView('lista')}>Lista</button>
           <button className={view === 'calendario' ? 'btn btn-primary btn-sm' : 'btn btn-sm'} onClick={() => setView('calendario')}>Calendario</button>
+          <button className={view === 'lista' ? 'btn btn-primary btn-sm' : 'btn btn-sm'} onClick={() => setView('lista')}>Lista</button>
         </div>
         {canAdd && <button className="btn btn-primary" onClick={() => setEdit(emptyEv('personale'))}>+ Nuovo impegno</button>}
       </div>
@@ -95,6 +96,7 @@ type SharedProps = {
   rows: EventItem[]; canEdit: (e: EventItem) => boolean;
   canConfirm: (e: EventItem) => boolean; onConfirm: (e: EventItem, ok: boolean) => void;
   onEdit: (e: EventItem) => void; onDel: (e: EventItem) => void; goto?: (r: string) => void
+  onAdd?: (dayIso: string) => void
 }
 
 function ListView({ rows, canEdit, onEdit, onDel, canConfirm, onConfirm, goto }: SharedProps) {
@@ -138,9 +140,10 @@ function ListView({ rows, canEdit, onEdit, onDel, canConfirm, onConfirm, goto }:
   )
 }
 
-function CalendarView({ rows, canEdit, onEdit, onDel, canConfirm, onConfirm, goto }: SharedProps) {
+function CalendarView({ rows, canEdit, onEdit, onDel, canConfirm, onConfirm, goto, onAdd }: SharedProps) {
   const { t: tr } = useLang()
   const [cur, setCur] = useState(() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() } })
+  const [sel, setSel] = useState<Date | null>(null)
 
   const byDay: Record<string, EventItem[]> = {}
   rows.forEach(e => { const k = localKey(e.start_at); (byDay[k] = byDay[k] || []).push(e) })
@@ -175,9 +178,10 @@ function CalendarView({ rows, canEdit, onEdit, onDel, canConfirm, onConfirm, got
             const k = dayKey(d)
             const evs = byDay[k] || []
             const isToday = k === todayK
+            const isSel = sel && dayKey(sel) === k
             return (
-              <div key={i}
-                style={{ minHeight: 48, borderRadius: 10, border: isToday ? '1px solid var(--accent, #F4C430)' : '1px solid var(--border)', background: isToday ? 'rgba(244,196,48,.08)' : 'transparent', padding: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+              <div key={i} onClick={() => setSel(d)}
+                style={{ minHeight: 48, borderRadius: 10, cursor: 'pointer', border: isSel ? '1.5px solid var(--accent, #F4C430)' : isToday ? '1px solid var(--accent, #F4C430)' : '1px solid var(--border)', background: isSel ? 'rgba(244,196,48,.16)' : isToday ? 'rgba(244,196,48,.08)' : 'transparent', padding: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
                 <span style={{ fontSize: 12.5, fontWeight: isToday ? 800 : 500 }}>{d.getDate()}</span>
                 <span className="flex" style={{ gap: 2 }}>
                   {evs.slice(0, 4).map((e, j) => <span key={j} style={{ width: 5, height: 5, borderRadius: '50%', background: typeOf(e.type).c }} />)}
@@ -188,10 +192,27 @@ function CalendarView({ rows, canEdit, onEdit, onDel, canConfirm, onConfirm, got
         </div>
       </div>
 
-      <div style={sectionLabel}>{tr('Prossimi impegni')}</div>
-      {next3.length === 0
-        ? <div className="faint" style={{ padding: '4px 6px' }}>{tr('Nessun impegno in programma.')}</div>
-        : next3.map(e => <EvCard key={e.id} e={e} canEdit={canEdit(e)} onEdit={() => onEdit(e)} onDel={() => onDel(e)} canConfirm={canConfirm(e)} onConfirm={ok => onConfirm(e, ok)} goto={goto} />)}
+      {sel ? (
+        <>
+          <div style={sectionLabel} className="flex between">
+            <span>{sel.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}</span>
+            <span className="flex gap">
+              {onAdd && <button className="btn btn-sm" onClick={() => { const dd = new Date(sel); dd.setHours(12, 0, 0, 0); onAdd(dd.toISOString()) }}>+ {tr('Aggiungi')}</button>}
+              <button className="btn btn-sm" onClick={() => setSel(null)}>{tr('Chiudi')}</button>
+            </span>
+          </div>
+          {(byDay[dayKey(sel)] || []).length === 0
+            ? <div className="faint" style={{ padding: '4px 6px' }}>{tr('Nessun impegno in questo giorno.')}</div>
+            : (byDay[dayKey(sel)] || []).map(e => <EvCard key={e.id} e={e} canEdit={canEdit(e)} onEdit={() => onEdit(e)} onDel={() => onDel(e)} canConfirm={canConfirm(e)} onConfirm={ok => onConfirm(e, ok)} goto={goto} />)}
+        </>
+      ) : (
+        <>
+          <div style={sectionLabel}>{tr('Prossimi impegni')}</div>
+          {next3.length === 0
+            ? <div className="faint" style={{ padding: '4px 6px' }}>{tr('Nessun impegno in programma.')}</div>
+            : next3.map(e => <EvCard key={e.id} e={e} canEdit={canEdit(e)} onEdit={() => onEdit(e)} onDel={() => onDel(e)} canConfirm={canConfirm(e)} onConfirm={ok => onConfirm(e, ok)} goto={goto} />)}
+        </>
+      )}
     </>
   )
 }
