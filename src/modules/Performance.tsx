@@ -108,7 +108,7 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
             <div className="muted" style={{ marginTop: 4 }}>{nextMatch.league}{nextMatch.round ? ` · ${nextMatch.round}` : ''}</div>
             <div className="flex gap wrap" style={{ marginTop: 10, gap: 8 }}>
               <Badge tone="accent">{fmtMatchDateTime(nextMatch.match_date, athleteTz)}</Badge>
-              <Badge>{nextMatch.venue === 'Home' ? 'In casa' : 'Trasferta'}</Badge>
+              <Badge>{(nextMatch.venue || '').toLowerCase() === 'home' ? 'In casa' : 'Trasferta'}</Badge>
             </div>
           </div>
         ) : <div className="faint" style={{ padding: '8px 0' }}>Nessuna partita in programma al momento.</div>}

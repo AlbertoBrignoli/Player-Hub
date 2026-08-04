@@ -123,7 +123,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
     matchMeta = [
       `${d.getDate().toString().padStart(2, '0')} ${MESI[d.getMonth()].slice(0, 3).toUpperCase()}`,
       fmtMatchTime(nextMatch.match_date, athleteTz),
-      nextMatch.venue === 'Home' ? 'IN CASA' : 'TRASFERTA',
+      (nextMatch.venue || '').toLowerCase() === 'home' ? 'IN CASA' : 'TRASFERTA',
     ]
   }
 
@@ -275,7 +275,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
               <div className="muted" style={{ marginTop: 4 }}>{nextMatch.league}{nextMatch.round ? ` · ${nextMatch.round}` : ''}</div>
               <div className="flex gap wrap" style={{ marginTop: 10, gap: 8 }}>
                 <Badge tone="accent">{fmtMatchDateTime(nextMatch.match_date, athleteTz)}</Badge>
-                <Badge>{nextMatch.venue === 'Home' ? 'In casa' : 'Trasferta'}</Badge>
+                <Badge>{(nextMatch.venue || '').toLowerCase() === 'home' ? 'In casa' : 'Trasferta'}</Badge>
               </div>
             </div>
           ) : <div className="faint" style={{ padding: '8px 0' }}>{t('Nessuna partita in programma al momento.')}</div>}

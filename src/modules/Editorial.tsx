@@ -225,7 +225,7 @@ function EntryChip({ e, onOpen, preview, tz, full }: { e: EditorialEntry; onOpen
   const { t } = useLang()
   if (e.type === 'partita' && e.match_info) {
     const mi = e.match_info
-    const home = mi.venue === 'Home'
+    const home = (mi.venue || '').toLowerCase() === 'home'
     const time = mi.kickoff ? fmtMatchTime(mi.kickoff, tz) : ''
     const played = mi.status === 'FT' && mi.team_score != null
     const score = played ? (home ? `${mi.team_score}–${mi.opponent_score}` : `${mi.opponent_score}–${mi.team_score}`) : null
@@ -631,7 +631,7 @@ function EntryModal({ entry, onClose, onChanged }: {
               <Info k={t("Giornata")} v={mi.round} />
               <Info k={t("Calcio d'inizio")} v={mi.kickoff ? fmtMatchDateTime(mi.kickoff, athleteTz) : null} />
               <Info k={t("Stadio")} v={mi.stadium} />
-              <Info k={t("Casa/Trasferta")} v={mi.venue === 'Home' ? t('In casa') : mi.venue === 'Away' ? t('Trasferta') : mi.venue} />
+              <Info k={t("Casa/Trasferta")} v={(mi.venue || '').toLowerCase() === 'home' ? t('In casa') : (mi.venue || '').toLowerCase() === 'away' ? t('Trasferta') : mi.venue} />
               {mi.status === 'FT' && <Info k={t("Risultato")} v={`${mi.team_score ?? '—'}–${mi.opponent_score ?? '—'}`} />}
             </div>
             <div className="flex gap wrap" style={{ marginTop: 12 }}>
