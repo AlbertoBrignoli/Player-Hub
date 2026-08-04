@@ -325,6 +325,7 @@ function EntryModal({ entry, onClose, onChanged }: {
   const [pickerOpen, setPickerOpen] = useState(false)
   const [igOpen, setIgOpen] = useState(false)
   const [genBusy, setGenBusy] = useState<'pre' | 'post' | null>(null)
+  const [showAnnotator, setShowAnnotator] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const materialRef = useRef<HTMLInputElement>(null)
   const mi = entry.match_info
@@ -569,9 +570,30 @@ function EntryModal({ entry, onClose, onChanged }: {
     toast('Segnato come pubblicato ✓'); onChanged()
   }
 
+  const isMatchDayAthlete = !isTeam && entry.type === 'partita'
+  const firstGraphicImg = grafiche.find(m => isImageFile(m.file_name))
+
+  async function acceptGraphic() {
+    const { error } = await updateRow('crm_editorial', entry.id, { status: 'pronto', revision: null })
+    if (error) { setErr(error.message); return }
+    notify('team', `Grafica accettata: ${entry.title}`, "L'atleta ha accettato la grafica pre-partita.", 'editorial', athleteId)
+    toast('Grafica accettata ✓'); onChanged(); onClose()
+  }
+  async function sendRevision(note: string, pins: { x: number; y: number; note: string }[]) {
+    const rev = { note: note || null, pins, at: new Date().toISOString(), by: 'player' }
+    const { error } = await updateRow('crm_editorial', entry.id, { revision: rev })
+    if (error) { setErr(error.message); return }
+    notify('team', `Modifiche richieste: ${entry.title}`, note || "L'atleta ha segnato dei punti da modificare sulla grafica.", 'editorial', athleteId)
+    toast('Richiesta inviata al team ✓'); onChanged(); onClose()
+  }
+
   return (
     <Modal title={entry.title} onClose={onClose} wide
-      footer={
+      footer={ isMatchDayAthlete ? (
+        <div className="flex" style={{ width: '100%', justifyContent: 'flex-end' }}>
+          <button className="btn" onClick={onClose}>{t('Chiudi')}</button>
+        </div>
+      ) : (
         <div className="flex between wrap gap" style={{ width: '100%' }}>
           <div className="flex gap" style={{ alignItems: 'center' }}>
             <Select value={entry.status} onChange={e => setStatus(e.target.value)} style={{ width: 200 }}>
@@ -597,7 +619,7 @@ function EntryModal({ entry, onClose, onChanged }: {
             <button className="btn" onClick={onClose}>{t('Chiudi')}</button>
           </div>
         </div>
-      }>
+      )}>
       <div className="grid" style={{ gap: 14 }}>
         <div className="flex gap wrap" style={{ alignItems: 'center' }}>
           <Badge tone={STATUSES[entry.status]?.tone}>{STATUSES[entry.status]?.label}</Badge>
@@ -634,7 +656,7 @@ function EntryModal({ entry, onClose, onChanged }: {
               <Info k={t("Casa/Trasferta")} v={(mi.venue || '').toLowerCase() === 'home' ? t('In casa') : (mi.venue || '').toLowerCase() === 'away' ? t('Trasferta') : mi.venue} />
               {mi.status === 'FT' && <Info k={t("Risultato")} v={`${mi.team_score ?? '—'}–${mi.opponent_score ?? '—'}`} />}
             </div>
-            <div className="flex gap wrap" style={{ marginTop: 12 }}>
+            {isTeam && <div className="flex gap wrap" style={{ marginTop: 12 }}>
               <button className="btn btn-sm" disabled={genBusy !== null} onClick={() => generateStory('pre')}
                 title="Storia 1080×1920 con foto dalla Media e info partita — si genera anche da sola 24h prima del kickoff">
                 <Icon name="image" size={13} /> {genBusy === 'pre' ? 'Genero…' : 'Genera storia pre-match'}
@@ -648,10 +670,50 @@ function EntryModal({ entry, onClose, onChanged }: {
               <span className="faint" style={{ fontSize: 11.5, alignSelf: 'center' }}>
                 Le storie si creano da sole: pre-match 24h prima, post-match con le statistiche. Qui puoi rigenerarle.
               </span>
-            </div>
+            </div>}
           </div>
         )}
 
+        {isTeam && entry.revision && (
+          <div className="card" style={{ background: 'var(--bg-2)', borderColor: '#E1306C' }}>
+            <div className="card-title" style={{ color: '#E1306C', marginBottom: 6 }}><Icon name="edit" size={14} /> Modifiche richieste dall'atleta</div>
+            {entry.revision.note && <div style={{ fontSize: 13, marginBottom: 8 }}>{entry.revision.note}</div>}
+            {firstGraphicImg && urls[firstGraphicImg.storage_path] && (entry.revision.pins?.length > 0) && (
+              <div style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', marginBottom: 8 }}>
+                <img src={urls[firstGraphicImg.storage_path]} alt="" style={{ width: '100%', display: 'block' }} />
+                {entry.revision.pins.map((p: any, i: number) => (<div key={i} style={pinStyle(p.x, p.y)}>{i + 1}</div>))}
+              </div>
+            )}
+            {(entry.revision.pins || []).filter((p: any) => p.note).map((p: any, i: number) => (
+              <div key={i} style={{ fontSize: 12.5, color: 'var(--text-dim)' }}><b>{i + 1}.</b> {p.note}</div>
+            ))}
+          </div>
+        )}
+
+        {isMatchDayAthlete && (
+          <div className="card" style={{ background: 'var(--bg-2)' }}>
+            <div className="card-title" style={{ marginBottom: 8 }}>Grafica pre-partita</div>
+            {firstGraphicImg && urls[firstGraphicImg.storage_path] ? (
+              showAnnotator ? (
+                <RevisionAnnotator url={urls[firstGraphicImg.storage_path]} onCancel={() => setShowAnnotator(false)} onSend={sendRevision} />
+              ) : (
+                <>
+                  <img src={urls[firstGraphicImg.storage_path]} alt="" style={{ width: '100%', borderRadius: 10, display: 'block' }} />
+                  {entry.revision && <div className="faint" style={{ fontSize: 12.5, marginTop: 8 }}>Hai già inviato una richiesta di modifiche — il team ci sta lavorando.</div>}
+                  <div className="flex gap" style={{ marginTop: 12 }}>
+                    <button className="btn btn-primary" style={{ flex: 1 }} onClick={acceptGraphic}><Icon name="check" size={15} /> Accetta</button>
+                    <button className="btn" style={{ flex: 1 }} onClick={() => setShowAnnotator(true)}><Icon name="edit" size={15} /> Chiedi modifiche</button>
+                  </div>
+                </>
+              )
+            ) : (
+              <div className="faint" style={{ fontSize: 13 }}>Il team non ha ancora caricato la grafica. Ti avviseremo appena è pronta da approvare.</div>
+            )}
+          </div>
+        )}
+
+        {!isMatchDayAthlete && (<>
+        {entry.type !== 'partita' && (
         <div>
           <div className="flex between" style={{ marginBottom: 6 }}>
             <div style={{ fontWeight: 650 }}>{t('Copy')}</div>
@@ -665,6 +727,7 @@ function EntryModal({ entry, onClose, onChanged }: {
             placeholder={t("Scrivi qui il copy del post: didascalia, hashtag, tag…")} />
           <div className="faint" style={{ fontSize: 11.5, marginTop: 4 }}>Copy modificabile da entrambi: il team lo prepara, tu lo approvi o lo ritocchi.</div>
         </div>
+        )}
 
         {entry.hashtags && (
           <div>
@@ -758,6 +821,7 @@ function EntryModal({ entry, onClose, onChanged }: {
             )}
         </div>
 
+        </>)}
         {err && <div className="msg-err">{err}</div>}
       </div>
       {pickerOpen && (
@@ -1049,5 +1113,64 @@ function MediaPicker({ athleteId, excludeSourceIds, onClose, onConfirm }: {
         </div>
       )}
     </Modal>
+  )
+}
+
+const pinStyle = (x: number, y: number): any => ({
+  position: 'absolute', left: `${x * 100}%`, top: `${y * 100}%`, transform: 'translate(-50%, -50%)',
+  width: 22, height: 22, borderRadius: '50%', background: '#E1306C', color: '#fff', fontWeight: 800, fontSize: 12,
+  display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #fff',
+  boxShadow: '0 1px 4px rgba(0,0,0,.5)', pointerEvents: 'none',
+})
+
+function RevisionAnnotator({ url, onCancel, onSend }: {
+  url: string; onCancel: () => void; onSend: (note: string, pins: { x: number; y: number; note: string }[]) => Promise<void>
+}) {
+  const [pins, setPins] = useState<{ x: number; y: number; note: string }[]>([])
+  const [note, setNote] = useState('')
+  const [zoom, setZoom] = useState(1)
+  const [sending, setSending] = useState(false)
+  const wrapRef = useRef<HTMLDivElement>(null)
+  function addPin(e: any) {
+    const el = wrapRef.current; if (!el) return
+    const r = el.getBoundingClientRect()
+    const x = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width))
+    const y = Math.min(1, Math.max(0, (e.clientY - r.top) / r.height))
+    setPins(p => [...p, { x, y, note: '' }])
+  }
+  const inputStyle: any = { flex: 1, background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 10px', color: 'var(--text)', fontSize: 13 }
+  return (
+    <div>
+      <div className="faint" style={{ fontSize: 12.5, marginBottom: 8 }}>
+        Tocca sulla grafica il punto da cambiare (puoi metterne più di uno). Usa lo zoom per il dettaglio e scrivi cosa modificare.
+      </div>
+      <div className="flex gap" style={{ alignItems: 'center', marginBottom: 8 }}>
+        <button className="btn btn-sm" onClick={() => setZoom(z => Math.max(1, +(z - 0.5).toFixed(1)))} disabled={zoom <= 1}>−</button>
+        <span className="faint" style={{ fontSize: 12, minWidth: 44, textAlign: 'center' }}>{Math.round(zoom * 100)}%</span>
+        <button className="btn btn-sm" onClick={() => setZoom(z => Math.min(4, +(z + 0.5).toFixed(1)))} disabled={zoom >= 4}>+</button>
+        {pins.length > 0 && <button className="btn btn-sm" onClick={() => setPins(p => p.slice(0, -1))}>Annulla ultimo punto</button>}
+      </div>
+      <div style={{ maxHeight: 440, overflow: 'auto', border: '1px solid var(--border)', borderRadius: 10, background: '#000' }}>
+        <div ref={wrapRef} onClick={addPin} style={{ position: 'relative', width: `${zoom * 100}%`, cursor: 'crosshair' }}>
+          <img src={url} alt="" style={{ display: 'block', width: '100%' }} draggable={false} />
+          {pins.map((p, i) => (<div key={i} style={pinStyle(p.x, p.y)}>{i + 1}</div>))}
+        </div>
+      </div>
+      {pins.map((p, i) => (
+        <div key={i} className="flex gap" style={{ alignItems: 'center', marginTop: 8 }}>
+          <div style={{ minWidth: 22, height: 22, borderRadius: '50%', background: '#E1306C', color: '#fff', fontWeight: 800, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: '0 0 auto' }}>{i + 1}</div>
+          <input style={inputStyle} placeholder={`Cosa cambiare nel punto ${i + 1}…`} value={p.note}
+            onChange={e => setPins(arr => arr.map((q, j) => j === i ? { ...q, note: e.target.value } : q))} />
+        </div>
+      ))}
+      <Textarea rows={3} style={{ marginTop: 10 }} placeholder="Nota generale sulle modifiche (facoltativa)…" value={note} onChange={e => setNote(e.target.value)} />
+      <div className="flex gap" style={{ justifyContent: 'flex-end', marginTop: 10 }}>
+        <button className="btn" onClick={onCancel}>Annulla</button>
+        <button className="btn btn-primary" disabled={sending || (pins.length === 0 && !note.trim())}
+          onClick={async () => { setSending(true); await onSend(note.trim(), pins) }}>
+          {sending ? 'Invio…' : 'Invia richiesta modifiche'}
+        </button>
+      </div>
+    </div>
   )
 }

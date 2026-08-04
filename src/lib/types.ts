@@ -244,6 +244,7 @@ export interface EditorialAsset {
 }
 
 export interface EditorialEntry {
+  revision?: any
   id: string
   entry_date: string
   type: 'partita' | 'post' | 'story' | 'carosello' | 'reel' | 'altro'
