@@ -59,21 +59,21 @@ export const BRAND_NAV: { group: string; items: NavDef[] }[] = [
   ]},
 ]
 
-// Menu dedicato al preparatore: fitness, parte sportiva, agenda e chat.
-// Fuori tutto ciò che non lo riguarda (contratti, sponsor, editoriale, media, documenti, task).
+// Menu del preparatore sul telaio unico dei professionisti.
+// Stessa impostazione del fisioterapista: cambia solo il "principio" del ruolo
+// (qui gli strumenti di preparazione: Area Fitness, Performance, Agenda).
 export const COACH_NAV: { group: string; items: NavDef[] }[] = [
   { group: 'Preparazione', items: [
     { key: 'dashboard', label: 'Home', icon: 'grid' },
-    { key: 'fitness', label: 'Area Fitness', icon: 'dumbbell' },
     { key: 'coach-profile', label: 'Il mio profilo', icon: 'user' },
+    { key: 'coach-office', label: 'Il mio ufficio', icon: 'briefcase' },
     { key: 'access-requests', label: 'Collegamenti', icon: 'key' },
   ]},
-  { group: 'Ufficio', items: [
-    { key: 'coach-office', label: 'Il mio ufficio', icon: 'briefcase' },
-  ]},
   { group: 'Atleta', items: [
-    { key: 'agenda', label: 'Agenda', icon: 'clock' },
+    { key: 'my-team', label: 'Il mio team', icon: 'users' },
+    { key: 'fitness', label: 'Area Fitness', icon: 'dumbbell' },
     { key: 'performance', label: 'Performance', icon: 'activity' },
+    { key: 'agenda', label: 'Agenda', icon: 'clock' },
     { key: 'messages', label: 'Messaggi', icon: 'message' },
   ]},
 ]
