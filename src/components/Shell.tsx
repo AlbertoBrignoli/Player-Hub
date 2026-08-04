@@ -72,6 +72,7 @@ export const COACH_NAV: { group: string; items: NavDef[] }[] = [
     { key: 'coach-office', label: 'Il mio ufficio', icon: 'briefcase' },
   ]},
   { group: 'Atleta', items: [
+    { key: 'agenda', label: 'Agenda', icon: 'clock' },
     { key: 'performance', label: 'Performance', icon: 'activity' },
     { key: 'messages', label: 'Messaggi', icon: 'message' },
   ]},

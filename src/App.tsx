@@ -55,7 +55,7 @@ export default function App() {
   const isBrand = profile.role === 'brand'
   const brandAllowed = ['brandhome', 'mediakit', 'campaigns', 'brandcard', 'talent', 'messages']
   // Il preparatore vede solo fitness, performance dell'atleta e chat.
-  const coachAllowed = ['dashboard', 'fitness', 'coach-profile', 'coach-office', 'performance', 'messages', 'access-requests', 'my-team']
+  const coachAllowed = ['dashboard', 'fitness', 'coach-profile', 'coach-office', 'performance', 'agenda', 'messages', 'access-requests', 'my-team']
   const isCoach = profile.role === 'preparatore'
   // L'agente vede solo le competenze del procuratore.
   const agentAllowed = ['agent-home', 'dashboard', 'performance', 'profile', 'editorial', 'media',
