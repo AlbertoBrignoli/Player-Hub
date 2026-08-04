@@ -100,6 +100,7 @@ export default function CoachOffice() {
       {/* ---------------- AGENDA ---------------- */}
       {tab === 'agenda' && (
         <div className="grid" style={{ gap: 14 }}>
+          <CoachCalendar sessions={sessions} clientName={clientName} onPick={setEditS} />
           <div className="flex between" style={{ alignItems: 'center' }}>
             <div style={{ ...kicker, color: 'var(--text-dim)' }}>Prossime sedute</div>
             <button className="btn btn-sm" style={{ background: ACCENT, color: '#111', fontWeight: 800, border: 'none' }}
@@ -389,5 +390,71 @@ function LedgerForm({ value, uid, onClose, onSaved }: { value: Partial<CoachLedg
       </Field>
       <Field label="Descrizione"><Input value={f.description || ''} onChange={e => set('description', e.target.value)} /></Field>
     </Modal>
+  )
+}
+
+// Calendario generale dell'ufficio: le sedute/impegni del coach su griglia mensile.
+function CoachCalendar({ sessions, clientName, onPick }: {
+  sessions: CoachSession[]; clientName: (id?: string | null) => string; onPick: (s: CoachSession) => void
+}) {
+  const [cur, setCur] = useState(() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() } })
+  const [sel, setSel] = useState<string | null>(null)
+  const kk = (y: number, m: number, d: number) => `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+  const byDay: Record<string, CoachSession[]> = {}
+  sessions.forEach(s => { if (s.session_date) (byDay[s.session_date] ||= []).push(s) })
+  const first = new Date(cur.y, cur.m, 1)
+  const startDow = (first.getDay() + 6) % 7
+  const ndays = new Date(cur.y, cur.m + 1, 0).getDate()
+  const cells: (number | null)[] = []
+  for (let i = 0; i < startDow; i++) cells.push(null)
+  for (let d = 1; d <= ndays; d++) cells.push(d)
+  const monthLabel = first.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
+  const todayK = kk(new Date().getFullYear(), new Date().getMonth(), new Date().getDate())
+  const move = (delta: number) => { const d = new Date(cur.y, cur.m + delta, 1); setCur({ y: d.getFullYear(), m: d.getMonth() }); setSel(null) }
+  const dow = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom']
+
+  return (
+    <div className="card" style={{ padding: 14 }}>
+      <div className="flex between" style={{ alignItems: 'center', marginBottom: 10 }}>
+        <button className="btn btn-sm" onClick={() => move(-1)}>‹</button>
+        <div style={{ fontWeight: 800, textTransform: 'capitalize' }}>{monthLabel}</div>
+        <button className="btn btn-sm" onClick={() => move(1)}>›</button>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 4 }}>
+        {dow.map(d => <div key={d} className="faint" style={{ fontSize: 11, textAlign: 'center', padding: '2px 0' }}>{d}</div>)}
+        {cells.map((d, i) => {
+          if (!d) return <div key={i} />
+          const k = kk(cur.y, cur.m, d)
+          const has = (byDay[k] || []).length
+          const isToday = k === todayK
+          const isSel = sel === k
+          return (
+            <div key={i} onClick={() => setSel(k)}
+              style={{ minHeight: 40, borderRadius: 9, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
+                border: isSel ? '1.5px solid ' + ACCENT : isToday ? '1px solid ' + ACCENT : '1px solid var(--border)',
+                background: isSel ? ACCENT + '22' : isToday ? ACCENT + '11' : 'transparent' }}>
+              <span style={{ fontSize: 12.5, fontWeight: has ? 800 : 500 }}>{d}</span>
+              {has ? <span style={{ width: 5, height: 5, borderRadius: '50%', background: ACCENT }} /> : null}
+            </div>
+          )
+        })}
+      </div>
+      {sel && (
+        <div style={{ marginTop: 12 }}>
+          <div style={{ ...kicker, color: 'var(--text-dim)', marginBottom: 8 }}>{fmtDate(sel)}</div>
+          {(byDay[sel] || []).length === 0
+            ? <div className="faint" style={{ fontSize: 13 }}>Nessun impegno in questo giorno.</div>
+            : (byDay[sel] || []).map(s => (
+              <div key={s.id} className="flex between" style={{ alignItems: 'center', gap: 10, padding: '7px 0', borderTop: '1px solid var(--border)' }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 700 }}>{s.title || 'Seduta'}{s.start_time ? ` · ${s.start_time}` : ''}</div>
+                  <div className="faint" style={{ fontSize: 12 }}>{clientName(s.client_id)}{s.location ? ` · ${s.location}` : ''}</div>
+                </div>
+                <button className="btn btn-ghost btn-sm" onClick={() => onPick(s)}>Apri</button>
+              </div>
+            ))}
+        </div>
+      )}
+    </div>
   )
 }
