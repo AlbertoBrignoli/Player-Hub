@@ -4,10 +4,9 @@ import { useAuth } from '../auth/AuthContext'
 import { Spinner, Field, Input, Textarea } from '../components/ui'
 import Icon from '../components/Icon'
 
-// Profilo del fisioterapista (Sezione 1 · Registrazione): anagrafica, profilo
-// professionale, lingue, contatti e biografia. Il fisio lo modifica; l'atleta
-// seguito lo vede in sola lettura. Stessi componenti/pattern dei ruoli esistenti.
-const ACCENT = '#3E8E9E' // verde-acqua sobrio: area clinica, distinta dagli altri ruoli
+// Profilo/Registrazione del fisioterapista. Il fisio lo compila; l'atleta seguito
+// lo vede in sola lettura. Stessi componenti/pattern dei ruoli esistenti.
+const ACCENT = '#3E8E9E'
 
 const kicker: React.CSSProperties = {
   fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase', fontWeight: 800,
@@ -40,6 +39,12 @@ export default function PhysioProfile() {
   }, [uid, isPhysio])
 
   const set = (k: string, v: any) => setP(prev => ({ ...prev, [k]: v }))
+  const F = (k: string, label: string, ph = '') => (
+    <Field label={label}><Input value={p[k] || ''} onChange={e => set(k, e.target.value)} placeholder={ph} /></Field>
+  )
+  const A = (k: string, label: string, ph = '', rows = 2) => (
+    <Field label={label}><Textarea rows={rows} value={p[k] || ''} onChange={e => set(k, e.target.value)} placeholder={ph} /></Field>
+  )
 
   const photoRef = useRef<HTMLInputElement>(null)
   const [upl, setUpl] = useState(false)
@@ -89,6 +94,9 @@ export default function PhysioProfile() {
           <Info k="Email" v={p.email} href={p.email ? `mailto:${p.email}` : undefined} />
           <Info k="Telefono" v={p.phone} href={p.phone ? `tel:${p.phone}` : undefined} />
           <Info k="Lingue" v={p.languages} />
+          <Info k="Specializzazioni" v={p.sports} />
+          <Info k="Tecniche" v={p.techniques} />
+          <Info k="Studio" v={p.clinic_name} />
         </div>
       </div>
     )
@@ -118,15 +126,15 @@ export default function PhysioProfile() {
         </div>
       </div>
 
-      {/* --- anagrafica e profilo professionale --- */}
+      {/* --- 1 · anagrafica e profilo professionale --- */}
       <div className="card">
         <div className="card-head"><div className="card-title">Anagrafica e profilo professionale</div></div>
         <div className="grid g2" style={{ gap: 10 }}>
-          <Field label="Nome e cognome"><Input value={p.name || ''} onChange={e => set('name', e.target.value)} /></Field>
-          <Field label="Titolo professionale"><Input value={p.title || ''} onChange={e => set('title', e.target.value)} placeholder="Es. Fisioterapista dello sport" /></Field>
-          <Field label="Albo / Iscrizione"><Input value={p.licence || ''} onChange={e => set('licence', e.target.value)} placeholder="Numero iscrizione all'albo" /></Field>
-          <Field label="Lingue"><Input value={p.languages || ''} onChange={e => set('languages', e.target.value)} placeholder="Es. Italiano, Inglese, Greco" /></Field>
-          <Field label="Città"><Input value={p.city || ''} onChange={e => set('city', e.target.value)} placeholder="Città, paese" /></Field>
+          {F('name', 'Nome e cognome')}
+          {F('title', 'Titolo professionale', 'Es. Fisioterapista dello sport')}
+          {F('licence', "Albo / Iscrizione", "Numero iscrizione all'albo")}
+          {F('languages', 'Lingue', 'Es. Italiano, Inglese, Greco')}
+          {F('city', 'Città', 'Città, paese')}
         </div>
         <Field label="Foto profilo">
           <div className="flex gap" style={{ alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
@@ -140,25 +148,77 @@ export default function PhysioProfile() {
         </Field>
       </div>
 
-      {/* --- contatti --- */}
+      {/* --- 2 · contatti --- */}
       <div className="card">
         <div className="card-head"><div className="card-title">Contatti</div></div>
         <div className="grid g2" style={{ gap: 10 }}>
-          <Field label="Email"><Input value={p.email || ''} onChange={e => set('email', e.target.value)} /></Field>
-          <Field label="Telefono"><Input value={p.phone || ''} onChange={e => set('phone', e.target.value)} /></Field>
-          <Field label="WhatsApp"><Input value={p.whatsapp || ''} onChange={e => set('whatsapp', e.target.value)} /></Field>
-          <Field label="Sito web"><Input value={p.website || ''} onChange={e => set('website', e.target.value)} placeholder="https://…" /></Field>
+          {F('email', 'Email')}
+          {F('phone', 'Telefono')}
+          {F('whatsapp', 'WhatsApp')}
+          {F('website', 'Sito web', 'https://…')}
+        </div>
+      </div>
+
+      {/* --- 3 · qualifiche professionali --- */}
+      <div className="card">
+        <div className="card-head"><div className="card-title">Qualifiche professionali</div></div>
+        <div className="grid g2" style={{ gap: 10 }}>
+          {F('degree', 'Laurea', 'Es. Laurea in Fisioterapia')}
+          {F('masters', 'Master / Specializzazioni post-laurea')}
+        </div>
+        {A('certifications', 'Certificazioni', 'Elenca le certificazioni professionali…')}
+        {F('insurance', 'Assicurazione professionale', 'Compagnia · numero polizza')}
+      </div>
+
+      {/* --- 4 · esperienza --- */}
+      <div className="card">
+        <div className="card-head"><div className="card-title">Esperienza</div></div>
+        <div className="grid g2" style={{ gap: 10 }}>
+          {F('clubs', 'Club professionistici', 'Es. AEK, Bologna…')}
+          {F('national_teams', 'Nazionali')}
+          {F('years_experience', 'Anni di esperienza')}
+          {F('clinic_name', 'Cliniche / Centri', 'Centri riabilitativi')}
+        </div>
+        {A('experience_desc', 'Descrizione', 'Racconta il tuo percorso ed esperienza…', 3)}
+      </div>
+
+      {/* --- 5 · specializzazioni --- */}
+      <div className="card">
+        <div className="card-head"><div className="card-title">Specializzazioni</div></div>
+        <div className="grid g2" style={{ gap: 10 }}>
+          {F('sports', 'Sport', 'Es. Calcio, Basket…')}
+          {F('body_areas', 'Aree del corpo', 'Es. Ginocchio, Spalla…')}
+          {F('pathologies', 'Patologie', 'Es. Lesioni muscolari…')}
+          {F('techniques', 'Tecniche', 'Es. Terapia manuale…')}
+        </div>
+        {A('methods', 'Metodi di trattamento', 'Metodi e approcci che utilizzi…')}
+      </div>
+
+      {/* --- 6 · studio / clinica --- */}
+      <div className="card">
+        <div className="card-head"><div className="card-title">Studio / Clinica</div></div>
+        {F('clinic_address', 'Indirizzo', 'Via, città, paese')}
+        {A('clinic_facilities', 'Strutture disponibili', 'Es. palestra, piscina, sala valutazione, parcheggio, accessibilità…')}
+      </div>
+
+      {/* --- 7 · disponibilità --- */}
+      <div className="card">
+        <div className="card-head"><div className="card-title">Disponibilità</div></div>
+        {A('availability', 'Modalità', 'Es. In studio, a domicilio, online, ritiri, trasferte internazionali…')}
+        <div className="grid g2" style={{ gap: 10 }}>
+          {F('working_days', 'Giorni lavorativi', 'Es. Lun–Ven')}
+          {F('working_hours', 'Orari', 'Es. 09:00–19:00')}
         </div>
       </div>
 
       {/* --- biografia --- */}
       <div className="card">
         <div className="card-head"><div className="card-title">Biografia</div></div>
-        <Field label="Presentazione"><Textarea rows={4} value={p.bio || ''} onChange={e => set('bio', e.target.value)} placeholder="Percorso, esperienza, approccio…" /></Field>
-        <Field label="Note"><Textarea rows={2} value={p.notes || ''} onChange={e => set('notes', e.target.value)} /></Field>
+        {A('bio', 'Presentazione', 'Percorso, esperienza, approccio…', 4)}
+        {A('notes', 'Note', '', 2)}
       </div>
 
-      <div className="flex gap" style={{ alignItems: 'center', gap: 12 }}>
+      <div className="flex gap" style={{ alignItems: 'center', gap: 12, position: 'sticky', bottom: 0 }}>
         <button className="btn btn-primary" disabled={busy} onClick={save}>
           <Icon name="check" size={14} /> {busy ? 'Salvo…' : 'Salva profilo'}
         </button>
