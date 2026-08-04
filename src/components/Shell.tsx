@@ -150,6 +150,7 @@ export const PHYSIO_NAV: { group: string; items: NavDef[] }[] = [
   { group: 'Fisioterapia', items: [
     { key: 'physio-home', label: 'Home', icon: 'grid' },
     { key: 'physio-profile', label: 'Il mio profilo', icon: 'user' },
+    { key: 'physio-office', label: 'Il mio ufficio', icon: 'briefcase' },
     { key: 'access-requests', label: 'Collegamenti', icon: 'key' },
   ]},
   { group: 'Atleta', items: [
@@ -189,6 +190,7 @@ const TITLES: Record<string, { t: string; s: string }> = {
   'tax-profile': { t: 'Il mio profilo', s: 'Contatti e studio' },
   'physio-home': { t: 'Home', s: 'La tua scheda e gli atleti seguiti' },
   'physio-profile': { t: 'Il mio profilo', s: 'Anagrafica, contatti e biografia' },
+  'physio-office': { t: 'Il mio ufficio', s: 'Atleti seguiti e spazio clinico' },
   'agent-profile': { t: 'Il mio profilo', s: 'Contatti personali e agenzia' },
   mediakit: { t: 'Media Kit', s: "I numeri dell'atleta" },
   campaigns: { t: 'Campagne', s: 'Proponi contenuti e carica lo shooting' },

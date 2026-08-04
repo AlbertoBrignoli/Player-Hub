@@ -17,7 +17,7 @@ const kicker: React.CSSProperties = {
 }
 
 const ROLE_LABEL: Record<string, string> = {
-  assicuratore: 'Assicuratore', agente: 'Procuratore', preparatore: 'Preparatore atletico',
+  assicuratore: 'Assicuratore', agente: 'Procuratore', preparatore: 'Preparatore atletico', fisioterapista: 'Fisioterapista',
 }
 
 type Req = {
@@ -38,7 +38,7 @@ export default function AccessRequests() {
   const [rows, setRows] = useState<Req[]>([])
   const [loading, setLoading] = useState(true)
 
-  const isPro = ['assicuratore', 'agente', 'preparatore'].includes(role || '')
+  const isPro = ['assicuratore', 'agente', 'preparatore', 'fisioterapista'].includes(role || '')
   const canDecide = isAdmin || role === 'player'
 
   async function load() {

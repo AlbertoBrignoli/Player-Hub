@@ -38,6 +38,7 @@ import TaxAdvisorHome from './modules/TaxAdvisorHome'
 import TaxAdvisorProfile from './modules/TaxAdvisorProfile'
 import PhysioHome from './modules/PhysioHome'
 import PhysioProfile from './modules/PhysioProfile'
+import PhysioOffice from './modules/PhysioOffice'
 import BrandCampaigns from './modules/BrandCampaigns'
 import MyTeam from './modules/MyTeam'
 import Archivio from './modules/Archivio'
@@ -71,7 +72,7 @@ export default function App() {
   const taxAllowed = ['tax-home', 'legaltax', 'tax-profile', 'services', 'documents', 'agenda', 'messages', 'access-requests', 'my-team']
   const isTax = profile.role === 'commercialista'
   // Il fisioterapista vede la sua area: home, profilo, chat e collegamenti.
-  const physioAllowed = ['physio-home', 'physio-profile', 'messages', 'access-requests', 'my-team']
+  const physioAllowed = ['physio-home', 'physio-profile', 'physio-office', 'messages', 'access-requests', 'my-team']
   const isPhysio = profile.role === 'fisioterapista'
   const home = isBrand ? 'brandhome' : isAgent ? 'agent-home' : isInsurer ? 'insurer-home' : isTax ? 'tax-home' : isPhysio ? 'physio-home' : 'dashboard'
   let route = routeState ?? home
@@ -108,6 +109,7 @@ export default function App() {
       case 'tax-profile': return <TaxAdvisorProfile />
       case 'physio-home': return <PhysioHome goto={setRoute} />
       case 'physio-profile': return <PhysioProfile />
+      case 'physio-office': return <PhysioOffice goto={setRoute} />
       case 'agent-profile': return <AgentProfile />
       case 'contracts': return <Contracts />
       case 'documents': return isInsurer ? <InsuranceDocuments /> : <Documents />
