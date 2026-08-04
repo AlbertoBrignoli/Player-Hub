@@ -36,6 +36,8 @@ import LegalTax from './modules/LegalTax'
 import Services from './modules/Services'
 import TaxAdvisorHome from './modules/TaxAdvisorHome'
 import TaxAdvisorProfile from './modules/TaxAdvisorProfile'
+import PhysioHome from './modules/PhysioHome'
+import PhysioProfile from './modules/PhysioProfile'
 import BrandCampaigns from './modules/BrandCampaigns'
 import MyTeam from './modules/MyTeam'
 import Archivio from './modules/Archivio'
@@ -68,13 +70,17 @@ export default function App() {
   // Il commercialista vede solo la sua area.
   const taxAllowed = ['tax-home', 'legaltax', 'tax-profile', 'services', 'documents', 'agenda', 'messages', 'access-requests', 'my-team']
   const isTax = profile.role === 'commercialista'
-  const home = isBrand ? 'brandhome' : isAgent ? 'agent-home' : isInsurer ? 'insurer-home' : isTax ? 'tax-home' : 'dashboard'
+  // Il fisioterapista vede la sua area: home, profilo, chat e collegamenti.
+  const physioAllowed = ['physio-home', 'physio-profile', 'messages', 'access-requests', 'my-team']
+  const isPhysio = profile.role === 'fisioterapista'
+  const home = isBrand ? 'brandhome' : isAgent ? 'agent-home' : isInsurer ? 'insurer-home' : isTax ? 'tax-home' : isPhysio ? 'physio-home' : 'dashboard'
   let route = routeState ?? home
   if (isBrand && !brandAllowed.includes(route)) route = 'brandhome'
   if (isCoach && !coachAllowed.includes(route)) route = 'dashboard'
   if (isAgent && !agentAllowed.includes(route)) route = 'agent-home'
   if (isInsurer && !insurerAllowed.includes(route)) route = 'insurer-home'
   if (isTax && !taxAllowed.includes(route)) route = 'tax-home'
+  if (isPhysio && !physioAllowed.includes(route)) route = 'physio-home'
 
   const view = (() => {
     switch (route) {
@@ -100,6 +106,8 @@ export default function App() {
       case 'archivio': return <Archivio />
       case 'tax-home': return <TaxAdvisorHome goto={setRoute} />
       case 'tax-profile': return <TaxAdvisorProfile />
+      case 'physio-home': return <PhysioHome goto={setRoute} />
+      case 'physio-profile': return <PhysioProfile />
       case 'agent-profile': return <AgentProfile />
       case 'contracts': return <Contracts />
       case 'documents': return isInsurer ? <InsuranceDocuments /> : <Documents />

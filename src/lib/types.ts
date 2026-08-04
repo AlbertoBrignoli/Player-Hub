@@ -1,4 +1,4 @@
-export type Role = 'admin' | 'player' | 'creator' | 'brand' | 'preparatore' | 'agente' | 'assicuratore' | 'commercialista'
+export type Role = 'admin' | 'player' | 'creator' | 'brand' | 'preparatore' | 'agente' | 'assicuratore' | 'commercialista' | 'fisioterapista'
 
 export interface Brand {
   id: string

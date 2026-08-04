@@ -145,6 +145,19 @@ export const TAX_NAV: { group: string; items: NavDef[] }[] = [
   ]},
 ]
 
+// Menu del fisioterapista: profilo, atleti seguiti, chat.
+export const PHYSIO_NAV: { group: string; items: NavDef[] }[] = [
+  { group: 'Fisioterapia', items: [
+    { key: 'physio-home', label: 'Home', icon: 'grid' },
+    { key: 'physio-profile', label: 'Il mio profilo', icon: 'user' },
+    { key: 'access-requests', label: 'Collegamenti', icon: 'key' },
+  ]},
+  { group: 'Atleta', items: [
+    { key: 'my-team', label: 'Il mio team', icon: 'users' },
+    { key: 'messages', label: 'Messaggi', icon: 'message' },
+  ]},
+]
+
 const TITLES: Record<string, { t: string; s: string }> = {
   dashboard: { t: 'Dashboard', s: 'Quadro generale della gestione' },
   fitness: { t: 'AUVI Performance', s: 'Preparazione atletica e performance' },
@@ -174,6 +187,8 @@ const TITLES: Record<string, { t: string; s: string }> = {
   archivio: { t: 'Contratti e Documenti', s: 'Accordi, scadenze e archivio file riservato' },
   'tax-home': { t: 'Home', s: 'La tua scheda e gli atleti seguiti' },
   'tax-profile': { t: 'Il mio profilo', s: 'Contatti e studio' },
+  'physio-home': { t: 'Home', s: 'La tua scheda e gli atleti seguiti' },
+  'physio-profile': { t: 'Il mio profilo', s: 'Anagrafica, contatti e biografia' },
   'agent-profile': { t: 'Il mio profilo', s: 'Contatti personali e agenzia' },
   mediakit: { t: 'Media Kit', s: "I numeri dell'atleta" },
   campaigns: { t: 'Campagne', s: 'Proponi contenuti e carica lo shooting' },
@@ -198,6 +213,7 @@ export default function Shell({ route, setRoute, right, children }: {
   const isAgent = role === 'agente'
   const isInsurer = role === 'assicuratore'
   const isTax = role === 'commercialista'
+  const isPhysio = role === 'fisioterapista'
 
   // Profili in cui questo utente può entrare (es. brand / procuratore).
   // Il selettore compare solo se ne ha più di uno.
@@ -223,7 +239,7 @@ export default function Shell({ route, setRoute, right, children }: {
     if (error) { alert(error.message); return }
     window.location.reload()
   }
-  const nav = isBrand ? BRAND_NAV : isCoach ? COACH_NAV : isAgent ? AGENT_NAV : isInsurer ? INSURER_NAV : isTax ? TAX_NAV : NAV
+  const nav = isBrand ? BRAND_NAV : isCoach ? COACH_NAV : isAgent ? AGENT_NAV : isInsurer ? INSURER_NAV : isTax ? TAX_NAV : isPhysio ? PHYSIO_NAV : NAV
 
   return (
     <div className="app">
@@ -260,7 +276,7 @@ export default function Shell({ route, setRoute, right, children }: {
             <div className="avatar">{initials(agentName || profile?.full_name || profile?.email)}</div>
             <div className="user-meta">
               <div className="user-name">{agentName || profile?.full_name || profile?.email}</div>
-              <div className="user-role">{role === 'admin' ? 'AUVI · Advisor' : role === 'creator' ? 'Team · Creator' : role === 'preparatore' ? 'Preparatore Atletico' : role === 'brand' ? 'Brand · Partner' : role === 'agente' ? 'Procuratore' : role === 'assicuratore' ? 'Assicuratore' : role === 'commercialista' ? 'Commercialista' : 'Giocatore'}</div>
+              <div className="user-role">{role === 'admin' ? 'AUVI · Advisor' : role === 'creator' ? 'Team · Creator' : role === 'preparatore' ? 'Preparatore Atletico' : role === 'brand' ? 'Brand · Partner' : role === 'agente' ? 'Procuratore' : role === 'assicuratore' ? 'Assicuratore' : role === 'commercialista' ? 'Commercialista' : role === 'fisioterapista' ? 'Fisioterapista' : 'Giocatore'}</div>
             </div>
             <button className="btn-ghost" style={{ marginLeft: 'auto', padding: 6, color: 'var(--text-dim)' }} title="Imposta password" onClick={() => setPwOpen(true)}><Icon name="key" size={16} /></button>
           </div>
@@ -320,6 +336,13 @@ export default function Shell({ route, setRoute, right, children }: {
               { key: 'brandhome', label: 'Home', icon: 'grid' },
               { key: 'mediakit', label: 'Numeri', icon: 'activity' },
               { key: 'campaigns', label: 'Campagne', icon: 'image' },
+              { key: 'messages', label: 'Chat', icon: 'message' },
+            ]
+          : isPhysio
+          ? [
+              { key: 'physio-home', label: 'Home', icon: 'grid' },
+              { key: 'physio-profile', label: 'Profilo', icon: 'user' },
+              { key: 'my-team', label: 'Team', icon: 'users' },
               { key: 'messages', label: 'Chat', icon: 'message' },
             ]
           : isTax
