@@ -109,7 +109,7 @@ export default function App() {
       case 'tax-profile': return <TaxAdvisorProfile />
       case 'physio-home': return <PhysioHome goto={setRoute} />
       case 'physio-profile': return <PhysioProfile />
-      case 'physio-office': return <PhysioOffice goto={setRoute} />
+      case 'physio-office': return <PhysioOffice />
       case 'agent-profile': return <AgentProfile />
       case 'contracts': return <Contracts />
       case 'documents': return isInsurer ? <InsuranceDocuments /> : <Documents />
