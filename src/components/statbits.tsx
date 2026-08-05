@@ -27,6 +27,7 @@ export function SPct({ k, pct, n, d }: { k: string; pct: number | null; n?: numb
 export function LastMatchGrid({ m }: { m: StatsMatch }) {
   return (
     <div className="grid g4" style={{ gap: 10 }}>
+      <SFact k="Voto" v={m.rating != null ? Number(m.rating).toFixed(1) : '—'} />
       <SFact k="Minuti" v={`${m.minutes ?? '—'}′`} />
       <SFact k="Gol / Assist" v={`${m.goal ?? 0} / ${m.assist ?? 0}`} />
       <SFact k="xG" v={m.xg != null ? Number(m.xg).toFixed(2) : '—'} />

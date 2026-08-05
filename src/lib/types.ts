@@ -308,6 +308,7 @@ export interface NotificationItem {
 }
 
 export interface StatsMatch {
+  rating?: number | string | null
   id: string
   match_date: string
   competition: string
