@@ -65,7 +65,22 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
       ])
       setPlayer(p.data as Player)
       setMatches((m.data as Match[]) || [])
-      setLastMatch(((t.data as StatsMatch[]) || [])[0] || null)
+      {
+        const nowIso = new Date().toISOString()
+        const pastPlayed = (((m.data as any[]) || [])
+          .filter(x => x.match_date && x.match_date < nowIso && (x.minutes ?? 0) > 0)
+          .sort((a, b) => (b.match_date || '').localeCompare(a.match_date || '')))
+        const lm = pastPlayed[0]
+        if (lm) {
+          const isHome = (lm.venue || '').toLowerCase() === 'home'
+          const hs = lm.team_score == null ? null : (isHome ? lm.team_score : lm.opponent_score)
+          const as = lm.team_score == null ? null : (isHome ? lm.opponent_score : lm.team_score)
+          const score = (hs != null && as != null) ? ` ${hs}:${as}` : ''
+          setLastMatch({ match_name: `${lm.home_team} - ${lm.away_team}${score}`, match_date: lm.match_date, minutes: lm.minutes ?? 0, competition: lm.league } as any)
+        } else {
+          setLastMatch(((t.data as StatsMatch[]) || [])[0] || null)
+        }
+      }
       setEvents((ev.data as EventItem[]) || [])
       setContracts((ct.data as Contract[]) || [])
       const content = ed.data as EditorialEntry | null
