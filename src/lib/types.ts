@@ -76,6 +76,7 @@ export interface ClubContacts {
 }
 
 export interface Match {
+  season?: number | string | null
   id: string
   match_date: string | null
   league: string | null

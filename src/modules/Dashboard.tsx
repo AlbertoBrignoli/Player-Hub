@@ -114,11 +114,16 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
 
   // ---- dati derivati condivisi ----
   const nextMatch = matches.find(m => m.match_date && new Date(m.match_date).getTime() > Date.now())
-  const played = matches.filter(m => m.minutes != null && m.minutes > 0)
+  // Stagione corrente = quella della partita piu recente; presenze/rating/gol si riferiscono a essa.
+  const curSeason = matches.length
+    ? matches.reduce((a, b) => ((a.match_date || '') > (b.match_date || '') ? a : b)).season
+    : null
+  const inSeason = (m: any) => curSeason == null || m.season === curSeason
+  const played = matches.filter(m => inSeason(m) && m.minutes != null && m.minutes > 0)
   const presenze = played.length
   const ratings = played.map(m => Number(m.rating)).filter(r => !isNaN(r) && r > 0)
   const avgRating = ratings.length ? (ratings.reduce((a, b) => a + b, 0) / ratings.length) : null
-  const goals = matches.reduce((s, m) => s + (m.goals || 0), 0)
+  const goals = matches.filter(inSeason).reduce((s, m) => s + (m.goals || 0), 0)
   const nextContractExpiry = contracts
     .filter(c => c.end_date).map(c => ({ c, d: daysUntil(c.end_date) }))
     .filter(x => x.d != null && x.d >= 0).sort((a, b) => (a.d! - b.d!))[0]
