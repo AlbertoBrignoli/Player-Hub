@@ -367,7 +367,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
         <StatBox label="Presenze" value={presenze} />
         <StatBox label="Rating medio" value={avgRating ? avgRating.toFixed(2) : '—'} tone={avgRating && avgRating >= 7 ? 'var(--green)' : undefined} />
         <StatBox label="Gol stagione" value={goals} />
-        <StatBox label="Contratto" value={nextContractExpiry ? `${nextContractExpiry.d}gg` : '—'} sub={nextContractExpiry ? `scade ${fmtDate(nextContractExpiry.c.end_date)}` : 'nessuna scadenza'} />
+        <StatBox label="Contratto" value={nextContractExpiry ? fmtDate(nextContractExpiry.c.end_date) : '—'} sub={nextContractExpiry ? 'scadenza contratto' : 'nessuna scadenza'} />
       </div>
 
       <ReferentiCard goto={goto} />
