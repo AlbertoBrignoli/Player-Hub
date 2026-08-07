@@ -211,6 +211,7 @@ function RequestForm({ onDone, mine }: { onDone: () => void; mine: Req[] }) {
 function CodesManager({ athleteId, athleteName }: { athleteId: number | null; athleteName: string }) {
   const [codes, setCodes] = useState<any[]>([])
   const [label, setLabel] = useState('')
+  const [role, setRole] = useState('')
   const [busy, setBusy] = useState(false)
   const [loading, setLoading] = useState(true)
 
@@ -226,10 +227,12 @@ function CodesManager({ athleteId, athleteName }: { athleteId: number | null; at
   async function genera() {
     if (!athleteId || busy) return
     setBusy(true)
-    const { error } = await supabase.rpc('crm_generate_code', { p_player_id: athleteId, p_label: label.trim() || null })
+    const { error } = await supabase.rpc('crm_generate_code', {
+      p_player_id: athleteId, p_label: label.trim() || null, p_role: role || null,
+    })
     setBusy(false)
     if (error) { toast(error.message, 'err'); return }
-    setLabel(''); toast('Codice generato'); load()
+    setLabel(''); setRole(''); toast('Codice generato'); load()
   }
   async function revoca(id: string) {
     if (!window.confirm('Revocare questo codice? Non sarà più utilizzabile.')) return
@@ -250,12 +253,26 @@ function CodesManager({ athleteId, athleteName }: { athleteId: number | null; at
       </div>
 
       <div className="flex gap" style={{ gap: 8, flexWrap: 'wrap', marginBottom: codes.length ? 14 : 0 }}>
-        <input value={label} onChange={e => setLabel(e.target.value)} placeholder="Per chi? es. Assicuratore Anthea (facoltativo)"
+        <select value={role} onChange={e => setRole(e.target.value)}
+          style={{ minWidth: 170, background: 'var(--card-dark, #101015)', border: '1px solid var(--border)',
+            borderRadius: 10, padding: '10px 12px', color: 'var(--text)', fontSize: 13.5 }}>
+          <option value="">Figura professionale…</option>
+          <option value="assicuratore">Assicuratore</option>
+          <option value="agente">Agente</option>
+          <option value="preparatore">Preparatore atletico</option>
+          <option value="commercialista">Commercialista</option>
+        </select>
+        <input value={label} onChange={e => setLabel(e.target.value)} placeholder="Per chi? es. Anthea Assicurazioni (facoltativo)"
           style={{ flex: 1, minWidth: 220, background: 'var(--card-dark, #101015)', border: '1px solid var(--border)',
             borderRadius: 10, padding: '10px 12px', color: 'var(--text)', fontSize: 13.5 }} />
         <button className="btn btn-primary" disabled={busy || !athleteId} onClick={genera}>
           <Icon name="plus" size={15} /> Genera codice
         </button>
+      </div>
+      <div className="faint" style={{ fontSize: 11.5, marginTop: -6, marginBottom: codes.length ? 12 : 0 }}>
+        Con la figura selezionata il codice vale anche come <b>invito alla registrazione</b>: il professionista
+        entra dal login con "codice invito" e trova subito la sua vista dedicata. Senza figura, il codice serve
+        solo a collegare un professionista già registrato.
       </div>
 
       {loading ? null : codes.length === 0 ? (
@@ -274,7 +291,7 @@ function CodesManager({ athleteId, athleteName }: { athleteId: number | null; at
                   <code style={{ fontSize: 14, fontWeight: 800, letterSpacing: 1.5, color: ACCENT,
                     textDecoration: revoked ? 'line-through' : 'none' }}>{c.code}</code>
                   <div className="faint" style={{ fontSize: 11.5, marginTop: 2 }}>
-                    {c.label ? c.label + ' · ' : ''}<span style={{ color: badge.col, fontWeight: 700 }}>{badge.t}</span>
+                    {c.role ? (ROLE_LABEL[c.role] || c.role) + ' · ' : ''}{c.label ? c.label + ' · ' : ''}<span style={{ color: badge.col, fontWeight: 700 }}>{badge.t}</span>
                   </div>
                 </div>
                 <span className="flex gap" style={{ alignItems: 'center', gap: 6, flexShrink: 0 }}>
