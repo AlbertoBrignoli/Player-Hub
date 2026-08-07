@@ -1088,8 +1088,11 @@ function MediaPicker({ athleteId, excludeSourceIds, onClose, onConfirm }: {
                 <Icon name="folder" size={13} /> {f}
               </div>
               <div className="asset-grid">
-                {items.filter(m => (m.folder || 'Senza cartella') === f).map(m => {
+                {items.filter(m => (m.folder || 'Senza cartella') === f)
+                  .sort((a, b) => (b.status === 'approvata' ? 1 : 0) - (a.status === 'approvata' ? 1 : 0))
+                  .map(m => {
                   const on = sel.has(m.id)
+                  const chosen = m.status === 'approvata'
                   return (
                     <div key={m.id} className="asset-card" onClick={() => toggle(m.id)}
                       title={m.file_name || ''}
@@ -1098,6 +1101,13 @@ function MediaPicker({ athleteId, excludeSourceIds, onClose, onConfirm }: {
                       {isImageFile(m.file_name) && urls[m.storage_path]
                         ? <img src={urls[m.storage_path].replace('/object/sign/', '/render/image/sign/') + '&width=220&quality=60'} alt="" loading="lazy" decoding="async" />
                         : <div className="asset-ph"><Icon name="camera" size={20} strokeWidth={1.4} /></div>}
+                      {chosen && (
+                        <div style={{ position: 'absolute', top: 6, left: 6, padding: '2px 7px', borderRadius: 8,
+                          background: 'var(--accent, #C6FF3A)', color: '#0b0b0e', fontSize: 10, fontWeight: 800,
+                          display: 'flex', alignItems: 'center', gap: 3 }}>
+                          <Icon name="star" size={11} /> Scelta
+                        </div>
+                      )}
                       <div style={{ position: 'absolute', top: 6, right: 6, width: 22, height: 22, borderRadius: '50%',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         background: on ? 'var(--accent, #C6FF3A)' : 'rgba(0,0,0,.5)',
