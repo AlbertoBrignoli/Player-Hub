@@ -713,7 +713,7 @@ function EntryModal({ entry, onClose, onChanged }: {
         )}
 
         {!isMatchDayAthlete && (<>
-        {entry.type !== 'partita' && (
+        {entry.type !== 'partita' && entry.type !== 'story' && (
         <div>
           <div className="flex between" style={{ marginBottom: 6 }}>
             <div style={{ fontWeight: 650 }}>{t('Copy')}</div>
