@@ -763,7 +763,7 @@ function EntryModal({ entry, onClose, onChanged }: {
                   <div className="asset-card" key={m.id} title={m.file_name || ''} style={{ position: 'relative' }}>
                     <div onClick={() => openAsset(m)}>
                       {isImageFile(m.file_name) && urls[m.storage_path]
-                        ? <img src={urls[m.storage_path]} alt="" loading="lazy" />
+                        ? <img src={urls[m.storage_path].replace('/object/sign/', '/render/image/sign/') + '&width=220&quality=60'} alt="" loading="lazy" decoding="async" />
                         : <div className="asset-ph"><Icon name="camera" size={20} strokeWidth={1.4} /></div>}
                     </div>
                     {/* numero d'ordine nel carosello */}
@@ -1096,7 +1096,7 @@ function MediaPicker({ athleteId, excludeSourceIds, onClose, onConfirm }: {
                       style={{ position: 'relative', cursor: 'pointer',
                         outline: on ? '2px solid var(--accent, #C6FF3A)' : 'none', outlineOffset: -2 }}>
                       {isImageFile(m.file_name) && urls[m.storage_path]
-                        ? <img src={urls[m.storage_path]} alt="" loading="lazy" />
+                        ? <img src={urls[m.storage_path].replace('/object/sign/', '/render/image/sign/') + '&width=220&quality=60'} alt="" loading="lazy" decoding="async" />
                         : <div className="asset-ph"><Icon name="camera" size={20} strokeWidth={1.4} /></div>}
                       <div style={{ position: 'absolute', top: 6, right: 6, width: 22, height: 22, borderRadius: '50%',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
