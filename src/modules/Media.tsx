@@ -288,7 +288,8 @@ export default function Media() {
     const thumb = (
       <div style={{ position: 'relative' }}>
         {isImageFile(m.file_name) && urls[m.storage_path] && !broken.has(m.storage_path)
-          ? <img className="media-thumb" src={previewUrl(m.storage_path)!} alt={m.file_name || ''}
+          ? <img className="media-thumb" src={previewUrl(m.storage_path, 280)!} alt={m.file_name || ''}
+              loading="lazy" decoding="async"
               onError={() => onThumbError(m.storage_path)}
               onClick={() => setLightbox(idx)} />
           : <div className="media-thumb media-ph" onClick={() => download(m)} style={{ cursor: 'pointer' }}>
@@ -444,7 +445,7 @@ export default function Media() {
                     </button>
                   )}
                   {cover
-                    ? <img className="folder-cover" src={previewUrl(cover.path, 640)!} alt=""
+                    ? <img className="folder-cover" src={previewUrl(cover.path, 640)!} alt="" loading="lazy" decoding="async"
                         onError={() => onThumbError(cover.path)} />
                     : <div className="folder-cover folder-cover-ph"><Icon name="folder" size={30} strokeWidth={1.3} /></div>}
                   <div className="folder-meta">
@@ -461,7 +462,7 @@ export default function Media() {
               return (
               <button className="folder-card" onClick={() => setOpenFolder(NO_FOLDER)} type="button">
                 {noneCover
-                  ? <img className="folder-cover" src={previewUrl(noneCover.path, 640)!} alt=""
+                  ? <img className="folder-cover" src={previewUrl(noneCover.path, 640)!} alt="" loading="lazy" decoding="async"
                       onError={() => onThumbError(noneCover.path)} />
                   : <div className="folder-cover folder-cover-ph"><Icon name="image" size={30} strokeWidth={1.3} /></div>}
                 <div className="folder-meta">
