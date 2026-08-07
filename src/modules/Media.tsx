@@ -24,6 +24,7 @@ export default function Media() {
   const [view, setView] = useState<'flusso' | 'cartelle'>('flusso')
   const [tab, setTab] = useState<'approvare' | 'approvate' | 'pubblicare' | 'pubblicati'>('approvare')
   const [openFolder, setOpenFolder] = useState<string | null>(null) // NO_FOLDER = senza cartella
+  const [limit, setLimit] = useState(30)
   const [urls, setUrls] = useState<Record<string, string>>({})
   const [uploading, setUploading] = useState(false)
   const [picked, setPicked] = useState<Set<string>>(new Set())
@@ -96,6 +97,9 @@ export default function Media() {
     })()
     return () => { alive = false }
   }, [rows]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Riparti da 30 foto quando si apre un'altra cartella o si cambia vista/tab.
+  useEffect(() => { setLimit(30) }, [openFolder, view, tab])
 
   function newFolder() {
     const name = window.prompt(t("Nome della nuova cartella (es. Pre Season):"))?.trim()
@@ -522,9 +526,16 @@ export default function Media() {
                 : 'Le grafiche caricate nelle box del calendario finiscono qui.'} />
           </div>
         ) : (
-          <div className="media-grid">
-            {visible.map((m, idx) => renderCard(m, idx))}
-          </div>
+          <>
+            <div className="media-grid">
+              {visible.slice(0, limit).map((m, idx) => renderCard(m, idx))}
+            </div>
+            {visible.length > limit && (
+              <div style={{ textAlign: 'center', marginTop: 14 }}>
+                <button className="btn" onClick={() => setLimit(l => l + 30)}>Mostra altre foto ({visible.length - limit})</button>
+              </div>
+            )}
+          </>
         )
       )}
 
