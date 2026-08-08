@@ -1,3 +1,4 @@
+import { teamLogo, leagueLogo } from '../lib/logos'
 import { useEffect, useState, type ReactNode } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../auth/AuthContext'
@@ -25,9 +26,9 @@ function TeamVs({ m, size = 24 }: { m: Match; size?: number }) {
     src ? <img src={src} alt="" style={{ height: size, width: size, objectFit: 'contain', flexShrink: 0 }} /> : null
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-      <Logo src={m.home_logo} /><span>{m.home_team}</span>
+      <Logo src={teamLogo(m.home_team, m.home_logo)} /><span>{m.home_team}</span>
       <span style={{ opacity: .45 }}>—</span>
-      <Logo src={m.away_logo} /><span>{m.away_team}</span>
+      <Logo src={teamLogo(m.away_team, m.away_logo)} /><span>{m.away_team}</span>
     </span>
   )
 }
@@ -196,6 +197,12 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
             <div className="ed-hero-body" style={{ textAlign: 'left' }}>
               <div className="ed-livepill"><span className="ed-livedot" /><span>Prossima · {matchWhen}</span></div>
               <div className="ed-hero-title"><TeamVs m={nextMatch} size={26} /></div>
+              {leagueLogo(nextMatch.league) && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
+                  <img src={leagueLogo(nextMatch.league)!} alt="" style={{ height: 22, width: 22, objectFit: 'contain' }} />
+                  <span style={{ fontSize: 12.5, opacity: .85, fontWeight: 600 }}>{nextMatch.league}</span>
+                </div>
+              )}
               <div className="ed-hero-meta">
                 {matchMeta.map((x, i) => <span key={i} style={{ display: 'contents' }}>{i > 0 && <span className="sep">|</span>}<span>{x}</span></span>)}
               </div>
