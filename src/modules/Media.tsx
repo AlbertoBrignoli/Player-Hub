@@ -71,7 +71,7 @@ export default function Media() {
   const folders = [...new Set(rows.map(m => m.folder).filter(Boolean))] as string[]
   const senzaCartella = rows.filter(m => m.folder == null && m.status !== 'scartata')
   const folderItems = openFolder
-    ? rows.filter(m => (openFolder === NO_FOLDER ? m.folder == null : m.folder === openFolder) && m.status !== 'scartata')
+    ? rows.filter(m => (openFolder === NO_FOLDER ? m.folder == null : m.folder === openFolder))
     : []
 
   const daApprovare = rows.filter(m => m.status === 'da_approvare')
@@ -256,6 +256,7 @@ export default function Media() {
   const STATUS_LABEL: Record<string, { l: string; tone?: 'green' | 'gold' | 'blue' }> = {
     da_approvare: { l: t('Da approvare') },
     approvata: { l: t('Approvata'), tone: 'gold' },
+    scartata: { l: t('Scartata') },
     da_pubblicare: { l: t('Da pubblicare'), tone: 'blue' },
     pubblicata: { l: 'Pubblicata', tone: 'green' },
   }
@@ -304,6 +305,12 @@ export default function Media() {
             </div>}
         {approvable && (
           <div className={`media-pick ${isPicked ? 'on' : ''}`} onClick={e => { e.stopPropagation(); togglePick(m.id) }}>{isPicked ? '✓' : ''}</div>
+        )}
+        {m.status === 'approvata' && (
+          <div title={t('Approvata')} style={{ position: 'absolute', top: 6, left: 6, width: 24, height: 24, borderRadius: '50%', background: '#22c55e', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 4px rgba(0,0,0,.45)' }}><Icon name="check" size={15} /></div>
+        )}
+        {m.status === 'scartata' && (
+          <div title={t('Scartata')} style={{ position: 'absolute', top: 6, left: 6, width: 24, height: 24, borderRadius: '50%', background: '#ef4444', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 4px rgba(0,0,0,.45)' }}><Icon name="x" size={15} /></div>
         )}
       </div>
     )
