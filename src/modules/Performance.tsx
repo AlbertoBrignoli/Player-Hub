@@ -66,6 +66,23 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
   const goals = seasonMatches.reduce((s, m) => s + (m.goals || 0), 0)
   const assists = seasonMatches.reduce((s, m) => s + (m.assists || 0), 0)
 
+  // Fallback: se mancano i dati partita-per-partita, usa l'aggregato dello storico (player_stats_api)
+  const seasonApi = stats.filter(s => String(s.season) === season.slice(0, 4))
+  const useApi = played.length === 0 && seasonApi.length > 0
+  const apiApps = seasonApi.reduce((a, s) => a + (s.appearances || 0), 0)
+  const apiMin = seasonApi.reduce((a, s) => a + (s.minutes || 0), 0)
+  const apiGoals = seasonApi.reduce((a, s) => a + (s.goals || 0), 0)
+  const apiAssists = seasonApi.reduce((a, s) => a + (s.assists || 0), 0)
+  const apiRated = seasonApi.filter(s => s.rating && s.appearances)
+  const apiAppsRated = apiRated.reduce((a, s) => a + (s.appearances || 0), 0)
+  const apiAvg = apiAppsRated ? apiRated.reduce((a, s) => a + (Number(s.rating) || 0) * (s.appearances || 0), 0) / apiAppsRated : null
+  const dPres = useApi ? apiApps : played.length
+  const dMin = useApi ? apiMin : totMin
+  const dRating = useApi ? apiAvg : avgRating
+  const dRatingsN = useApi ? apiAppsRated : ratings.length
+  const dGoals = useApi ? apiGoals : goals
+  const dAssists = useApi ? apiAssists : assists
+
   // Ultime 5 giocate in assoluto (rating), indipendenti dalla stagione selezionata.
   const last5 = matches.filter(m => m.minutes != null && Number(m.rating) > 0).slice(0, 5).reverse()
   const maxR = Math.max(10, ...last5.map(m => Number(m.rating) || 0))
@@ -153,16 +170,18 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
           </Select>
         </div>
         <div className="grid g4" style={{ gap: 10, marginBottom: seasonTech.length ? 14 : 0 }}>
-          <Stat icon={<Icon name="check" size={13} />} label={t("Presenze")} value={played.length} sub={`${totMin}' giocati`} />
-          <Stat icon={<Icon name="star" size={13} />} label={t("Rating medio")} value={avgRating ? avgRating.toFixed(2) : '—'} tone="var(--accent)" sub={`${ratings.length} valutazioni`} />
-          <Stat icon={<Icon name="ball" size={13} />} label={t("Gol")} value={goals} />
-          <Stat icon={<Icon name="send" size={13} />} label={t("Assist")} value={assists} />
+          <Stat icon={<Icon name="check" size={13} />} label={t("Presenze")} value={dPres} sub={`${dMin}' giocati`} />
+          <Stat icon={<Icon name="star" size={13} />} label={t("Rating medio")} value={dRating ? dRating.toFixed(2) : '—'} tone="var(--accent)" sub={`${dRatingsN} valutazioni`} />
+          <Stat icon={<Icon name="ball" size={13} />} label={t("Gol")} value={dGoals} />
+          <Stat icon={<Icon name="send" size={13} />} label={t("Assist")} value={dAssists} />
         </div>
         {seasonTech.length === 0 ? (
           <div className="faint" style={{ padding: '6px 0' }}>
-            {season === currentSeason
-              ? 'I dati tecnici della nuova stagione arrivano con le prime partite.'
-              : 'Nessun dato tecnico registrato per questa stagione.'}
+            {useApi
+              ? 'Riepilogo aggregato dallo storico competizioni (dettaglio partita-per-partita non disponibile).'
+              : season === currentSeason
+                ? 'I dati tecnici della nuova stagione arrivano con le prime partite.'
+                : 'Nessun dato tecnico registrato per questa stagione.'}
           </div>
         ) : (
           <SeasonBlock stats={seasonTech} />
