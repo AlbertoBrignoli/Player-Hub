@@ -501,6 +501,9 @@ function EntryModal({ entry, onClose, onChanged }: {
         storage_path: it.storage_path, file_name: it.file_name, kind: 'foto', status: 'approvata',
         editorial_id: entry.id, source_media_id: it.id, uploaded_by: session?.user.id,
         uploaded_role: profile?.role, note: entry.title, player_id: athleteId,
+        // Stessa cartella "POST <titolo>" della selezione fatta da Media:
+        // senza questa la libreria le mostra in "Senza cartella".
+        folder: `POST ${entry.title}`,
       })
       if (!ins.error) ok++
     }
