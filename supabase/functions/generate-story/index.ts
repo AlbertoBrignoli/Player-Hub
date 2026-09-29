@@ -49,6 +49,7 @@ const FONTS: FontSpec[] = [
   { family: "Barlow Condensed", weight: 700, name: "Barlow Condensed" },
   { family: "Barlow Condensed", weight: 800, name: "Barlow Condensed" },
   { family: "Archivo", weight: 500, name: "Archivo" },
+  { family: "Archivo", weight: 600, name: "Archivo" },
   { family: "Archivo", weight: 700, name: "Archivo" },
   { family: "JetBrains Mono", weight: 700, name: "JetBrains Mono" },
 ];
@@ -198,6 +199,132 @@ async function photoDataUri(storagePath: string | null, player: PlayerRow): Prom
   }
   // ripiego: foto stadio del profilo (URL pubblico, satori la scarica da sé)
   return player.stadium_photo_url ?? null;
+}
+
+// ---------- libreria asset in storage (template MOSAIC approvato 07/08/2026) ----------
+// Asset statici pre-composti (plate di sfondo per competizione+stadio, cutout del
+// giocatore per competizione, stemmi monoline blu per team_id) caricati in
+// crm-media/assets/ via mode:"put_asset". La grafica runtime = plate + cutout +
+// stemmi + testi (round, data, stadio, ora) posizionati come nel layout approvato.
+const assetCache = new Map<string, string | null>();
+async function assetDataUri(path: string): Promise<string | null> {
+  if (assetCache.has(path)) return assetCache.get(path)!;
+  const { data, error } = await supa.storage.from("crm-media").download(`assets/${path}`);
+  let uri: string | null = null;
+  if (!error && data) {
+    const buf = new Uint8Array(await data.arrayBuffer());
+    uri = b64uri(buf, path.toLowerCase().endsWith(".png") ? "image/png" : "image/jpeg");
+  }
+  assetCache.set(path, uri);
+  return uri;
+}
+
+function competitionKey(league: string | null): "ucl" | "slgr" | null {
+  if (!league) return null;
+  if (/champions/i.test(league)) return "ucl";
+  if (/super league/i.test(league)) return "slgr";
+  return null;
+}
+const stadiumSlug = (s: string | null) => (s ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+
+// orario greco (regola confermata: sempre ora greca, anche in Champions)
+function fmtKickoffGreek(iso: string): { date: string; time: string } {
+  const d = new Date(iso);
+  const p = (t: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Athens", ...t }).format(d);
+  return {
+    date: `${p({ day: "2-digit" })}.${p({ month: "2-digit" })}.${p({ year: "numeric" })}`,
+    time: p({ hour: "2-digit", minute: "2-digit", hour12: false }),
+  };
+}
+
+const STADIUM_DISPLAY: Record<string, string> = {
+  "Goffertstadion": "GOFFERTSTADION, NIJMEGEN",
+  "Georgios Karaiskakis Stadium": "G. KARAISKAKIS STADIUM",
+  "OAKA Spyros Louis": "OAKA SPYROS LOUIS, ATHENS",
+};
+const stadiumDisplay = (s: string | null) => (s ? (STADIUM_DISPLAY[s] ?? s.toUpperCase()) : "");
+
+// round + eventuale andata/ritorno (se il turno ha due fixture)
+async function roundDisplay(match: MatchRow, playerId: number): Promise<string | null> {
+  if (!match.round) return null;
+  const rs = match.round.match(/^Regular Season - (\d+)$/i);
+  if (rs && /super league/i.test(match.league ?? "")) return `SUPER LEAGUE · MATCHDAY ${rs[1]}`;
+  let leg = "";
+  try {
+    const { data: sameRound } = await supa.from("matches")
+      .select("match_date").eq("player_id", playerId)
+      .eq("league", match.league ?? "").eq("round", match.round)
+      .order("match_date", { ascending: true });
+    if (sameRound && sameRound.length === 2) {
+      leg = sameRound[0].match_date === match.match_date ? " · 1ST LEG" : " · 2ND LEG";
+    }
+  } catch { /* solo estetica */ }
+  return match.round.toUpperCase() + leg;
+}
+
+// ---------- template PRE-MATCH "MOSAIC" (layout approvato) ----------
+// deno-lint-ignore no-explicit-any
+function mosaicPreTemplate(opts: {
+  plate: string; cutout: string; overlay: string | null; homeCrest: string; awayCrest: string;
+  round: string | null; date: string; time: string; stadium: string; comp: string;
+}): any {
+  const BLUE = opts.comp === "slgr" ? "#b2102a" : "#102a6c";
+  const INK = "#14161e";
+  return h("div", { ...col, width: W, height: H, position: "relative", backgroundColor: "#eee9de" },
+    img(opts.plate, { position: "absolute", top: 0, left: 0, width: W, height: H }),
+    // giocatore: piedi sull'erba della plate (ombre già nella plate)
+    img(opts.cutout, { position: "absolute", top: 795, left: 72, height: 895 }),
+    // mosaico sopra le gambe (come nel template approvato)
+    opts.overlay ? img(opts.overlay, { position: "absolute", top: 0, left: 0, width: W, height: H }) : null,
+    // stemmi: casa a sx, X, ospite a dx — stessa scatola visiva, riga centrata
+    h("div", { position: "absolute", top: 645, left: 660, width: 374, height: 155, alignItems: "center", justifyContent: "center", gap: 14 },
+      img(opts.homeCrest, { height: 155 }),
+      h("div", { fontFamily: "Archivo", fontWeight: 700, fontSize: 40, color: INK }, "x"),
+      img(opts.awayCrest, { height: 155 }),
+    ),
+    // kicker round
+    opts.round
+      ? h("div", { position: "absolute", top: 1486, left: 660, alignItems: "center", gap: 11 },
+          h("div", { width: 9, height: 9, backgroundColor: BLUE }),
+          h("div", { fontFamily: "JetBrains Mono", fontWeight: 700, fontSize: 17, color: BLUE }, opts.round),
+        )
+      : null,
+    // data / stadio / ora
+    h("div", { ...col, position: "absolute", top: 1530, left: 660 },
+      h("div", { fontFamily: "Barlow Condensed", fontWeight: 800, fontSize: 64, lineHeight: 1.15, color: BLUE }, opts.date),
+      h("div", { fontFamily: "Archivo", fontWeight: 600, fontSize: 22, marginTop: 6, color: BLUE }, opts.stadium),
+      h("div", { fontFamily: "Barlow Condensed", fontWeight: 800, fontSize: 64, lineHeight: 1.15, marginTop: 12, color: BLUE }, opts.time),
+    ),
+  );
+}
+
+// prova a costruire il tree MOSAIC; null se mancano asset (fallback al legacy)
+// deno-lint-ignore no-explicit-any
+async function buildMosaicPre(match: MatchRow, playerId: number): Promise<any | null> {
+  const comp = competitionKey(match.league);
+  if (!comp) return null;
+  const plate =
+    (await assetDataUri(`plates/plate_${comp}_${stadiumSlug(match.stadium)}.jpg`)) ??
+    (await assetDataUri(`plates/plate_${comp}_default.jpg`));
+  const cutout = await assetDataUri(`cutouts/cutout_pirola_${comp}.png`);
+  const homeId = (match as unknown as { home_team_id: number | null }).home_team_id;
+  const awayId = (match as unknown as { away_team_id: number | null }).away_team_id;
+  const homeCrest = homeId
+    ? ((await assetDataUri(`crests/crest_mono_${comp}_${homeId}.png`)) ?? (await assetDataUri(`crests/crest_mono_${homeId}.png`)))
+    : null;
+  const awayCrest = awayId
+    ? ((await assetDataUri(`crests/crest_mono_${comp}_${awayId}.png`)) ?? (await assetDataUri(`crests/crest_mono_${awayId}.png`)))
+    : null;
+  if (!plate || !cutout || !homeCrest || !awayCrest) return null;
+  const overlay =
+    (await assetDataUri(`plates/overlay_${comp}_${stadiumSlug(match.stadium)}.png`)) ??
+    (await assetDataUri(`plates/overlay_${comp}_default.png`));
+  const k = fmtKickoffGreek(match.match_date);
+  return mosaicPreTemplate({
+    plate, cutout, overlay, homeCrest, awayCrest, comp,
+    round: await roundDisplay(match, playerId),
+    date: k.date, time: k.time, stadium: stadiumDisplay(match.stadium),
+  });
 }
 
 // ---------- blocchi comuni ----------
@@ -361,13 +488,18 @@ function postTemplate(match: MatchRow, player: PlayerRow, photo: string | null):
 }
 
 // ---------- render + salvataggio ----------
-async function renderStory(match: MatchRow, player: PlayerRow, photo: string | null, type: "pre" | "post"): Promise<Uint8Array> {
+// deno-lint-ignore no-explicit-any
+async function renderTree(tree: any): Promise<Uint8Array> {
   await ensureWasm();
   const fonts = await satoriFonts();
-  const tree = type === "pre" ? preTemplate(match, player, photo) : postTemplate(match, player, photo);
   const svg = await satori(tree, { width: W, height: H, fonts });
   const resvg = new Resvg(svg, { fitTo: { mode: "width", value: W }, font: { loadSystemFonts: false } });
   return resvg.render().asPng();
+}
+
+async function renderStory(match: MatchRow, player: PlayerRow, photo: string | null, type: "pre" | "post"): Promise<Uint8Array> {
+  const tree = type === "pre" ? preTemplate(match, player, photo) : postTemplate(match, player, photo);
+  return renderTree(tree);
 }
 
 type Entry = { id: string; title: string; status: string; match_id: string | null; player_id: number };
@@ -395,10 +527,19 @@ async function generateFor(entry: Entry, type: "pre" | "post", force: boolean, n
     .eq("api_player_id", entry.player_id).maybeSingle();
   const pl: PlayerRow = player ?? { name: null, shirt_number: null, position: null, stadium_photo_url: null };
 
-  const photoPath = await pickPhoto(entry.player_id, entry.id, match as MatchRow, type);
-  const photo = await photoDataUri(photoPath, pl);
-
-  const png = await renderStory(match as MatchRow, pl, photo, type);
+  // pre-match: prima il template MOSAIC (asset library); fallback al legacy se mancano asset
+  let png: Uint8Array;
+  let photoPath: string | null = null;
+  let template = "legacy";
+  const mosaic = type === "pre" ? await buildMosaicPre(match as MatchRow, entry.player_id) : null;
+  if (mosaic) {
+    template = "mosaic";
+    png = await renderTree(mosaic);
+  } else {
+    photoPath = await pickPhoto(entry.player_id, entry.id, match as MatchRow, type);
+    const photo = await photoDataUri(photoPath, pl);
+    png = await renderStory(match as MatchRow, pl, photo, type);
+  }
 
   const { error: upErr } = await supa.storage.from("crm-media")
     .upload(storagePath, png, { contentType: "image/png", upsert: true });
@@ -426,7 +567,7 @@ async function generateFor(entry: Entry, type: "pre" | "post", force: boolean, n
     { recipient_role: "team", title: `🤖 Grafica automatica generata`, body: `${entry.title} — storia ${label} creata in automatico.`, route: "editorial", player_id: entry.player_id },
   ]);
 
-  return { entry: entry.id, type, ok: true, photo: photoPath ?? "(nessuna foto: sfondo)", path: storagePath };
+  return { entry: entry.id, type, ok: true, template, photo: photoPath ?? "(asset library)", path: storagePath };
 }
 
 // ---------- modalità auto (cron) ----------
@@ -490,6 +631,16 @@ Deno.serve(async (req) => {
       if (!bySecret) return json({ error: "unauthorized" }, 401);
       const { data, error } = await supa.storage.from("crm-media").createSignedUrl(body.path, 3600);
       return json({ url: data?.signedUrl ?? null, error: error?.message ?? null });
+    }
+
+    // upload asset statici della libreria grafica (solo secret di sistema)
+    if (body.mode === "put_asset" && body.path && body.b64) {
+      if (!bySecret) return json({ error: "unauthorized" }, 401);
+      const bytes = Uint8Array.from(atob(body.b64), (c) => c.charCodeAt(0));
+      const ctype = body.contentType ?? (String(body.path).endsWith(".png") ? "image/png" : "image/jpeg");
+      const { error } = await supa.storage.from("crm-media")
+        .upload(`assets/${body.path}`, bytes, { contentType: ctype, upsert: true });
+      return json({ ok: !error, path: `assets/${body.path}`, error: error?.message ?? null });
     }
 
     if (body.mode === "auto") return json({ status: "ok", results: await runAuto() });
