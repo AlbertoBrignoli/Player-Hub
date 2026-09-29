@@ -3,8 +3,8 @@
    Brand identity AUVI Agency:
    - primaria: #FFEC00 giallo · #000 nero · #7A7A7A grigio · #FFF bianco
    - secondaria (solo accenti speciali): #EE0FB8 · #DD0088 · #FF6700 · #E53F00
-   - font: Monument Extended (titoli) → qui Termina via Adobe Fonts,
-     con Archivo Expanded come riserva · Inter (testo)
+   - font: al posto di Monument Extended (a pagamento) i titoli usano
+     Archivo Expanded (asse wdth 125); testo in Inter — scelta definitiva
    Regole: fondo chiaro, nero per il testo, GIALLO = unica azione primaria.
    Il gradiente magenta→arancio compare solo su live, notifiche e highlight.
    ============================================================ */
@@ -52,7 +52,7 @@
   --shadow: 0 1px 2px rgba(10,10,10,.04), 0 18px 48px -18px rgba(10,10,10,.22);
 
   --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-display: 'termina', 'Archivo', 'Inter', sans-serif;
+  --font-display: 'Archivo', 'Inter', sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
   --tabbar-h: 64px;
   --tap: 44px;
