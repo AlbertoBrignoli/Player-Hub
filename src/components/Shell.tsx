@@ -13,7 +13,7 @@ import { Modal, Field, Input, Tabs } from './ui'
 // Schermate home dei vari ruoli: qui compare l'invito ad attivare le notifiche.
 const HOME_ROUTES = ['dashboard', 'brandhome', 'agent-home', 'insurer-home', 'tax-home', 'physio-home']
 
-export const APP_VERSION = 'v5.8'
+export const APP_VERSION = 'v5.9'
 
 export interface NavDef {
   key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[]
@@ -32,7 +32,7 @@ export const NAV: { group: string; items: NavDef[] }[] = [
       { key: 'tasks', label: 'Task' },
     ]},
     { key: 'media', label: 'Media', icon: 'image' },
-    { key: 'messages', label: 'Messaggi', icon: 'message' },
+    { key: 'services', label: 'Servizi AUVI', icon: 'layers' },
     { key: 'performance', label: 'Atleta', icon: 'activity', tabs: [
       { key: 'performance', label: 'Performance' },
       { key: 'fitness', label: 'Preparazione' },
@@ -46,8 +46,8 @@ export const NAV: { group: string; items: NavDef[] }[] = [
     ]},
   ]},
   { group: 'Altro', items: [
-    { key: 'services', label: 'Servizi AUVI', icon: 'layers' },
     { key: 'my-team', label: 'Il mio team', icon: 'users' },
+    { key: 'messages', label: 'Chat', icon: 'message' },
     { key: 'access-requests', label: 'Collegamenti', icon: 'key' },
   ]},
 ]
@@ -323,7 +323,7 @@ export default function Shell({ route, setRoute, right, children }: {
               { key: 'dashboard', label: 'Home', icon: 'home' },
               { key: 'editorial', label: 'Calendario', icon: 'calendar' },
               { key: 'media', label: 'Media', icon: 'image' },
-              { key: 'messages', label: 'Chat', icon: 'message' },
+              { key: 'services', label: 'Servizi', icon: 'layers' },
             ])
   const tabbarKeys = new Set(tabbarItems.map(t => t.key))
   const title = hub && hubTabs.length > 1 ? { t: hub.label, s: title0.s } : title0

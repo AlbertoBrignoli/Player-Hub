@@ -1091,4 +1091,5 @@ const EN: Record<string, string> = {
   'Formazione': 'Education',
   'Licenza / albo': 'Licence',
   'Fondata': 'Founded',
+  'Servizi': 'Services',
 }
