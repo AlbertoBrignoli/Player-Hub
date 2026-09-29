@@ -181,10 +181,10 @@ function CalendarView({ rows, canEdit, onEdit, onDel, canConfirm, onConfirm, got
       <div style={{ ...sectionLabel, marginTop: 4 }}>{tr('Prossimi impegni')}</div>
       {next3.length === 0
         ? <div className="faint" style={{ padding: '4px 6px 8px' }}>{tr('Nessun impegno in programma.')}</div>
-        : <div className="ev-list">{next3.map(card)}</div>}
+        : <div className="ev-list ev-list-compact">{next3.map(e => <EvRow key={e.id} e={e} onOpen={() => setSel(new Date(e.start_at))} />)}</div>}
 
-      <div className="card" style={{ padding: 16 }}>
-        <div className="flex between" style={{ alignItems: 'center', marginBottom: 12 }}>
+      <div className="card" style={{ padding: 12 }}>
+        <div className="flex between" style={{ alignItems: 'center', marginBottom: 8 }}>
           <button className="btn btn-sm" onClick={prev}>‹</button>
           <div style={{ fontWeight: 700 }}>{tr(MONTHS[cur.m])} {cur.y}</div>
           <button className="btn btn-sm" onClick={next}>›</button>
@@ -199,7 +199,7 @@ function CalendarView({ rows, canEdit, onEdit, onDel, canConfirm, onConfirm, got
             const isSel = sel && dayKey(sel) === k
             return (
               <div key={i} onClick={() => setSel(d)}
-                style={{ minHeight: 48, borderRadius: 10, cursor: 'pointer', border: isSel ? '1.5px solid var(--ink)' : isToday ? '1px solid var(--accent)' : '1px solid var(--border)', background: isSel ? 'var(--yellow-soft)' : isToday ? 'rgba(255,236,0,.10)' : 'transparent', padding: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                style={{ minHeight: 36, borderRadius: 10, cursor: 'pointer', border: isSel ? '1.5px solid var(--ink)' : isToday ? '1px solid var(--accent)' : '1px solid var(--border)', background: isSel ? 'var(--yellow-soft)' : isToday ? 'rgba(255,236,0,.10)' : 'transparent', padding: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
                 <span style={{ fontSize: 12.5, fontWeight: isToday ? 800 : 500 }}>{d.getDate()}</span>
                 <span className="flex" style={{ gap: 2 }}>
                   {evs.slice(0, 4).map((e, j) => <span key={j} style={{ width: 5, height: 5, borderRadius: '50%', background: typeOf(e.type).c }} />)}
@@ -226,6 +226,24 @@ function CalendarView({ rows, canEdit, onEdit, onDel, canConfirm, onConfirm, got
         </>
       )}
     </>
+  )
+}
+
+// Stessa scheda dell'impegno in formato riga: tipo, titolo, giorno e ora.
+// Un tocco seleziona quel giorno nel calendario, dove compare la scheda completa.
+function EvRow({ e, onOpen }: { e: EventItem; onOpen: () => void }) {
+  const { t: tr } = useLang()
+  const t = typeOf(e.type)
+  const d = new Date(e.start_at)
+  const day = d.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' })
+  const time = d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
+  return (
+    <button className="card ev-row" onClick={onOpen} style={{ borderLeft: `3px solid ${t.c}` }}>
+      <span className="ev-row-ic" style={{ background: t.c + '22', color: t.c }}><Icon name={t.icon} size={14} /></span>
+      <span className="ev-row-t">{e.title}</span>
+      <span className="ev-row-when">{day} · <b>{time}</b></span>
+      {e.request_status === 'da_confermare' && <span className="ev-row-dot" title={tr('Da confermare')} />}
+    </button>
   )
 }
 

@@ -696,3 +696,15 @@ p { text-wrap: pretty; }
 .ev-ic:hover { background: var(--surface-2); color: var(--text); }
 .ev-ic-danger:hover { background: rgba(229,63,0,.08); color: var(--red); }
 @media (pointer: coarse) { .ev-ic { width: 40px; height: 40px; } }
+/* Prossimi impegni in formato riga (Calendario > Impegni) */
+.ev-list-compact { gap: 6px; margin-bottom: 10px; }
+.ev-row { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 8px 12px; min-height: 44px; border-radius: 12px; cursor: pointer; }
+.ev-row-ic { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; flex-shrink: 0; }
+.ev-row-t { flex: 1; min-width: 0; font-weight: 650; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ev-row-when { flex-shrink: 0; font-size: 12px; color: var(--text-dim); font-variant-numeric: tabular-nums; }
+.ev-row-when b { color: var(--text); font-weight: 700; }
+.ev-row-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--gold); flex-shrink: 0; }
+@media (max-width: 880px) {
+  /* titolo pagina: usa lo spazio libero della barra (niente "CALENDA…") */
+  .topbar .page-title { max-width: calc(100vw - 190px); }
+}
