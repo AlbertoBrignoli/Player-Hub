@@ -708,3 +708,17 @@ p { text-wrap: pretty; }
   /* titolo pagina: usa lo spazio libero della barra (niente "CALENDA…") */
   .topbar .page-title { max-width: calc(100vw - 190px); }
 }
+
+/* Profilo referente (Home > I tuoi referenti) */
+.ref-prof-head { display: flex; align-items: center; gap: 14px; }
+.ref-prof-av { width: 72px; height: 72px; border-radius: 20px; object-fit: cover; flex-shrink: 0; background: var(--bg-2); }
+.ref-prof-ini { display: grid; place-items: center; background: var(--yellow); color: var(--ink); font-weight: 800; font-size: 22px; }
+.ref-prof-name { font-family: var(--font-display); font-stretch: 125%; font-weight: 700; font-size: 20px; text-transform: uppercase; line-height: 1.1; }
+.ref-prof-role { font-size: 13px; color: var(--text-dim); margin-top: 3px; }
+.ref-prof-org { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 13px; font-weight: 600; }
+.ref-prof-org img { height: 22px; max-width: 80px; object-fit: contain; }
+.ref-prof-facts { margin: 16px 0 0; display: grid; gap: 10px; }
+.ref-prof-facts > div { display: grid; grid-template-columns: 120px 1fr; gap: 10px; font-size: 13px; }
+.ref-prof-facts dt { color: var(--text-faint); }
+.ref-prof-facts dd { margin: 0; font-weight: 500; white-space: pre-line; }
+.ref-prof-bio { margin-top: 16px; font-size: 13.5px; line-height: 1.55; color: var(--text-dim); white-space: pre-line; }
