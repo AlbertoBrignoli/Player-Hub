@@ -37,6 +37,17 @@ export default function Login() {
   // Telefono: di base il video è a tutto schermo con una barra compatta;
   // il modulo si apre solo quando si tocca Accedi / Registrati.
   const [sheetOpen, setSheetOpen] = useState(false)
+  // sfondo nero sotto il login: sull'iPhone installato niente bordi chiari in alto/in basso
+  useEffect(() => {
+    document.documentElement.classList.add('is-login')
+    const meta = document.querySelector('meta[name="theme-color"]')
+    const prev = meta?.getAttribute('content')
+    meta?.setAttribute('content', '#000000')
+    return () => {
+      document.documentElement.classList.remove('is-login')
+      if (meta && prev) meta.setAttribute('content', prev)
+    }
+  }, [])
   const videoRef = useRef<HTMLVideoElement | null>(null)
 
   // autoplay: muted va forzato sul nodo prima di play() (altrimenti Safari blocca)
