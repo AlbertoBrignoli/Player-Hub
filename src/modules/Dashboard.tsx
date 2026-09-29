@@ -43,12 +43,19 @@ button.home-card:active, .home-qa:active, .home-contact:active { transform: scal
 .home-id-role { font-size: 12.5px; color: var(--text-dim); margin-top: 3px; }
 
 /* 2 azioni rapide */
-.home-qas { display: grid; gap: 8px; max-width: 440px; }
+.home-qas { display: grid; gap: 8px; }
 .home-qa { display: flex; flex-direction: column; align-items: center; gap: 7px; min-height: 44px; padding: 2px 0; background: none; border: none; cursor: pointer; transition: transform .12s; }
 .home-qa-ic { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; background: var(--surface); border: 1px solid var(--border); color: var(--text); transition: border-color .15s, background .15s; }
 .home-qa:hover .home-qa-ic { border-color: var(--border-2); }
 .home-qa.primary .home-qa-ic { background: var(--yellow); border-color: var(--yellow); color: var(--ink); }
 .home-qa-l { font-size: 12px; font-weight: 600; color: var(--text); }
+.home-qa-ic { position: relative; }
+.home-qa.primary .home-qa-ic { box-shadow: 0 6px 18px -8px rgba(10,10,10,.35); }
+.home-qa-badge { position: absolute; top: -4px; right: -8px; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; background: var(--grad); color: #fff; font-size: 11px; font-weight: 800; display: grid; place-items: center; border: 2px solid var(--bg); font-variant-numeric: tabular-nums; }
+.home-score-content { display: flex; align-items: center; gap: 10px; margin-top: 14px; padding: 10px 12px; border-radius: 14px; background: rgba(255,255,255,.1); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); text-align: left; }
+.home-score-content img, .home-score-content-ic { width: 38px; height: 38px; border-radius: 10px; object-fit: cover; flex-shrink: 0; display: grid; place-items: center; background: rgba(255,255,255,.12); }
+.home-score-content-k { font-size: 10.5px; color: rgba(255,255,255,.7); font-weight: 600; letter-spacing: .3px; }
+.home-score-content-st { color: var(--yellow); }
 
 /* 3 da fare ora */
 .home-todo { display: flex; flex-direction: column; gap: 10px; }
@@ -142,12 +149,6 @@ function Team({ name, logo }: { name: string | null; logo: string | null }) {
   )
 }
 
-// Miniatura che compare solo a immagine caricata; se il caricamento fallisce sparisce.
-function Thumb({ src }: { src: string }) {
-  const [state, setState] = useState<'loading' | 'ok' | 'err'>('loading')
-  if (state === 'err') return null
-  return <img src={src} alt="" className={state === 'ok' ? 'ok' : ''} onLoad={() => setState('ok')} onError={() => setState('err')} />
-}
 
 export default function Dashboard({ goto }: { goto: (r: string) => void }) {
   const { profile, role, isTeam } = useAuth()
@@ -163,7 +164,6 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
   const [nextContent, setNextContent] = useState<EditorialEntry | null>(null)
   const [nextContentThumb, setNextContentThumb] = useState<string | null>(null)
   const [toApprove, setToApprove] = useState<MediaItem[]>([])
-  const [approveUrls, setApproveUrls] = useState<Record<string, string>>({})
   const [accessPending, setAccessPending] = useState(0)
   const [adding, setAdding] = useState<'event' | 'task' | null>(null)
   const isPlayer = role === 'player'
@@ -223,15 +223,6 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
           if (s?.signedUrl) setNextContentThumb(s.signedUrl)
         }
       }
-      const paths = photos.filter(x => isImageFile(x.file_name)).slice(0, 6).map(x => x.storage_path)
-      if (paths.length) {
-        const { data: signed } = await supabase.storage.from(BUCKET).createSignedUrls(paths, 3600)
-        if (signed) {
-          const next: Record<string, string> = {}
-          signed.forEach(d => { if (d.signedUrl && d.path) next[d.path] = d.signedUrl })
-          setApproveUrls(next)
-        }
-      }
     })()
   }, [athleteId, isPlayer])
 
@@ -277,82 +268,46 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
   )
 
   // ---- 2 azioni rapide (sostituiscono il "+" globale) ----
-  type QA = { key: string; label: string; icon: string; run: () => void }
+  type QA = { key: string; label: string; icon: string; run: () => void; badge?: number }
   const qas: QA[] = []
+  // Foto per prima: sostituisce la vecchia card "Foto da approvare" (stesso posto, meno spazio)
+  qas.push(isTeam
+    ? { key: 'media', label: t('Foto'), icon: 'image', run: () => goto(toApprove.length ? 'media?tab=approvare' : 'media?tab=approvate'), badge: toApprove.length }
+    : { key: 'media', label: t('Foto'), icon: 'image', run: () => goto('media?tab=approvare'), badge: toApprove.length })
   if (canEvent) qas.push({ key: 'event', label: t('Impegno'), icon: 'calendar', run: () => setAdding('event') })
   if (canTask) qas.push({ key: 'task', label: t('Task'), icon: 'check-square', run: () => setAdding('task') })
-  qas.push(isTeam
-    ? { key: 'media', label: t('Carica'), icon: 'upload', run: () => goto('media?tab=approvate') }
-    : { key: 'media', label: t('Foto'), icon: 'image', run: () => goto('media?tab=approvare') })
   qas.push({ key: 'chat', label: t('Chat'), icon: 'message', run: () => goto('messages') })
   const quick = (
-    <nav className="home-sec home-qas" aria-label={t('Azioni rapide')} style={{ gridTemplateColumns: `repeat(${Math.max(qas.length, 4)}, minmax(0, 1fr))` }}>
-      {qas.map((q, i) => (
-        <button key={q.key} className={`home-qa${i === 0 ? ' primary' : ''}`} onClick={q.run}>
-          <span className="home-qa-ic"><Icon name={q.icon} size={20} strokeWidth={1.7} /></span>
+    <nav className="home-sec home-qas" aria-label={t('Azioni rapide')} style={{ gridTemplateColumns: `repeat(${qas.length}, minmax(0, 1fr))` }}>
+      {qas.map(q => (
+        <button key={q.key} className={`home-qa${q.badge ? ' primary' : ''}`} onClick={q.run}
+          aria-label={q.badge ? `${q.label}: ${q.badge} ${t('da approvare')}` : q.label}>
+          <span className="home-qa-ic">
+            <Icon name={q.icon} size={21} strokeWidth={1.7} />
+            {!!q.badge && <span className="home-qa-badge">{q.badge > 99 ? '99+' : q.badge}</span>}
+          </span>
           <span className="home-qa-l">{q.label}</span>
         </button>
       ))}
     </nav>
   )
 
-  // ---- 3 da fare ora ----
-  const thumbs = toApprove.map(m => approveUrls[m.storage_path]).filter(Boolean).slice(0, 6)
-  const hasActions = toApprove.length > 0 || !!nextContent || accessPending > 0
-  const todo = (
+  // ---- 3 da fare ora: solo ciò che non ha già un posto in Home ----
+  // (foto → icona Foto delle azioni rapide; prossimo contenuto → tabellone partita)
+  const todo = accessPending > 0 ? (
     <section className="home-sec">
-      <div className="home-h">{t('Da fare ora')}</div>
-      {hasActions ? (
-        <div className="home-todo">
-          {toApprove.length > 0 && (
-            <button className="ed-action prio" onClick={() => goto('media?tab=approvare')}>
-              <div className="ed-action-num">{toApprove.length}</div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div className="ed-action-t">{t('Foto da approvare')}</div>
-                <div className="ed-action-s">{t('Selezioni in attesa del tuo ok')}</div>
-                {thumbs.length > 0 && <div className="home-thumbs">{thumbs.map(u => <Thumb key={u} src={u} />)}</div>}
-              </div>
-              <Icon name="chevron-right" size={18} style={{ color: 'var(--text-faint)', flexShrink: 0 }} />
-            </button>
-          )}
-          {accessPending > 0 && (
-            <button className="ed-action" onClick={() => goto('access-requests')}>
-              <div className="ed-action-num">{accessPending}</div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div className="ed-action-t">{t('Richieste di accesso')}</div>
-                <div className="ed-action-s">{t('Professionisti che chiedono di entrare nella tua area')}</div>
-              </div>
-              <Icon name="chevron-right" size={18} style={{ color: 'var(--text-faint)', flexShrink: 0 }} />
-            </button>
-          )}
-          {nextContent && (
-            <button className="ed-action" onClick={() => goto(`editorial?entry=${nextContent.id}`)}>
-              {nextContentThumb
-                ? <img className="ed-action-thumb" src={nextContentThumb} alt="" />
-                : <div className="ed-action-thumb" style={{ display: 'grid', placeItems: 'center', color: 'var(--text-faint)' }}><Icon name="image" size={18} strokeWidth={1.5} /></div>}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div className="faint" style={{ fontSize: 11.5 }}>{t('Prossimo contenuto')} · {fmtDate(nextContent.entry_date)}</div>
-                <div className="ed-action-t home-trunc" style={{ marginTop: 2 }}>{nextContent.title}</div>
-                <div className="flex gap wrap" style={{ gap: 6, marginTop: 6 }}>
-                  <span className={`ed-chip ${CHIP[nextContent.status]?.c || 'ed-chip-gold'}`}>{t(CHIP[nextContent.status]?.l || 'In lavorazione')}</span>
-                  {nextContent.copy_text && nextContent.status !== 'copy_pronto' && <span className="ed-chip ed-chip-blue">{t('Copy pronto')}</span>}
-                </div>
-              </div>
-              <Icon name="chevron-right" size={18} style={{ color: 'var(--text-faint)', flexShrink: 0 }} />
-            </button>
-          )}
-        </div>
-      ) : (
-        <div className="home-card home-calm">
-          <span className="home-calm-ic"><Icon name="check" size={16} /></span>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontWeight: 650, fontSize: 14 }}>{t('Tutto in ordine')}</div>
-            <div className="faint" style={{ fontSize: 12 }}>{t('Nessuna foto da approvare e nessun contenuto in coda.')}</div>
+      <div className="home-todo">
+        <button className="ed-action prio" onClick={() => goto('access-requests')}>
+          <div className="ed-action-num">{accessPending}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div className="ed-action-t">{t('Richieste di accesso')}</div>
+            <div className="ed-action-s">{t('Professionisti che chiedono di entrare nella tua area')}</div>
           </div>
-        </div>
-      )}
+          <Icon name="chevron-right" size={18} style={{ color: 'var(--text-faint)', flexShrink: 0 }} />
+        </button>
+      </div>
     </section>
-  )
+  ) : null
 
   // ---- 4 tabellone prossima partita ----
   let hero: ReactNode
@@ -364,7 +319,8 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
     const home = (nextMatch.venue || '').toLowerCase() === 'home'
     const lg = leagueLogo(nextMatch.league)
     hero = (
-      <button className="ed-hero home-score home-sec" onClick={() => goto('performance')} aria-label={`${t('Prossima partita')}: ${nextMatch.home_team} - ${nextMatch.away_team}`}>
+      <button className="ed-hero home-score home-sec" onClick={() => goto(nextContent ? `editorial?entry=${nextContent.id}` : 'performance')}
+        aria-label={`${t('Prossima partita')}: ${nextMatch.home_team} - ${nextMatch.away_team}${nextContent ? ` · ${t('Prossimo contenuto')}` : ''}`}>
         {player?.stadium_photo_url && <img className="ed-hero-img" src={player.stadium_photo_url} alt="" style={{ opacity: .38 }} />}
         <div className="ed-hero-scrim" style={{ background: 'linear-gradient(180deg, rgba(10,10,10,.55) 0%, rgba(10,10,10,.82) 100%)' }} />
         <div className="home-score-body">
@@ -383,6 +339,18 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
             {nextMatch.league && <span style={{ opacity: .45 }}>|</span>}
             <span style={{ flexShrink: 0 }}>{home ? t('In casa') : t('Trasferta')}</span>
           </div>
+          {nextContent && (
+            <div className="home-score-content">
+              {nextContentThumb
+                ? <img src={nextContentThumb} alt="" />
+                : <span className="home-score-content-ic"><Icon name="image" size={15} strokeWidth={1.6} /></span>}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="home-score-content-k home-trunc">{t('Contenuto')} · {fmtDate(nextContent.entry_date)} · <span className="home-score-content-st">{t(CHIP[nextContent.status]?.l || 'In lavorazione')}</span></div>
+                <div className="home-trunc" style={{ fontWeight: 650, fontSize: 13 }}>{nextContent.title}</div>
+              </div>
+              <Icon name="chevron-right" size={16} style={{ opacity: .7, flexShrink: 0 }} />
+            </div>
+          )}
         </div>
       </button>
     )

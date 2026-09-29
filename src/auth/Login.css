@@ -158,3 +158,56 @@
 .ph-login__panel .ph-login__link:hover, .ph-login__panel .ph-login__pwToggle:hover { color: #0A0A0A; text-decoration: underline; }
 .ph-login__tile { background: #0A0A0A; }
 .ph-login__tile img { filter: none; }
+
+/* ============================================================
+   v5.3 — video a tutto schermo: il video riempie sempre lo schermo,
+   il modulo di accesso galleggia sopra (card a destra su PC,
+   foglio dal basso su telefono).
+   ============================================================ */
+.ph-login { position: relative; display: block; min-height: 100vh; min-height: 100dvh; background: #000; }
+.ph-login__stage { position: fixed; inset: 0; min-height: 0; height: 100vh; height: 100dvh; }
+.ph-login__stageInner { min-height: 100vh; min-height: 100dvh; padding-right: calc(460px + 56px); }
+.ph-login__panel {
+  position: relative; z-index: 2; margin-left: auto;
+  width: min(440px, 100%); min-height: 100vh; min-height: 100dvh;
+  padding: 32px; background: transparent; border-left: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.ph-login__form {
+  background: #FFFFFF; border-radius: 28px; padding: 36px 32px 28px;
+  box-shadow: 0 30px 80px -20px rgba(0,0,0,.55);
+}
+@media (max-width: 900px) {
+  .ph-login__stageInner { padding: calc(20px + env(safe-area-inset-top)) 22px 0; min-height: 0; height: auto; justify-content: flex-start; gap: 22vh; }
+  .ph-login__reason, .ph-login__partners { display: none; }
+  .ph-login__claim { font-size: 40px; }
+  .ph-login__panel {
+    width: 100%; min-height: 100dvh; padding: 0;
+    align-items: flex-end;
+  }
+  .ph-login__form {
+    max-width: none; border-radius: 28px 28px 0 0;
+    padding: 26px 22px calc(26px + env(safe-area-inset-bottom));
+    max-height: 72dvh; overflow-y: auto;
+  }
+  .ph-login__tile { display: none; }
+  .ph-login__title { font-size: 24px; }
+  .ph-login__fields { margin-top: 22px; }
+  .ph-login__footer { margin-top: 20px; padding-top: 16px; }
+}
+@media (max-width: 900px) {
+  /* foglio più basso: il video resta protagonista */
+  .ph-login__footer { display: none; }
+  .ph-login__sub { margin-top: 4px; font-size: 13.5px; }
+  .ph-login__fields { gap: 12px; margin-top: 18px; }
+  .ph-login__form { padding-top: 22px; }
+  .ph-login__stageInner { gap: 0; height: calc(100dvh - 430px); justify-content: space-between; padding-bottom: 22px; }
+  .ph-login__claimBlock { margin-top: auto; }
+  .ph-login__kicker { margin-bottom: 10px; }
+}
+@media (max-width: 900px) {
+  .ph-login__stageInner { height: calc(100dvh - 400px); }
+  .ph-login__claim { font-size: 34px; }
+}
+@media (max-width: 900px) { .ph-login__stageInner { height: calc(100dvh - 476px); min-height: 150px; } }
+@media (max-width: 900px) and (max-height: 700px) { .ph-login__claimBlock { display: none; } }
