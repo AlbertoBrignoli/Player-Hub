@@ -7,14 +7,13 @@ import NotificationBell from './NotificationBell'
 import { useLang, LangToggle } from '../lib/i18n'
 import Toaster from './Toaster'
 import PushNudge from './PushNudge'
-import QuickAdd from './QuickAdd'
 import Icon from './Icon'
 import { Modal, Field, Input, Tabs } from './ui'
 
 // Schermate home dei vari ruoli: qui compare l'invito ad attivare le notifiche.
 const HOME_ROUTES = ['dashboard', 'brandhome', 'agent-home', 'insurer-home', 'tax-home', 'physio-home']
 
-export const APP_VERSION = 'v5.1'
+export const APP_VERSION = 'v5.2'
 
 export interface NavDef {
   key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[]
@@ -50,7 +49,6 @@ export const NAV: { group: string; items: NavDef[] }[] = [
     { key: 'services', label: 'Servizi AUVI', icon: 'layers' },
     { key: 'my-team', label: 'Il mio team', icon: 'users' },
     { key: 'access-requests', label: 'Collegamenti', icon: 'key' },
-    { key: 'settings', label: 'Impostazioni', icon: 'sliders' },
   ]},
 ]
 
@@ -167,7 +165,7 @@ export const PHYSIO_NAV: { group: string; items: NavDef[] }[] = [
 ]
 
 const TITLES: Record<string, { t: string; s: string }> = {
-  dashboard: { t: 'Dashboard', s: 'Quadro generale della gestione' },
+  dashboard: { t: 'Home', s: 'Quadro generale della gestione' },
   fitness: { t: 'Preparazione', s: 'AUVI Performance · preparazione atletica' },
   'coach-profile': { t: 'Profilo Preparatore', s: 'Il tuo profilo professionale' },
   profile: { t: 'Profilo', s: 'Spedizioni, equipaggiamento e contatti club' },
@@ -212,7 +210,6 @@ export default function Shell({ route, setRoute, right, children }: {
   const { t: tr } = useLang()
   const { athletes, athleteId, setAthleteId, canSwitch } = useAthlete()
   const [open, setOpen] = useState(false)
-  const [pwOpen, setPwOpen] = useState(false)
   const baseTitle = TITLES[route] || { t: '', s: '' }
   const athleteName = athletes.find(a => a.api_player_id === athleteId)?.name
   const title0 = route === 'mediakit' && athleteName
@@ -278,105 +275,9 @@ export default function Shell({ route, setRoute, right, children }: {
     setOpen(false)
   }
   const isActiveItem = (key: string) => hub?.key === key
-  const title = hub && hubTabs.length > 1 ? { t: hub.label, s: title0.s } : title0
 
-  return (
-    <div className="app">
-      <div className={`scrim ${open ? 'show' : ''}`} onClick={() => setOpen(false)} />
-      <aside className={`sidebar ${open ? 'open' : ''}`}
-        style={{ paddingBottom: 'calc(26px + env(safe-area-inset-bottom))' }}>
-        <div className="brand" style={{ flexShrink: 0, flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
-          <img className="brand-wordmark" src="/brand/auvi-wordmark.svg" alt="AUVI" />
-          <div className="brand-sub">Player Hub · {APP_VERSION}</div>
-        </div>
-        <nav className="nav"
-          style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}>
-          {nav.map(g => {
-            const items = g.items.filter(visibleItem)
-            if (!items.length) return null
-            return (
-              <React.Fragment key={g.group}>
-                <div className="nav-label">{tr(g.group)}</div>
-                {items.map(i => (
-                  <button key={i.key} className={`nav-item ${isActiveItem(i.key) ? 'active' : ''}`}
-                    onClick={() => openItem(i)}>
-                    <span className="nav-ico"><Icon name={i.icon} size={17} /></span>{tr(i.label)}
-                  </button>
-                ))}
-              </React.Fragment>
-            )
-          })}
-        </nav>
-        <div className="sidebar-foot" style={{ flexShrink: 0 }}>
-          <div className="user-chip">
-            <div className="avatar">{initials(agentName || profile?.full_name || profile?.email)}</div>
-            <div className="user-meta">
-              <div className="user-name">{agentName || profile?.full_name || profile?.email}</div>
-              <div className="user-role">{role === 'admin' ? 'AUVI · Advisor' : role === 'creator' ? 'Team · Creator' : role === 'preparatore' ? 'Preparatore Atletico' : role === 'brand' ? 'Brand · Partner' : role === 'agente' ? 'Procuratore' : role === 'assicuratore' ? 'Assicuratore' : role === 'commercialista' ? 'Commercialista' : role === 'fisioterapista' ? 'Fisioterapista' : 'Giocatore'}</div>
-            </div>
-            <button className="btn-ghost" style={{ marginLeft: 'auto', padding: 6, color: 'var(--text-dim)' }} title="Imposta password" onClick={() => setPwOpen(true)}><Icon name="key" size={16} /></button>
-          </div>
-          {myRoles.length > 1 && (
-            <div style={{ marginTop: 10 }}>
-              <div style={{ fontSize: 10, letterSpacing: 1.2, textTransform: 'uppercase', fontWeight: 800, color: 'var(--text-dim)', marginBottom: 5 }}>
-                Cambia profilo
-              </div>
-              <select className="input" style={{ width: '100%', fontSize: 13 }}
-                value={role || ''} onChange={e => switchRole(e.target.value)}>
-                {myRoles.map(r => (
-                  <option key={r.role} value={r.role}>{r.label || r.role}</option>
-                ))}
-              </select>
-            </div>
-          )}
-          <div className="drawer-lang" style={{ marginTop: 10 }}><LangToggle /></div>
-          <button className="btn" style={{ width: '100%', marginTop: 8, justifyContent: 'center' }} onClick={signOut}>
-            <Icon name="logout" size={15} /> Esci
-          </button>
-        </div>
-      </aside>
-
-      <div className="main">
-        <div className="topbar">
-          <div className="flex gap">
-            <button className="menu-btn" onClick={() => setOpen(true)} aria-label="Menu"><Icon name="menu" size={17} /></button>
-            <div>
-              <div className="page-title">{tr(title.t)}</div>
-              <div className="page-sub">{tr(title.s)}</div>
-            </div>
-          </div>
-          <div className="flex gap" style={{ alignItems: 'center' }}>
-            {canSwitch && (
-              <select
-                aria-label="Atleta gestito"
-                title="Atleta gestito"
-                value={athleteId ?? ''}
-                onChange={e => setAthleteId(Number(e.target.value))}
-                className="select athlete-select"
-              >
-                {athletes.map(a => (
-                  <option key={a.api_player_id} value={a.api_player_id}>{a.name || `#${a.api_player_id}`}</option>
-                ))}
-              </select>
-            )}
-            <span className="topbar-lang"><LangToggle /></span>
-            {right}{!isBrand && <QuickAdd />}<NotificationBell goto={setRoute} />
-          </div>
-        </div>
-        <div className="content">
-          {HOME_ROUTES.includes(route) && <PushNudge />}
-          {hub && hubTabs.length > 1 && (
-            <div className="hub-tabs">
-              <Tabs tabs={hubTabs.map(t => ({ key: t.key, label: tr(t.label) }))} value={route} onChange={k => setRoute(k)} />
-            </div>
-          )}
-          {children}
-        </div>
-      </div>
-
-      {/* Tab bar mobile (iOS): pollice, zero frizioni. "Altro" apre il drawer completo. */}
-      <nav className="tabbar">
-        {(isBrand
+  // Voci della barra in basso (telefono). Nel menu "Altro" su telefono non si ripetono.
+  const tabbarItems: { key: string; label: string; icon: string }[] = (isBrand
           ? [
               { key: 'brandhome', label: 'Home', icon: 'grid' },
               { key: 'mediakit', label: 'Numeri', icon: 'activity' },
@@ -423,7 +324,109 @@ export default function Shell({ route, setRoute, right, children }: {
               { key: 'editorial', label: 'Calendario', icon: 'calendar' },
               { key: 'media', label: 'Media', icon: 'image' },
               { key: 'messages', label: 'Chat', icon: 'message' },
-            ]).map(t => (
+            ])
+  const tabbarKeys = new Set(tabbarItems.map(t => t.key))
+  const title = hub && hubTabs.length > 1 ? { t: hub.label, s: title0.s } : title0
+
+  return (
+    <div className="app">
+      <div className={`scrim ${open ? 'show' : ''}`} onClick={() => setOpen(false)} />
+      <aside className={`sidebar ${open ? 'open' : ''}`}
+        style={{ paddingBottom: 'calc(26px + env(safe-area-inset-bottom))' }}>
+        <div className="brand" style={{ flexShrink: 0, flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
+          <img className="brand-wordmark" src="/brand/auvi-wordmark.svg" alt="AUVI" />
+          <div className="brand-sub">Player Hub · {APP_VERSION}</div>
+        </div>
+        <nav className="nav"
+          style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}>
+          {nav.map(g => {
+            const items = g.items.filter(visibleItem)
+            if (!items.length) return null
+            return (
+              <React.Fragment key={g.group}>
+                <div className="nav-label">{tr(g.group)}</div>
+                {items.map(i => (
+                  <button key={i.key} className={`nav-item ${isActiveItem(i.key) ? 'active' : ''} ${tabbarKeys.has(i.key) ? 'in-tabbar' : ''}`}
+                    onClick={() => openItem(i)}>
+                    <span className="nav-ico"><Icon name={i.icon} size={17} /></span>{tr(i.label)}
+                  </button>
+                ))}
+              </React.Fragment>
+            )
+          })}
+        </nav>
+        <div className="sidebar-foot" style={{ flexShrink: 0 }}>
+          <button className={`user-chip ${route === 'settings' ? 'active' : ''}`} onClick={() => { setRoute('settings'); setOpen(false) }}
+            title="Impostazioni: password, calendario sul telefono, notifiche" style={{ width: '100%', textAlign: 'left' }}>
+            <div className="avatar">{initials(agentName || profile?.full_name || profile?.email)}</div>
+            <div className="user-meta">
+              <div className="user-name">{agentName || profile?.full_name || profile?.email}</div>
+              <div className="user-role">{role === 'admin' ? 'AUVI · Advisor' : role === 'creator' ? 'Team · Creator' : role === 'preparatore' ? 'Preparatore Atletico' : role === 'brand' ? 'Brand · Partner' : role === 'agente' ? 'Procuratore' : role === 'assicuratore' ? 'Assicuratore' : role === 'commercialista' ? 'Commercialista' : role === 'fisioterapista' ? 'Fisioterapista' : 'Giocatore'}</div>
+            </div>
+            <span style={{ marginLeft: 'auto', color: 'var(--text-faint)', display: 'grid' }}><Icon name="sliders" size={16} /></span>
+          </button>
+          {myRoles.length > 1 && (
+            <div style={{ marginTop: 10 }}>
+              <div style={{ fontSize: 10, letterSpacing: 1.2, textTransform: 'uppercase', fontWeight: 800, color: 'var(--text-dim)', marginBottom: 5 }}>
+                Cambia profilo
+              </div>
+              <select className="input" style={{ width: '100%', fontSize: 13 }}
+                value={role || ''} onChange={e => switchRole(e.target.value)}>
+                {myRoles.map(r => (
+                  <option key={r.role} value={r.role}>{r.label || r.role}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          <div className="drawer-lang" style={{ marginTop: 10 }}><LangToggle /></div>
+          <button className="btn" style={{ width: '100%', marginTop: 8, justifyContent: 'center' }} onClick={signOut}>
+            <Icon name="logout" size={15} /> Esci
+          </button>
+        </div>
+      </aside>
+
+      <div className="main">
+        <div className="topbar">
+          <div className="flex gap">
+            <button className="menu-btn" onClick={() => setOpen(true)} aria-label="Menu"><Icon name="menu" size={17} /></button>
+            <div>
+              {HOME_ROUTES.includes(route) && <img className="topbar-wordmark" src="/brand/auvi-wordmark.svg" alt="AUVI" />}
+              <div className={`page-title ${HOME_ROUTES.includes(route) ? 'desktop-only' : ''}`}>{tr(title.t)}</div>
+              <div className="page-sub">{tr(title.s)}</div>
+            </div>
+          </div>
+          <div className="flex gap" style={{ alignItems: 'center' }}>
+            {canSwitch && (
+              <select
+                aria-label="Atleta gestito"
+                title="Atleta gestito"
+                value={athleteId ?? ''}
+                onChange={e => setAthleteId(Number(e.target.value))}
+                className="select athlete-select"
+              >
+                {athletes.map(a => (
+                  <option key={a.api_player_id} value={a.api_player_id}>{a.name || `#${a.api_player_id}`}</option>
+                ))}
+              </select>
+            )}
+            <span className="topbar-lang"><LangToggle /></span>
+            {right}<NotificationBell goto={setRoute} />
+          </div>
+        </div>
+        <div className="content">
+          {HOME_ROUTES.includes(route) && <PushNudge />}
+          {hub && hubTabs.length > 1 && (
+            <div className="hub-tabs">
+              <Tabs tabs={hubTabs.map(t => ({ key: t.key, label: tr(t.label) }))} value={route} onChange={k => setRoute(k)} />
+            </div>
+          )}
+          {children}
+        </div>
+      </div>
+
+      {/* Tab bar mobile (iOS): pollice, zero frizioni. "Altro" apre il drawer completo. */}
+      <nav className="tabbar">
+        {tabbarItems.map(t => (
           <button key={t.key} className={`tab-item ${!open && (route === t.key || isActiveItem(t.key)) ? 'active' : ''}`}
             onClick={() => { const it = allItems.find(i => i.key === t.key); if (it) openItem(it); else { setRoute(t.key); setOpen(false) } }}>
             <span className="tab-ico"><Icon name={t.icon} size={21} strokeWidth={1.7} /></span>
@@ -436,39 +439,7 @@ export default function Shell({ route, setRoute, right, children }: {
         </button>
       </nav>
 
-      {pwOpen && <PasswordModal onClose={() => setPwOpen(false)} />}
       <Toaster />
     </div>
-  )
-}
-
-function PasswordModal({ onClose }: { onClose: () => void }) {
-  const [pw, setPw] = useState('')
-  const [pw2, setPw2] = useState('')
-  const [busy, setBusy] = useState(false)
-  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
-
-  async function save() {
-    if (pw.length < 8) { setMsg({ ok: false, text: 'Minimo 8 caratteri.' }); return }
-    if (pw !== pw2) { setMsg({ ok: false, text: 'Le due password non coincidono.' }); return }
-    setBusy(true); setMsg(null)
-    const { error } = await supabase.auth.updateUser({ password: pw })
-    setBusy(false)
-    if (error) setMsg({ ok: false, text: error.message })
-    else setMsg({ ok: true, text: 'Password impostata! Dal prossimo accesso entri con email e password.' })
-  }
-
-  return (
-    <Modal title="Imposta la tua password" onClose={onClose}
-      footer={<><button className="btn" onClick={onClose}>Chiudi</button><button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? 'Salvo…' : 'Salva password'}</button></>}>
-      <div className="grid" style={{ gap: 12 }}>
-        <div className="faint" style={{ fontSize: 12.5 }}>
-          Con la password entri direttamente da email + password, senza aspettare il link via email.
-        </div>
-        <Field label="Nuova password"><Input type="password" value={pw} onChange={e => setPw(e.target.value)} placeholder="Minimo 8 caratteri" autoFocus /></Field>
-        <Field label="Ripeti password"><Input type="password" value={pw2} onChange={e => setPw2(e.target.value)} /></Field>
-        {msg && <div className={msg.ok ? 'msg-ok' : 'msg-err'}>{msg.text}</div>}
-      </div>
-    </Modal>
   )
 }

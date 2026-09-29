@@ -669,3 +669,20 @@ p { text-wrap: pretty; }
   .athlete-select { max-width: 112px; padding-left: 10px; padding-right: 26px; font-size: 12.5px; }
   .bell { width: 38px; height: 38px; }
 }
+
+/* Menu "Altro" su telefono: niente doppioni delle voci già nella barra in basso */
+@media (max-width: 880px) { .nav-item.in-tabbar { display: none; } }
+/* Chip utente = ingresso alle Impostazioni */
+.user-chip { transition: background .15s; }
+.user-chip:hover, .user-chip.active { background: var(--surface-2); }
+/* In Home la barra in alto mostra il logo AUVI (su telefono) invece del titolo */
+.topbar-wordmark { height: 20px; width: auto; display: block; }
+@media (min-width: 881px) { .topbar-wordmark { display: none; } .topbar-wordmark + .page-sub { margin-top: 0; } }
+@media (max-width: 880px) {
+  /* banner notifiche compatto su telefono: titolo + pulsante, testo di supporto più corto */
+  .nudge { padding: 12px 12px 12px 14px; gap: 12px; }
+  .nudge-ico { width: 34px; height: 34px; border-radius: 10px; }
+  .nudge-t { font-size: 13.5px; }
+  .nudge-s { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 11.5px; }
+}
+@media (max-width: 880px) { .desktop-only { display: none !important; } }

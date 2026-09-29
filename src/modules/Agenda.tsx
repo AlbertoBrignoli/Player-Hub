@@ -9,7 +9,6 @@ import { Modal, Field, Input, Textarea, Select, Empty, Spinner, Tabs } from '../
 import Icon from '../components/Icon'
 import LuogoAutocomplete from '../components/LuogoAutocomplete'
 import type { EventItem, EventAttachment } from '../lib/types'
-import CalendarSync from '../components/CalendarSync'
 import { downloadIcs, mapsUrl } from '../lib/ics'
 
 const DOC_BUCKET = 'crm-documents'
@@ -92,7 +91,10 @@ export default function Agenda({ goto }: { goto?: (r: string) => void }) {
         ? <ListView rows={rows} {...shared} />
         : <CalendarView rows={rows} {...shared} />}
 
-      <div style={{ marginTop: 16 }}><CalendarSync /></div>
+      {/* la scheda completa sta in Impostazioni: qui solo un rimando di una riga */}
+      <button className="ed-more" style={{ marginTop: 12, display: 'inline-flex', alignItems: 'center', gap: 6 }} onClick={() => goto?.('settings')}>
+        <Icon name="smartphone" size={14} /> {tr("Vedi l'agenda nel calendario del telefono")} →
+      </button>
 
       {edit && <EventForm value={edit} isAdmin={isAdmin} uid={uid} athleteId={athleteId} onClose={() => setEdit(null)} onSaved={() => { setEdit(null); reload() }} />}
     </div>

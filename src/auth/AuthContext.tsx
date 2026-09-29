@@ -31,17 +31,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let mounted = true
-    supabase.auth.getSession().then(async ({ data }) => {
-      if (!mounted) return
-      setSession(data.session)
-      if (data.session) await loadProfile(data.session.user.id)
-      setLoading(false)
-    })
-    const { data: sub } = supabase.auth.onAuthStateChange(async (_e, s) => {
+    supabase.auth.getSession()
+      .then(async ({ data }) => {
+        if (!mounted) return
+        setSession(data.session)
+        if (data.session) await loadProfile(data.session.user.id)
+      })
+      .catch(() => { /* rete assente: si mostra il login invece di restare in caricamento */ })
+      .finally(() => { if (mounted) setLoading(false) })
+    // Dentro questo callback supabase-js tiene un lock: chiamare di nuovo Supabase
+    // in attesa (await) può bloccare tutto e lasciare l'app sullo spinner.
+    // Il profilo si carica quindi fuori dal callback (setTimeout 0).
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
       setSession(s)
-      if (s) await loadProfile(s.user.id)
-      else setProfile(null)
-      setLoading(false)
+      if (!s) { setProfile(null); setLoading(false); return }
+      setTimeout(() => {
+        loadProfile(s.user.id).catch(() => {}).finally(() => { if (mounted) setLoading(false) })
+      }, 0)
     })
     return () => { mounted = false; sub.subscription.unsubscribe() }
   }, [])

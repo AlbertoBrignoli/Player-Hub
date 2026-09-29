@@ -18,7 +18,7 @@ const roleLabel = (r?: string | null) =>
 export default function Messages() {
   const { t: tr } = useLang()
   const { session, profile, isAdmin, role } = useAuth()
-  const { athleteId, athletes, setAthleteId } = useAthlete()
+  const { athleteId, athletes } = useAthlete()
   const [rows, setRows] = useState<Message[]>([])
   const [brands, setBrands] = useState<BrandLite[]>([])
   const [coachName, setCoachName] = useState<string | null>(null)
@@ -207,19 +207,10 @@ export default function Messages() {
               <div style={{ fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', fontWeight: 800, color: 'var(--text-dim)' }}>
                 Stai scrivendo a
               </div>
-              {athletes.length > 1 ? (
-                <select value={athleteId ?? ''} onChange={e => setAthleteId(Number(e.target.value))}
-                  style={{ fontSize: 18, fontWeight: 900, letterSpacing: -0.2, lineHeight: 1.2,
-                    background: 'transparent', border: 'none', color: 'var(--text)', cursor: 'pointer',
-                    padding: 0, maxWidth: '100%', appearance: 'auto' }}>
-                  {!athleteId && <option value="">{tr(tr('Scegli un giocatore…'))}</option>}
-                  {athletes.map(a => <option key={a.api_player_id} value={a.api_player_id}>{a.name}</option>)}
-                </select>
-              ) : (
-                <div style={{ fontSize: 18, fontWeight: 900, letterSpacing: -0.2, lineHeight: 1.2 }}>
-                  {athlete?.name || tr('Nessun atleta selezionato')}
-                </div>
-              )}
+              {/* l'atleta si sceglie una volta sola, dal selettore in alto */}
+              <div style={{ fontSize: 18, fontWeight: 900, letterSpacing: -0.2, lineHeight: 1.2 }}>
+                {athlete?.name || tr('Nessun atleta selezionato')}
+              </div>
               <div className="faint" style={{ fontSize: 11.5, marginTop: 1 }}>
                 {active?.label} · conversazione riservata
               </div>

@@ -17,13 +17,27 @@ function defaultStart() {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`
 }
 
-export default function QuickAdd() {
-  const { isAdmin, role, session } = useAuth()
+// Chi può creare cosa (usato anche dalla Home per decidere quali azioni rapide mostrare)
+export function useQuickAddPermissions() {
+  const { isAdmin, role } = useAuth()
+  return { canEvent: isAdmin || role === 'player', canTask: isAdmin }
+}
+
+// Finestra "Aggiungi" aperta da fuori (es. le azioni rapide della Home).
+export function QuickAddModal({ initialKind, onClose }: { initialKind: 'event' | 'task'; onClose: () => void }) {
+  return <QuickAdd controlled initialKind={initialKind} onClose={onClose} />
+}
+
+export default function QuickAdd({ controlled, initialKind, onClose }: {
+  controlled?: boolean; initialKind?: 'event' | 'task'; onClose?: () => void
+} = {}) {
+  const { session } = useAuth()
   const { athleteId } = useAthlete()
-  const canEvent = isAdmin || role === 'player'
-  const canTask = isAdmin
-  const [open, setOpen] = useState(false)
-  const [kind, setKind] = useState<'event' | 'task'>(canEvent ? 'event' : 'task')
+  const { canEvent, canTask } = useQuickAddPermissions()
+  const [openState, setOpenState] = useState(false)
+  const open = controlled ? true : openState
+  const setOpen = (v: boolean) => { if (controlled) { if (!v) onClose?.() } else setOpenState(v) }
+  const [kind, setKind] = useState<'event' | 'task'>(initialKind ?? (canEvent ? 'event' : 'task'))
   const [title, setTitle] = useState('')
   const [start, setStart] = useState(defaultStart)
   const [location, setLocation] = useState('')
@@ -56,9 +70,11 @@ export default function QuickAdd() {
 
   return (
     <>
-      <button className="bell" onClick={() => setOpen(true)} aria-label="Aggiungi" title="Aggiungi impegno o task">
-        <Icon name="plus" size={18} />
-      </button>
+      {!controlled && (
+        <button className="bell" onClick={() => setOpen(true)} aria-label="Aggiungi" title="Aggiungi impegno o task">
+          <Icon name="plus" size={18} />
+        </button>
+      )}
       {open && (
         <Modal title="Aggiungi" onClose={() => setOpen(false)}
           footer={<><button className="btn" onClick={() => setOpen(false)}>Annulla</button>

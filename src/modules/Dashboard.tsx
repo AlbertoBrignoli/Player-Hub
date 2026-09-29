@@ -1,13 +1,13 @@
 import { teamLogo, leagueLogo } from '../lib/logos'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../auth/AuthContext'
 import { useAthlete } from '../lib/athlete'
 import { useLang } from '../lib/i18n'
 import { Spinner } from '../components/ui'
 import Icon from '../components/Icon'
-import ReferentiCard from '../components/ReferentiCard'
-import { useIsMobile } from '../lib/useIsMobile'
+import { QuickAddModal, useQuickAddPermissions } from '../components/QuickAdd'
+import HomeContacts from './home/HomeContacts'
 import { fmtDate, fmtMatchTime, daysUntil, isImageFile } from '../lib/format'
 import type { Player, EventItem, Contract, Match, StatsMatch, EditorialEntry, MediaItem } from '../lib/types'
 
@@ -18,65 +18,142 @@ const CHIP: Record<string, { l: string; c: string }> = {
   grafica_caricata: { l: 'Grafica', c: 'ed-chip-gold' },
   pronto: { l: 'Pronto', c: 'ed-chip-green' },
 }
-const MESI = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre']
 
-// Layout Home: una sola struttura.
-// Desktop (>880px): 2 colonne, principale (identità, prossima partita, da fare) + laterale (impegni, stagione, ultima partita).
-// Telefono: colonna unica; le due colonne diventano "display: contents" e l'ordine lo decide `order`.
+// Home = pagina di punta, pensata prima per il telefono (375px).
+// Ordine: 1 identità, 2 azioni rapide, 3 da fare ora, 4 prossima partita,
+// 5 prossimi giorni, 6 stagione + ultima partita, 7 referenti.
+// Desktop (>880px): colonna sinistra 1-4, destra 5-7. Stesso DOM, nessun `order`.
 const HOME_CSS = `
-.home { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 22px; align-items: start; }
-.home-col { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
-.home-sec { min-width: 0; }
-.home-agenda-row { width: 100%; display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: none; border: none; text-align: left; cursor: pointer; }
-.home-agenda-row + .home-agenda-row { border-top: 1px solid var(--border); }
-.home-agenda-row:hover { background: var(--bg-2); }
-.home-agenda-date { width: 42px; flex-shrink: 0; text-align: center; border-radius: 10px; background: var(--bg-2); padding: 5px 0; }
-.home-agenda-date .d { font-weight: 700; font-size: 16px; line-height: 1; color: var(--text); }
-.home-agenda-date .m { font-weight: 600; font-size: 9.5px; letter-spacing: .8px; text-transform: uppercase; color: var(--text-faint); margin-top: 2px; }
-.home-list { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
-.home-trunc { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.home-thumbs { display: flex; gap: 4px; margin-top: 7px; }
-.home-thumbs img, .home-thumbs span { width: 26px; height: 26px; border-radius: 7px; object-fit: cover; background: var(--bg-2); display: block; }
-.home-calm { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 18px 16px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-.home-calm-ic { width: 46px; height: 46px; border-radius: 13px; background: var(--bg-2); color: var(--text-dim); display: grid; place-items: center; flex-shrink: 0; }
-.home-stats { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 4px 8px 14px; }
+.home { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+.home-col { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+.home-sec { min-width: 0; width: 100%; }
+.home-trunc { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.home-h { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; font-weight: 650; font-size: 13px; color: var(--text-dim); margin: 0 2px 10px; }
+.home-h .n { font-weight: 600; font-size: 12px; color: var(--text-faint); }
+.home-card { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; text-align: left; }
+button.home-card { cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .12s; }
+button.home-card:hover { border-color: var(--border-2); box-shadow: var(--shadow-sm); }
+button.home-card:active, .home-qa:active, .home-contact:active { transform: scale(.98); }
+
+/* 1 identita */
+.home-id { display: flex; align-items: center; gap: 14px; }
+.home-id-ph { width: 52px; height: 52px; border-radius: 15px; object-fit: cover; border: 1px solid var(--border-2); flex-shrink: 0; }
+.home-id-hi { font-size: 12.5px; color: var(--text-faint); font-weight: 500; }
+.home-id-name { font-family: var(--font-display); font-stretch: 125%; font-weight: 700; text-transform: uppercase; font-size: 21px; line-height: 1.05; margin-top: 2px; }
+.home-id-role { font-size: 12.5px; color: var(--text-dim); margin-top: 3px; }
+
+/* 2 azioni rapide */
+.home-qas { display: grid; gap: 8px; max-width: 440px; }
+.home-qa { display: flex; flex-direction: column; align-items: center; gap: 7px; min-height: 44px; padding: 2px 0; background: none; border: none; cursor: pointer; transition: transform .12s; }
+.home-qa-ic { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; background: var(--surface); border: 1px solid var(--border); color: var(--text); transition: border-color .15s, background .15s; }
+.home-qa:hover .home-qa-ic { border-color: var(--border-2); }
+.home-qa.primary .home-qa-ic { background: var(--yellow); border-color: var(--yellow); color: var(--ink); }
+.home-qa-l { font-size: 12px; font-weight: 600; color: var(--text); }
+
+/* 3 da fare ora */
+.home-todo { display: flex; flex-direction: column; gap: 10px; }
+.home-thumbs { display: flex; gap: 4px; margin-top: 8px; }
+.home-thumbs img { width: 28px; height: 28px; border-radius: 7px; object-fit: cover; display: block; opacity: 0; transition: opacity .25s; }
+.home-thumbs img.ok { opacity: 1; }
+.home-thumbs img:not(.ok) { display: none; } /* niente buchi mentre carica */
+.home-calm { display: flex; align-items: center; gap: 12px; padding: 14px 16px; }
+.home-calm-ic { width: 32px; height: 32px; border-radius: 50%; background: var(--bg-2); color: var(--text-dim); display: grid; place-items: center; flex-shrink: 0; }
+
+/* 4 tabellone prossima partita */
+.home-score.ed-hero { height: auto; min-height: 0; padding: 0; border: 1px solid var(--border); display: block; cursor: pointer; }
+.home-score-body { position: relative; padding: 16px 16px 16px; }
+.home-score .ed-livepill { margin-bottom: 14px; }
+.home-score-row { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 8px; }
+.home-team { display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0; text-align: center; }
+.home-team-logo { width: 46px; height: 46px; object-fit: contain; }
+.home-team-ini { width: 46px; height: 46px; border-radius: 50%; background: rgba(255,255,255,.1); display: grid; place-items: center; font-weight: 700; font-size: 15px; }
+.home-team-n { font-family: var(--font-display); font-stretch: 125%; font-weight: 700; text-transform: uppercase; font-size: 12.5px; line-height: 1.15; max-width: 100%; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; word-break: break-word; }
+.home-kick { text-align: center; padding: 0 4px; }
+.home-kick-t { font-family: var(--font-display); font-stretch: 125%; font-weight: 700; font-size: 22px; line-height: 1; font-variant-numeric: tabular-nums; }
+.home-kick-d { font-size: 11px; font-weight: 600; letter-spacing: .6px; text-transform: uppercase; color: rgba(255,255,255,.72); margin-top: 6px; }
+.home-score-meta { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 16px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.14); font-size: 12px; font-weight: 600; color: rgba(255,255,255,.82); min-width: 0; }
+.home-score-meta img { width: 18px; height: 18px; object-fit: contain; flex-shrink: 0; }
+
+/* 5 prossimi giorni */
+.home-tl-row { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 8px 14px; }
+.home-tl-row + .home-tl-row { border-top: 1px solid var(--border); }
+.home-tl-day { width: 44px; flex-shrink: 0; text-align: center; border-radius: 10px; background: var(--bg-2); padding: 5px 0 4px; }
+.home-tl-day .w { font-size: 9.5px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: var(--text-faint); }
+.home-tl-day .d { font-weight: 700; font-size: 16px; line-height: 1.1; color: var(--text); font-variant-numeric: tabular-nums; }
+.home-tl-time { width: 42px; flex-shrink: 0; font-size: 12.5px; font-weight: 600; color: var(--text-dim); font-variant-numeric: tabular-nums; }
+.home-tl-t { flex: 1; min-width: 0; font-size: 13.5px; font-weight: 600; color: var(--text); }
+
+/* 6 stagione */
+.home-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 16px 6px 14px; }
+.home-stat { text-align: center; min-width: 0; }
+.home-stat + .home-stat { border-left: 1px solid var(--border); }
+.home-stat .v { font-family: var(--font-display); font-stretch: 125%; font-weight: 700; font-size: 24px; line-height: 1; font-variant-numeric: tabular-nums; }
+.home-stat .l { font-size: 11.5px; color: var(--text-faint); margin-top: 6px; font-weight: 500; }
+.home-last { display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-top: 1px solid var(--border); font-size: 12.5px; min-width: 0; }
+.home-last .k { color: var(--text-faint); font-weight: 600; flex-shrink: 0; }
+.home-last .m { flex: 1; min-width: 0; font-weight: 650; color: var(--text); }
+.home-last .x { color: var(--text-faint); flex-shrink: 0; font-variant-numeric: tabular-nums; }
+.home-note { font-size: 11.5px; color: var(--text-faint); padding: 0 14px 12px; text-align: center; }
+
+/* 7 referenti */
+.home-contacts { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; margin: 0 -16px; padding: 0 16px 4px; scroll-padding-inline: 16px; scrollbar-width: none; }
+.home-contacts::-webkit-scrollbar { display: none; }
+.home-contact { scroll-snap-align: start; flex: 0 0 auto; width: 172px; display: flex; align-items: center; gap: 10px; padding: 10px 12px; min-height: 60px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; text-align: left; cursor: pointer; transition: border-color .15s, transform .12s; }
+.home-contact:hover { border-color: var(--border-2); }
+.home-contact-av { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+.home-contact-ini { display: grid; place-items: center; background: var(--bg-2); color: var(--text); font-weight: 700; font-size: 13px; }
+.home-contact-n { font-size: 13px; font-weight: 650; color: var(--text); }
+.home-contact-r { font-size: 11.5px; color: var(--text-faint); margin-top: 1px; }
+
+@media (min-width: 881px) {
+  .home-contacts { margin: 0; padding: 0; flex-direction: column; overflow: visible; }
+  .home-contact { width: 100%; }
+}
 @media (max-width: 880px) {
-  .home { display: flex; flex-direction: column; gap: 20px; }
-  .home-col { display: contents; }
-  .home-o1 { order: 1; } .home-o2 { order: 2; } .home-o3 { order: 3; } .home-o4 { order: 4; }
-  .home-o5 { order: 5; } .home-o6 { order: 6; } .home-o7 { order: 7; }
-  .home .ed-hero-title { font-size: 21px; }
+  .home { display: flex; flex-direction: column; align-items: stretch; gap: 24px; }
+  .home-col { gap: 24px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-thumbs img { transition: none; }
+  button.home-card:active, .home-qa:active, .home-contact:active { transform: none; }
 }
 `
 
-// Due squadre con logo (da API-Football) affiancate: [logo] Casa — [logo] Trasferta
-function TeamVs({ m, size = 24 }: { m: Match; size?: number }) {
-  const Logo = ({ src }: { src: string | null }) =>
-    src ? <img src={src} alt="" style={{ height: size, width: size, objectFit: 'contain', flexShrink: 0 }} /> : null
-  return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-      <Logo src={teamLogo(m.home_team, m.home_logo)} /><span>{m.home_team}</span>
-      <span style={{ opacity: .45 }}>—</span>
-      <Logo src={teamLogo(m.away_team, m.away_logo)} /><span>{m.away_team}</span>
-    </span>
-  )
+// Nome corto per il tabellone: via sigle societarie e anni di fondazione.
+function shortTeam(name: string | null | undefined) {
+  if (!name) return ''
+  const s = name
+    .replace(/\b(F\.?C\.?|A\.?F\.?C\.?|S\.?S\.?C\.?|A\.?C\.?|S\.?C\.?|U\.?S\.?|S\.?S\.?|CF|FK|PAE|GFC|Calcio|Football Club)\b/gi, '')
+    .replace(/\b(18|19|20)\d{2}\b/g, '')
+    .replace(/\s{2,}/g, ' ').trim()
+  return s || name
 }
 
-function Masthead({ title, quiet, more, onMore }: { title: string; quiet?: boolean; more?: string; onMore?: () => void }) {
+function Team({ name, logo }: { name: string | null; logo: string | null }) {
+  const [broken, setBroken] = useState(false)
+  const short = shortTeam(name)
   return (
-    <div className="ed-masthead">
-      <div className={`ed-masthead-t${quiet ? ' quiet' : ''}`}>{title}</div>
-      <div className="ed-rule" />
-      {more && onMore && <button className="ed-more" onClick={onMore}>{more}</button>}
+    <div className="home-team">
+      {logo && !broken
+        ? <img className="home-team-logo" src={logo} alt="" onError={() => setBroken(true)} />
+        : <span className="home-team-ini">{short.slice(0, 1)}</span>}
+      <span className="home-team-n" title={name || ''}>{short}</span>
     </div>
   )
 }
 
+// Miniatura che compare solo a immagine caricata; se il caricamento fallisce sparisce.
+function Thumb({ src }: { src: string }) {
+  const [state, setState] = useState<'loading' | 'ok' | 'err'>('loading')
+  if (state === 'err') return null
+  return <img src={src} alt="" className={state === 'ok' ? 'ok' : ''} onLoad={() => setState('ok')} onError={() => setState('err')} />
+}
+
 export default function Dashboard({ goto }: { goto: (r: string) => void }) {
-  const { profile } = useAuth()
+  const { profile, role, isTeam } = useAuth()
   const { athleteId, athleteTz } = useAthlete()
-  const { t } = useLang()
-  const isMobile = useIsMobile()
+  const { t, lang } = useLang()
+  const { canEvent, canTask } = useQuickAddPermissions()
   const [loading, setLoading] = useState(true)
   const [player, setPlayer] = useState<Player | null>(null)
   const [matches, setMatches] = useState<Match[]>([])
@@ -87,13 +164,16 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
   const [nextContentThumb, setNextContentThumb] = useState<string | null>(null)
   const [toApprove, setToApprove] = useState<MediaItem[]>([])
   const [approveUrls, setApproveUrls] = useState<Record<string, string>>({})
+  const [accessPending, setAccessPending] = useState(0)
+  const [adding, setAdding] = useState<'event' | 'task' | null>(null)
+  const isPlayer = role === 'player'
 
   useEffect(() => {
     if (!athleteId) return
     (async () => {
       const todayKey = new Date().toISOString().slice(0, 10)
       const pid = athleteId
-      const [p, m, t, ev, ct, ed, ph] = await Promise.all([
+      const [p, m, t, ev, ct, ed, ph, rq] = await Promise.all([
         supabase.from('player').select('*').eq('api_player_id', pid).maybeSingle(),
         supabase.from('matches').select('*').eq('player_id', pid).order('match_date', { ascending: true }),
         supabase.from('player_stats_match').select('*').eq('player_id', pid).order('match_date', { ascending: false }).limit(1),
@@ -102,6 +182,9 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
         supabase.from('crm_editorial').select('*').eq('player_id', pid).gte('entry_date', todayKey)
           .neq('status', 'pubblicato').order('entry_date').limit(1).maybeSingle(),
         supabase.from('crm_media').select('*').eq('player_id', pid).eq('status', 'da_approvare').order('created_at', { ascending: false }),
+        isPlayer
+          ? supabase.from('crm_access_requests').select('id').eq('player_id', pid).eq('status', 'pending')
+          : Promise.resolve({ data: [] as any[] }),
       ])
       setPlayer(p.data as Player)
       setMatches((m.data as Match[]) || [])
@@ -116,18 +199,21 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
           const hs = lm.team_score == null ? null : (isHome ? lm.team_score : lm.opponent_score)
           const as = lm.team_score == null ? null : (isHome ? lm.opponent_score : lm.team_score)
           const score = (hs != null && as != null) ? ` ${hs}:${as}` : ''
-          setLastMatch({ match_name: `${lm.home_team} - ${lm.away_team}${score}`, match_date: lm.match_date, minutes: lm.minutes ?? 0, competition: lm.league } as any)
+          setLastMatch({ match_name: `${shortTeam(lm.home_team)} - ${shortTeam(lm.away_team)}${score}`, match_date: lm.match_date, minutes: lm.minutes ?? 0, competition: lm.league } as any)
         } else {
           setLastMatch(((t.data as StatsMatch[]) || [])[0] || null)
         }
       }
       setEvents((ev.data as EventItem[]) || [])
       setContracts((ct.data as Contract[]) || [])
+      setAccessPending(((rq.data as any[]) || []).length)
       const content = ed.data as EditorialEntry | null
       setNextContent(content)
       const photos = (ph.data as MediaItem[]) || []
       setToApprove(photos)
+      setLoading(false)
 
+      // miniature dopo il primo disegno: la Home non aspetta le immagini
       if (content) {
         const { data: cm } = await supabase.from('crm_media').select('storage_path,file_name')
           .eq('editorial_id', content.id).limit(4)
@@ -137,7 +223,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
           if (s?.signedUrl) setNextContentThumb(s.signedUrl)
         }
       }
-      const paths = photos.slice(0, 8).map(x => x.storage_path)
+      const paths = photos.filter(x => isImageFile(x.file_name)).slice(0, 6).map(x => x.storage_path)
       if (paths.length) {
         const { data: signed } = await supabase.storage.from(BUCKET).createSignedUrls(paths, 3600)
         if (signed) {
@@ -146,13 +232,13 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
           setApproveUrls(next)
         }
       }
-      setLoading(false)
     })()
-  }, [athleteId])
+  }, [athleteId, isPlayer])
 
   if (loading) return <Spinner />
 
   // ---- dati derivati ----
+  const locale = lang === 'en' ? 'en-GB' : 'it-IT'
   const nextMatch = matches.find(m => m.match_date && new Date(m.match_date).getTime() > Date.now())
   // Stagione corrente = quella della partita piu recente; presenze/rating/gol si riferiscono a essa.
   const curSeason = matches.length
@@ -161,6 +247,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
   const inSeason = (m: any) => curSeason == null || m.season === curSeason
   const played = matches.filter(m => inSeason(m) && m.minutes != null && m.minutes > 0)
   const presenze = played.length
+  const minutes = played.reduce((s, m) => s + (m.minutes || 0), 0)
   const ratings = played.map(m => Number(m.rating)).filter(r => !isNaN(r) && r > 0)
   const avgRating = ratings.length ? (ratings.reduce((a, b) => a + b, 0) / ratings.length) : null
   const goals = matches.filter(inSeason).reduce((s, m) => s + (m.goals || 0), 0)
@@ -168,84 +255,74 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
     .filter(c => c.end_date).map(c => ({ c, d: daysUntil(c.end_date) }))
     .filter(x => x.d != null && x.d >= 0).sort((a, b) => (a.d! - b.d!))[0]
 
-  const greeting = new Date().getHours() < 13 ? 'Buongiorno' : new Date().getHours() < 19 ? 'Buon pomeriggio' : 'Buonasera'
+  const h = new Date().getHours()
+  const greeting = t(h < 13 ? 'Buongiorno' : h < 19 ? 'Buon pomeriggio' : 'Buonasera')
   const firstName = (profile?.full_name || '').split(' ')[0]
-  const igHandle = player?.instagram_url?.replace(/\/$/, '').split('/').pop()
-  const bd = player?.birth_date ? new Date(player.birth_date + 'T12:00') : null
-  const birthLabel = bd ? `${bd.getDate()} ${MESI[bd.getMonth()]} ${bd.getFullYear()}` : null
-  const roleLine = player ? `${player.position} · ${player.team_name} · #${player.shirt_number ?? '—'}` : 'Gestione riservata AUVI'
+  const roleLine = player
+    ? [player.position, player.team_name, player.shirt_number != null ? `#${player.shirt_number}` : null].filter(Boolean).join(' · ')
+    : t('Gestione riservata AUVI')
 
-  let matchWhen = ''
-  let matchMeta: string[] = []
-  if (nextMatch?.match_date) {
-    const days = Math.ceil((new Date(nextMatch.match_date).getTime() - Date.now()) / 86400000)
-    matchWhen = days <= 0 ? 'Oggi' : days === 1 ? 'Domani' : `Fra ${days} giorni`
-    const d = new Date(nextMatch.match_date)
-    matchMeta = [
-      `${d.getDate().toString().padStart(2, '0')} ${MESI[d.getMonth()].slice(0, 3).toUpperCase()}`,
-      fmtMatchTime(nextMatch.match_date, athleteTz),
-      (nextMatch.venue || '').toLowerCase() === 'home' ? 'IN CASA' : 'TRASFERTA',
-    ]
-  }
-  const hasActions = toApprove.length > 0 || !!nextContent
-
-  // ---- blocchi ----
-  const photo = (px: number, radius: number) => player?.photo_url
-    ? <img src={player.photo_url} alt="" style={{ width: px, height: px, borderRadius: radius, objectFit: 'cover', border: '1px solid var(--border-2)', flexShrink: 0 }} />
-    : <div className="avatar" style={{ width: px, height: px, fontSize: Math.round(px / 2.8), borderRadius: radius, flexShrink: 0 }}>{firstName[0]}</div>
-
-  const identity = isMobile ? (
-    <div className="home-sec home-o1 flex gap" style={{ gap: 12, alignItems: 'center' }}>
-      {photo(48, 14)}
+  // ---- 1 identita ----
+  const identity = (
+    <header className="home-sec home-id">
+      {player?.photo_url
+        ? <img className="home-id-ph" src={player.photo_url} alt="" />
+        : <div className="avatar" style={{ width: 52, height: 52, fontSize: 19, borderRadius: 15, flexShrink: 0 }}>{(player?.name || firstName || 'A')[0]}</div>}
       <div style={{ minWidth: 0 }}>
-        <div className="ed-kicker">{greeting}{firstName ? `, ${firstName}` : ''}</div>
-        <div className="ed-id-name home-trunc" style={{ fontSize: 20, marginTop: 3 }}>{player?.name || 'Atleta'}</div>
-        <div className="muted home-trunc" style={{ marginTop: 3, fontSize: 12 }}>{roleLine}</div>
+        <div className="home-id-hi home-trunc">{greeting}{firstName ? `, ${firstName}` : ''}</div>
+        <h1 className="home-id-name home-trunc">{player?.name || t('Atleta')}</h1>
+        <div className="home-id-role home-trunc">{roleLine}</div>
       </div>
-    </div>
-  ) : (
-    <div className="ed-id-card home-sec">
-      <div className="flex gap" style={{ gap: 16, alignItems: 'center' }}>
-        {photo(64, 18)}
-        <div style={{ minWidth: 0 }}>
-          <div className="ed-kicker">{greeting}{firstName ? `, ${firstName}` : ''}</div>
-          <div className="ed-id-name">{player?.name || 'Atleta'}</div>
-          <div className="muted" style={{ marginTop: 6, fontSize: 12.5 }}>{roleLine}</div>
-        </div>
-      </div>
-      {(birthLabel || player?.contact_email || player?.instagram_url) && (
-        <>
-          <div style={{ height: 1, background: 'var(--border)', margin: '16px 0' }} />
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 13 }}>
-            {birthLabel && <Anag icon="cake" label="Nato il" value={birthLabel} />}
-            {player?.contact_email && <Anag icon="mail" label="Email" value={player.contact_email} href={`mailto:${player.contact_email}`} />}
-            {player?.instagram_url && <Anag icon="instagram" label="Instagram" value={igHandle ? `@${igHandle}` : 'Profilo'} href={player.instagram_url} external />}
-          </div>
-        </>
-      )}
-    </div>
+    </header>
   )
 
+  // ---- 2 azioni rapide (sostituiscono il "+" globale) ----
+  type QA = { key: string; label: string; icon: string; run: () => void }
+  const qas: QA[] = []
+  if (canEvent) qas.push({ key: 'event', label: t('Impegno'), icon: 'calendar', run: () => setAdding('event') })
+  if (canTask) qas.push({ key: 'task', label: t('Task'), icon: 'check-square', run: () => setAdding('task') })
+  qas.push(isTeam
+    ? { key: 'media', label: t('Carica'), icon: 'upload', run: () => goto('media?tab=approvate') }
+    : { key: 'media', label: t('Foto'), icon: 'image', run: () => goto('media?tab=approvare') })
+  qas.push({ key: 'chat', label: t('Chat'), icon: 'message', run: () => goto('messages') })
+  const quick = (
+    <nav className="home-sec home-qas" aria-label={t('Azioni rapide')} style={{ gridTemplateColumns: `repeat(${Math.max(qas.length, 4)}, minmax(0, 1fr))` }}>
+      {qas.map((q, i) => (
+        <button key={q.key} className={`home-qa${i === 0 ? ' primary' : ''}`} onClick={q.run}>
+          <span className="home-qa-ic"><Icon name={q.icon} size={20} strokeWidth={1.7} /></span>
+          <span className="home-qa-l">{q.label}</span>
+        </button>
+      ))}
+    </nav>
+  )
+
+  // ---- 3 da fare ora ----
+  const thumbs = toApprove.map(m => approveUrls[m.storage_path]).filter(Boolean).slice(0, 6)
+  const hasActions = toApprove.length > 0 || !!nextContent || accessPending > 0
   const todo = (
-    <div className="home-sec home-o2">
-      <Masthead title={t('Da fare ora')} />
+    <section className="home-sec">
+      <div className="home-h">{t('Da fare ora')}</div>
       {hasActions ? (
-        <div className="grid" style={{ gap: 10 }}>
+        <div className="home-todo">
           {toApprove.length > 0 && (
             <button className="ed-action prio" onClick={() => goto('media?tab=approvare')}>
               <div className="ed-action-num">{toApprove.length}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div className="ed-action-t">{t('Foto da approvare')}</div>
                 <div className="ed-action-s">{t('Selezioni in attesa del tuo ok')}</div>
-                {Object.keys(approveUrls).length > 0 && (
-                  <div className="home-thumbs">
-                    {toApprove.slice(0, isMobile ? 5 : 8).map(m => (isImageFile(m.file_name) && approveUrls[m.storage_path]
-                      ? <img key={m.id} src={approveUrls[m.storage_path]} alt="" loading="lazy" />
-                      : <span key={m.id} />))}
-                  </div>
-                )}
+                {thumbs.length > 0 && <div className="home-thumbs">{thumbs.map(u => <Thumb key={u} src={u} />)}</div>}
               </div>
-              <span className="ed-chev">›</span>
+              <Icon name="chevron-right" size={18} style={{ color: 'var(--text-faint)', flexShrink: 0 }} />
+            </button>
+          )}
+          {accessPending > 0 && (
+            <button className="ed-action" onClick={() => goto('access-requests')}>
+              <div className="ed-action-num">{accessPending}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="ed-action-t">{t('Richieste di accesso')}</div>
+                <div className="ed-action-s">{t('Professionisti che chiedono di entrare nella tua area')}</div>
+              </div>
+              <Icon name="chevron-right" size={18} style={{ color: 'var(--text-faint)', flexShrink: 0 }} />
             </button>
           )}
           {nextContent && (
@@ -254,119 +331,126 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
                 ? <img className="ed-action-thumb" src={nextContentThumb} alt="" />
                 : <div className="ed-action-thumb" style={{ display: 'grid', placeItems: 'center', color: 'var(--text-faint)' }}><Icon name="image" size={18} strokeWidth={1.5} /></div>}
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div className="faint" style={{ fontSize: 11 }}>{t('Prossimo contenuto')} · {fmtDate(nextContent.entry_date)}</div>
+                <div className="faint" style={{ fontSize: 11.5 }}>{t('Prossimo contenuto')} · {fmtDate(nextContent.entry_date)}</div>
                 <div className="ed-action-t home-trunc" style={{ marginTop: 2 }}>{nextContent.title}</div>
                 <div className="flex gap wrap" style={{ gap: 6, marginTop: 6 }}>
-                  <span className={`ed-chip ${CHIP[nextContent.status]?.c || 'ed-chip-gold'}`}>{CHIP[nextContent.status]?.l || 'In lavorazione'}</span>
-                  {nextContent.copy_text && nextContent.status !== 'copy_pronto' && <span className="ed-chip ed-chip-blue">Copy pronto</span>}
+                  <span className={`ed-chip ${CHIP[nextContent.status]?.c || 'ed-chip-gold'}`}>{t(CHIP[nextContent.status]?.l || 'In lavorazione')}</span>
+                  {nextContent.copy_text && nextContent.status !== 'copy_pronto' && <span className="ed-chip ed-chip-blue">{t('Copy pronto')}</span>}
                 </div>
               </div>
-              <span className="ed-chev">›</span>
+              <Icon name="chevron-right" size={18} style={{ color: 'var(--text-faint)', flexShrink: 0 }} />
             </button>
           )}
         </div>
       ) : (
-        <div className="home-calm">
-          <div className="home-calm-ic"><Icon name="check" size={20} /></div>
-          <div style={{ flex: 1, minWidth: 160 }}>
-            <div className="ed-action-t">{t('Tutto in ordine')}</div>
-            <div className="ed-action-s">{t('Nessuna foto da approvare e nessun contenuto in coda.')}</div>
+        <div className="home-card home-calm">
+          <span className="home-calm-ic"><Icon name="check" size={16} /></span>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontWeight: 650, fontSize: 14 }}>{t('Tutto in ordine')}</div>
+            <div className="faint" style={{ fontSize: 12 }}>{t('Nessuna foto da approvare e nessun contenuto in coda.')}</div>
           </div>
-          <button className="btn btn-sm" onClick={() => goto('tasks')}>{t('Vedi i task')}</button>
         </div>
       )}
-    </div>
+    </section>
   )
 
-  const hero = nextMatch ? (
-    <button className="ed-hero home-sec home-o3" onClick={() => goto('performance')} style={{ padding: 0, border: '1px solid var(--border)' }}>
-      {player?.stadium_photo_url && <img className="ed-hero-img" src={player.stadium_photo_url} alt="" style={{ opacity: .5 }} />}
-      <div className="ed-hero-scrim" />
-      <div className="ed-hero-body" style={{ textAlign: 'left' }}>
-        <div className="ed-livepill"><span className="ed-livedot" /><span>Prossima · {matchWhen}</span></div>
-        <div className="ed-hero-title"><TeamVs m={nextMatch} size={isMobile ? 22 : 26} /></div>
-        {leagueLogo(nextMatch.league) && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6, minWidth: 0 }}>
-            <img src={leagueLogo(nextMatch.league)!} alt="" style={{ height: 22, width: 22, objectFit: 'contain', flexShrink: 0 }} />
-            <span className="home-trunc" style={{ fontSize: 12.5, opacity: .85, fontWeight: 600 }}>{nextMatch.league}</span>
+  // ---- 4 tabellone prossima partita ----
+  let hero: ReactNode
+  if (nextMatch?.match_date) {
+    const d = new Date(nextMatch.match_date)
+    const days = Math.ceil((d.getTime() - Date.now()) / 86400000)
+    const when = days <= 0 ? t('Oggi') : days === 1 ? t('Domani') : `${t('Fra')} ${days} ${t('giorni')}`
+    const dayLabel = d.toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'short', timeZone: athleteTz || undefined }).replace(/\./g, '')
+    const home = (nextMatch.venue || '').toLowerCase() === 'home'
+    const lg = leagueLogo(nextMatch.league)
+    hero = (
+      <button className="ed-hero home-score home-sec" onClick={() => goto('performance')} aria-label={`${t('Prossima partita')}: ${nextMatch.home_team} - ${nextMatch.away_team}`}>
+        {player?.stadium_photo_url && <img className="ed-hero-img" src={player.stadium_photo_url} alt="" style={{ opacity: .38 }} />}
+        <div className="ed-hero-scrim" style={{ background: 'linear-gradient(180deg, rgba(10,10,10,.55) 0%, rgba(10,10,10,.82) 100%)' }} />
+        <div className="home-score-body">
+          <div className="ed-livepill"><span className="ed-livedot" /><span>{t('Prossima')} · {when}</span></div>
+          <div className="home-score-row">
+            <Team name={nextMatch.home_team} logo={teamLogo(nextMatch.home_team, nextMatch.home_logo)} />
+            <div className="home-kick">
+              <div className="home-kick-t">{fmtMatchTime(nextMatch.match_date, athleteTz)}</div>
+              <div className="home-kick-d">{dayLabel}</div>
+            </div>
+            <Team name={nextMatch.away_team} logo={teamLogo(nextMatch.away_team, nextMatch.away_logo)} />
+          </div>
+          <div className="home-score-meta">
+            {lg && <img src={lg} alt="" />}
+            {nextMatch.league && <span className="home-trunc" style={{ minWidth: 0 }}>{nextMatch.league}</span>}
+            {nextMatch.league && <span style={{ opacity: .45 }}>|</span>}
+            <span style={{ flexShrink: 0 }}>{home ? t('In casa') : t('Trasferta')}</span>
+          </div>
+        </div>
+      </button>
+    )
+  } else {
+    hero = (
+      <button className="home-card home-sec home-calm" onClick={() => goto('performance')}>
+        <span className="home-calm-ic"><Icon name="ball" size={16} /></span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: 650, fontSize: 14 }}>{t('Prossima partita')}</div>
+          <div className="faint" style={{ fontSize: 12 }}>{t('Nessuna partita in programma al momento.')}</div>
+        </div>
+        <Icon name="chevron-right" size={18} style={{ color: 'var(--text-faint)', flexShrink: 0 }} />
+      </button>
+    )
+  }
+
+  // ---- 5 prossimi giorni ----
+  const agenda = (
+    <section className="home-sec">
+      <div className="home-h">{t('Prossimi giorni')}</div>
+      <button className="home-card" onClick={() => goto('agenda')} aria-label={t('Apri agenda')}>
+        {events.length === 0 ? (
+          <div className="home-tl-row">
+            <span className="home-tl-t faint" style={{ fontWeight: 500 }}>{t('Nessun impegno in programma.')}</span>
+            <Icon name="chevron-right" size={18} style={{ color: 'var(--text-faint)', flexShrink: 0 }} />
+          </div>
+        ) : events.map(e => {
+          const d = new Date(e.start_at)
+          return (
+            <div className="home-tl-row" key={e.id}>
+              <div className="home-tl-day">
+                <div className="w">{d.toLocaleDateString(locale, { weekday: 'short' }).replace('.', '')}</div>
+                <div className="d">{d.getDate()}</div>
+              </div>
+              <span className="home-tl-time">{d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}</span>
+              <span className="home-tl-t home-trunc">{e.title}</span>
+            </div>
+          )
+        })}
+      </button>
+    </section>
+  )
+
+  // ---- 6 stagione + ultima partita ----
+  const useGoals = goals > 0
+  const stats = (
+    <section className="home-sec">
+      <div className="home-h">{t('In stagione')}</div>
+      <button className="home-card" onClick={() => goto('performance')}>
+        <div className="home-stats">
+          <div className="home-stat"><div className="v">{presenze}</div><div className="l">{t('Presenze')}</div></div>
+          <div className="home-stat"><div className="v">{useGoals ? goals : minutes}</div><div className="l">{useGoals ? t('Gol') : t('Minuti')}</div></div>
+          <div className="home-stat"><div className="v">{avgRating ? avgRating.toFixed(2) : '-'}</div><div className="l">{t('Rating')}</div></div>
+        </div>
+        {lastMatch && (
+          <div className="home-last">
+            <span className="k">{t('Ultima')}</span>
+            <span className="m home-trunc">{lastMatch.match_name}</span>
+            <span className="x">{lastMatch.minutes}′ · {fmtDate(lastMatch.match_date)}</span>
           </div>
         )}
-        <div className="ed-hero-meta">
-          {matchMeta.map((x, i) => <span key={i} style={{ display: 'contents' }}>{i > 0 && <span className="sep">|</span>}<span>{x}</span></span>)}
-        </div>
-      </div>
-    </button>
-  ) : (
-    <button className="ed-strip home-sec home-o3" onClick={() => goto('performance')}>
-      <div style={{ minWidth: 0 }}>
-        <div className="ed-kicker">{t('Prossima partita')}</div>
-        <div className="muted" style={{ fontSize: 13, marginTop: 5 }}>{t('Nessuna partita in programma al momento.')}</div>
-      </div>
-      <span className="ed-chev">›</span>
-    </button>
-  )
-
-  const agenda = (
-    <div className="home-sec home-o4">
-      <Masthead title={t('Prossimi impegni')} quiet more={t('Agenda →')} onMore={() => goto('agenda')} />
-      {events.length === 0 ? (
-        <button className="ed-strip" onClick={() => goto('agenda')}>
-          <span className="muted" style={{ fontSize: 13 }}>{t('Nessun impegno in programma.')}</span>
-          <span className="ed-chev">›</span>
-        </button>
-      ) : (
-        <div className="home-list">
-          {events.map(e => {
-            const d = new Date(e.start_at)
-            const time = d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
-            return (
-              <button className="home-agenda-row" key={e.id} onClick={() => goto('agenda')}>
-                <div className="home-agenda-date">
-                  <div className="d">{d.getDate()}</div>
-                  <div className="m">{MESI[d.getMonth()].slice(0, 3)}</div>
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div className="home-trunc" style={{ fontWeight: 650, fontSize: 13.5, color: 'var(--text)' }}>{e.title}</div>
-                  <div className="faint home-trunc" style={{ fontSize: 11.5, marginTop: 2 }}>{time}{e.location ? ` · ${e.location}` : ''}</div>
-                </div>
-                <span className="ed-chev">›</span>
-              </button>
-            )
-          })}
-        </div>
-      )}
-    </div>
-  )
-
-  const stats = (
-    <div className="home-sec home-o5">
-      <Masthead title={t('In stagione')} quiet more={t('Dettagli →')} onMore={() => goto('performance')} />
-      <div className="home-stats">
-        <div className="ed-statcols">
-          <div className="ed-statcol"><div className="v">{presenze}</div><div className="l">{t('Presenze')}</div></div>
-          <div className="ed-statdiv" />
-          <div className="ed-statcol"><div className="v" style={{ color: avgRating && avgRating >= 7 ? 'var(--green)' : undefined }}>{avgRating ? avgRating.toFixed(2) : '—'}</div><div className="l">{t('Rating')}</div></div>
-          <div className="ed-statdiv" />
-          <div className="ed-statcol"><div className="v">{goals}</div><div className="l">{t('Gol')}</div></div>
-        </div>
         {nextContractExpiry && (
-          <div className="faint" style={{ fontSize: 11.5, textAlign: 'center', marginTop: 12, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
+          <div className="home-note" style={lastMatch ? { paddingTop: 0 } : undefined}>
             {t('Contratto in scadenza il')} {fmtDate(nextContractExpiry.c.end_date)}
           </div>
         )}
-      </div>
-    </div>
-  )
-
-  const last = lastMatch && (
-    <button className="ed-strip home-sec home-o6" onClick={() => goto('performance')}>
-      <div style={{ minWidth: 0 }}>
-        <div className="ed-kicker">{t('Ultima partita')}</div>
-        <div className="home-trunc" style={{ fontWeight: 700, fontSize: 14, marginTop: 5 }}>{lastMatch.match_name}</div>
-        <div className="faint home-trunc" style={{ fontSize: 11, marginTop: 2 }}>{fmtDate(lastMatch.match_date)} · {lastMatch.minutes}′ giocati · {lastMatch.competition}</div>
-      </div>
-      <span className="ed-chev">›</span>
-    </button>
+      </button>
+    </section>
   )
 
   return (
@@ -374,29 +458,16 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
       <style>{HOME_CSS}</style>
       <div className="home-col">
         {identity}
-        {hero}
+        {quick}
         {todo}
+        {hero}
       </div>
       <div className="home-col">
         {agenda}
         {stats}
-        {last}
-        <div className="home-sec home-o7"><ReferentiCard goto={goto} /></div>
+        <HomeContacts goto={goto} title={t('I tuoi referenti')} />
       </div>
+      {adding && <QuickAddModal initialKind={adding} onClose={() => setAdding(null)} />}
     </div>
   )
-}
-
-function Anag({ icon, label, value, href, external }: { icon: string; label: string; value: string; href?: string; external?: boolean }) {
-  const inner = (
-    <div className="ed-anag">
-      <span className="ed-anag-ic"><Icon name={icon} size={15} /></span>
-      <div style={{ minWidth: 0 }}>
-        <div className="ed-anag-l">{label}</div>
-        <div className="ed-anag-v">{value}</div>
-      </div>
-    </div>
-  )
-  if (href) return <a href={href} target={external ? '_blank' : undefined} rel="noreferrer" className="ed-anag-link" style={{ display: 'block', minWidth: 0 }}>{inner}</a>
-  return inner
 }

@@ -56,23 +56,23 @@ export default function App() {
 
   // Il brand ha un set di schermate dedicato e non accede alle aree interne.
   const isBrand = profile.role === 'brand'
-  const brandAllowed = ['brandhome', 'mediakit', 'campaigns', 'brandcard', 'talent', 'messages']
+  const brandAllowed = ['settings', 'brandhome', 'mediakit', 'campaigns', 'brandcard', 'talent', 'messages']
   // Il preparatore vede solo fitness, performance dell'atleta e chat.
-  const coachAllowed = ['dashboard', 'fitness', 'coach-profile', 'coach-office', 'performance', 'agenda', 'messages', 'access-requests', 'my-team']
+  const coachAllowed = ['settings', 'dashboard', 'fitness', 'coach-profile', 'coach-office', 'performance', 'agenda', 'messages', 'access-requests', 'my-team']
   const isCoach = profile.role === 'preparatore'
   // L'agente vede solo le competenze del procuratore.
-  const agentAllowed = ['agent-home', 'dashboard', 'performance', 'profile', 'editorial', 'media',
+  const agentAllowed = ['settings', 'agent-home', 'dashboard', 'performance', 'profile', 'editorial', 'media',
                         'contracts', 'documents', 'sponsors', 'commercial', 'fitness',
                         'agenda', 'tasks', 'messages', 'agent-profile', 'insurance', 'legaltax', 'services', 'access-requests', 'my-team', 'archivio']
   const isAgent = profile.role === 'agente'
   // L'assicuratore vede solo la sua area: polizze, scadenze e chat.
-  const insurerAllowed = ['insurer-home', 'insurance', 'insurer-profile', 'documents', 'agenda', 'messages', 'access-requests', 'my-team']
+  const insurerAllowed = ['settings', 'insurer-home', 'insurance', 'insurer-profile', 'documents', 'agenda', 'messages', 'access-requests', 'my-team']
   const isInsurer = profile.role === 'assicuratore'
   // Il commercialista vede solo la sua area.
-  const taxAllowed = ['tax-home', 'legaltax', 'tax-profile', 'services', 'documents', 'agenda', 'messages', 'access-requests', 'my-team']
+  const taxAllowed = ['settings', 'tax-home', 'legaltax', 'tax-profile', 'services', 'documents', 'agenda', 'messages', 'access-requests', 'my-team']
   const isTax = profile.role === 'commercialista'
   // Il fisioterapista vede la sua area: home, profilo, chat e collegamenti.
-  const physioAllowed = ['physio-home', 'physio-profile', 'physio-office', 'messages', 'access-requests', 'my-team']
+  const physioAllowed = ['settings', 'physio-home', 'physio-profile', 'physio-office', 'messages', 'access-requests', 'my-team']
   const isPhysio = profile.role === 'fisioterapista'
   const home = isBrand ? 'brandhome' : isAgent ? 'agent-home' : isInsurer ? 'insurer-home' : isTax ? 'tax-home' : isPhysio ? 'physio-home' : 'dashboard'
   let route = routeState ?? home
