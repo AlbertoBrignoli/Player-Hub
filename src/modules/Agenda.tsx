@@ -1,10 +1,10 @@
-import { useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { toast, undoable } from '../lib/toast'
 import { useAuth } from '../auth/AuthContext'
 import { useAthlete } from '../lib/athlete'
 import { useLang } from '../lib/i18n'
-import { useCollection, insertRow, updateRow, deleteRow } from '../lib/useData'
+import { insertRow, updateRow, deleteRow } from '../lib/useData'
 import { Modal, Field, Input, Textarea, Select, Empty, Spinner, Tabs } from '../components/ui'
 import Icon from '../components/Icon'
 import LuogoAutocomplete from '../components/LuogoAutocomplete'
@@ -37,6 +37,22 @@ const TYPES: Record<string, TypeDef> = {
   scadenza:    { l: 'Scadenza',    icon: 'clock',     c: '#C2570C' },
 }
 const typeOf = (t: string): TypeDef => TYPES[t] || TYPES.personale
+// Partite ufficiali (tabella matches): voci di sola lettura, colore ink.
+const MATCH_TYPE: TypeDef = { l: 'Partita', icon: 'ball', c: '#0A0A0A' }
+
+// Voce dell'agenda: un impegno crm_events oppure una partita (sola lettura).
+type AgItem = EventItem & { _match?: boolean; _pids?: number[] }
+const typeFor = (e: AgItem): TypeDef => e._match ? MATCH_TYPE : typeOf(e.type)
+const pidsOf = (e: AgItem): number[] => e._pids || (e.player_id != null ? [e.player_id] : [])
+
+// Colore stabile per atleta (indice nell'elenco), leggibile su bianco.
+const ATHLETE_PALETTE = ['#1F6FEB', '#12A150', '#DD0088', '#FF6700', '#0A0A0A', '#8A6D00']
+type Tag = { name: string; color: string }
+type TagOf = ((pid: number) => Tag | null) | null
+
+const PRO_ROLES = ['agente', 'assicuratore', 'commercialista', 'preparatore', 'fisioterapista']
+// Ruoli che hanno accesso a Performance: solo per loro la partita e' toccabile.
+const PERF_ROLES = ['admin', 'creator', 'player', 'agente', 'preparatore']
 const ADMIN_TYPES = ['partita', 'commerciale', 'sponsor', 'personale', 'medico', 'viaggio', 'scadenza']
 const PLAYER_TYPES = ['personale', 'medico', 'viaggio']
 
@@ -49,20 +65,72 @@ const sectionLabel: React.CSSProperties = { fontSize: 11, letterSpacing: 1.2, te
 const emptyEv = (type: string): Partial<EventItem> => ({ title: '', type, start_at: '' })
 
 export default function Agenda({ goto }: { goto?: (r: string) => void }) {
-  const { athleteId } = useAthlete()
+  const { athleteId, athletes, setAthleteId, loading: athletesLoading } = useAthlete()
   const { t: tr } = useLang()
   const { isAdmin, role, session } = useAuth()
   const uid = session?.user.id
   const canAdd = isAdmin || role === 'player'
-  const { rows, loading, reload, setRows } = useCollection<EventItem>('crm_events', { orderBy: 'start_at', ascending: true, match: { player_id: athleteId } })
+  const isPro = !!role && PRO_ROLES.includes(role)
+  const showScope = (isPro || role === 'admin' || role === 'creator') && athletes.length > 1
+  const [scopeState, setScope] = useState<'all' | 'one'>(isPro ? 'all' : 'one')
+  const scope = showScope ? scopeState : 'one'
   const [view, setView] = useState<'lista' | 'calendario'>('calendario')
   const [edit, setEdit] = useState<Partial<EventItem> | null>(null)
 
+  const ids = scope === 'all' ? athletes.map(a => a.api_player_id) : (athleteId != null ? [athleteId] : [])
+  const idsKey = ids.join(',')
+  const [rows, setRows] = useState<AgItem[]>([])
+  const [loading, setLoading] = useState(true)
+
+  // Impegni (crm_events, RLS filtra per ruolo) + partite dei giocatori in vista.
+  const reload = useCallback(async () => {
+    const list = idsKey ? idsKey.split(',').map(Number) : []
+    if (!list.length) { setRows([]); setLoading(true); return }
+    const from = new Date(Date.now() - 30 * 86400000).toISOString()
+    const to = new Date(Date.now() + 120 * 86400000).toISOString()
+    const [ev, m] = await Promise.all([
+      supabase.from('crm_events').select('*').in('player_id', list).order('start_at', { ascending: true }),
+      supabase.from('matches').select('*').in('player_id', list).gte('match_date', from).lte('match_date', to).order('match_date', { ascending: true }),
+    ])
+    const matches = new Map<string, AgItem>()
+    ;((m.data as any[]) || []).forEach(x => {
+      if (!x.match_date) return
+      const key = String(x.fixture_id ?? x.id)
+      const prev = matches.get(key)
+      if (prev) { if (x.player_id != null && !prev._pids!.includes(x.player_id)) prev._pids!.push(x.player_id); return }
+      const title = x.home_team && x.away_team ? `${x.home_team} – ${x.away_team}` : (x.opponent ? `vs ${x.opponent}` : 'Partita')
+      matches.set(key, {
+        id: 'match-' + key, title, type: 'partita', start_at: x.match_date, end_at: null,
+        location: x.stadium || x.venue || null, notes: x.league || null, created_at: x.match_date,
+        player_id: x.player_id, _match: true, _pids: x.player_id != null ? [x.player_id] : [],
+      })
+    })
+    const all = [...((ev.data as AgItem[]) || []), ...matches.values()]
+    all.sort((a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime())
+    setRows(all)
+    setLoading(false)
+  }, [idsKey])
+  useEffect(() => { reload() }, [reload])
+
+  // nessun atleta collegato: niente caricamento infinito, ma il passo successivo
+  if (!athletesLoading && athletes.length === 0) {
+    return <Empty icon={<Icon name="calendar" size={24} strokeWidth={1.6} />} title={tr('Nessun atleta collegato')}
+      hint={tr('Quando un atleta accetta il tuo invito, qui trovi partite e impegni di tutti.')}
+      action={goto ? { label: tr('Invita un atleta'), onClick: () => goto('my-athletes') } : undefined} />
+  }
   if (loading) return <Spinner />
 
-  const canEdit = (e: EventItem) => isAdmin || e.created_by === uid || role === 'player'
+  const tagOf: TagOf = scope === 'all' ? (pid: number) => {
+    const i = athletes.findIndex(a => a.api_player_id === pid)
+    if (i < 0) return null
+    return { name: athletes[i].name || '—', color: ATHLETE_PALETTE[i % ATHLETE_PALETTE.length] }
+  } : null
+  const canOpenMatch = !!goto && !!role && PERF_ROLES.includes(role)
+  const onOpenMatch = canOpenMatch ? (e: AgItem) => { const pid = pidsOf(e)[0]; if (pid != null) setAthleteId(pid); goto!('performance') } : undefined
+
+  const canEdit = (e: AgItem) => !e._match && (isAdmin || e.created_by === uid || role === 'player')
   // Richieste dell'atleta: l'agenzia conferma o rifiuta.
-  const canConfirm = (e: EventItem) => isAdmin && e.request_status === 'da_confermare'
+  const canConfirm = (e: AgItem) => !e._match && isAdmin && e.request_status === 'da_confermare'
   const onConfirm = async (e: EventItem, ok: boolean) => {
     await updateRow('crm_events', e.id, { request_status: ok ? 'confermata' : 'rifiutata' })
     toast(ok ? 'Richiesta confermata' : 'Richiesta rifiutata')
@@ -73,10 +141,15 @@ export default function Agenda({ goto }: { goto?: (r: string) => void }) {
     undoable(tr('Impegno eliminato'), () => deleteRow('crm_events', e.id), reload)
   }
   const onAdd = (dayIso: string) => setEdit({ ...emptyEv('personale'), start_at: dayIso })
-  const shared = { canEdit, onEdit: setEdit, onDel, canConfirm, onConfirm, goto, onAdd }
+  const shared = { canEdit, onEdit: setEdit, onDel, canConfirm, onConfirm, goto, onAdd, tagOf, onOpenMatch }
+  const selName = athletes.find(a => a.api_player_id === athleteId)?.name || tr('Atleta')
 
   return (
     <div className="grid" style={{ gap: 8 }}>
+      <style>{AG_CSS}</style>
+      {showScope && (
+        <Tabs tabs={[{ key: 'all', label: tr('Tutti i miei atleti') }, { key: 'one', label: selName }]} value={scope} onChange={setScope} />
+      )}
       <div className="flex between" style={{ alignItems: 'center' }}>
         <div className="flex gap">
           <Tabs tabs={[{ key: 'calendario', label: tr('Calendario') }, { key: 'lista', label: tr('Lista') }]} value={view} onChange={setView} />
@@ -96,19 +169,39 @@ export default function Agenda({ goto }: { goto?: (r: string) => void }) {
         <Icon name="smartphone" size={14} /> {tr("Vedi l'agenda nel calendario del telefono")} →
       </button>
 
-      {edit && <EventForm value={edit} isAdmin={isAdmin} uid={uid} athleteId={athleteId} onClose={() => setEdit(null)} onSaved={() => { setEdit(null); reload() }} />}
+      {edit && <EventForm value={edit} isAdmin={isAdmin} uid={uid} athleteId={athleteId}
+        athleteChoices={scope === 'all' && !edit.id ? athletes.map(a => ({ id: a.api_player_id, name: a.name || String(a.api_player_id) })) : undefined}
+        onClose={() => setEdit(null)} onSaved={() => { setEdit(null); reload() }} />}
     </div>
   )
 }
 
-type SharedProps = {
-  rows: EventItem[]; canEdit: (e: EventItem) => boolean;
-  canConfirm: (e: EventItem) => boolean; onConfirm: (e: EventItem, ok: boolean) => void;
-  onEdit: (e: EventItem) => void; onDel: (e: EventItem) => void; goto?: (r: string) => void
-  onAdd?: (dayIso: string) => void
+const AG_CSS = `
+.ag-chip { display: inline-flex; align-items: center; max-width: 140px; padding: 1px 8px; border-radius: 999px; border: 1px solid; font-size: 11px; font-weight: 700; line-height: 1.5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0; }
+.ag-chips { display: inline-flex; gap: 4px; flex-shrink: 0; }
+.ag-row-static { cursor: default; }
+`
+
+function Chips({ e, tagOf }: { e: AgItem; tagOf: TagOf }) {
+  if (!tagOf) return null
+  const tags = pidsOf(e).map(tagOf).filter((x): x is Tag => !!x)
+  if (!tags.length) return null
+  return (
+    <span className="ag-chips">
+      {tags.map(t => <span key={t.name} className="ag-chip" style={{ color: t.color, background: t.color + '12', borderColor: t.color + '40' }}>{t.name}</span>)}
+    </span>
+  )
 }
 
-function ListView({ rows, canEdit, onEdit, onDel, canConfirm, onConfirm, goto }: SharedProps) {
+type SharedProps = {
+  rows: AgItem[]; canEdit: (e: AgItem) => boolean;
+  canConfirm: (e: AgItem) => boolean; onConfirm: (e: EventItem, ok: boolean) => void;
+  onEdit: (e: EventItem) => void; onDel: (e: EventItem) => void; goto?: (r: string) => void
+  onAdd?: (dayIso: string) => void
+  tagOf: TagOf; onOpenMatch?: (e: AgItem) => void
+}
+
+function ListView({ rows, canEdit, onEdit, onDel, canConfirm, onConfirm, goto, tagOf, onOpenMatch }: SharedProps) {
   const { t: tr } = useLang()
   const now = Date.now()
   const upcoming = rows.filter(e => new Date(e.start_at).getTime() >= now - 3600000)
@@ -117,7 +210,7 @@ function ListView({ rows, canEdit, onEdit, onDel, canConfirm, onConfirm, goto }:
   const today = dayKey(new Date())
   const tomorrow = dayKey(new Date(now + 86400000))
   const in7 = dayKey(new Date(now + 7 * 86400000))
-  const groups: { label: string; items: EventItem[] }[] = [
+  const groups: { label: string; items: AgItem[] }[] = [
     { label: tr('Oggi'), items: [] }, { label: tr('Domani'), items: [] },
     { label: tr('Questa settimana'), items: [] }, { label: tr('Più avanti'), items: [] },
   ]
@@ -129,7 +222,7 @@ function ListView({ rows, canEdit, onEdit, onDel, canConfirm, onConfirm, goto }:
     else groups[3].items.push(e)
   })
 
-  const card = (e: EventItem) => <EvCard key={e.id} e={e} canEdit={canEdit(e)} onEdit={() => onEdit(e)} onDel={() => onDel(e)} canConfirm={canConfirm(e)} onConfirm={ok => onConfirm(e, ok)} goto={goto} />
+  const card = (e: AgItem) => <EvCard key={e.id} e={e} canEdit={canEdit(e)} onEdit={() => onEdit(e)} onDel={() => onDel(e)} canConfirm={canConfirm(e)} onConfirm={ok => onConfirm(e, ok)} goto={goto} tagOf={tagOf} onOpenMatch={onOpenMatch} />
 
   return (
     <>
@@ -149,12 +242,12 @@ function ListView({ rows, canEdit, onEdit, onDel, canConfirm, onConfirm, goto }:
   )
 }
 
-function CalendarView({ rows, canEdit, onEdit, onDel, canConfirm, onConfirm, goto, onAdd }: SharedProps) {
+function CalendarView({ rows, canEdit, onEdit, onDel, canConfirm, onConfirm, goto, onAdd, tagOf, onOpenMatch }: SharedProps) {
   const { t: tr } = useLang()
   const [cur, setCur] = useState(() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() } })
   const [sel, setSel] = useState<Date | null>(null)
 
-  const byDay: Record<string, EventItem[]> = {}
+  const byDay: Record<string, AgItem[]> = {}
   rows.forEach(e => { const k = localKey(e.start_at); (byDay[k] = byDay[k] || []).push(e) })
 
   const first = new Date(cur.y, cur.m, 1)
@@ -172,7 +265,7 @@ function CalendarView({ rows, canEdit, onEdit, onDel, canConfirm, onConfirm, got
   const now = Date.now()
   const next3 = rows.filter(e => new Date(e.start_at).getTime() >= now - 3600000).slice(0, 3)
 
-  const card = (e: EventItem) => <EvCard key={e.id} e={e} canEdit={canEdit(e)} onEdit={() => onEdit(e)} onDel={() => onDel(e)} canConfirm={canConfirm(e)} onConfirm={ok => onConfirm(e, ok)} goto={goto} />
+  const card = (e: AgItem) => <EvCard key={e.id} e={e} canEdit={canEdit(e)} onEdit={() => onEdit(e)} onDel={() => onDel(e)} canConfirm={canConfirm(e)} onConfirm={ok => onConfirm(e, ok)} goto={goto} tagOf={tagOf} onOpenMatch={onOpenMatch} />
 
   // In alto ciò che arriva, sotto il calendario per spostarsi nei giorni;
   // toccando un giorno i suoi impegni compaiono subito sotto il calendario.
@@ -181,7 +274,7 @@ function CalendarView({ rows, canEdit, onEdit, onDel, canConfirm, onConfirm, got
       <div style={{ ...sectionLabel, marginTop: 4 }}>{tr('Prossimi impegni')}</div>
       {next3.length === 0
         ? <div className="faint" style={{ padding: '4px 6px 8px' }}>{tr('Nessun impegno in programma.')}</div>
-        : <div className="ev-list ev-list-compact">{next3.map(e => <EvRow key={e.id} e={e} onOpen={() => setSel(new Date(e.start_at))} />)}</div>}
+        : <div className="ev-list ev-list-compact">{next3.map(e => <EvRow key={e.id} e={e} tagOf={tagOf} onOpen={e._match ? (onOpenMatch ? () => onOpenMatch(e) : undefined) : () => setSel(new Date(e.start_at))} />)}</div>}
 
       <div className="card" style={{ padding: 12 }}>
         <div className="flex between" style={{ alignItems: 'center', marginBottom: 8 }}>
@@ -202,7 +295,7 @@ function CalendarView({ rows, canEdit, onEdit, onDel, canConfirm, onConfirm, got
                 style={{ minHeight: 36, borderRadius: 10, cursor: 'pointer', border: isSel ? '1.5px solid var(--ink)' : isToday ? '1px solid var(--accent)' : '1px solid var(--border)', background: isSel ? 'var(--yellow-soft)' : isToday ? 'rgba(255,236,0,.10)' : 'transparent', padding: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
                 <span style={{ fontSize: 12.5, fontWeight: isToday ? 800 : 500 }}>{d.getDate()}</span>
                 <span className="flex" style={{ gap: 2 }}>
-                  {evs.slice(0, 4).map((e, j) => <span key={j} style={{ width: 5, height: 5, borderRadius: '50%', background: typeOf(e.type).c }} />)}
+                  {evs.slice(0, 4).map((e, j) => <span key={j} style={{ width: 5, height: 5, borderRadius: '50%', background: typeFor(e).c }} />)}
                 </span>
               </div>
             )
@@ -231,26 +324,27 @@ function CalendarView({ rows, canEdit, onEdit, onDel, canConfirm, onConfirm, got
 
 // Stessa scheda dell'impegno in formato riga: tipo, titolo, giorno e ora.
 // Un tocco seleziona quel giorno nel calendario, dove compare la scheda completa.
-function EvRow({ e, onOpen }: { e: EventItem; onOpen: () => void }) {
+function EvRow({ e, onOpen, tagOf }: { e: AgItem; onOpen?: () => void; tagOf: TagOf }) {
   const { t: tr } = useLang()
-  const t = typeOf(e.type)
+  const t = typeFor(e)
   const d = new Date(e.start_at)
   const day = d.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' })
   const time = d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
   return (
-    <button className="card ev-row" onClick={onOpen} style={{ borderLeft: `3px solid ${t.c}` }}>
+    <button className={'card ev-row' + (onOpen ? '' : ' ag-row-static')} onClick={onOpen} disabled={!onOpen} style={{ borderLeft: `3px solid ${t.c}`, color: 'inherit' }}>
       <span className="ev-row-ic" style={{ background: t.c + '22', color: t.c }}><Icon name={t.icon} size={14} /></span>
       <span className="ev-row-t">{e.title}</span>
+      <Chips e={e} tagOf={tagOf} />
       <span className="ev-row-when">{day} · <b>{time}</b></span>
       {e.request_status === 'da_confermare' && <span className="ev-row-dot" title={tr('Da confermare')} />}
     </button>
   )
 }
 
-function EvCard({ e, canEdit, onEdit, onDel, canConfirm, onConfirm, goto }: { e: EventItem; canEdit: boolean; onEdit: () => void; onDel: () => void; canConfirm: boolean; onConfirm: (ok: boolean) => void; goto?: (r: string) => void }) {
+function EvCard({ e, canEdit, onEdit, onDel, canConfirm, onConfirm, goto, tagOf, onOpenMatch }: { e: AgItem; canEdit: boolean; onEdit: () => void; onDel: () => void; canConfirm: boolean; onConfirm: (ok: boolean) => void; goto?: (r: string) => void; tagOf: TagOf; onOpenMatch?: (e: AgItem) => void }) {
   const { t: tr } = useLang()
-  const req = e.request_status
-  const t = typeOf(e.type)
+  const req = e._match ? null : e.request_status
+  const t = typeFor(e)
   const isTraining = e.type === 'allenamento' && !!e.fitness_program_id
   const d = new Date(e.start_at)
   const day = d.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' })
@@ -266,6 +360,8 @@ function EvCard({ e, canEdit, onEdit, onDel, canConfirm, onConfirm, goto }: { e:
           <span style={{ fontSize: 10.5, color: t.c, fontWeight: 700, whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: .6 }}>{tr(t.l)}</span>
         </div>
         <div className="flex gap" style={{ alignItems: 'center', marginTop: 4, flexWrap: 'wrap', gap: 10 }}>
+          <Chips e={e} tagOf={tagOf} />
+          {e._match && e.notes && <span className="faint" style={{ fontSize: 12 }}>{e.notes}</span>}
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12.5, fontWeight: 500, color: 'var(--text-dim)' }}>
             <Icon name="calendar" size={13} /> {day}
           </span>
@@ -307,6 +403,7 @@ function EvCard({ e, canEdit, onEdit, onDel, canConfirm, onConfirm, goto }: { e:
         )}
         {/* un'unica riga di azioni: conferme e scheda a sinistra, icone a destra */}
         <div className="ev-actions">
+          {e._match && onOpenMatch && <button className="btn btn-sm" onClick={() => onOpenMatch(e)}>{tr('Apri partita →')}</button>}
           {isTraining && goto && <button className="btn btn-sm btn-primary" onClick={() => goto('fitness')}>{tr('Apri scheda →')}</button>}
           {canConfirm && <button className="btn btn-sm" style={{ background: 'var(--green)', color: '#fff', borderColor: 'var(--green)' }} onClick={() => onConfirm(true)}>{tr('Conferma')}</button>}
           {canConfirm && <button className="btn btn-ghost btn-sm" onClick={() => onConfirm(false)}>{tr('Rifiuta')}</button>}
@@ -328,10 +425,12 @@ function EvCard({ e, canEdit, onEdit, onDel, canConfirm, onConfirm, goto }: { e:
   )
 }
 
-function EventForm({ value, isAdmin, uid, athleteId, onClose, onSaved }: {
-  value: Partial<EventItem>; isAdmin: boolean; uid?: string; athleteId: number | null; onClose: () => void; onSaved: () => void
+function EventForm({ value, isAdmin, uid, athleteId, athleteChoices, onClose, onSaved }: {
+  value: Partial<EventItem>; isAdmin: boolean; uid?: string; athleteId: number | null
+  athleteChoices?: { id: number; name: string }[]; onClose: () => void; onSaved: () => void
 }) {
   const { t: tr } = useLang()
+  const [pid, setPid] = useState<number | null>(athleteId)
   const [f, setF] = useState<Partial<EventItem>>({ ...value, start_at: value.start_at ? toLocal(value.start_at) : '' })
   const [busy, setBusy] = useState(false)
   const [atts, setAtts] = useState<EventAttachment[]>(value.attachments || [])
@@ -369,7 +468,7 @@ function EventForm({ value, isAdmin, uid, athleteId, onClose, onSaved }: {
       attachments: atts,
     }
     if (f.id) await updateRow('crm_events', f.id, payload)
-    else await insertRow('crm_events', { ...payload, player_id: athleteId, created_by: uid })
+    else await insertRow('crm_events', { ...payload, player_id: athleteChoices ? pid : athleteId, created_by: uid })
     setBusy(false); onSaved()
   }
 
@@ -379,6 +478,13 @@ function EventForm({ value, isAdmin, uid, athleteId, onClose, onSaved }: {
         <button className="btn btn-ghost" onClick={onClose}>{tr('Annulla')}</button>
         <button className="btn btn-primary" disabled={busy || !f.title || !f.start_at} onClick={save}>{busy ? 'Salvo…' : 'Salva'}</button>
       </>}>
+      {athleteChoices && (
+        <Field label={tr("Atleta")}>
+          <Select value={pid ?? ''} onChange={e => setPid(Number(e.target.value))}>
+            {athleteChoices.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+          </Select>
+        </Field>
+      )}
       <Field label={tr("Titolo")}><Input value={f.title || ''} onChange={e => set('title', e.target.value)} placeholder={tr("es. Transfer aeroporto")} /></Field>
       <div className="row2">
         <Field label={tr("Tipo")}><Select value={f.type} onChange={e => set('type', e.target.value)}>{types.map(k => <option key={k} value={k}>{tr(typeOf(k).l)}</option>)}</Select></Field>

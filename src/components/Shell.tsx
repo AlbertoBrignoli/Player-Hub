@@ -8,12 +8,12 @@ import { useLang, LangToggle } from '../lib/i18n'
 import Toaster from './Toaster'
 import PushNudge from './PushNudge'
 import Icon from './Icon'
-import { Modal, Field, Input, Tabs } from './ui'
+import { Modal, Field, Input, Tabs, Empty } from './ui'
 
 // Schermate home dei vari ruoli: qui compare l'invito ad attivare le notifiche.
 const HOME_ROUTES = ['dashboard', 'brandhome', 'agent-home', 'insurer-home', 'tax-home', 'physio-home']
 
-export const APP_VERSION = 'v5.9'
+export const APP_VERSION = 'v6.0'
 
 export interface NavDef {
   key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[]
@@ -64,105 +64,104 @@ export const BRAND_NAV: { group: string; items: NavDef[] }[] = [
   ]},
 ]
 
-// Menu del preparatore sul telaio unico dei professionisti.
-// Stessa impostazione del fisioterapista: cambia solo il "principio" del ruolo
-// (qui gli strumenti di preparazione: Area Fitness, Performance, Agenda).
-export const COACH_NAV: { group: string; items: NavDef[] }[] = [
-  { group: 'Principale', items: [
-    { key: 'dashboard', label: 'Home', icon: 'home' },
-    { key: 'fitness', label: 'Atleta', icon: 'dumbbell', tabs: [
-      { key: 'fitness', label: 'Area Fitness' },
-      { key: 'performance', label: 'Performance' },
-    ]},
-    { key: 'agenda', label: 'Agenda', icon: 'calendar' },
-    { key: 'messages', label: 'Messaggi', icon: 'message' },
-    { key: 'coach-office', label: 'Il mio ufficio', icon: 'briefcase' },
-  ]},
-  { group: 'Altro', items: [
-    { key: 'coach-profile', label: 'Il mio profilo', icon: 'user' },
-    { key: 'my-team', label: 'Il mio team', icon: 'users' },
-    { key: 'access-requests', label: 'Collegamenti', icon: 'key' },
-  ]},
-]
+// ---- Ufficio del professionista: un solo telaio per tutti i ruoli pro ----
+// Principale = Home ufficio, I miei atleti, Agenda/Calendario, Chat + area del ruolo;
+// Altro = il mio profilo e gli extra del ruolo. Cambiano solo le voci dell'area.
+type ProRole = 'agente' | 'assicuratore' | 'commercialista' | 'preparatore' | 'fisioterapista'
+export const PRO_ROLES: Record<ProRole, { home: string; profile: string; area: NavDef[]; extra: NavDef[]; tab: { key: string; label: string; icon: string } }> = {
+  agente: {
+    home: 'agent-home', profile: 'agent-profile',
+    area: [
+      { key: 'dashboard', label: 'Atleta', icon: 'activity', tabs: [
+        { key: 'dashboard', label: 'Panoramica' },
+        { key: 'performance', label: 'Performance' },
+        { key: 'fitness', label: 'Preparazione' },
+        { key: 'profile', label: 'Scheda' },
+      ]},
+      { key: 'media', label: 'Media', icon: 'image' },
+      { key: 'commercial', label: 'Business', icon: 'briefcase', tabs: [
+        { key: 'commercial', label: 'Profilo commerciale' },
+        { key: 'sponsors', label: 'Sponsor' },
+        { key: 'contracts', label: 'Contratti' },
+        { key: 'documents', label: 'Documenti' },
+      ]},
+    ],
+    extra: [],
+    tab: { key: 'dashboard', label: 'Atleta', icon: 'activity' },
+  },
+  assicuratore: {
+    home: 'insurer-home', profile: 'insurer-profile',
+    area: [
+      { key: 'insurance', label: 'Polizze', icon: 'lock' },
+      { key: 'documents', label: 'Documenti', icon: 'archive' },
+    ],
+    extra: [],
+    tab: { key: 'insurance', label: 'Polizze', icon: 'lock' },
+  },
+  commercialista: {
+    home: 'tax-home', profile: 'tax-profile',
+    area: [
+      { key: 'legaltax', label: 'Fisco e legale', icon: 'briefcase' },
+      { key: 'documents', label: 'Documenti', icon: 'archive' },
+    ],
+    extra: [{ key: 'services', label: 'Richieste servizi', icon: 'layers' }],
+    tab: { key: 'legaltax', label: 'Fisco', icon: 'briefcase' },
+  },
+  preparatore: {
+    home: 'dashboard', profile: 'coach-profile',
+    area: [
+      { key: 'fitness', label: 'Preparazione', icon: 'dumbbell', tabs: [
+        { key: 'fitness', label: 'Area Fitness' },
+        { key: 'performance', label: 'Performance' },
+      ]},
+      { key: 'coach-office', label: 'Clienti e cassa', icon: 'inbox' },
+    ],
+    extra: [],
+    tab: { key: 'fitness', label: 'Fitness', icon: 'dumbbell' },
+  },
+  fisioterapista: {
+    home: 'physio-home', profile: 'physio-profile',
+    area: [{ key: 'physio-office', label: 'Studio', icon: 'briefcase' }],
+    extra: [],
+    tab: { key: 'physio-office', label: 'Studio', icon: 'briefcase' },
+  },
+}
 
-// Menu dell'agente/procuratore: accesso completo a tutto ciò che riguarda il suo atleta.
-// Fuori solo le Impostazioni di sistema (whitelist accessi) e l'ufficio privato del preparatore.
-export const AGENT_NAV: { group: string; items: NavDef[] }[] = [
-  { group: 'Principale', items: [
-    { key: 'agent-home', label: 'Home', icon: 'home' },
-    { key: 'dashboard', label: 'Atleta', icon: 'activity', tabs: [
-      { key: 'dashboard', label: 'Panoramica' },
-      { key: 'performance', label: 'Performance' },
-      { key: 'fitness', label: 'Preparazione' },
-      { key: 'profile', label: 'Scheda' },
+export function proNav(role: ProRole): { group: string; items: NavDef[] }[] {
+  const r = PRO_ROLES[role]
+  // l'agente lavora anche su contenuti ed editoriale: Calendario completo al posto della sola Agenda
+  const cal: NavDef = role === 'agente'
+    ? { key: 'editorial', label: 'Calendario', icon: 'calendar', tabs: [
+        { key: 'agenda', label: 'Impegni' },
+        { key: 'editorial', label: 'Editoriale' },
+        { key: 'tasks', label: 'Task' },
+      ]}
+    : { key: 'agenda', label: 'Agenda', icon: 'calendar' }
+  return [
+    { group: 'Ufficio', items: [
+      { key: r.home, label: 'Home', icon: 'home' },
+      { key: 'my-athletes', label: 'I miei atleti', icon: 'users' },
+      cal,
+      { key: 'messages', label: 'Chat', icon: 'message' },
     ]},
-    { key: 'editorial', label: 'Calendario', icon: 'calendar', tabs: [
-      { key: 'editorial', label: 'Editoriale' },
-      { key: 'agenda', label: 'Impegni' },
-      { key: 'tasks', label: 'Task' },
+    { group: 'Area di lavoro', items: r.area },
+    { group: 'Altro', items: [
+      { key: r.profile, label: 'Il mio profilo', icon: 'user' },
+      ...r.extra,
     ]},
-    { key: 'media', label: 'Media', icon: 'image' },
-    { key: 'messages', label: 'Messaggi', icon: 'message' },
-    { key: 'commercial', label: 'Business', icon: 'briefcase', tabs: [
-      { key: 'commercial', label: 'Profilo commerciale' },
-      { key: 'sponsors', label: 'Sponsor' },
-      { key: 'contracts', label: 'Contratti' },
-      { key: 'documents', label: 'Documenti' },
-    ]},
-  ]},
-  { group: 'Altro', items: [
-    { key: 'agent-profile', label: 'Il mio profilo', icon: 'user' },
-    { key: 'my-team', label: 'Il mio team', icon: 'users' },
-    { key: 'access-requests', label: 'Collegamenti', icon: 'key' },
-  ]},
-]
+  ]
+}
 
-// Menu dell'assicuratore: le sue polizze, i suoi atleti, la sua scheda.
-export const INSURER_NAV: { group: string; items: NavDef[] }[] = [
-  { group: 'Assicurazioni', items: [
-    { key: 'insurer-home', label: 'Home', icon: 'grid' },
-    { key: 'insurance', label: 'Polizze', icon: 'lock' },
-    { key: 'insurer-profile', label: 'Il mio profilo', icon: 'user' },
-    { key: 'access-requests', label: 'Collegamenti', icon: 'key' },
-  ]},
-  { group: 'Atleta', items: [
-    { key: 'my-team', label: 'Il mio team', icon: 'users' },
-    { key: 'documents', label: 'Documenti', icon: 'archive' },
-    { key: 'agenda', label: 'Scadenze', icon: 'clock' },
-    { key: 'messages', label: 'Messaggi', icon: 'message' },
-  ]},
-]
-
-// Menu del commercialista: area fiscale, atleti seguiti, scheda personale.
-export const TAX_NAV: { group: string; items: NavDef[] }[] = [
-  { group: 'Legal & Tax', items: [
-    { key: 'tax-home', label: 'Home', icon: 'grid' },
-    { key: 'legaltax', label: 'Fisco e legale', icon: 'briefcase' },
-    { key: 'services', label: 'Richieste servizi', icon: 'star' },
-    { key: 'tax-profile', label: 'Il mio profilo', icon: 'user' },
-    { key: 'access-requests', label: 'Collegamenti', icon: 'key' },
-  ]},
-  { group: 'Atleta', items: [
-    { key: 'my-team', label: 'Il mio team', icon: 'users' },
-    { key: 'documents', label: 'Documenti', icon: 'archive' },
-    { key: 'agenda', label: 'Scadenze', icon: 'clock' },
-    { key: 'messages', label: 'Messaggi', icon: 'message' },
-  ]},
-]
-
-// Menu del fisioterapista: profilo, atleti seguiti, chat.
-export const PHYSIO_NAV: { group: string; items: NavDef[] }[] = [
-  { group: 'Fisioterapia', items: [
-    { key: 'physio-home', label: 'Home', icon: 'grid' },
-    { key: 'physio-profile', label: 'Il mio profilo', icon: 'user' },
-    { key: 'physio-office', label: 'Il mio ufficio', icon: 'briefcase' },
-    { key: 'access-requests', label: 'Collegamenti', icon: 'key' },
-  ]},
-  { group: 'Atleta', items: [
-    { key: 'my-team', label: 'Il mio team', icon: 'users' },
-    { key: 'messages', label: 'Messaggi', icon: 'message' },
-  ]},
-]
+// Tab bar dei professionisti: Home, Atleti, area del ruolo, Agenda (+ Altro)
+export function proTabbar(role: ProRole) {
+  const r = PRO_ROLES[role]
+  return [
+    { key: r.home, label: 'Home', icon: 'home' },
+    { key: 'my-athletes', label: 'Atleti', icon: 'users' },
+    r.tab,
+    role === 'agente' ? { key: 'editorial', label: 'Calendario', icon: 'calendar' } : { key: 'agenda', label: 'Agenda', icon: 'calendar' },
+  ]
+}
 
 const TITLES: Record<string, { t: string; s: string }> = {
   dashboard: { t: 'Home', s: 'Quadro generale della gestione' },
@@ -190,6 +189,7 @@ const TITLES: Record<string, { t: string; s: string }> = {
   legaltax: { t: 'Legal & Tax', s: 'Pagamenti, documenti e richieste' },
   services: { t: 'Servizi AUVI', s: 'Servizi e partner a tua disposizione' },
   'my-team': { t: 'Il mio team', s: 'Il tuo team di lavoro' },
+  'my-athletes': { t: 'I miei atleti', s: 'Collegamenti, inviti e accesso rapido a ogni atleta' },
   archivio: { t: 'Contratti e Documenti', s: 'Accordi, scadenze e archivio file riservato' },
   'tax-home': { t: 'Home', s: 'La tua scheda e gli atleti seguiti' },
   'tax-profile': { t: 'Il mio profilo', s: 'Contatti e studio' },
@@ -208,7 +208,7 @@ export default function Shell({ route, setRoute, right, children }: {
 }) {
   const { profile, isAdmin, isBrand, role, signOut } = useAuth()
   const { t: tr } = useLang()
-  const { athletes, athleteId, setAthleteId, canSwitch } = useAthlete()
+  const { athletes, athleteId, setAthleteId, canSwitch, loading: athletesLoading } = useAthlete()
   const [open, setOpen] = useState(false)
   const baseTitle = TITLES[route] || { t: '', s: '' }
   const athleteName = athletes.find(a => a.api_player_id === athleteId)?.name
@@ -249,7 +249,11 @@ export default function Shell({ route, setRoute, right, children }: {
     if (error) { alert(error.message); return }
     window.location.reload()
   }
-  const nav = isBrand ? BRAND_NAV : isCoach ? COACH_NAV : isAgent ? AGENT_NAV : isInsurer ? INSURER_NAV : isTax ? TAX_NAV : isPhysio ? PHYSIO_NAV : NAV
+  const isPro = isCoach || isAgent || isInsurer || isTax || isPhysio
+  const nav = isBrand ? BRAND_NAV : isPro ? proNav(role as ProRole) : NAV
+  // professionista senza atleti: le aree di lavoro non hanno dati da mostrare (evita caricamenti infiniti)
+  const proFree = isPro ? [PRO_ROLES[role as ProRole].home, PRO_ROLES[role as ProRole].profile, 'my-athletes', 'settings', 'access-requests', 'coach-office'] : []
+  const needsAthlete = isPro && !athletesLoading && athletes.length === 0 && !proFree.includes(route)
 
   // Sezioni con schede: una voce di menu raggruppa più schermate (es. Calendario =
   // Editoriale · Impegni · Task). La voce resta attiva su tutte le sue schede e,
@@ -277,54 +281,20 @@ export default function Shell({ route, setRoute, right, children }: {
   const isActiveItem = (key: string) => hub?.key === key
 
   // Voci della barra in basso (telefono). Nel menu "Altro" su telefono non si ripetono.
-  const tabbarItems: { key: string; label: string; icon: string }[] = (isBrand
-          ? [
+  const tabbarItems: { key: string; label: string; icon: string }[] = isBrand
+    ? [
               { key: 'brandhome', label: 'Home', icon: 'grid' },
               { key: 'mediakit', label: 'Numeri', icon: 'activity' },
               { key: 'campaigns', label: 'Campagne', icon: 'image' },
               { key: 'messages', label: 'Chat', icon: 'message' },
             ]
-          : isPhysio
-          ? [
-              { key: 'physio-home', label: 'Home', icon: 'grid' },
-              { key: 'physio-profile', label: 'Profilo', icon: 'user' },
-              { key: 'my-team', label: 'Team', icon: 'users' },
-              { key: 'messages', label: 'Chat', icon: 'message' },
-            ]
-          : isTax
-          ? [
-              { key: 'tax-home', label: 'Home', icon: 'grid' },
-              { key: 'legaltax', label: 'Fisco', icon: 'briefcase' },
-              { key: 'agenda', label: 'Scadenze', icon: 'clock' },
-              { key: 'messages', label: 'Chat', icon: 'message' },
-            ]
-          : isInsurer
-          ? [
-              { key: 'insurer-home', label: 'Home', icon: 'grid' },
-              { key: 'insurance', label: 'Polizze', icon: 'lock' },
-              { key: 'agenda', label: 'Scadenze', icon: 'clock' },
-              { key: 'messages', label: 'Chat', icon: 'message' },
-            ]
-          : isAgent
-          ? [
-              { key: 'agent-home', label: 'Home', icon: 'home' },
-              { key: 'dashboard', label: 'Atleta', icon: 'activity' },
-              { key: 'editorial', label: 'Calendario', icon: 'calendar' },
-              { key: 'messages', label: 'Chat', icon: 'message' },
-            ]
-          : isCoach
-          ? [
-              { key: 'dashboard', label: 'Home', icon: 'grid' },
-              { key: 'fitness', label: 'Atleta', icon: 'dumbbell' },
-              { key: 'agenda', label: 'Agenda', icon: 'calendar' },
-              { key: 'messages', label: 'Chat', icon: 'message' },
-            ]
-          : [
+    : isPro ? proTabbar(role as ProRole)
+    : [
               { key: 'dashboard', label: 'Home', icon: 'home' },
               { key: 'editorial', label: 'Calendario', icon: 'calendar' },
               { key: 'media', label: 'Media', icon: 'image' },
               { key: 'services', label: 'Servizi', icon: 'layers' },
-            ])
+            ]
   const tabbarKeys = new Set(tabbarItems.map(t => t.key))
   const title = hub && hubTabs.length > 1 ? { t: hub.label, s: title0.s } : title0
 
@@ -420,7 +390,11 @@ export default function Shell({ route, setRoute, right, children }: {
               <Tabs tabs={hubTabs.map(t => ({ key: t.key, label: tr(t.label) }))} value={route} onChange={k => setRoute(k)} />
             </div>
           )}
-          {children}
+          {needsAthlete ? (
+            <Empty icon={<Icon name="users" size={24} strokeWidth={1.6} />} title={tr('Nessun atleta collegato')}
+              hint={tr("Quest'area si riempie quando un atleta accetta il tuo invito.")}
+              action={{ label: tr('Invita un atleta'), onClick: () => setRoute('my-athletes') }} />
+          ) : children}
         </div>
       </div>
 

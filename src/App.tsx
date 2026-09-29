@@ -8,7 +8,6 @@ import Dashboard from './modules/Dashboard'
 import Performance from './modules/Performance'
 import Profile from './modules/Profile'
 import Fitness from './modules/Fitness'
-import FitnessCoachHome from './modules/FitnessCoachHome'
 import FitnessCoachProfile from './modules/FitnessCoachProfile'
 import Contracts from './modules/Contracts'
 import Documents from './modules/Documents'
@@ -27,22 +26,20 @@ import BrandCard from './modules/BrandCard'
 import BrandHome from './modules/BrandHome'
 import CoachOffice from './modules/CoachOffice'
 import AgentProfile from './modules/AgentProfile'
-import AgentHome from './modules/AgentHome'
 import Insurance from './modules/Insurance'
-import InsurerHome from './modules/InsurerHome'
 import InsurerProfile from './modules/InsurerProfile'
 import AccessRequests from './modules/AccessRequests'
 import LegalTax from './modules/LegalTax'
 import Services from './modules/Services'
-import TaxAdvisorHome from './modules/TaxAdvisorHome'
 import TaxAdvisorProfile from './modules/TaxAdvisorProfile'
-import PhysioHome from './modules/PhysioHome'
 import PhysioProfile from './modules/PhysioProfile'
 import PhysioOffice from './modules/PhysioOffice'
 import BrandCampaigns from './modules/BrandCampaigns'
 import MyTeam from './modules/MyTeam'
 import Archivio from './modules/Archivio'
 import TalentSearch from './modules/TalentSearch'
+import MyAthletes from './modules/MyAthletes'
+import ProHome from './modules/ProHome'
 
 export default function App() {
   const { session, profile, loading } = useAuth()
@@ -58,21 +55,21 @@ export default function App() {
   const isBrand = profile.role === 'brand'
   const brandAllowed = ['settings', 'brandhome', 'mediakit', 'campaigns', 'brandcard', 'talent', 'messages']
   // Il preparatore vede solo fitness, performance dell'atleta e chat.
-  const coachAllowed = ['settings', 'dashboard', 'fitness', 'coach-profile', 'coach-office', 'performance', 'agenda', 'messages', 'access-requests', 'my-team']
+  const coachAllowed = ['my-athletes', 'settings', 'dashboard', 'fitness', 'coach-profile', 'coach-office', 'performance', 'agenda', 'messages', 'access-requests', 'my-team']
   const isCoach = profile.role === 'preparatore'
   // L'agente vede solo le competenze del procuratore.
-  const agentAllowed = ['settings', 'agent-home', 'dashboard', 'performance', 'profile', 'editorial', 'media',
+  const agentAllowed = ['my-athletes', 'settings', 'agent-home', 'dashboard', 'performance', 'profile', 'editorial', 'media',
                         'contracts', 'documents', 'sponsors', 'commercial', 'fitness',
                         'agenda', 'tasks', 'messages', 'agent-profile', 'insurance', 'legaltax', 'services', 'access-requests', 'my-team', 'archivio']
   const isAgent = profile.role === 'agente'
   // L'assicuratore vede solo la sua area: polizze, scadenze e chat.
-  const insurerAllowed = ['settings', 'insurer-home', 'insurance', 'insurer-profile', 'documents', 'agenda', 'messages', 'access-requests', 'my-team']
+  const insurerAllowed = ['my-athletes', 'settings', 'insurer-home', 'insurance', 'insurer-profile', 'documents', 'agenda', 'messages', 'access-requests', 'my-team']
   const isInsurer = profile.role === 'assicuratore'
   // Il commercialista vede solo la sua area.
-  const taxAllowed = ['settings', 'tax-home', 'legaltax', 'tax-profile', 'services', 'documents', 'agenda', 'messages', 'access-requests', 'my-team']
+  const taxAllowed = ['my-athletes', 'settings', 'tax-home', 'legaltax', 'tax-profile', 'services', 'documents', 'agenda', 'messages', 'access-requests', 'my-team']
   const isTax = profile.role === 'commercialista'
   // Il fisioterapista vede la sua area: home, profilo, chat e collegamenti.
-  const physioAllowed = ['settings', 'physio-home', 'physio-profile', 'physio-office', 'messages', 'access-requests', 'my-team']
+  const physioAllowed = ['agenda', 'my-athletes', 'settings', 'physio-home', 'physio-profile', 'physio-office', 'messages', 'access-requests', 'my-team']
   const isPhysio = profile.role === 'fisioterapista'
   const home = isBrand ? 'brandhome' : isAgent ? 'agent-home' : isInsurer ? 'insurer-home' : isTax ? 'tax-home' : isPhysio ? 'physio-home' : 'dashboard'
   let route = routeState ?? home
@@ -90,24 +87,25 @@ export default function App() {
       case 'campaigns': return <BrandCampaigns />
       case 'brandcard': return <BrandCard goto={setRoute} />
       case 'talent': return <TalentSearch goto={setRoute} />
-      case 'dashboard': return profile.role === 'preparatore' ? <FitnessCoachHome goto={setRoute} /> : <Dashboard goto={setRoute} />
+      case 'dashboard': return profile.role === 'preparatore' ? <ProHome goto={setRoute} /> : <Dashboard goto={setRoute} />
       case 'performance': return <Performance goto={setRoute} />
       case 'profile': return <Profile />
       case 'fitness': return <Fitness goto={setRoute} />
       case 'coach-profile': return <FitnessCoachProfile goto={setRoute} />
       case 'coach-office': return <CoachOffice />
-      case 'agent-home': return <AgentHome goto={setRoute} />
+      case 'agent-home': return <ProHome goto={setRoute} />
       case 'insurance': return <Insurance />
-      case 'insurer-home': return <InsurerHome goto={setRoute} />
+      case 'insurer-home': return <ProHome goto={setRoute} />
       case 'insurer-profile': return <InsurerProfile />
       case 'access-requests': return <AccessRequests />
       case 'legaltax': return <LegalTax />
       case 'services': return <Services />
       case 'my-team': return <MyTeam goto={setRoute} />
+      case 'my-athletes': return <MyAthletes />
       case 'archivio': return <Archivio />
-      case 'tax-home': return <TaxAdvisorHome goto={setRoute} />
+      case 'tax-home': return <ProHome goto={setRoute} />
       case 'tax-profile': return <TaxAdvisorProfile />
-      case 'physio-home': return <PhysioHome goto={setRoute} />
+      case 'physio-home': return <ProHome goto={setRoute} />
       case 'physio-profile': return <PhysioProfile />
       case 'physio-office': return <PhysioOffice />
       case 'agent-profile': return <AgentProfile />
@@ -121,7 +119,7 @@ export default function App() {
       case 'tasks': return <Tasks />
       case 'messages': return <Messages />
       case 'settings': return <Settings />
-      default: return isBrand ? <MediaKit /> : profile.role === 'preparatore' ? <FitnessCoachHome goto={setRoute} /> : <Dashboard goto={setRoute} />
+      default: return isBrand ? <MediaKit /> : profile.role === 'preparatore' ? <ProHome goto={setRoute} /> : <Dashboard goto={setRoute} />
     }
   })()
 

@@ -3,9 +3,10 @@ import { supabase } from '../lib/supabase'
 import { toast } from '../lib/toast'
 import { useAuth } from '../auth/AuthContext'
 import { useAthlete } from '../lib/athlete'
-import { Field, Input, Textarea, Empty, Spinner } from '../components/ui'
+import { Field, Input, Textarea, Select, Empty, Spinner } from '../components/ui'
 import Icon from '../components/Icon'
 import { fmtDateTime } from '../lib/format'
+import MyAthletes from './MyAthletes'
 
 // Collegamenti fra professionisti e atleti.
 // Il professionista NON vede l'elenco degli atleti: inserisce il codice che gli
@@ -16,11 +17,14 @@ const kicker: React.CSSProperties = {
   fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase', fontWeight: 800,
 }
 
-const ROLE_LABEL: Record<string, string> = {
-  assicuratore: 'Assicuratore', agente: 'Procuratore', preparatore: 'Preparatore atletico', fisioterapista: 'Fisioterapista',
+export const ROLE_LABEL: Record<string, string> = {
+  assicuratore: 'Assicuratore', agente: 'Procuratore', preparatore: 'Preparatore atletico',
+  fisioterapista: 'Fisioterapista', commercialista: 'Commercialista',
 }
 
-type Req = {
+export const PRO_ROLES = ['assicuratore', 'agente', 'preparatore', 'fisioterapista', 'commercialista']
+
+export type Req = {
   id: string
   requester_id: string
   requester_name: string | null
@@ -33,12 +37,19 @@ type Req = {
 }
 
 export default function AccessRequests() {
+  const { role } = useAuth()
+  // I professionisti usano l'hub "I miei atleti" (i vecchi link restano validi).
+  if (PRO_ROLES.includes(role || '')) return <MyAthletes />
+  return <AccessRequestsBoard />
+}
+
+function AccessRequestsBoard() {
   const { role, isAdmin } = useAuth()
   const { athletes, athleteId } = useAthlete()
   const [rows, setRows] = useState<Req[]>([])
   const [loading, setLoading] = useState(true)
 
-  const isPro = ['assicuratore', 'agente', 'preparatore', 'fisioterapista'].includes(role || '')
+  const isPro = PRO_ROLES.includes(role || '')
   const canDecide = isAdmin || role === 'player'
 
   async function load() {
@@ -66,6 +77,7 @@ export default function AccessRequests() {
 
   return (
     <div className="grid" style={{ gap: 18 }}>
+      {role === 'player' && <AcceptProInvite />}
       {isPro && <RequestForm onDone={load} mine={rows} />}
 
       {canDecide && (
@@ -150,8 +162,53 @@ export default function AccessRequests() {
   )
 }
 
+// Atleta: inserisce il codice che gli ha dato un professionista (crm_accept_pro_invite).
+// È la conferma dell'atleta: il collegamento è immediato.
+function AcceptProInvite() {
+  const [code, setCode] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  async function accept() {
+    const c = code.trim()
+    if (!c || busy) return
+    setBusy(true)
+    const { data, error } = await supabase.rpc('crm_accept_pro_invite', { p_code: c })
+    setBusy(false)
+    if (error) { toast(error.message, 'err'); return }
+    const res = data as any
+    if (!res?.ok) { toast(res?.error || 'Codice non valido', 'err'); return }
+    toast(`${res.pro || 'Il professionista'} ora fa parte del tuo team`)
+    setCode('')
+    setTimeout(() => window.location.reload(), 900)
+  }
+
+  return (
+    <div className="card" style={{ borderColor: 'var(--yellow)', background: 'var(--yellow-soft)' }}>
+      <div style={{ ...kicker, color: 'var(--ink)' }}>Un professionista ti ha dato un codice?</div>
+      <div style={{ fontSize: 12.5, color: 'var(--text-dim)', marginTop: 5, marginBottom: 12 }}>
+        Inseriscilo qui per collegarlo al tuo Player Hub. Inserendolo confermi che può lavorare con te.
+      </div>
+      <div className="flex gap" style={{ gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ flex: 1, minWidth: 200 }}>
+          <Input value={code} onChange={e => setCode(e.target.value.toUpperCase())}
+            onKeyDown={e => { if (e.key === 'Enter') accept() }}
+            placeholder="ES. AUVI-1A2B3C" style={{ letterSpacing: 2, fontWeight: 700, background: 'var(--surface)' }} />
+        </div>
+        <button className="btn btn-primary" disabled={busy || !code.trim()} onClick={accept}>
+          {busy ? 'Collego…' : 'Collega'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // Form per il professionista: inserisce il codice ricevuto dall'atleta o dall'agenzia.
-function RequestForm({ onDone, mine }: { onDone: () => void; mine: Req[] }) {
+// `bare` = senza riquadro (dentro una finestra, es. in "I miei atleti").
+export function RequestForm({ onDone, mine = [], bare }: {
+  onDone: () => void
+  mine?: Pick<Req, 'status'>[]
+  bare?: boolean
+}) {
   const [code, setCode] = useState('')
   const [msg, setMsg] = useState('')
   const [busy, setBusy] = useState(false)
@@ -173,10 +230,10 @@ function RequestForm({ onDone, mine }: { onDone: () => void; mine: Req[] }) {
   }
 
   return (
-    <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 18,
+    <div style={bare ? undefined : { position: 'relative', overflow: 'hidden', borderRadius: 18,
                   background: 'var(--bg-2)', border: '1px solid var(--border)', padding: '22px' }}>
-      <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 5, background: ACCENT }} />
-      <div style={{ ...kicker, color: ACCENT }}>Collegati a un atleta</div>
+      {!bare && <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 5, background: ACCENT }} />}
+      {!bare && <div style={{ ...kicker, color: ACCENT }}>Collegati a un atleta</div>}
       <div className="faint" style={{ fontSize: 12.5, marginTop: 5, marginBottom: 14 }}>
         Inserisci il codice che ti ha dato l'atleta o AUVI. La richiesta viene approvata
         prima di darti accesso.
@@ -253,18 +310,19 @@ function CodesManager({ athleteId, athleteName }: { athleteId: number | null; at
       </div>
 
       <div className="flex gap" style={{ gap: 8, flexWrap: 'wrap', marginBottom: codes.length ? 14 : 0 }}>
-        <select value={role} onChange={e => setRole(e.target.value)}
-          style={{ minWidth: 170, background: 'var(--bg-2)', border: '1px solid var(--border)',
-            borderRadius: 10, padding: '10px 12px', color: 'var(--text)', fontSize: 13.5 }}>
-          <option value="">Figura professionale…</option>
-          <option value="assicuratore">Assicuratore</option>
-          <option value="agente">Agente</option>
-          <option value="preparatore">Preparatore atletico</option>
-          <option value="commercialista">Commercialista</option>
-        </select>
-        <input value={label} onChange={e => setLabel(e.target.value)} placeholder="Per chi? es. Anthea Assicurazioni (facoltativo)"
-          style={{ flex: 1, minWidth: 220, background: 'var(--bg-2)', border: '1px solid var(--border)',
-            borderRadius: 10, padding: '10px 12px', color: 'var(--text)', fontSize: 13.5 }} />
+        <div style={{ minWidth: 170 }}>
+          <Select value={role} onChange={e => setRole(e.target.value)}>
+            <option value="">Figura professionale…</option>
+            <option value="assicuratore">Assicuratore</option>
+            <option value="agente">Agente</option>
+            <option value="preparatore">Preparatore atletico</option>
+            <option value="commercialista">Commercialista</option>
+            <option value="fisioterapista">Fisioterapista</option>
+          </Select>
+        </div>
+        <div style={{ flex: 1, minWidth: 220 }}>
+          <Input value={label} onChange={e => setLabel(e.target.value)} placeholder="Per chi? es. Anthea Assicurazioni (facoltativo)" />
+        </div>
         <button className="btn btn-primary" disabled={busy || !athleteId} onClick={genera}>
           <Icon name="plus" size={15} /> Genera codice
         </button>

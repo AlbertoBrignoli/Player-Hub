@@ -48,7 +48,8 @@ export function AthleteProvider({ children }: { children: React.ReactNode }) {
     return () => { mounted = false }
   }, [profile?.id, profile?.player_api_id])
 
-  const canSwitch = (role === 'admin' || role === 'creator' || role === 'preparatore' || role === 'brand' || role === 'agente') && athletes.length > 1
+  // tutti i professionisti gestiscono più atleti: il selettore in alto vale per ognuno di loro
+  const canSwitch = ['admin', 'creator', 'brand', 'agente', 'preparatore', 'assicuratore', 'commercialista', 'fisioterapista'].includes(role || '') && athletes.length > 1
   const athleteTz = athletes.find(a => a.api_player_id === athleteId)?.timezone || 'Europe/Rome'
 
   return (
