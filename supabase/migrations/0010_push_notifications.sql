@@ -28,7 +28,7 @@ begin
     body := jsonb_build_object('record', to_jsonb(new)),
     headers := jsonb_build_object(
       'Content-Type', 'application/json',
-      'x-push-secret', 'ec0d75afddf48f5b0661b309b2396d24a27843e98edd64b1'
+      'x-push-secret', '<ruotato in 0025, vedi cp_secrets>'
     )
   );
   return new;

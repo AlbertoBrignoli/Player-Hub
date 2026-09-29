@@ -1,6 +1,7 @@
 import { supabase } from './supabase'
 
-const VAPID_PUBLIC = 'BDJdQSchOc8i4-12DlWUF2UjGBjff8iOxNfIVf1ulkxF7se8AZc8yFCKuFpFIDuuM_yx6Z7o2MFgBRk92qo19u4'
+// Chiave pubblica VAPID (ruotata il 29/09/2026). La privata vive solo in cp_secrets.
+const VAPID_PUBLIC = 'BLI1QMfUoxMzckpgPktyw4FoWHYaAg-Bi673G8SvopmGMbrScFiiOi5fr9fD6HpmDgBlRASH2Mh_81on_IxubkI'
 
 export function pushSupported() {
   return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window
@@ -17,7 +18,10 @@ export async function getPushState(): Promise<'on' | 'off' | 'unsupported'> {
   try {
     const reg = await navigator.serviceWorker.getRegistration()
     const sub = reg && await reg.pushManager.getSubscription()
-    return sub ? 'on' : 'off'
+    if (!sub) return 'off'
+    // iscrizione fatta con le vecchie chiavi: non riceve più nulla, va rifatta
+    if (!sameKey(sub)) { await sub.unsubscribe(); return 'off' }
+    return 'on'
   } catch {
     return 'off'
   }
@@ -29,6 +33,8 @@ export async function enablePush(userId: string, role: string): Promise<string |
     const reg = await navigator.serviceWorker.register('/sw.js')
     const perm = await Notification.requestPermission()
     if (perm !== 'granted') return 'Permesso notifiche negato: attivalo dalle impostazioni del browser.'
+    const old = await reg.pushManager.getSubscription()
+    if (old && !sameKey(old)) await old.unsubscribe()
     const sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlB64ToUint8(VAPID_PUBLIC),
@@ -45,6 +51,14 @@ export async function enablePush(userId: string, role: string): Promise<string |
   } catch (e: any) {
     return e?.message || 'Attivazione non riuscita.'
   }
+}
+
+function sameKey(sub: PushSubscription) {
+  const k = sub.options?.applicationServerKey
+  if (!k) return true
+  const a = new Uint8Array(k)
+  const b = urlB64ToUint8(VAPID_PUBLIC)
+  return a.length === b.length && a.every((v, i) => v === b[i])
 }
 
 function urlB64ToUint8(s: string) {
