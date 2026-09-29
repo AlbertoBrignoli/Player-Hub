@@ -5,7 +5,7 @@ import { useAuth } from '../auth/AuthContext'
 import { useAthlete } from '../lib/athlete'
 import { useLang } from '../lib/i18n'
 import { useCollection, insertRow, updateRow, deleteRow } from '../lib/useData'
-import { Modal, Field, Input, Textarea, Select, Empty, Spinner } from '../components/ui'
+import { Modal, Field, Input, Textarea, Select, Empty, Spinner, Tabs } from '../components/ui'
 import Icon from '../components/Icon'
 import LuogoAutocomplete from '../components/LuogoAutocomplete'
 import type { EventItem, EventAttachment } from '../lib/types'
@@ -80,8 +80,7 @@ export default function Agenda({ goto }: { goto?: (r: string) => void }) {
     <div className="grid" style={{ gap: 8 }}>
       <div className="flex between" style={{ alignItems: 'center' }}>
         <div className="flex gap">
-          <button className={view === 'calendario' ? 'btn btn-primary btn-sm' : 'btn btn-sm'} onClick={() => setView('calendario')}>Calendario</button>
-          <button className={view === 'lista' ? 'btn btn-primary btn-sm' : 'btn btn-sm'} onClick={() => setView('lista')}>Lista</button>
+          <Tabs tabs={[{ key: 'calendario', label: tr('Calendario') }, { key: 'lista', label: tr('Lista') }]} value={view} onChange={setView} />
         </div>
         {canAdd && <button className="btn btn-primary" onClick={() => setEdit(emptyEv('personale'))}>+ Nuovo impegno</button>}
       </div>

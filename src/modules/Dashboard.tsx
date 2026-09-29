@@ -1,14 +1,14 @@
 import { teamLogo, leagueLogo } from '../lib/logos'
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../auth/AuthContext'
 import { useAthlete } from '../lib/athlete'
 import { useLang } from '../lib/i18n'
-import { Spinner, Badge } from '../components/ui'
+import { Spinner } from '../components/ui'
 import Icon from '../components/Icon'
 import ReferentiCard from '../components/ReferentiCard'
 import { useIsMobile } from '../lib/useIsMobile'
-import { fmtDate, fmtDateTime, fmtMatchTime, fmtMatchDateTime, daysUntil, isImageFile } from '../lib/format'
+import { fmtDate, fmtMatchTime, daysUntil, isImageFile } from '../lib/format'
 import type { Player, EventItem, Contract, Match, StatsMatch, EditorialEntry, MediaItem } from '../lib/types'
 
 const BUCKET = 'crm-media'
@@ -20,6 +20,35 @@ const CHIP: Record<string, { l: string; c: string }> = {
 }
 const MESI = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre']
 
+// Layout Home: una sola struttura.
+// Desktop (>880px): 2 colonne, principale (identità, prossima partita, da fare) + laterale (impegni, stagione, ultima partita).
+// Telefono: colonna unica; le due colonne diventano "display: contents" e l'ordine lo decide `order`.
+const HOME_CSS = `
+.home { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+.home-col { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
+.home-sec { min-width: 0; }
+.home-agenda-row { width: 100%; display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: none; border: none; text-align: left; cursor: pointer; }
+.home-agenda-row + .home-agenda-row { border-top: 1px solid var(--border); }
+.home-agenda-row:hover { background: var(--bg-2); }
+.home-agenda-date { width: 42px; flex-shrink: 0; text-align: center; border-radius: 10px; background: var(--bg-2); padding: 5px 0; }
+.home-agenda-date .d { font-weight: 700; font-size: 16px; line-height: 1; color: var(--text); }
+.home-agenda-date .m { font-weight: 600; font-size: 9.5px; letter-spacing: .8px; text-transform: uppercase; color: var(--text-faint); margin-top: 2px; }
+.home-list { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+.home-trunc { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.home-thumbs { display: flex; gap: 4px; margin-top: 7px; }
+.home-thumbs img, .home-thumbs span { width: 26px; height: 26px; border-radius: 7px; object-fit: cover; background: var(--bg-2); display: block; }
+.home-calm { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 18px 16px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.home-calm-ic { width: 46px; height: 46px; border-radius: 13px; background: var(--bg-2); color: var(--text-dim); display: grid; place-items: center; flex-shrink: 0; }
+.home-stats { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 4px 8px 14px; }
+@media (max-width: 880px) {
+  .home { display: flex; flex-direction: column; gap: 20px; }
+  .home-col { display: contents; }
+  .home-o1 { order: 1; } .home-o2 { order: 2; } .home-o3 { order: 3; } .home-o4 { order: 4; }
+  .home-o5 { order: 5; } .home-o6 { order: 6; } .home-o7 { order: 7; }
+  .home .ed-hero-title { font-size: 21px; }
+}
+`
+
 // Due squadre con logo (da API-Football) affiancate: [logo] Casa — [logo] Trasferta
 function TeamVs({ m, size = 24 }: { m: Match; size?: number }) {
   const Logo = ({ src }: { src: string | null }) =>
@@ -30,6 +59,16 @@ function TeamVs({ m, size = 24 }: { m: Match; size?: number }) {
       <span style={{ opacity: .45 }}>—</span>
       <Logo src={teamLogo(m.away_team, m.away_logo)} /><span>{m.away_team}</span>
     </span>
+  )
+}
+
+function Masthead({ title, quiet, more, onMore }: { title: string; quiet?: boolean; more?: string; onMore?: () => void }) {
+  return (
+    <div className="ed-masthead">
+      <div className={`ed-masthead-t${quiet ? ' quiet' : ''}`}>{title}</div>
+      <div className="ed-rule" />
+      {more && onMore && <button className="ed-more" onClick={onMore}>{more}</button>}
+    </div>
   )
 }
 
@@ -113,7 +152,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
 
   if (loading) return <Spinner />
 
-  // ---- dati derivati condivisi ----
+  // ---- dati derivati ----
   const nextMatch = matches.find(m => m.match_date && new Date(m.match_date).getTime() > Date.now())
   // Stagione corrente = quella della partita piu recente; presenze/rating/gol si riferiscono a essa.
   const curSeason = matches.length
@@ -134,6 +173,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
   const igHandle = player?.instagram_url?.replace(/\/$/, '').split('/').pop()
   const bd = player?.birth_date ? new Date(player.birth_date + 'T12:00') : null
   const birthLabel = bd ? `${bd.getDate()} ${MESI[bd.getMonth()]} ${bd.getFullYear()}` : null
+  const roleLine = player ? `${player.position} · ${player.team_name} · #${player.shirt_number ?? '—'}` : 'Gestione riservata AUVI'
 
   let matchWhen = ''
   let matchMeta: string[] = []
@@ -147,247 +187,202 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
       (nextMatch.venue || '').toLowerCase() === 'home' ? 'IN CASA' : 'TRASFERTA',
     ]
   }
+  const hasActions = toApprove.length > 0 || !!nextContent
 
-  const anag = (
-    <>
-      {birthLabel && <Anag icon="cake" label="Nato il" value={birthLabel} />}
-      {player?.contact_email && <Anag icon="mail" label="Email" value={player.contact_email} href={`mailto:${player.contact_email}`} />}
-      {player?.instagram_url && <Anag icon="instagram" label="Instagram" value={igHandle ? `@${igHandle}` : 'Profilo'} href={player.instagram_url} external />}
-    </>
-  )
+  // ---- blocchi ----
+  const photo = (px: number, radius: number) => player?.photo_url
+    ? <img src={player.photo_url} alt="" style={{ width: px, height: px, borderRadius: radius, objectFit: 'cover', border: '1px solid var(--border-2)', flexShrink: 0 }} />
+    : <div className="avatar" style={{ width: px, height: px, fontSize: Math.round(px / 2.8), borderRadius: radius, flexShrink: 0 }}>{firstName[0]}</div>
 
-  // ============================================================
-  // VISTA iPHONE — editoriale, colonna singola
-  // ============================================================
-  if (isMobile) {
-    return (
-      <div className="grid" style={{ gap: 22 }}>
-        <div className="ed-id-card">
-          <div className="flex gap" style={{ gap: 16, alignItems: 'center' }}>
-            {player?.photo_url
-              ? <img src={player.photo_url} alt="" style={{ width: 74, height: 74, borderRadius: 20, objectFit: 'cover', border: '1px solid var(--border-2)', flexShrink: 0 }} />
-              : <div className="avatar" style={{ width: 74, height: 74, fontSize: 26, borderRadius: 20 }}>{firstName[0]}</div>}
-            <div style={{ minWidth: 0 }}>
-              <div className="ed-kicker">{greeting}</div>
-              <div className="ed-id-name">{player?.name || 'Atleta'}</div>
-              <div className="muted" style={{ marginTop: 6, fontSize: 12 }}>
-                {player ? `${player.position} · ${player.team_name} · #${player.shirt_number ?? '—'}` : 'Gestione riservata AUVI'}
-              </div>
-            </div>
-          </div>
-          <div style={{ height: 1, background: 'var(--border)', margin: '16px 0' }} />
-          <div className="grid" style={{ gap: 13 }}>{anag}</div>
-        </div>
-
-        {lastMatch && (
-          <button className="ed-strip" onClick={() => goto('performance')}>
-            <div style={{ minWidth: 0 }}>
-              <div className="ed-kicker">{t('Ultima partita')}</div>
-              <div style={{ fontWeight: 700, fontSize: 14, marginTop: 5 }}>{lastMatch.match_name}</div>
-              <div className="faint" style={{ fontSize: 11, marginTop: 2 }}>{fmtDate(lastMatch.match_date)} · {lastMatch.minutes}′ giocati · {lastMatch.competition}</div>
-            </div>
-            <span className="ed-chev">›</span>
-          </button>
-        )}
-
-        {nextMatch && (
-          <button className="ed-hero" onClick={() => goto('editorial')} style={{ padding: 0, border: '1px solid var(--border)' }}>
-            {player?.stadium_photo_url && <img className="ed-hero-img" src={player.stadium_photo_url} alt="" style={{ opacity: .5 }} />}
-            <div className="ed-hero-scrim" />
-            <div className="ed-hero-body" style={{ textAlign: 'left' }}>
-              <div className="ed-livepill"><span className="ed-livedot" /><span>Prossima · {matchWhen}</span></div>
-              <div className="ed-hero-title"><TeamVs m={nextMatch} size={26} /></div>
-              {leagueLogo(nextMatch.league) && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
-                  <img src={leagueLogo(nextMatch.league)!} alt="" style={{ height: 22, width: 22, objectFit: 'contain' }} />
-                  <span style={{ fontSize: 12.5, opacity: .85, fontWeight: 600 }}>{nextMatch.league}</span>
-                </div>
-              )}
-              <div className="ed-hero-meta">
-                {matchMeta.map((x, i) => <span key={i} style={{ display: 'contents' }}>{i > 0 && <span className="sep">|</span>}<span>{x}</span></span>)}
-              </div>
-            </div>
-          </button>
-        )}
-
-        <div>
-          <div className="ed-masthead"><div className="ed-masthead-t">{t('Da fare ora')}</div><div className="ed-rule" /></div>
-          <div className="grid" style={{ gap: 10 }}>
-            {toApprove.length > 0 && (
-              <button className="ed-action prio" onClick={() => goto('media?tab=approvare')}>
-                <div className="ed-action-num">{toApprove.length}</div>
-                <div style={{ flex: 1 }}>
-                  <div className="ed-action-t">{t('Foto da approvare')}</div>
-                  <div className="ed-action-s">{t('Selezioni in attesa del tuo ok')}</div>
-                </div>
-                <span className="ed-chev">›</span>
-              </button>
-            )}
-            {nextContent ? (
-              <button className="ed-action" onClick={() => goto(nextContent ? `editorial?entry=${nextContent.id}` : 'editorial')}>
-                {nextContentThumb
-                  ? <img className="ed-action-thumb" src={nextContentThumb} alt="" />
-                  : <div className="ed-action-thumb" style={{ display: 'grid', placeItems: 'center', color: 'var(--text-faint)' }}><Icon name="image" size={18} strokeWidth={1.5} /></div>}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div className="flex gap" style={{ gap: 8, alignItems: 'baseline' }}>
-                    <span className="ed-action-t">{nextContent.title}</span>
-                    <span className="faint" style={{ fontSize: 10 }}>· {fmtDate(nextContent.entry_date)}</span>
-                  </div>
-                  <div className="flex gap" style={{ gap: 6, marginTop: 6 }}>
-                    <span className={`ed-chip ${CHIP[nextContent.status]?.c || 'ed-chip-gold'}`}>{CHIP[nextContent.status]?.l || 'In lavorazione'}</span>
-                    {nextContent.copy_text && <span className="ed-chip ed-chip-blue">Copy pronto</span>}
-                  </div>
-                </div>
-                <span className="ed-chev">›</span>
-              </button>
-            ) : <div className="faint" style={{ fontSize: 12.5, padding: '4px 2px' }}>Nessun contenuto in coda: calendario editoriale pulito.</div>}
-          </div>
-        </div>
-
-        <div>
-          <div className="ed-masthead">
-            <div className="ed-masthead-t quiet">{t('In stagione')}</div><div className="ed-rule" />
-            <button className="ed-more" onClick={() => goto('performance')}>{t('Dettagli →')}</button>
-          </div>
-          <div className="ed-statcols">
-            <div className="ed-statcol"><div className="v">{presenze}</div><div className="l">{t('Presenze')}</div></div>
-            <div className="ed-statdiv" />
-            <div className="ed-statcol"><div className="v" style={{ color: avgRating && avgRating >= 7 ? 'var(--green)' : undefined }}>{avgRating ? avgRating.toFixed(2) : '—'}</div><div className="l">{t('Rating')}</div></div>
-            <div className="ed-statdiv" />
-            <div className="ed-statcol"><div className="v">{goals}</div><div className="l">{t('Gol')}</div></div>
-          </div>
+  const identity = isMobile ? (
+    <div className="home-sec home-o1 flex gap" style={{ gap: 12, alignItems: 'center' }}>
+      {photo(48, 14)}
+      <div style={{ minWidth: 0 }}>
+        <div className="ed-kicker">{greeting}{firstName ? `, ${firstName}` : ''}</div>
+        <div className="ed-id-name home-trunc" style={{ fontSize: 20, marginTop: 3 }}>{player?.name || 'Atleta'}</div>
+        <div className="muted home-trunc" style={{ marginTop: 3, fontSize: 12 }}>{roleLine}</div>
+      </div>
+    </div>
+  ) : (
+    <div className="ed-id-card home-sec">
+      <div className="flex gap" style={{ gap: 16, alignItems: 'center' }}>
+        {photo(64, 18)}
+        <div style={{ minWidth: 0 }}>
+          <div className="ed-kicker">{greeting}{firstName ? `, ${firstName}` : ''}</div>
+          <div className="ed-id-name">{player?.name || 'Atleta'}</div>
+          <div className="muted" style={{ marginTop: 6, fontSize: 12.5 }}>{roleLine}</div>
         </div>
       </div>
-    )
-  }
-
-  // ============================================================
-  // VISTA PC — larga, manageriale, multi-colonna
-  // ============================================================
-  return (
-    <div className="grid" style={{ gap: 18 }}>
-      <div className="card card-lg">
-        <div className="flex between wrap" style={{ gap: 20, alignItems: 'flex-start' }}>
-          <div className="flex gap" style={{ gap: 18, alignItems: 'center' }}>
-            {player?.photo_url
-              ? <img src={player.photo_url} alt="" style={{ width: 76, height: 76, borderRadius: 16, objectFit: 'cover', border: '1px solid var(--border-2)' }} />
-              : <div className="avatar" style={{ width: 76, height: 76, fontSize: 26 }}>{firstName[0]}</div>}
-            <div>
-              <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-.5px' }}>{greeting}, {firstName}</div>
-              <div className="muted" style={{ marginTop: 3 }}>
-                {player ? `${player.position} · ${player.team_name} · #${player.shirt_number ?? '—'}` : 'Gestione riservata AUVI'}
-              </div>
-              <div className="flex wrap gap" style={{ gap: 14, marginTop: 12 }}>{anag}</div>
-            </div>
+      {(birthLabel || player?.contact_email || player?.instagram_url) && (
+        <>
+          <div style={{ height: 1, background: 'var(--border)', margin: '16px 0' }} />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 13 }}>
+            {birthLabel && <Anag icon="cake" label="Nato il" value={birthLabel} />}
+            {player?.contact_email && <Anag icon="mail" label="Email" value={player.contact_email} href={`mailto:${player.contact_email}`} />}
+            {player?.instagram_url && <Anag icon="instagram" label="Instagram" value={igHandle ? `@${igHandle}` : 'Profilo'} href={player.instagram_url} external />}
           </div>
-          {lastMatch && (
-            <button className="card" onClick={() => goto('performance')} style={{ background: 'var(--bg-2)', minWidth: 230, textAlign: 'left', cursor: 'pointer' }}>
-              <div className="stat-label">Ultima partita</div>
-              <div style={{ fontWeight: 700, marginTop: 4, fontSize: 13.5 }}>{lastMatch.match_name}</div>
-              <div className="faint" style={{ fontSize: 12, marginTop: 2 }}>{fmtDate(lastMatch.match_date)} · {lastMatch.minutes}′ · {lastMatch.competition}</div>
+        </>
+      )}
+    </div>
+  )
+
+  const todo = (
+    <div className="home-sec home-o2">
+      <Masthead title={t('Da fare ora')} />
+      {hasActions ? (
+        <div className="grid" style={{ gap: 10 }}>
+          {toApprove.length > 0 && (
+            <button className="ed-action prio" onClick={() => goto('media?tab=approvare')}>
+              <div className="ed-action-num">{toApprove.length}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="ed-action-t">{t('Foto da approvare')}</div>
+                <div className="ed-action-s">{t('Selezioni in attesa del tuo ok')}</div>
+                {Object.keys(approveUrls).length > 0 && (
+                  <div className="home-thumbs">
+                    {toApprove.slice(0, isMobile ? 5 : 8).map(m => (isImageFile(m.file_name) && approveUrls[m.storage_path]
+                      ? <img key={m.id} src={approveUrls[m.storage_path]} alt="" loading="lazy" />
+                      : <span key={m.id} />))}
+                  </div>
+                )}
+              </div>
+              <span className="ed-chev">›</span>
+            </button>
+          )}
+          {nextContent && (
+            <button className="ed-action" onClick={() => goto(`editorial?entry=${nextContent.id}`)}>
+              {nextContentThumb
+                ? <img className="ed-action-thumb" src={nextContentThumb} alt="" />
+                : <div className="ed-action-thumb" style={{ display: 'grid', placeItems: 'center', color: 'var(--text-faint)' }}><Icon name="image" size={18} strokeWidth={1.5} /></div>}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="faint" style={{ fontSize: 11 }}>{t('Prossimo contenuto')} · {fmtDate(nextContent.entry_date)}</div>
+                <div className="ed-action-t home-trunc" style={{ marginTop: 2 }}>{nextContent.title}</div>
+                <div className="flex gap wrap" style={{ gap: 6, marginTop: 6 }}>
+                  <span className={`ed-chip ${CHIP[nextContent.status]?.c || 'ed-chip-gold'}`}>{CHIP[nextContent.status]?.l || 'In lavorazione'}</span>
+                  {nextContent.copy_text && nextContent.status !== 'copy_pronto' && <span className="ed-chip ed-chip-blue">Copy pronto</span>}
+                </div>
+              </div>
+              <span className="ed-chev">›</span>
             </button>
           )}
         </div>
-      </div>
-
-      <div className="grid g2">
-        <div className="card">
-          <div className="card-head">
-            <div className="card-title">{t('Prossima partita')}</div>
-            <button className="btn btn-ghost btn-sm" onClick={() => goto('editorial')}>{t('Calendario →')}</button>
+      ) : (
+        <div className="home-calm">
+          <div className="home-calm-ic"><Icon name="check" size={20} /></div>
+          <div style={{ flex: 1, minWidth: 160 }}>
+            <div className="ed-action-t">{t('Tutto in ordine')}</div>
+            <div className="ed-action-s">{t('Nessuna foto da approvare e nessun contenuto in coda.')}</div>
           </div>
-          {nextMatch ? (
-            <div>
-              <div style={{ fontSize: 17, fontWeight: 750 }}><TeamVs m={nextMatch} size={22} /></div>
-              <div className="muted" style={{ marginTop: 4 }}>{nextMatch.league}{nextMatch.round ? ` · ${nextMatch.round}` : ''}</div>
-              <div className="flex gap wrap" style={{ marginTop: 10, gap: 8 }}>
-                <Badge tone="accent">{fmtMatchDateTime(nextMatch.match_date, athleteTz)}</Badge>
-                <Badge>{(nextMatch.venue || '').toLowerCase() === 'home' ? 'In casa' : 'Trasferta'}</Badge>
-              </div>
-            </div>
-          ) : <div className="faint" style={{ padding: '8px 0' }}>{t('Nessuna partita in programma al momento.')}</div>}
+          <button className="btn btn-sm" onClick={() => goto('tasks')}>{t('Vedi i task')}</button>
         </div>
-
-        <div className="card">
-          <div className="card-head">
-            <div className="card-title">{t('Prossimo contenuto da pubblicare')}</div>
-            <button className="btn btn-ghost btn-sm" onClick={() => goto('editorial')}>{t('Apri →')}</button>
-          </div>
-          {nextContent ? (
-            <div>
-              <div style={{ fontSize: 16, fontWeight: 750 }}>{nextContent.title}</div>
-              <div className="muted" style={{ marginTop: 4 }}>{fmtDate(nextContent.entry_date)}</div>
-              <div className="flex gap wrap" style={{ marginTop: 10, gap: 8 }}>
-                <span className={`ed-chip ${CHIP[nextContent.status]?.c || 'ed-chip-gold'}`}>{CHIP[nextContent.status]?.l || 'In lavorazione'}</span>
-                {nextContent.copy_text && <span className="ed-chip ed-chip-blue">Copy pronto</span>}
-              </div>
-            </div>
-          ) : <div className="faint" style={{ padding: '8px 0' }}>Niente in coda: calendario editoriale pulito.</div>}
-        </div>
-      </div>
-
-      <div className="grid g2">
-        <button className="card dash-approve" onClick={() => goto('media?tab=approvare')} style={{ textAlign: 'left', display: 'block', width: '100%' }}>
-          <div className="card-head">
-            <div className="card-title">Foto da approvare{toApprove.length ? ` (${toApprove.length})` : ''}</div>
-            <span className="btn btn-ghost btn-sm">Apri Media →</span>
-          </div>
-          {toApprove.length === 0 ? <div className="faint" style={{ padding: '8px 0' }}>Nessuna foto in attesa di approvazione.</div> : (
-            <>
-              <div className="dash-approve-grid">
-                {toApprove.slice(0, 8).map(m => (
-                  <div className="dash-approve-cell" key={m.id}>
-                    {isImageFile(m.file_name) && approveUrls[m.storage_path]
-                      ? <img src={approveUrls[m.storage_path]} alt="" loading="lazy" />
-                      : <div className="dash-approve-ph"><Icon name="camera" size={16} strokeWidth={1.4} /></div>}
-                  </div>
-                ))}
-              </div>
-              <div className="faint" style={{ fontSize: 12, marginTop: 10 }}>Clicca per aprire e approvare · {toApprove.length} in attesa</div>
-            </>
-          )}
-        </button>
-
-        <div className="card">
-          <div className="card-head">
-            <div className="card-title">Prossimi impegni</div>
-            <button className="btn btn-ghost btn-sm" onClick={() => goto('agenda')}>Agenda →</button>
-          </div>
-          {events.length === 0 ? <div className="faint" style={{ padding: '8px 0' }}>Nessun impegno in programma.</div> : (
-            <div className="list">
-              {events.map(e => (
-                <div className="row" key={e.id}>
-                  <span className="dot" style={{ background: 'var(--text-dim)' }} />
-                  <div className="row-main">
-                    <div className="row-title">{e.title}</div>
-                    <div className="row-sub">{e.location || '—'}</div>
-                  </div>
-                  <div className="row-right faint" style={{ fontSize: 12 }}>{fmtDateTime(e.start_at)}</div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="grid g4">
-        <StatBox label="Presenze" value={presenze} />
-        <StatBox label="Rating medio" value={avgRating ? avgRating.toFixed(2) : '—'} tone={avgRating && avgRating >= 7 ? 'var(--green)' : undefined} />
-        <StatBox label="Gol stagione" value={goals} />
-        <StatBox label="Contratto" value={nextContractExpiry ? fmtDate(nextContractExpiry.c.end_date) : '—'} sub={nextContractExpiry ? 'scadenza contratto' : 'nessuna scadenza'} />
-      </div>
-
-      <ReferentiCard goto={goto} />
+      )}
     </div>
   )
-}
 
-function StatBox({ label, value, sub, tone }: { label: string; value: ReactNode; sub?: string; tone?: string }) {
+  const hero = nextMatch ? (
+    <button className="ed-hero home-sec home-o3" onClick={() => goto('performance')} style={{ padding: 0, border: '1px solid var(--border)' }}>
+      {player?.stadium_photo_url && <img className="ed-hero-img" src={player.stadium_photo_url} alt="" style={{ opacity: .5 }} />}
+      <div className="ed-hero-scrim" />
+      <div className="ed-hero-body" style={{ textAlign: 'left' }}>
+        <div className="ed-livepill"><span className="ed-livedot" /><span>Prossima · {matchWhen}</span></div>
+        <div className="ed-hero-title"><TeamVs m={nextMatch} size={isMobile ? 22 : 26} /></div>
+        {leagueLogo(nextMatch.league) && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6, minWidth: 0 }}>
+            <img src={leagueLogo(nextMatch.league)!} alt="" style={{ height: 22, width: 22, objectFit: 'contain', flexShrink: 0 }} />
+            <span className="home-trunc" style={{ fontSize: 12.5, opacity: .85, fontWeight: 600 }}>{nextMatch.league}</span>
+          </div>
+        )}
+        <div className="ed-hero-meta">
+          {matchMeta.map((x, i) => <span key={i} style={{ display: 'contents' }}>{i > 0 && <span className="sep">|</span>}<span>{x}</span></span>)}
+        </div>
+      </div>
+    </button>
+  ) : (
+    <button className="ed-strip home-sec home-o3" onClick={() => goto('performance')}>
+      <div style={{ minWidth: 0 }}>
+        <div className="ed-kicker">{t('Prossima partita')}</div>
+        <div className="muted" style={{ fontSize: 13, marginTop: 5 }}>{t('Nessuna partita in programma al momento.')}</div>
+      </div>
+      <span className="ed-chev">›</span>
+    </button>
+  )
+
+  const agenda = (
+    <div className="home-sec home-o4">
+      <Masthead title={t('Prossimi impegni')} quiet more={t('Agenda →')} onMore={() => goto('agenda')} />
+      {events.length === 0 ? (
+        <button className="ed-strip" onClick={() => goto('agenda')}>
+          <span className="muted" style={{ fontSize: 13 }}>{t('Nessun impegno in programma.')}</span>
+          <span className="ed-chev">›</span>
+        </button>
+      ) : (
+        <div className="home-list">
+          {events.map(e => {
+            const d = new Date(e.start_at)
+            const time = d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
+            return (
+              <button className="home-agenda-row" key={e.id} onClick={() => goto('agenda')}>
+                <div className="home-agenda-date">
+                  <div className="d">{d.getDate()}</div>
+                  <div className="m">{MESI[d.getMonth()].slice(0, 3)}</div>
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="home-trunc" style={{ fontWeight: 650, fontSize: 13.5, color: 'var(--text)' }}>{e.title}</div>
+                  <div className="faint home-trunc" style={{ fontSize: 11.5, marginTop: 2 }}>{time}{e.location ? ` · ${e.location}` : ''}</div>
+                </div>
+                <span className="ed-chev">›</span>
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+
+  const stats = (
+    <div className="home-sec home-o5">
+      <Masthead title={t('In stagione')} quiet more={t('Dettagli →')} onMore={() => goto('performance')} />
+      <div className="home-stats">
+        <div className="ed-statcols">
+          <div className="ed-statcol"><div className="v">{presenze}</div><div className="l">{t('Presenze')}</div></div>
+          <div className="ed-statdiv" />
+          <div className="ed-statcol"><div className="v" style={{ color: avgRating && avgRating >= 7 ? 'var(--green)' : undefined }}>{avgRating ? avgRating.toFixed(2) : '—'}</div><div className="l">{t('Rating')}</div></div>
+          <div className="ed-statdiv" />
+          <div className="ed-statcol"><div className="v">{goals}</div><div className="l">{t('Gol')}</div></div>
+        </div>
+        {nextContractExpiry && (
+          <div className="faint" style={{ fontSize: 11.5, textAlign: 'center', marginTop: 12, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
+            {t('Contratto in scadenza il')} {fmtDate(nextContractExpiry.c.end_date)}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+
+  const last = lastMatch && (
+    <button className="ed-strip home-sec home-o6" onClick={() => goto('performance')}>
+      <div style={{ minWidth: 0 }}>
+        <div className="ed-kicker">{t('Ultima partita')}</div>
+        <div className="home-trunc" style={{ fontWeight: 700, fontSize: 14, marginTop: 5 }}>{lastMatch.match_name}</div>
+        <div className="faint home-trunc" style={{ fontSize: 11, marginTop: 2 }}>{fmtDate(lastMatch.match_date)} · {lastMatch.minutes}′ giocati · {lastMatch.competition}</div>
+      </div>
+      <span className="ed-chev">›</span>
+    </button>
+  )
+
   return (
-    <div className="card stat">
-      <div className="stat-label">{label}</div>
-      <div className="stat-value" style={tone ? { color: tone } : undefined}>{value}</div>
-      {sub && <div className="stat-sub">{sub}</div>}
+    <div className="home">
+      <style>{HOME_CSS}</style>
+      <div className="home-col">
+        {identity}
+        {hero}
+        {todo}
+      </div>
+      <div className="home-col">
+        {agenda}
+        {stats}
+        {last}
+        <div className="home-sec home-o7"><ReferentiCard goto={goto} /></div>
+      </div>
     </div>
   )
 }
@@ -402,6 +397,6 @@ function Anag({ icon, label, value, href, external }: { icon: string; label: str
       </div>
     </div>
   )
-  if (href) return <a href={href} target={external ? '_blank' : undefined} rel="noreferrer" className="ed-anag-link" style={{ display: 'block' }}>{inner}</a>
+  if (href) return <a href={href} target={external ? '_blank' : undefined} rel="noreferrer" className="ed-anag-link" style={{ display: 'block', minWidth: 0 }}>{inner}</a>
   return inner
 }

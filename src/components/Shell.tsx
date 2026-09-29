@@ -7,40 +7,46 @@ import NotificationBell from './NotificationBell'
 import { useLang, LangToggle } from '../lib/i18n'
 import Toaster from './Toaster'
 import PushNudge from './PushNudge'
+import QuickAdd from './QuickAdd'
 import Icon from './Icon'
-import { Modal, Field, Input } from './ui'
+import { Modal, Field, Input, Tabs } from './ui'
 
 // Schermate home dei vari ruoli: qui compare l'invito ad attivare le notifiche.
 const HOME_ROUTES = ['dashboard', 'brandhome', 'agent-home', 'insurer-home', 'tax-home', 'physio-home']
 
-export const APP_VERSION = 'v5.0'
+export const APP_VERSION = 'v5.1'
 
-export interface NavDef { key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[] }
+export interface NavDef {
+  key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[]
+  /** sezione con schede: le route elencate sono le schede della stessa voce di menu */
+  tabs?: { key: string; label: string; roles?: string[] }[]
+}
 
 // Menu principale (admin / player / creator): 5 gruppi, niente gruppi da una voce,
 // le azioni quotidiane (Messaggi, Agenda, Task) subito dopo i contenuti.
 export const NAV: { group: string; items: NavDef[] }[] = [
-  { group: 'Panoramica', items: [
-    { key: 'dashboard', label: 'Dashboard', icon: 'grid' },
-    { key: 'performance', label: 'Performance', icon: 'activity' },
-    { key: 'fitness', label: 'Preparazione', icon: 'dumbbell' },
-    { key: 'profile', label: 'Profilo', icon: 'user' },
-  ]},
-  { group: 'Contenuti', items: [
-    { key: 'editorial', label: 'Cal. Editoriale', icon: 'calendar' },
+  { group: 'Principale', items: [
+    { key: 'dashboard', label: 'Home', icon: 'home' },
+    { key: 'editorial', label: 'Calendario', icon: 'calendar', tabs: [
+      { key: 'editorial', label: 'Editoriale' },
+      { key: 'agenda', label: 'Impegni' },
+      { key: 'tasks', label: 'Task' },
+    ]},
     { key: 'media', label: 'Media', icon: 'image' },
-  ]},
-  { group: 'Operatività', items: [
     { key: 'messages', label: 'Messaggi', icon: 'message' },
-    { key: 'agenda', label: 'Agenda', icon: 'clock' },
-    { key: 'tasks', label: 'Task', icon: 'check-square' },
+    { key: 'performance', label: 'Atleta', icon: 'activity', tabs: [
+      { key: 'performance', label: 'Performance' },
+      { key: 'fitness', label: 'Preparazione' },
+      { key: 'profile', label: 'Profilo' },
+    ]},
+    { key: 'commercial', label: 'Business', icon: 'briefcase', tabs: [
+      { key: 'commercial', label: 'Profilo commerciale', roles: ['admin', 'player', 'creator'] },
+      { key: 'sponsors', label: 'Sponsor' },
+      { key: 'contracts', label: 'Contratti' },
+      { key: 'documents', label: 'Documenti' },
+    ]},
   ]},
-  { group: 'Gestione', items: [
-    { key: 'archivio', label: 'Contratti e Documenti', icon: 'archive' },
-    { key: 'sponsors', label: 'Sponsor', icon: 'award' },
-    { key: 'commercial', label: 'Commercial Profile', icon: 'star', roles: ['admin', 'player', 'creator'] },
-  ]},
-  { group: 'AUVI', items: [
+  { group: 'Altro', items: [
     { key: 'services', label: 'Servizi AUVI', icon: 'layers' },
     { key: 'my-team', label: 'Il mio team', icon: 'users' },
     { key: 'access-requests', label: 'Collegamenti', icon: 'key' },
@@ -64,49 +70,52 @@ export const BRAND_NAV: { group: string; items: NavDef[] }[] = [
 // Stessa impostazione del fisioterapista: cambia solo il "principio" del ruolo
 // (qui gli strumenti di preparazione: Area Fitness, Performance, Agenda).
 export const COACH_NAV: { group: string; items: NavDef[] }[] = [
-  { group: 'Preparazione', items: [
-    { key: 'dashboard', label: 'Home', icon: 'grid' },
-    { key: 'coach-profile', label: 'Il mio profilo', icon: 'user' },
-    { key: 'coach-office', label: 'Il mio ufficio', icon: 'briefcase' },
-    { key: 'access-requests', label: 'Collegamenti', icon: 'key' },
-  ]},
-  { group: 'Atleta', items: [
-    { key: 'my-team', label: 'Il mio team', icon: 'users' },
-    { key: 'fitness', label: 'Area Fitness', icon: 'dumbbell' },
-    { key: 'performance', label: 'Performance', icon: 'activity' },
-    { key: 'agenda', label: 'Agenda', icon: 'clock' },
+  { group: 'Principale', items: [
+    { key: 'dashboard', label: 'Home', icon: 'home' },
+    { key: 'fitness', label: 'Atleta', icon: 'dumbbell', tabs: [
+      { key: 'fitness', label: 'Area Fitness' },
+      { key: 'performance', label: 'Performance' },
+    ]},
+    { key: 'agenda', label: 'Agenda', icon: 'calendar' },
     { key: 'messages', label: 'Messaggi', icon: 'message' },
+    { key: 'coach-office', label: 'Il mio ufficio', icon: 'briefcase' },
+  ]},
+  { group: 'Altro', items: [
+    { key: 'coach-profile', label: 'Il mio profilo', icon: 'user' },
+    { key: 'my-team', label: 'Il mio team', icon: 'users' },
+    { key: 'access-requests', label: 'Collegamenti', icon: 'key' },
   ]},
 ]
 
 // Menu dell'agente/procuratore: accesso completo a tutto ciò che riguarda il suo atleta.
 // Fuori solo le Impostazioni di sistema (whitelist accessi) e l'ufficio privato del preparatore.
 export const AGENT_NAV: { group: string; items: NavDef[] }[] = [
-  { group: 'Procura', items: [
+  { group: 'Principale', items: [
     { key: 'agent-home', label: 'Home', icon: 'home' },
-    { key: 'agent-profile', label: 'Il mio profilo', icon: 'user' },
-    { key: 'access-requests', label: 'Collegamenti', icon: 'key' },
-  ]},
-  { group: 'Atleta', items: [
-    { key: 'dashboard', label: 'Panoramica', icon: 'grid' },
-    { key: 'performance', label: 'Performance', icon: 'activity' },
-    { key: 'fitness', label: 'Preparazione', icon: 'dumbbell' },
-    { key: 'profile', label: 'Scheda atleta', icon: 'file' },
-    { key: 'my-team', label: 'Il mio team', icon: 'users' },
-  ]},
-  { group: 'Contenuti', items: [
-    { key: 'editorial', label: 'Cal. Editoriale', icon: 'calendar' },
+    { key: 'dashboard', label: 'Atleta', icon: 'activity', tabs: [
+      { key: 'dashboard', label: 'Panoramica' },
+      { key: 'performance', label: 'Performance' },
+      { key: 'fitness', label: 'Preparazione' },
+      { key: 'profile', label: 'Scheda' },
+    ]},
+    { key: 'editorial', label: 'Calendario', icon: 'calendar', tabs: [
+      { key: 'editorial', label: 'Editoriale' },
+      { key: 'agenda', label: 'Impegni' },
+      { key: 'tasks', label: 'Task' },
+    ]},
     { key: 'media', label: 'Media', icon: 'image' },
-  ]},
-  { group: 'Operatività', items: [
     { key: 'messages', label: 'Messaggi', icon: 'message' },
-    { key: 'agenda', label: 'Agenda', icon: 'clock' },
-    { key: 'tasks', label: 'Task', icon: 'check-square' },
+    { key: 'commercial', label: 'Business', icon: 'briefcase', tabs: [
+      { key: 'commercial', label: 'Profilo commerciale' },
+      { key: 'sponsors', label: 'Sponsor' },
+      { key: 'contracts', label: 'Contratti' },
+      { key: 'documents', label: 'Documenti' },
+    ]},
   ]},
-  { group: 'Gestione', items: [
-    { key: 'archivio', label: 'Contratti e Documenti', icon: 'archive' },
-    { key: 'sponsors', label: 'Sponsor', icon: 'award' },
-    { key: 'commercial', label: 'Commercial Profile', icon: 'star' },
+  { group: 'Altro', items: [
+    { key: 'agent-profile', label: 'Il mio profilo', icon: 'user' },
+    { key: 'my-team', label: 'Il mio team', icon: 'users' },
+    { key: 'access-requests', label: 'Collegamenti', icon: 'key' },
   ]},
 ]
 
@@ -206,7 +215,7 @@ export default function Shell({ route, setRoute, right, children }: {
   const [pwOpen, setPwOpen] = useState(false)
   const baseTitle = TITLES[route] || { t: '', s: '' }
   const athleteName = athletes.find(a => a.api_player_id === athleteId)?.name
-  const title = route === 'mediakit' && athleteName
+  const title0 = route === 'mediakit' && athleteName
     ? { t: baseTitle.t, s: `I numeri di ${athleteName}` }
     : baseTitle
   const isCoach = role === 'preparatore'
@@ -221,7 +230,11 @@ export default function Shell({ route, setRoute, right, children }: {
   useEffect(() => {
     if (!profile?.id) return
     supabase.from('crm_user_roles').select('role, label')
-      .then(({ data }) => setMyRoles((data as any[]) || []))
+      .then(({ data }) => {
+        // un ruolo può comparire più volte (es. una riga per atleta): nel menu basta una voce
+        const seen = new Set<string>()
+        setMyRoles(((data as any[]) || []).filter(r => !seen.has(r.role) && !!seen.add(r.role)))
+      })
   }, [profile?.id])
 
   // Con più profili sullo stesso account, full_name resta quello del ruolo con cui
@@ -241,6 +254,32 @@ export default function Shell({ route, setRoute, right, children }: {
   }
   const nav = isBrand ? BRAND_NAV : isCoach ? COACH_NAV : isAgent ? AGENT_NAV : isInsurer ? INSURER_NAV : isTax ? TAX_NAV : isPhysio ? PHYSIO_NAV : NAV
 
+  // Sezioni con schede: una voce di menu raggruppa più schermate (es. Calendario =
+  // Editoriale · Impegni · Task). La voce resta attiva su tutte le sue schede e,
+  // quando la riapri, torna all'ultima scheda che stavi guardando.
+  const visibleItem = (i: NavDef) => (!i.adminOnly || isAdmin) && (!i.roles || (!!role && i.roles.includes(role)))
+  const tabsOf = (i: NavDef) => (i.tabs || []).filter(t => !t.roles || (!!role && t.roles.includes(role)))
+  const allItems = nav.flatMap(g => g.items).filter(visibleItem)
+  const hub = allItems.find(i => i.key === route || tabsOf(i).some(t => t.key === route))
+  const hubTabs = hub ? tabsOf(hub) : []
+  useEffect(() => {
+    if (hub && hubTabs.some(t => t.key === route)) {
+      try { sessionStorage.setItem('hub:' + hub.key, route) } catch { /* modalità privata */ }
+    }
+  }, [route]) // eslint-disable-line react-hooks/exhaustive-deps
+  function openItem(i: NavDef) {
+    const tabs = tabsOf(i)
+    let target = tabs.length ? tabs[0].key : i.key
+    try {
+      const last = sessionStorage.getItem('hub:' + i.key)
+      if (last && tabs.some(t => t.key === last)) target = last
+    } catch { /* modalità privata */ }
+    setRoute(target)
+    setOpen(false)
+  }
+  const isActiveItem = (key: string) => hub?.key === key
+  const title = hub && hubTabs.length > 1 ? { t: hub.label, s: title0.s } : title0
+
   return (
     <div className="app">
       <div className={`scrim ${open ? 'show' : ''}`} onClick={() => setOpen(false)} />
@@ -253,14 +292,14 @@ export default function Shell({ route, setRoute, right, children }: {
         <nav className="nav"
           style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}>
           {nav.map(g => {
-            const items = g.items.filter(i => (!i.adminOnly || isAdmin) && (!i.roles || (role && i.roles.includes(role))))
+            const items = g.items.filter(visibleItem)
             if (!items.length) return null
             return (
               <React.Fragment key={g.group}>
                 <div className="nav-label">{tr(g.group)}</div>
                 {items.map(i => (
-                  <button key={i.key} className={`nav-item ${route === i.key ? 'active' : ''}`}
-                    onClick={() => { setRoute(i.key); setOpen(false) }}>
+                  <button key={i.key} className={`nav-item ${isActiveItem(i.key) ? 'active' : ''}`}
+                    onClick={() => openItem(i)}>
                     <span className="nav-ico"><Icon name={i.icon} size={17} /></span>{tr(i.label)}
                   </button>
                 ))}
@@ -321,11 +360,16 @@ export default function Shell({ route, setRoute, right, children }: {
               </select>
             )}
             <span className="topbar-lang"><LangToggle /></span>
-            {right}<NotificationBell goto={setRoute} />
+            {right}{!isBrand && <QuickAdd />}<NotificationBell goto={setRoute} />
           </div>
         </div>
         <div className="content">
           {HOME_ROUTES.includes(route) && <PushNudge />}
+          {hub && hubTabs.length > 1 && (
+            <div className="hub-tabs">
+              <Tabs tabs={hubTabs.map(t => ({ key: t.key, label: tr(t.label) }))} value={route} onChange={k => setRoute(k)} />
+            </div>
+          )}
           {children}
         </div>
       </div>
@@ -362,16 +406,16 @@ export default function Shell({ route, setRoute, right, children }: {
             ]
           : isAgent
           ? [
-              { key: 'agent-home', label: 'Home', icon: 'grid' },
-              { key: 'archivio', label: 'Archivio', icon: 'archive' },
-              { key: 'agenda', label: 'Agenda', icon: 'clock' },
+              { key: 'agent-home', label: 'Home', icon: 'home' },
+              { key: 'dashboard', label: 'Atleta', icon: 'activity' },
+              { key: 'editorial', label: 'Calendario', icon: 'calendar' },
               { key: 'messages', label: 'Chat', icon: 'message' },
             ]
           : isCoach
           ? [
               { key: 'dashboard', label: 'Home', icon: 'grid' },
-              { key: 'fitness', label: 'Fitness', icon: 'dumbbell' },
-              { key: 'performance', label: 'Performance', icon: 'activity' },
+              { key: 'fitness', label: 'Atleta', icon: 'dumbbell' },
+              { key: 'agenda', label: 'Agenda', icon: 'calendar' },
               { key: 'messages', label: 'Chat', icon: 'message' },
             ]
           : [
@@ -380,8 +424,8 @@ export default function Shell({ route, setRoute, right, children }: {
               { key: 'media', label: 'Media', icon: 'image' },
               { key: 'messages', label: 'Chat', icon: 'message' },
             ]).map(t => (
-          <button key={t.key} className={`tab-item ${route === t.key ? 'active' : ''}`}
-            onClick={() => { setRoute(t.key); setOpen(false) }}>
+          <button key={t.key} className={`tab-item ${!open && (route === t.key || isActiveItem(t.key)) ? 'active' : ''}`}
+            onClick={() => { const it = allItems.find(i => i.key === t.key); if (it) openItem(it); else { setRoute(t.key); setOpen(false) } }}>
             <span className="tab-ico"><Icon name={t.icon} size={21} strokeWidth={1.7} /></span>
             <span className="tab-lbl">{t.label}</span>
           </button>

@@ -652,3 +652,20 @@ p { text-wrap: pretty; }
   /* le tabelle larghe scorrono dentro la card invece di allargare la pagina */
   .table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 }
+
+/* Schede di pagina (componente Tabs) */
+.pill-tab { display: inline-flex; align-items: center; gap: 6px; }
+.tab-badge { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--ink); color: #fff; font-size: 10.5px; font-weight: 700; display: inline-grid; place-items: center; font-variant-numeric: tabular-nums; }
+.pill-tab.active .tab-badge { background: var(--yellow); color: var(--ink); }
+/* Schede di sezione (hub): sotto la barra in alto, sempre visibili */
+.hub-tabs { margin: -6px 0 18px; }
+@media (max-width: 880px) { .hub-tabs { margin: -2px 0 14px; } .hub-tabs .pill-tabs { width: 100%; } .hub-tabs .pill-tab { flex: 1; justify-content: center; } }
+@media (max-width: 880px) {
+  /* barra in alto a 375px: titolo, atleta, + e campanella devono stare in una riga */
+  .topbar { gap: 8px; }
+  .topbar > .flex { min-width: 0; }
+  .topbar > .flex:last-child { gap: 6px; flex-shrink: 0; }
+  .topbar .page-title { max-width: 30vw; font-size: 15px; }
+  .athlete-select { max-width: 112px; padding-left: 10px; padding-right: 26px; font-size: 12.5px; }
+  .bell { width: 38px; height: 38px; }
+}

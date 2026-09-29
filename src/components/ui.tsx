@@ -102,3 +102,22 @@ export function ConfirmButton({ onConfirm, children, className = 'btn btn-danger
     </button>
   )
 }
+
+// Schede di pagina: UN solo stile in tutta l'app (prima c'erano pill-tabs, mk-tabs,
+// bottoni e stili inline). Scorrono in orizzontale su telefono, con badge opzionale.
+export interface TabDef<K extends string = string> { key: K; label: string; badge?: number | string | null; icon?: React.ReactNode }
+export function Tabs<K extends string>({ tabs, value, onChange, style }: {
+  tabs: TabDef<K>[]; value: K; onChange: (k: K) => void; style?: React.CSSProperties
+}) {
+  return (
+    <div className="pill-tabs" role="tablist" style={style}>
+      {tabs.map(t => (
+        <button key={t.key} role="tab" aria-selected={value === t.key}
+          className={`pill-tab ${value === t.key ? 'active' : ''}`} onClick={() => onChange(t.key)}>
+          {t.icon}{t.label}
+          {t.badge != null && t.badge !== 0 && t.badge !== '' && <span className="tab-badge">{t.badge}</span>}
+        </button>
+      ))}
+    </div>
+  )
+}

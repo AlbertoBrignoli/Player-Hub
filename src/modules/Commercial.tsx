@@ -10,7 +10,8 @@ import { useAuth } from '../auth/AuthContext'
 import { useAthlete } from '../lib/athlete'
 import { useLang } from '../lib/i18n'
 import { supabase, AGENCY_NAME } from '../lib/supabase'
-import { Modal, Field, Input, Textarea, Select, Badge, Empty, Spinner, Stat, ConfirmButton } from '../components/ui'
+import { Modal, Field, Input, Textarea, Select, Badge, Empty, Spinner, Stat, ConfirmButton, Tabs } from '../components/ui'
+import { useRouteParam } from '../lib/route'
 import Icon from '../components/Icon'
 import { fmtMoney, fmtDate, fmtDateTime } from '../lib/format'
 import type { Player } from '../lib/types'
@@ -42,7 +43,9 @@ export default function Commercial() {
   const { t: tr } = useLang()
   const { isAdmin, role, profile: user } = useAuth()
   const { athleteId } = useAthlete()
-  const [tab, setTab] = useState('overview')
+  const routeTab = useRouteParam('tab')
+  const [tab, setTab] = useState<TabKey>(() => toTab(routeTab) || 'valore')
+  useEffect(() => { const k = toTab(routeTab); if (k) setTab(k) }, [routeTab])
   const [loading, setLoading] = useState(true)
   const [player, setPlayer] = useState<Player | null>(null)
   const [stats, setStats] = useState<any[]>([])
@@ -120,49 +123,77 @@ export default function Commercial() {
   const catFits = useMemo(() => !prof ? [] : cats.map((c: any) => ({ key: c.key, name: c.name, ...computeCategoryFit(c.key, prof, player) })), [cats, prof, player])
   const topFits = catFits.filter(f => !f.excluded).sort((a, b) => b.pct - a.pct)
   const recos: Reco[] = useMemo(() => (score && prof ? buildRecommendations(prof, player, score) : []), [score, prof, player])
-  const activeOpps = opps.filter(o => !['completata', 'non_accettata'].includes(o.status))
 
   if (loading) return <Spinner />
   if (wizard && prof) return <Onboarding profile={prof} save={saveProf} onDone={() => { setWizard(false); reload() }} onLater={() => setWizard(false)} />
 
-  const TABS = [
-    { id: 'overview', l: tr('Overview') }, { id: 'valore', l: tr('Il mio valore') }, { id: 'brandfit', l: tr('Brand Fit') },
-    { id: 'mediakit', l: tr('Media Kit') }, { id: 'opportunita', l: `${tr('Opportunità')}${activeOpps.length ? ` · ${activeOpps.length}` : ''}` },
-    { id: 'collaborazioni', l: tr('Collaborazioni') }, { id: 'performance', l: tr('Performance') }, { id: 'dati', l: tr('Dati e preferenze') },
-    ...(isAdmin ? [{ id: 'admin', l: tr('Gestione AUVI') }] : []),
+  // Opportunità che aspettano una risposta dell'atleta (stessa regola di OppModal.canRespond)
+  const toAnswer = opps.filter(o => ['nuova', 'in_valutazione'].includes(o.status) && !o.athlete_response).length
+  const TABS: { key: TabKey; label: string; badge?: number }[] = [
+    { key: 'valore', label: tr('Valore') },
+    { key: 'opportunita', label: tr('Opportunità'), badge: toAnswer },
+    { key: 'mediakit', label: tr('Media Kit') },
+    { key: 'profilo', label: tr('Profilo') },
+    ...(isAdmin ? [{ key: 'gestione' as TabKey, label: tr('Gestione') }] : []),
   ]
+  // Le raccomandazioni e i rimandi interni usano ancora le vecchie sezioni: le traduco nelle nuove schede
+  const go = (section: string) => { const k = toTab(section); if (k) setTab(k) }
 
   return (
     <div className="grid" style={{ gap: 16 }}>
-      {/* Subnav */}
-      <div className="flex gap" style={{ flexWrap: 'wrap' }}>
-        {TABS.map(t => (
-          <button key={t.id} className={`btn btn-sm ${tab === t.id ? 'btn-primary' : ''}`} onClick={() => setTab(t.id)}>{t.l}</button>
-        ))}
-      </div>
+      <Tabs tabs={TABS} value={tab === 'gestione' && !isAdmin ? 'valore' : tab} onChange={setTab} />
 
-      {prof && !prof.onboarding_completed && tab !== 'admin' && (
+      {prof && !prof.onboarding_completed && tab !== 'gestione' && (
         <div className="card" style={{ borderColor: 'var(--gold)', cursor: 'pointer' }} onClick={() => setWizard(true)}>
           <div className="flex gap" style={{ alignItems: 'center' }}>
             <span style={{ color: 'var(--gold)' }}><Icon name="star" size={20} /></span>
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 700 }}>{tr("Completa l'onboarding commerciale")}</div>
-              <div className="muted" style={{ fontSize: 12.5 }}>Pochi minuti: punteggio e compatibilità con i brand diventeranno molto più precisi.</div>
+              <div className="muted" style={{ fontSize: 12.5 }}>{tr('Pochi minuti: punteggio e compatibilità diventano più precisi.')}</div>
             </div>
             <Icon name="chevron-right" size={18} />
           </div>
         </div>
       )}
 
-      {tab === 'overview' && score && <Overview score={score} snaps={snaps} topFits={topFits} activeOpps={activeOpps} recos={recos} goto={setTab} />}
-      {tab === 'valore' && score && <Valore score={score} snaps={snaps} recos={recos} relBand={relBand} goto={setTab} />}
-      {tab === 'brandfit' && <BrandFit topFits={topFits} excluded={catFits.filter(f => f.excluded)} />}
+      {tab === 'valore' && score && (<>
+        <Overview score={score} snaps={snaps} />
+        <Recos score={score} recos={recos} goto={go} />
+        <Section title={tr('Componenti del punteggio')} />
+        <Valore score={score} snaps={snaps} relBand={relBand} />
+        <Section title={tr('Compatibilità con i brand')} />
+        <BrandFit topFits={topFits} excluded={catFits.filter(f => f.excluded)} />
+      </>)}
+      {tab === 'opportunita' && (<>
+        <Opportunita opps={opps} cats={cats} role={role} userName={user?.full_name || user?.email || ''} reload={reload} />
+        <Section title={tr('Collaborazioni')} />
+        <Collaborazioni collabs={collabs} perf={perf} cats={cats} role={role} reload={reload} />
+        <Section title={tr('Performance')} />
+        <PerformanceTab collabs={collabs} perf={perf} />
+      </>)}
       {tab === 'mediakit' && prof && score && <MediaKitTab player={player} prof={prof} topFits={topFits} collabs={collabs} cats={cats} saveProf={saveProf} />}
-      {tab === 'opportunita' && <Opportunita opps={opps} cats={cats} role={role} userName={user?.full_name || user?.email || ''} reload={reload} />}
-      {tab === 'collaborazioni' && <Collaborazioni collabs={collabs} perf={perf} cats={cats} role={role} reload={reload} />}
-      {tab === 'performance' && <PerformanceTab collabs={collabs} perf={perf} />}
-      {tab === 'dati' && prof && <DatiPreferenze prof={prof} saveProf={saveProf} openWizard={() => setWizard(true)} />}
-      {tab === 'admin' && isAdmin && <AdminPanel athleteId={athleteId!} cfg={cfg} cats={cats} opps={opps} collabs={collabs} perf={perf} userName={user?.full_name || 'AUVI'} reload={reload} />}
+      {tab === 'profilo' && prof && <DatiPreferenze prof={prof} saveProf={saveProf} openWizard={() => setWizard(true)} />}
+      {tab === 'gestione' && isAdmin && <AdminPanel athleteId={athleteId!} cfg={cfg} cats={cats} opps={opps} collabs={collabs} perf={perf} userName={user?.full_name || 'AUVI'} reload={reload} />}
+    </div>
+  )
+}
+
+// ── Schede e deep link (#/commercial?tab=…) ──────────────────────────────────
+type TabKey = 'valore' | 'opportunita' | 'mediakit' | 'profilo' | 'gestione'
+// Accetta le chiavi nuove e quelle delle vecchie 9 schede (link e raccomandazioni esistenti)
+const TAB_ALIAS: Record<string, TabKey> = {
+  valore: 'valore', overview: 'valore', brandfit: 'valore',
+  opportunita: 'opportunita', collaborazioni: 'opportunita', performance: 'opportunita',
+  mediakit: 'mediakit',
+  profilo: 'profilo', dati: 'profilo',
+  gestione: 'gestione', admin: 'gestione',
+}
+function toTab(k: string | null | undefined): TabKey | null { return (k && TAB_ALIAS[k]) || null }
+
+function Section({ title }: { title: string }) {
+  return (
+    <div className="ed-masthead" style={{ margin: '8px 0 0' }}>
+      <span className="ed-masthead-t">{title}</span><span className="ed-rule" />
     </div>
   )
 }
@@ -199,10 +230,10 @@ function ProgressRow({ name, pct, onClick, open }: { name: string; pct: number; 
   )
 }
 
-// ── OVERVIEW ──────────────────────────────────────────────────────────────────
-function Overview({ score, snaps, topFits, activeOpps, recos, goto }: any) {
+// ── VALORE: punteggio e valore ────────────────────────────────────────────────
+function Overview({ score, snaps }: any) {
   const { t: tr } = useLang()
-  return (<>
+  return (
     <div className="grid g2">
       <div className="card">
         <div className="flex gap" style={{ alignItems: 'center', gap: 20 }}>
@@ -226,64 +257,43 @@ function Overview({ score, snaps, topFits, activeOpps, recos, goto }: any) {
         <div className="faint" style={{ fontSize: 11.5, lineHeight: 1.55, marginTop: 8 }}>{DISCLAIMER}</div>
       </div>
     </div>
-
-    <div className="grid g2">
-      <div className="card">
-        <div className="flex between" style={{ marginBottom: 10 }}>
-          <div style={{ fontWeight: 700 }}>{tr('Completezza del profilo')}</div>
-          <span style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: score.components.readiness.score >= 70 ? 'var(--green)' : 'var(--gold)' }}>{score.components.readiness.score}%</span>
-        </div>
-        <div className="bar"><span style={{ width: `${score.components.readiness.score}%` }} /></div>
-        <div className="muted" style={{ fontSize: 12, marginTop: 10 }}>
-          {score.components.readiness.missing.length ? `Da completare: ${score.components.readiness.missing.slice(0, 3).join(', ')}${score.components.readiness.missing.length > 3 ? '…' : ''}` : 'Profilo completo.'}
-        </div>
-      </div>
-      <div className="card">
-        <div style={{ fontWeight: 700, marginBottom: 6 }}>{tr('Categorie più compatibili')}</div>
-        {topFits.slice(0, 4).map((f: any) => <ProgressRow key={f.key} name={f.name} pct={f.pct} />)}
-        <button className="btn btn-sm" style={{ marginTop: 6 }} onClick={() => goto('brandfit')}>{tr('Vedi tutte')}</button>
-      </div>
-    </div>
-
-    <div className="grid g2">
-      <div className="card">
-        <div style={{ fontWeight: 700, marginBottom: 10 }}>{tr('Opportunità attive')}</div>
-        {activeOpps.length === 0
-          ? <div className="muted" style={{ fontSize: 12.5 }}>Nessuna opportunità attiva. Completa il profilo per aumentare le possibilità di riceverne.</div>
-          : activeOpps.slice(0, 4).map((o: any) => (
-            <div key={o.id} className="flex between" style={{ padding: '8px 0', borderBottom: '1px solid var(--border)', cursor: 'pointer' }} onClick={() => goto('opportunita')}>
-              <div>
-                <div style={{ fontWeight: 600, fontSize: 13.5 }}>{o.brand_name}</div>
-                <div className="faint" style={{ fontSize: 11.5 }}>{o.category_key || ''}</div>
-              </div>
-              <Badge tone={OPP_STATUS[o.status]?.tone}>{tr(OPP_STATUS[o.status]?.label || o.status)}</Badge>
-            </div>
-          ))}
-      </div>
-      <div className="card">
-        <div style={{ fontWeight: 700, marginBottom: 10 }}>{tr('Azioni consigliate')}</div>
-        {recos.length === 0 && <div className="muted" style={{ fontSize: 12.5 }}>Profilo in ottima forma, nessuna azione urgente.</div>}
-        {recos.slice(0, 4).map((r: Reco, i: number) => (
-          <div key={i} className="flex gap" style={{ alignItems: 'center', padding: '7px 0', cursor: 'pointer' }} onClick={() => goto(r.section)}>
-            <Badge tone="gold">+{r.impact} pt</Badge>
-            <span style={{ flex: 1, fontSize: 13 }}>{r.title}</span>
-            <Icon name="chevron-right" size={14} style={{ color: 'var(--text-faint)' }} />
-          </div>
-        ))}
-      </div>
-    </div>
-  </>)
+  )
 }
 
-// ── IL MIO VALORE ─────────────────────────────────────────────────────────────
-function Valore({ score, snaps, recos, relBand, goto }: any) {
+// ── VALORE: come crescere (completezza + azioni consigliate) ─────────────────
+function Recos({ score, recos, goto }: any) {
   const { t: tr } = useLang()
+  const ready = score.components.readiness
+  return (
+    <div className="card">
+      <div className="flex between" style={{ marginBottom: 10 }}>
+        <div style={{ fontWeight: 700 }}>{tr('Come aumentare il tuo valore')}</div>
+        <span className="faint" style={{ fontSize: 12 }}>{tr('Profilo completo al')} <b style={{ color: ready.score >= 70 ? 'var(--green)' : 'var(--gold)' }}>{ready.score}%</b></span>
+      </div>
+      <div className="bar" style={{ marginBottom: 6 }}><span style={{ width: `${ready.score}%` }} /></div>
+      {recos.length === 0 && <div className="muted" style={{ fontSize: 12.5, marginTop: 8 }}>{tr('Hai completato tutte le azioni consigliate.')}</div>}
+      {recos.map((r: Reco, i: number) => (
+        <div key={i} className="flex gap" style={{ alignItems: 'center', padding: '10px 0', borderBottom: i < recos.length - 1 ? '1px solid var(--border)' : 'none' }}>
+          <Badge tone="gold">+{r.impact} pt</Badge>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 600, fontSize: 13.5 }}>{r.title}</div>
+            <div className="faint" style={{ fontSize: 12 }}>{r.cta}</div>
+          </div>
+          <span className="faint" style={{ fontSize: 11, textTransform: 'uppercase', color: r.priority === 'alta' ? 'var(--red)' : r.priority === 'media' ? 'var(--gold)' : undefined }}>{r.priority}</span>
+          {r.section !== 'valore' && <button className="btn btn-sm" onClick={() => goto(r.section)}>{tr('Vai')}</button>}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ── VALORE: componenti del punteggio ──────────────────────────────────────────
+function Valore({ score, snaps, relBand }: any) {
   const [open, setOpen] = useState<string | null>(null)
   const relLabel = relBand === null ? null : relBand >= 90 ? 'Ottima' : relBand >= 75 ? 'Molto buona' : relBand >= 60 ? 'Buona' : 'In costruzione'
-  return (<>
+  return (
     <div className="card">
-      <div style={{ fontWeight: 700, marginBottom: 6 }}>{tr('Le componenti del tuo punteggio')}</div>
-      <div className="muted" style={{ fontSize: 12.5, marginBottom: 10 }}>Ogni area mostra i dati usati per il calcolo e cosa manca. I pesi sono definiti da {AGENCY_NAME}.</div>
+      <div className="faint" style={{ fontSize: 12, marginBottom: 4 }}>Tocca un'area per vedere i dati usati. Pesi definiti da {AGENCY_NAME}.</div>
       {COMP_META.map(m => {
         const c = score.components[m.key]
         const isOpen = open === m.key
@@ -320,32 +330,16 @@ function Valore({ score, snaps, recos, relBand, goto }: any) {
         )
       })}
     </div>
-    <div className="card">
-      <div style={{ fontWeight: 700, marginBottom: 10 }}>{tr('Come aumentare il tuo valore')}</div>
-      {recos.length === 0 && <div className="muted" style={{ fontSize: 12.5 }}>{tr('Hai completato tutte le azioni consigliate.')}</div>}
-      {recos.map((r: Reco, i: number) => (
-        <div key={i} className="flex gap" style={{ alignItems: 'center', padding: '10px 0', borderBottom: i < recos.length - 1 ? '1px solid var(--border)' : 'none' }}>
-          <Badge tone="gold">+{r.impact} pt</Badge>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 600, fontSize: 13.5 }}>{r.title}</div>
-            <div className="faint" style={{ fontSize: 12 }}>{r.cta}</div>
-          </div>
-          <span className="faint" style={{ fontSize: 11, textTransform: 'uppercase', color: r.priority === 'alta' ? 'var(--red)' : r.priority === 'media' ? 'var(--gold)' : undefined }}>{r.priority}</span>
-          <button className="btn btn-sm" onClick={() => goto(r.section)}>{tr('Vai')}</button>
-        </div>
-      ))}
-    </div>
-  </>)
+  )
 }
 
-// ── BRAND FIT ─────────────────────────────────────────────────────────────────
+// ── VALORE: compatibilità con i brand ─────────────────────────────────────────
 function BrandFit({ topFits, excluded }: any) {
   const { t: tr } = useLang()
   const [open, setOpen] = useState<string | null>(null)
-  return (<>
+  return (
     <div className="card">
-      <div style={{ fontWeight: 700, marginBottom: 4 }}>{tr('Compatibilità per categoria')}</div>
-      <div className="muted" style={{ fontSize: 12.5, marginBottom: 12 }}>Percentuali derivate da regole tracciabili: preferenze, interessi, audience, territori e contenuti. Più il profilo è completo, più il matching è preciso.</div>
+      <div className="faint" style={{ fontSize: 12, marginBottom: 4 }}>{tr('Tocca una categoria per vedere il perché.')}</div>
       {topFits.map((f: any) => (
         <div key={f.key} style={{ borderBottom: '1px solid var(--border)' }}>
           <ProgressRow name={f.name} pct={f.pct} open={open === f.key} onClick={() => setOpen(open === f.key ? null : f.key)} />
@@ -363,12 +357,7 @@ function BrandFit({ topFits, excluded }: any) {
         </div>
       )}
     </div>
-    <div className="card">
-      <div className="muted" style={{ fontSize: 12.5, lineHeight: 1.7 }}>
-        <b style={{ color: 'var(--text)' }}>In arrivo:</b> il matching con i singoli brand sarà attivato quando il sistema avrà accumulato dati sufficienti dalle campagne reali.
-      </div>
-    </div>
-  </>)
+  )
 }
 
 // ── MEDIA KIT ─────────────────────────────────────────────────────────────────
@@ -395,7 +384,7 @@ function MediaKitTab({ player, prof, topFits, collabs, cats, saveProf }: any) {
   return (<>
     <div className="card">
       <div style={{ fontWeight: 700, marginBottom: 4 }}>{tr('Media Kit dinamico')}</div>
-      <div className="muted" style={{ fontSize: 12.5, marginBottom: 14 }}>Generato automaticamente dai dati del profilo: sempre aggiornato, personalizzabile per lingua e categoria di brand.</div>
+      <div className="faint" style={{ fontSize: 12, marginBottom: 14 }}>{tr('Si aggiorna da solo con i dati del profilo.')}</div>
       <div className="row2">
         <Field label={tr("Versione")}><Select value={version} onChange={e => setVersion(e.target.value as any)}>
           <option value="completo">Completa — numeri e dettagli (uso interno / su richiesta)</option>
@@ -688,7 +677,7 @@ function Collaborazioni({ collabs, perf, cats, role, reload }: any) {
   const { t: tr } = useLang()
   const [sel, setSel] = useState<any>(null)
   return (<>
-    {collabs.length === 0 && <div className="card"><Empty icon={<Icon name="award" size={30} strokeWidth={1.4} />} title="Nessuna collaborazione registrata" hint="Le campagne concluse con i brand costruiranno qui il tuo storico commerciale." /></div>}
+    {collabs.length === 0 && <div className="card muted" style={{ fontSize: 12.5 }}>{tr('Nessuna collaborazione registrata: le campagne concluse con i brand compariranno qui.')}</div>}
     <div className="grid g2">
       {collabs.map((c: any) => (
         <div key={c.id} className="card" style={{ cursor: 'pointer' }} onClick={() => setSel(c)}>
@@ -757,7 +746,7 @@ function CollabModal({ collab, p, cats, role, onClose, reload }: any) {
 // ── PERFORMANCE ───────────────────────────────────────────────────────────────
 function PerformanceTab({ collabs, perf }: any) {
   const { t: tr } = useLang()
-  if (!perf.length) return <div className="card"><Empty icon={<Icon name="activity" size={30} strokeWidth={1.4} />} title="Ancora nessun dato di performance" hint="I risultati delle campagne verranno registrati da AUVI e alimenteranno il tuo Commercial Score." /></div>
+  if (!perf.length) return <div className="card muted" style={{ fontSize: 12.5 }}>{tr('Ancora nessun dato: i risultati delle campagne li registra AUVI.')}</div>
   const sum = (k: string) => perf.reduce((s: number, p: any) => s + (Number(p[k]) || 0), 0)
   const ers = perf.map((p: any) => Number(p.engagement) || 0).filter((x: number) => x > 0)
   return (<>
@@ -808,7 +797,7 @@ function DatiPreferenze({ prof, saveProf, openWizard }: any) {
   return (<>
     <div className="card">
       <div style={{ fontWeight: 700, marginBottom: 4 }}>{tr('Audience — altri canali')}</div>
-      <div className="muted" style={{ fontSize: 12.5, marginBottom: 12 }}>Instagram è gestito da AUVI nel Media Kit; qui puoi aggiungere gli altri canali e i dati del pubblico. In futuro saranno sincronizzati dalle API.</div>
+      <div className="faint" style={{ fontSize: 12, marginBottom: 12 }}>{tr('Instagram lo aggiorna AUVI: qui aggiungi gli altri canali.')}</div>
       {plat('tiktok', 'TikTok')}{plat('youtube', 'YouTube')}
       <div className="row2">
         <Field label={tr("Paesi principali audience")}><Input placeholder={tr("Es. Italia, Grecia, Spagna")} value={(aud.geo || []).join(', ')} onChange={e => setAud({ ...aud, geo: e.target.value.split(',').map(x => x.trim()).filter(Boolean) })} /></Field>
@@ -836,7 +825,7 @@ function DatiPreferenze({ prof, saveProf, openWizard }: any) {
     </div>
     <div className="card">
       <div style={{ fontWeight: 700, marginBottom: 6 }}>{tr('Preferenze commerciali')}</div>
-      <div className="muted" style={{ fontSize: 12.5, marginBottom: 10 }}>Valori, categorie, disponibilità, territori e storico si modificano dall'onboarding guidato.</div>
+      <div className="faint" style={{ fontSize: 12, marginBottom: 10 }}>{tr('Valori, categorie, disponibilità, territori e storico.')}</div>
       <button className="btn" onClick={openWizard}><Icon name="edit" size={14} /> Modifica le preferenze</button>
     </div>
     <div className="flex" style={{ justifyContent: 'flex-end' }}>
@@ -959,22 +948,29 @@ function Onboarding({ profile, save, onDone, onLater }: any) {
 // ═════════════════════════════════════════════════════════════════════════════
 function AdminPanel({ athleteId, cfg, cats, opps, collabs, perf, userName, reload }: any) {
   const { t: tr } = useLang()
-  const [sub, setSub] = useState('opportunita')
-  return (
-    <div className="grid" style={{ gap: 16 }}>
-      <div className="flex gap" style={{ flexWrap: 'wrap' }}>
-        {[['opportunita', 'Opportunità'], ['collaborazioni', 'Collaborazioni'], ['ricerche', 'Ricerche brand'], ['valutazioni', 'Valutazione riservata'], ['instagram', 'Instagram Sync'], ['config', 'Pesi & Config']].map(([id, l]) => (
-          <button key={id} className={`btn btn-sm ${sub === id ? 'btn-primary' : ''}`} onClick={() => setSub(id)}>{l}</button>
-        ))}
-      </div>
-      {sub === 'opportunita' && <AdminOpps athleteId={athleteId} cats={cats} opps={opps} userName={userName} reload={reload} />}
-      {sub === 'collaborazioni' && <AdminCollabs athleteId={athleteId} cats={cats} collabs={collabs} perf={perf} reload={reload} />}
-      {sub === 'ricerche' && <AdminBrandSearches />}
-      {sub === 'valutazioni' && <AdminEval athleteId={athleteId} reload={reload} />}
-      {sub === 'instagram' && <AdminInstagram athleteId={athleteId} reload={reload} />}
-      {sub === 'config' && cfg && <AdminConfig cfg={cfg} reload={reload} />}
-    </div>
-  )
+  const [sub, setSub] = useState<'pipeline' | 'brand' | 'impostazioni'>('pipeline')
+  return (<>
+    <Tabs value={sub} onChange={setSub} tabs={[
+      { key: 'pipeline', label: tr('Opportunità e collaborazioni') },
+      { key: 'brand', label: tr('Brand e valutazione') },
+      { key: 'impostazioni', label: tr('Impostazioni') },
+    ]} />
+    {sub === 'pipeline' && (<>
+      <AdminOpps athleteId={athleteId} cats={cats} opps={opps} userName={userName} reload={reload} />
+      <Section title={tr('Collaborazioni')} />
+      <AdminCollabs athleteId={athleteId} cats={cats} collabs={collabs} perf={perf} reload={reload} />
+    </>)}
+    {sub === 'brand' && (<>
+      <Section title={tr('Ricerche dei brand')} />
+      <AdminBrandSearches />
+      <Section title={tr('Valutazione riservata')} />
+      <AdminEval athleteId={athleteId} reload={reload} />
+    </>)}
+    {sub === 'impostazioni' && (<>
+      <AdminInstagram athleteId={athleteId} reload={reload} />
+      {cfg && <AdminConfig cfg={cfg} reload={reload} />}
+    </>)}
+  </>)
 }
 
 function AdminOpps({ athleteId, cats, opps, userName, reload }: any) {

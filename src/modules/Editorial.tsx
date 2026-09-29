@@ -7,7 +7,7 @@ import { useCollection, insertRow, updateRow, deleteRow } from '../lib/useData'
 import { notify } from '../lib/notify'
 import { toast } from '../lib/toast'
 import { useRouteParam, goto } from '../lib/route'
-import { Modal, Field, Input, Select, Textarea, Badge, Empty, Spinner, ConfirmButton } from '../components/ui'
+import { Modal, Field, Input, Select, Textarea, Badge, Empty, Spinner, ConfirmButton, Tabs } from '../components/ui'
 import Icon from '../components/Icon'
 import { fmtDate, fmtDateTime, fmtMatchTime, fmtMatchDateTime, isImageFile, fileExt } from '../lib/format'
 import type { EditorialEntry, MediaItem } from '../lib/types'
@@ -38,27 +38,69 @@ const STATUSES: Record<string, { label: string; tone?: 'green' | 'red' | 'gold' 
   da_preparare: { label: 'Da preparare' },
   copy_pronto: { label: 'Copy pronto', tone: 'blue' },
   grafica_caricata: { label: 'Grafica caricata', tone: 'gold' },
-  pronto: { label: 'Pronto ✓', tone: 'green' },
+  pronto: { label: 'Pronto', tone: 'green' },
   pubblicato: { label: 'Pubblicato', tone: 'accent' },
 }
 
 const moveBtn = (disabled: boolean): React.CSSProperties => ({
   width: 24, height: 24, borderRadius: 7, border: 'none', cursor: disabled ? 'default' : 'pointer',
-  background: 'rgba(0,0,0,.72)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+  background: 'var(--ink)', color: 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center',
   opacity: disabled ? 0.35 : 1,
 })
+
+type View = 'cal' | 'dafare' | 'pubblicati'
+const VIEW_PARAM: Record<string, View> = { calendario: 'cal', dafare: 'dafare', pubblicati: 'pubblicati' }
+const VIEW_NAME: Record<View, string> = { cal: 'calendario', dafare: 'dafare', pubblicati: 'pubblicati' }
+const IG_PINK = '#E1306C' // colore del marchio Instagram: resta fisso di proposito
+
+// Caricamento della grafica finale di un contenuto: usato sia dentro il contenuto
+// sia dal bottone rapido della lista "Da fare". Il file entra anche nei Media
+// (cartella Pubblicati) e il contenuto passa a "Grafica caricata".
+async function uploadEntryGraphics(entry: EditorialEntry, files: File[], ctx: {
+  userId?: string; role?: string | null; athleteId: number | null; isTeam: boolean
+}): Promise<{ ok: number; error?: string }> {
+  let ok = 0
+  let error: string | undefined
+  for (const file of files) {
+    const path = `editorial/${entry.id}/${Date.now()}-${file.name.replace(/[^\w.\-]/g, '_')}`
+    const up = await supabase.storage.from(BUCKET).upload(path, file, { upsert: false })
+    if (up.error) { error = up.error.message; continue }
+    // La grafica caricata nella box entra anche nei Media, sezione Pubblicati.
+    const ins = await insertRow('crm_media', {
+      storage_path: path, file_name: file.name, kind: 'grafica', status: 'pubblicata',
+      editorial_id: entry.id, folder: 'Pubblicati', uploaded_by: ctx.userId,
+      uploaded_role: ctx.role, note: entry.title, player_id: ctx.athleteId,
+    })
+    if (!ins.error) ok++
+  }
+  if (ok) {
+    const status = ['da_preparare', 'copy_pronto'].includes(entry.status) ? 'grafica_caricata' : entry.status
+    if (status !== entry.status) await updateRow('crm_editorial', entry.id, { status })
+    notify(ctx.isTeam ? 'player' : 'team', `Grafica caricata: ${entry.title}`,
+      `${ok} file pront${ok > 1 ? 'i' : 'o'} nel calendario editoriale.`, 'editorial', ctx.athleteId)
+    toast(`${ok} grafic${ok > 1 ? 'he' : 'a'} caricat${ok > 1 ? 'e' : 'a'} — anche in Media, Pubblicati`)
+  }
+  return { ok, error }
+}
 
 const MONTHS = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre']
 const DOW = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom']
 
 export default function Editorial() {
-  const { isTeam } = useAuth()
+  const { isTeam, session, profile } = useAuth()
   const { athleteId, athleteTz } = useAthlete()
   const { t } = useLang()
   const { rows, loading, reload } = useCollection<EditorialEntry>('crm_editorial', { orderBy: 'entry_date', ascending: true, match: { player_id: athleteId } })
   const today = new Date()
   const [ym, setYm] = useState<[number, number]>([today.getFullYear(), today.getMonth()])
-  const [view, setView] = useState<'cal' | 'lista' | 'pubblicati'>('cal')
+  // #/editorial?view=dafare|calendario|pubblicati
+  const viewParam = useRouteParam('view')
+  const [viewState, setView] = useState<View | null>(() => VIEW_PARAM[viewParam || ''] || null)
+  useEffect(() => { const v = VIEW_PARAM[viewParam || '']; if (v) setView(v) }, [viewParam])
+  function changeView(v: View) { setView(v); goto(`editorial?view=${VIEW_NAME[v]}`) }
+  const [quickBusy, setQuickBusy] = useState<string | null>(null)
+  const quickRef = useRef<HTMLInputElement>(null)
+  const quickTarget = useRef<EditorialEntry | null>(null)
   const [openEntry, setOpenEntry] = useState<EditorialEntry | null>(null)
   const [creating, setCreating] = useState(false)
   // link diretti (Home, notifiche): #/editorial?entry=<id> apre il contenuto
@@ -122,7 +164,55 @@ export default function Editorial() {
     return m
   }, [rows])
 
+  // "Da fare": solo ciò che chiede un'azione, dalla data più vicina.
+  // Si guarda da una settimana fa in avanti: più indietro sono arretrati ormai persi.
+  const todo = useMemo(() => {
+    const from = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10)
+    const live = rows.filter(e => e.status !== 'pubblicato' && e.entry_date >= from)
+      .sort((a, b) => a.entry_date.localeCompare(b.entry_date))
+    const groups: { key: string; title: string; hint: string; entries: EditorialEntry[]; action: 'grafica' | 'apri' }[] = isTeam ? [
+      { key: 'rev', title: 'Modifiche richieste', hint: "L'atleta ha chiesto di ritoccare la grafica", action: 'grafica',
+        entries: live.filter(e => !!e.revision) },
+      { key: 'prep', title: 'Da preparare', hint: 'Manca il copy o la grafica', action: 'grafica',
+        entries: live.filter(e => !e.revision && (e.status === 'da_preparare' || e.status === 'copy_pronto')) },
+      { key: 'pub', title: 'Da pubblicare', hint: 'Grafica pronta: manca la pubblicazione', action: 'apri',
+        entries: live.filter(e => !e.revision && (e.status === 'grafica_caricata' || e.status === 'pronto')) },
+    ] : [
+      { key: 'pub', title: 'Da pubblicare', hint: 'Pronti: copia il testo, pubblica e conferma', action: 'apri',
+        entries: live.filter(e => e.status === 'pronto') },
+      { key: 'check', title: 'Grafiche da vedere', hint: 'Il team ha caricato la grafica: accetta o chiedi modifiche', action: 'apri',
+        entries: live.filter(e => e.status === 'grafica_caricata') },
+      { key: 'prop', title: 'Le tue proposte', hint: 'Idee che hai inviato al team', action: 'apri',
+        entries: live.filter(e => !!e.requested_by && !['pronto', 'grafica_caricata'].includes(e.status)) },
+    ]
+    return groups.filter(g => g.entries.length > 0)
+  }, [rows, isTeam])
+  const todoCount = todo.reduce((n, g) => n + g.entries.length, 0)
+  const view: View = viewState ?? (isTeam && todoCount > 0 ? 'dafare' : 'cal')
+  useEffect(() => {
+    if (!loading && viewState == null) setView(isTeam && todoCount > 0 ? 'dafare' : 'cal')
+  }, [loading]) // eslint-disable-line react-hooks/exhaustive-deps
+
   if (loading) return <Spinner />
+
+  function quickUpload(e: EditorialEntry) {
+    quickTarget.current = e
+    quickRef.current?.click()
+  }
+  async function onQuickFiles(ev: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(ev.target.files || [])
+    const entry = quickTarget.current
+    if (!files.length || !entry) return
+    setQuickBusy(entry.id)
+    try {
+      const { ok, error } = await uploadEntryGraphics(entry, files, { userId: session?.user.id, role: profile?.role, athleteId, isTeam })
+      if (error) toast(error, 'err')
+      if (ok) reload()
+    } finally {
+      setQuickBusy(null)
+      if (quickRef.current) quickRef.current.value = ''
+    }
+  }
 
   const [year, month] = ym
   const first = new Date(year, month, 1)
@@ -137,39 +227,40 @@ export default function Editorial() {
   const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
 
   const listEntries = [...rows].sort((a, b) => a.entry_date.localeCompare(b.entry_date))
-  const upcoming = listEntries.filter(e => e.entry_date >= todayKey)
-  const past = listEntries.filter(e => e.entry_date < todayKey).reverse()
 
   function prevMonth() { setYm(month === 0 ? [year - 1, 11] : [year, month - 1]) }
   function nextMonth() { setYm(month === 11 ? [year + 1, 0] : [year, month + 1]) }
 
   return (
     <div className="grid" style={{ gap: 16 }}>
-      <div className="card flex between wrap gap">
+      <div className="flex between wrap gap" style={{ alignItems: 'center' }}>
+        <Tabs<View> value={view} onChange={changeView} tabs={[
+          { key: 'cal', label: t('Calendario') },
+          { key: 'dafare', label: t('Da fare'), badge: todoCount },
+          { key: 'pubblicati', label: t('Pubblicati') },
+        ]} />
         <div className="flex gap" style={{ alignItems: 'center' }}>
-          <button className="btn btn-sm" onClick={prevMonth}>‹</button>
-          <div style={{ fontWeight: 750, fontSize: 16, minWidth: 150, textAlign: 'center' }}>{t(MONTHS[month])} {year}</div>
-          <button className="btn btn-sm" onClick={nextMonth}>›</button>
-          <button className="btn btn-ghost btn-sm" onClick={() => setYm([today.getFullYear(), today.getMonth()])}>{t('Oggi')}</button>
-        </div>
-        <div className="flex gap">
-          <div className="pill-tabs">
-            <button className={`pill-tab ${view === 'cal' ? 'active' : ''}`} onClick={() => setView('cal')}>{t('Calendario')}</button>
-            <button className={`pill-tab ${view === 'lista' ? 'active' : ''}`} onClick={() => setView('lista')}>{t('Lista')}</button>
-            <button className={`pill-tab ${view === 'pubblicati' ? 'active' : ''}`} onClick={() => setView('pubblicati')}>{t('Pubblicati')}</button>
-          </div>
-          <button className="btn btn-primary" onClick={() => setCreating(true)}>
-            <Icon name="plus" size={14} /> {isTeam ? t('Contenuto') : 'Proponi contenuto'}
+          {view === 'cal' && (
+            <div className="flex" style={{ alignItems: 'center', gap: 4 }}>
+              <button className="btn btn-sm btn-ghost" onClick={prevMonth} aria-label={t('Mese precedente')}>
+                <span style={{ display: 'inline-flex', transform: 'rotate(180deg)' }}><Icon name="chevron-right" size={14} /></span>
+              </button>
+              <button className="btn btn-sm btn-ghost" onClick={() => setYm([today.getFullYear(), today.getMonth()])} title={t('Oggi')}
+                style={{ fontWeight: 700, minWidth: 116 }}>{t(MONTHS[month])} {year}</button>
+              <button className="btn btn-sm btn-ghost" onClick={nextMonth} aria-label={t('Mese successivo')}><Icon name="chevron-right" size={14} /></button>
+            </div>
+          )}
+          <button className="btn btn-primary btn-sm" onClick={() => setCreating(true)}>
+            <Icon name="plus" size={14} /> {isTeam ? t('Contenuto') : t('Proponi')}
           </button>
         </div>
       </div>
-
-      <div className="card" style={{ padding: 14 }}>
-        <div className="faint" style={{ fontSize: 12.5 }}>
-          Le partite entrano da sole dal database: ogni fixture ha già la sua casella con tutte le info per le grafiche.
-          Copy e grafiche si preparano dentro ogni contenuto.
+      {view === 'cal' && (
+        <div className="faint" style={{ fontSize: 12, marginTop: -8 }}>
+          {t('Le partite entrano da sole; copy e grafiche si preparano dentro ogni contenuto. Tocca il mese per tornare a oggi.')}
         </div>
-      </div>
+      )}
+      <input ref={quickRef} type="file" multiple accept="image/*,video/*,.pdf,.psd,.ai" hidden onChange={onQuickFiles} />
 
       {view === 'cal' && isMobile ? (
         /* Vista agenda verticale ottimizzata per telefono */
@@ -210,19 +301,39 @@ export default function Editorial() {
           </div>
         </div>
       ) : view === 'pubblicati' ? (
-        <EntryList title={t('Pubblicati ✓')} entries={listEntries.filter(e => e.status === 'pubblicato').reverse()}
+        <EntryList title={t('Pubblicati')} entries={listEntries.filter(e => e.status === 'pubblicato').reverse()}
           onOpen={setOpenEntry} empty="Ancora nessun contenuto pubblicato. Confermando un post come pubblicato, finisce qui." />
+      ) : todo.length === 0 ? (
+        <div className="card">
+          <Empty icon={<Icon name="check" size={32} strokeWidth={1.4} />} title={t('Niente da fare')}
+            hint={isTeam ? 'Tutti i contenuti in programma hanno copy e grafica.' : 'Quando un contenuto è pronto da pubblicare lo trovi qui.'} />
+        </div>
       ) : (
-        <div className="grid g2">
-          <EntryList title={t('In arrivo')} entries={upcoming} onOpen={setOpenEntry} empty={t('Niente in programma.')} />
-          <EntryList title={t('Archivio')} entries={past} onOpen={setOpenEntry} empty={t('Ancora nessun contenuto passato.')} />
+        <div className="grid" style={{ gap: 14 }}>
+          {todo.map(g => (
+            <div className="card" key={g.key}>
+              <div className="card-head">
+                <div className="card-title">{t(g.title)}</div>
+                <div className="card-hint">{g.entries.length}</div>
+              </div>
+              <div className="faint" style={{ fontSize: 12, marginTop: -4, marginBottom: 4 }}>{t(g.hint)}</div>
+              <div className="list">
+                {g.entries.slice(0, 40).map(e => (
+                  <TodoRow key={e.id} e={e} preview={previews[e.id]} todayKey={todayKey} onOpen={setOpenEntry}
+                    action={g.action === 'grafica' && isTeam
+                      ? { label: quickBusy === e.id ? t('Carico…') : t('Carica grafica'), icon: 'upload', busy: quickBusy === e.id, run: () => quickUpload(e) }
+                      : { label: t('Apri'), icon: 'chevron-right', run: () => setOpenEntry(e) }} />
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
       {openEntry && (
         <EntryModal
           entry={rows.find(e => e.id === openEntry.id) || openEntry}
-          onClose={() => { setOpenEntry(null); if (entryParam) goto('editorial') }}
+          onClose={() => { setOpenEntry(null); if (entryParam) goto(`editorial?view=${VIEW_NAME[view]}`) }}
           onChanged={reload}
         />
       )}
@@ -244,7 +355,7 @@ function EntryChip({ e, onOpen, preview, tz, full }: { e: EditorialEntry; onOpen
     return (
       <button className={`cal-match cal-${e.status} ${full ? 'cal-w-full' : ''}`} onClick={() => onOpen(e)} title={e.title}>
         <div className="cal-match-top">
-          <span className="cal-league"><Icon name="instagram" size={10} style={{ verticalAlign: '-1px', marginRight: 3, color: e.status === 'pubblicato' ? '#E1306C' : 'currentColor', opacity: e.status === 'pubblicato' ? 1 : 0.55 }} />{shortLeague(mi.league)}</span>
+          <span className="cal-league"><Icon name="instagram" size={10} style={{ verticalAlign: '-1px', marginRight: 3, color: e.status === 'pubblicato' ? IG_PINK : 'currentColor', opacity: e.status === 'pubblicato' ? 1 : 0.55 }} />{shortLeague(mi.league)}</span>
           <span>{home ? t('CASA') : t('TRASF')} · {score || time}</span>
         </div>
         <div className="cal-match-teams">{mi.home_team}<br />{mi.away_team}</div>
@@ -253,7 +364,7 @@ function EntryChip({ e, onOpen, preview, tz, full }: { e: EditorialEntry; onOpen
     )
   }
   const st = STATUSES[e.status]
-  const toneColor = (t?: string) => t === 'green' ? 'var(--green)' : t === 'gold' ? 'var(--gold)' : t === 'blue' ? 'var(--blue)' : t === 'accent' ? '#E1306C' : 'var(--text-dim)'
+  const toneColor = (t?: string) => t === 'green' ? 'var(--green)' : t === 'gold' ? 'var(--gold)' : t === 'blue' ? 'var(--blue)' : t === 'accent' ? IG_PINK : 'var(--text-dim)'
   const accent = toneColor(st?.tone)
   return (
     <button className={`cal-chip-rich ${full ? 'cal-w-full' : ''}`} onClick={() => onOpen(e)} title={`${e.title} · Instagram`}
@@ -265,8 +376,8 @@ function EntryChip({ e, onOpen, preview, tz, full }: { e: EditorialEntry; onOpen
           ? <img src={preview} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           : <Icon name={TYPES[e.type]?.icon || 'image'} size={16} strokeWidth={1.5} />}
         <span style={{ position: 'absolute', bottom: -1, right: -1, width: 15, height: 15, borderRadius: 5,
-          background: 'rgba(0,0,0,.7)', display: 'grid', placeItems: 'center' }}>
-          <Icon name="instagram" size={9} style={{ color: e.status === 'pubblicato' ? '#E1306C' : '#fff' }} />
+          background: 'var(--ink)', display: 'grid', placeItems: 'center' }}>
+          <Icon name="instagram" size={9} style={{ color: e.status === 'pubblicato' ? IG_PINK : 'var(--surface)' }} />
         </span>
       </div>
       <div style={{ minWidth: 0, flex: 1 }}>
@@ -292,6 +403,44 @@ function shortLeague(l?: string | null) {
   return l.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 4)
 }
 
+// Riga della lista "Da fare": data, titolo, stato, anteprima e UNA azione.
+function TodoRow({ e, preview, todayKey, onOpen, action }: {
+  e: EditorialEntry; preview?: string; todayKey: string; onOpen: (e: EditorialEntry) => void
+  action: { label: string; icon: string; busy?: boolean; run: () => void }
+}) {
+  const { t } = useLang()
+  const d = new Date(e.entry_date + 'T12:00')
+  const late = e.entry_date < todayKey
+  const isToday = e.entry_date === todayKey
+  return (
+    <div className="row" style={{ cursor: 'pointer', gap: 12 }} onClick={() => onOpen(e)}>
+      <div style={{ width: 44, flexShrink: 0, textAlign: 'center', borderRadius: 10, padding: '5px 0',
+        background: isToday ? 'var(--yellow)' : 'var(--bg-2)', color: late ? 'var(--red)' : 'var(--ink)' }}>
+        <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.4px' }}>{t(DOW[(d.getDay() + 6) % 7])}</div>
+        <div style={{ fontSize: 17, fontWeight: 800, lineHeight: 1.1 }}>{d.getDate()}</div>
+        <div style={{ fontSize: 9.5, fontWeight: 600, color: late ? 'var(--red)' : 'var(--text-faint)' }}>{t(MONTHS[d.getMonth()]).slice(0, 3)}</div>
+      </div>
+      {preview
+        ? <img className="row-thumb" src={preview} alt="" loading="lazy" />
+        : <span className="row-thumb" style={{ display: 'grid', placeItems: 'center', background: 'var(--bg-2)', color: 'var(--text-dim)' }}>
+            <Icon name={TYPES[e.type]?.icon || 'file'} size={18} strokeWidth={1.5} />
+          </span>}
+      <div className="row-main" style={{ minWidth: 0 }}>
+        <div className="row-title" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.title}</div>
+        <div className="row-sub flex gap wrap" style={{ gap: 6, alignItems: 'center' }}>
+          <Badge tone={STATUSES[e.status]?.tone}>{t(STATUSES[e.status]?.label || e.status)}</Badge>
+          <span>{t(TYPES[e.type]?.label || e.type)}</span>
+          {late && <span style={{ color: 'var(--red)' }}>{t('in ritardo')}</span>}
+        </div>
+      </div>
+      <button className="btn btn-primary btn-sm" style={{ flexShrink: 0 }} disabled={action.busy}
+        onClick={ev => { ev.stopPropagation(); action.run() }}>
+        <Icon name={action.icon} size={13} /> {action.label}
+      </button>
+    </div>
+  )
+}
+
 function EntryList({ title, entries, onOpen, empty }: {
   title: string; entries: EditorialEntry[]; onOpen: (e: EditorialEntry) => void; empty: string
 }) {
@@ -303,7 +452,7 @@ function EntryList({ title, entries, onOpen, empty }: {
           {entries.slice(0, 30).map(e => (
             <button className="row" key={e.id} onClick={() => onOpen(e)} style={{ textAlign: 'left', width: '100%' }}>
               <span className="flex gap" style={{ alignItems: 'center', gap: 6 }}>
-                <Icon name="instagram" size={15} style={{ color: e.status === 'pubblicato' ? '#E1306C' : 'var(--text-dim)' }} />
+                <Icon name="instagram" size={15} style={{ color: e.status === 'pubblicato' ? IG_PINK : 'var(--text-dim)' }} />
                 <span style={{ color: 'var(--text-dim)' }}><Icon name={TYPES[e.type]?.icon || 'file'} size={16} /></span>
               </span>
               <div className="row-main">
@@ -336,7 +485,6 @@ function EntryModal({ entry, onClose, onChanged }: {
   const [hCopied, setHCopied] = useState(false)
   const [pickerOpen, setPickerOpen] = useState(false)
   const [igOpen, setIgOpen] = useState(false)
-  const [genBusy, setGenBusy] = useState<'pre' | 'post' | null>(null)
   const [showAnnotator, setShowAnnotator] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const materialRef = useRef<HTMLInputElement>(null)
@@ -421,29 +569,14 @@ function EntryModal({ entry, onClose, onChanged }: {
     const files = Array.from(e.target.files || [])
     if (!files.length) return
     setUploading(true); setErr('')
-    let ok = 0
-    for (const file of files) {
-      const path = `editorial/${entry.id}/${Date.now()}-${file.name.replace(/[^\w.\-]/g, '_')}`
-      const up = await supabase.storage.from(BUCKET).upload(path, file, { upsert: false })
-      if (up.error) { setErr(up.error.message); continue }
-      // La grafica caricata nella box entra anche nei Media, sezione Pubblicati.
-      const ins = await insertRow('crm_media', {
-        storage_path: path, file_name: file.name, kind: 'grafica', status: 'pubblicata',
-        editorial_id: entry.id, folder: 'Pubblicati', uploaded_by: session?.user.id,
-        uploaded_role: profile?.role, note: entry.title, player_id: athleteId,
-      })
-      if (!ins.error) ok++
+    try {
+      const { ok, error } = await uploadEntryGraphics(entry, files, { userId: session?.user.id, role: profile?.role, athleteId, isTeam })
+      if (error) setErr(error)
+      if (ok) { loadMedia(); onChanged() }
+    } finally {
+      setUploading(false)
+      if (fileRef.current) fileRef.current.value = ''
     }
-    if (ok) {
-      const status = ['da_preparare', 'copy_pronto'].includes(entry.status) ? 'grafica_caricata' : entry.status
-      if (status !== entry.status) await updateRow('crm_editorial', entry.id, { status })
-      notify(isTeam ? 'player' : 'team', `Grafica caricata: ${entry.title}`,
-        `${ok} file pront${ok > 1 ? 'i' : 'o'} nel calendario editoriale.`, 'editorial', athleteId)
-      toast(`${ok} grafic${ok > 1 ? 'he' : 'a'} caricat${ok > 1 ? 'e' : 'a'} — anche in Media, Pubblicati`)
-      loadMedia(); onChanged()
-    }
-    setUploading(false)
-    if (fileRef.current) fileRef.current.value = ''
   }
 
   // Materiale sorgente (foto) caricato dal giocatore o dal team dentro il contenuto:
@@ -546,26 +679,6 @@ function EntryModal({ entry, onClose, onChanged }: {
     onChanged()
   }
 
-  // Storia Instagram generata dal server (foto dalla Media + statistiche):
-  // la stessa routine gira da sola via cron, qui si può (ri)generare al volo.
-  async function generateStory(kind: 'pre' | 'post') {
-    setGenBusy(kind)
-    try {
-      const { data, error } = await supabase.functions.invoke('generate-story', {
-        body: { editorial_id: entry.id, type: kind },
-      })
-      if (error) throw error
-      if (data?.error) throw new Error(String(data.error))
-      if (data?.skipped) { toast(String(data.skipped)); return }
-      toast(`Storia ${kind === 'pre' ? 'pre' : 'post'}-match generata ✓`)
-      loadMedia(); onChanged()
-    } catch (e: any) {
-      toast(e?.message || 'Generazione non riuscita', 'err')
-    } finally {
-      setGenBusy(null)
-    }
-  }
-
   async function removeEntry() {
     await deleteRow('crm_editorial', entry.id)
     onClose(); onChanged()
@@ -581,8 +694,8 @@ function EntryModal({ entry, onClose, onChanged }: {
     await supabase.from('crm_media').update({ status: 'pubblicata', folder: 'Pubblicati' })
       .eq('editorial_id', entry.id).eq('kind', 'grafica')
     notify(isTeam ? 'player' : 'team', `Pubblicato: ${entry.title}`,
-      'Contenuto confermato come pubblicato — lavoro completato ✓', 'editorial', athleteId)
-    toast('Segnato come pubblicato ✓'); onChanged()
+      'Contenuto confermato come pubblicato — lavoro completato', 'editorial', athleteId)
+    toast('Segnato come pubblicato'); onChanged()
   }
 
   const isMatchDayAthlete = !isTeam && entry.type === 'partita'
@@ -592,14 +705,14 @@ function EntryModal({ entry, onClose, onChanged }: {
     const { error } = await updateRow('crm_editorial', entry.id, { status: 'pronto', revision: null })
     if (error) { setErr(error.message); return }
     notify('team', `Grafica accettata: ${entry.title}`, "L'atleta ha accettato la grafica pre-partita.", 'editorial', athleteId)
-    toast('Grafica accettata ✓'); onChanged(); onClose()
+    toast('Grafica accettata'); onChanged(); onClose()
   }
   async function sendRevision(note: string, pins: { x: number; y: number; note: string }[]) {
     const rev = { note: note || null, pins, at: new Date().toISOString(), by: 'player' }
     const { error } = await updateRow('crm_editorial', entry.id, { revision: rev })
     if (error) { setErr(error.message); return }
     notify('team', `Modifiche richieste: ${entry.title}`, note || "L'atleta ha segnato dei punti da modificare sulla grafica.", 'editorial', athleteId)
-    toast('Richiesta inviata al team ✓'); onChanged(); onClose()
+    toast('Richiesta inviata al team'); onChanged(); onClose()
   }
 
   return (
@@ -620,12 +733,12 @@ function EntryModal({ entry, onClose, onChanged }: {
             {isAdmin && entry.type !== 'partita' && <ConfirmButton onConfirm={removeEntry}>Elimina</ConfirmButton>}
           </div>
           <div className="flex gap">
-            {approvate.length > 0 && (
+            {isTeam && approvate.length > 0 && (
               <button className="btn" onClick={() => setIgOpen(true)} title="Copia la caption e scarica le foto in ordine">
                 <Icon name="image" size={14} /> Prepara per Instagram
               </button>
             )}
-            {entry.status !== 'pubblicato' && (
+            {isTeam && entry.status !== 'pubblicato' && (
               <button className="btn btn-primary" onClick={publish} disabled={approvate.length === 0}
                 title={approvate.length === 0 ? 'Serve prima il materiale' : 'Conferma che il post è stato pubblicato'}>
                 <Icon name="check" size={14} /> Conferma pubblicato
@@ -635,73 +748,18 @@ function EntryModal({ entry, onClose, onChanged }: {
           </div>
         </div>
       )}>
-      <div className="grid" style={{ gap: 14 }}>
+      <div className="grid" style={{ gap: 18 }}>
         <div className="flex gap wrap" style={{ alignItems: 'center' }}>
-          <Badge tone={STATUSES[entry.status]?.tone}>{STATUSES[entry.status]?.label}</Badge>
+          <Badge tone={STATUSES[entry.status]?.tone}>{t(STATUSES[entry.status]?.label || entry.status)}</Badge>
           <Badge>{TYPES[entry.type]?.label || entry.type}</Badge>
           {entry.theme && <Badge>{THEMES[entry.theme] || entry.theme}</Badge>}
           {brandName && <Badge tone="red">Contenuto {brandName}</Badge>}
           {entry.requested_by && <Badge tone="accent">{t('Proposto dal giocatore')}</Badge>}
           <span className="faint" style={{ fontSize: 12.5 }}>{fmtDate(entry.entry_date)}</span>
         </div>
-        {approvate.length === 0 && entry.status !== 'pubblicato' && (
-          <div style={{ fontSize: 12.5, color: 'var(--gold)', background: 'var(--yellow-soft)',
-            border: '1px solid rgba(154,134,0,.35)', borderRadius: 10, padding: '9px 12px',
-            display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Icon name="clock" size={14} /> Per approvare (Pronto ✓) serve prima il materiale: carica o seleziona le foto qui sotto, così il team ha di che lavorare.
-          </div>
-        )}
-
         {entry.brief && (
-          <div className="card" style={{ background: 'var(--bg-2)' }}>
-            <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.8px', fontWeight: 700, marginBottom: 4 }}>{t('Brief')}</div>
-            <div style={{ fontSize: 13.5 }}>{entry.brief}</div>
-          </div>
-        )}
-
-        {mi && (
-          <div className="card" style={{ background: 'var(--bg-2)' }}>
-            <div className="card-head"><div className="card-title">{t('Info partita per le grafiche')}</div></div>
-            <div className="grid g3" style={{ gap: 10 }}>
-              <Info k={t("Match")} v={`${mi.home_team ?? '—'} vs ${mi.away_team ?? '—'}`} />
-              <Info k={t("Competizione")} v={mi.league} />
-              <Info k={t("Giornata")} v={mi.round} />
-              <Info k={t("Calcio d'inizio")} v={mi.kickoff ? fmtMatchDateTime(mi.kickoff, athleteTz) : null} />
-              <Info k={t("Stadio")} v={mi.stadium} />
-              <Info k={t("Casa/Trasferta")} v={(mi.venue || '').toLowerCase() === 'home' ? t('In casa') : (mi.venue || '').toLowerCase() === 'away' ? t('Trasferta') : mi.venue} />
-              {mi.status === 'FT' && <Info k={t("Risultato")} v={`${mi.team_score ?? '—'}–${mi.opponent_score ?? '—'}`} />}
-            </div>
-            {isTeam && <div className="flex gap wrap" style={{ marginTop: 12 }}>
-              <button className="btn btn-sm" disabled={genBusy !== null} onClick={() => generateStory('pre')}
-                title="Storia 1080×1920 con foto dalla Media e info partita — si genera anche da sola 24h prima del kickoff">
-                <Icon name="image" size={13} /> {genBusy === 'pre' ? 'Genero…' : 'Genera storia pre-match'}
-              </button>
-              {mi.status === 'FT' && (
-                <button className="btn btn-sm" disabled={genBusy !== null} onClick={() => generateStory('post')}
-                  title="Storia 1080×1920 con risultato e statistiche personali — si genera da sola quando arrivano le statistiche">
-                  <Icon name="activity" size={13} /> {genBusy === 'post' ? 'Genero…' : 'Genera storia post-match'}
-                </button>
-              )}
-              <span className="faint" style={{ fontSize: 11.5, alignSelf: 'center' }}>
-                Le storie si creano da sole: pre-match 24h prima, post-match con le statistiche. Qui puoi rigenerarle.
-              </span>
-            </div>}
-          </div>
-        )}
-
-        {isTeam && entry.revision && (
-          <div className="card" style={{ background: 'var(--bg-2)', borderColor: 'var(--magenta)' }}>
-            <div className="card-title" style={{ color: 'var(--magenta)', marginBottom: 6 }}><Icon name="edit" size={14} /> Modifiche richieste dall'atleta</div>
-            {entry.revision.note && <div style={{ fontSize: 13, marginBottom: 8 }}>{entry.revision.note}</div>}
-            {firstGraphicImg && urls[firstGraphicImg.storage_path] && (entry.revision.pins?.length > 0) && (
-              <div style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', marginBottom: 8 }}>
-                <img src={urls[firstGraphicImg.storage_path]} alt="" style={{ width: '100%', display: 'block' }} />
-                {entry.revision.pins.map((p: any, i: number) => (<div key={i} style={pinStyle(p.x, p.y)}>{i + 1}</div>))}
-              </div>
-            )}
-            {(entry.revision.pins || []).filter((p: any) => p.note).map((p: any, i: number) => (
-              <div key={i} style={{ fontSize: 12.5, color: 'var(--text-dim)' }}><b>{i + 1}.</b> {p.note}</div>
-            ))}
+          <div style={{ fontSize: 13.5, color: 'var(--text-dim)', borderLeft: '3px solid var(--border-2)', paddingLeft: 10 }}>
+            <b style={{ color: 'var(--text)' }}>{t('Brief')}:</b> {entry.brief}
           </div>
         )}
 
@@ -728,12 +786,87 @@ function EntryModal({ entry, onClose, onChanged }: {
         )}
 
         {!isMatchDayAthlete && (<>
+        {/* 1. Grafica finale: la cosa che si usa di più (team la carica, atleta la pubblica) */}
+        <div>
+          <div className="flex between" style={{ marginBottom: 8, alignItems: 'center' }}>
+            <div style={{ fontWeight: 650 }}>{t('Grafica finale')}</div>
+            {isTeam && (
+              <>
+                <button className="btn btn-primary btn-sm" disabled={uploading} onClick={() => fileRef.current?.click()}>
+                  <Icon name="upload" size={13} /> {uploading ? 'Carico…' : 'Carica grafica'}
+                </button>
+                <input ref={fileRef} type="file" multiple accept="image/*,video/*,.pdf,.psd,.ai" hidden onChange={onUpload} />
+              </>
+            )}
+          </div>
+          {!isTeam && firstGraphicImg && urls[firstGraphicImg.storage_path] && (
+            <img src={urls[firstGraphicImg.storage_path]} alt="" onClick={() => openAsset(firstGraphicImg)}
+              style={{ width: '100%', maxHeight: 460, objectFit: 'contain', borderRadius: 12, display: 'block',
+                background: 'var(--bg-2)', cursor: 'pointer', marginBottom: 10 }} />
+          )}
+          {!isTeam && (
+            <div className="flex gap wrap" style={{ marginBottom: 10 }}>
+              {entry.status !== 'pubblicato' && (
+                <button className="btn btn-primary" onClick={publish} disabled={approvate.length === 0}
+                  title={approvate.length === 0 ? 'Serve prima il materiale' : 'Conferma che il post è stato pubblicato'}>
+                  <Icon name="check" size={14} /> {t('Segna come pubblicato')}
+                </button>
+              )}
+              {entry.type !== 'partita' && entry.type !== 'story' && (
+                <button className="btn" onClick={copyToClipboard} disabled={!copy}>
+                  <Icon name="copy" size={14} /> {copied ? t('Copiato') : t('Copia testo')}
+                </button>
+              )}
+              {approvate.length > 0 && (
+                <button className="btn" onClick={() => setIgOpen(true)} title="Copia la caption e scarica le foto in ordine">
+                  <Icon name="instagram" size={14} /> {t('Prepara per Instagram')}
+                </button>
+              )}
+            </div>
+          )}
+          {grafiche.length === 0
+            ? <div className="faint" style={{ fontSize: 12.5, padding: '6px 0' }}>{isTeam ? 'Carica qui i file pronti da pubblicare: finiscono anche in Media → Pubblicati.' : 'Il team caricherà qui la grafica finale, pronta da pubblicare.'}</div>
+            : (isTeam || grafiche.length > 1 || !firstGraphicImg) && (
+              <div className="list">
+                {grafiche.map(m => (
+                  <div className="row" key={m.id}>
+                    {isImageFile(m.file_name) && urls[m.storage_path]
+                      ? <img className="row-thumb" src={urls[m.storage_path]} alt="" loading="lazy" onClick={() => openAsset(m)} />
+                      : <span className="row-thumb file-badge" onClick={() => openAsset(m)}>{fileExt(m.file_name)}</span>}
+                    <div className="row-main">
+                      <div className="row-title">{m.file_name}</div>
+                      <div className="row-sub">{fmtDateTime(m.created_at)}</div>
+                    </div>
+                    <button className="btn btn-sm" onClick={() => openAsset(m)}><Icon name="download" size={13} /> {t('Scarica')}</button>
+                    {isAdmin && <ConfirmButton onConfirm={() => removeAsset(m)}><Icon name="x" size={13} /></ConfirmButton>}
+                  </div>
+                ))}
+              </div>
+            )}
+        </div>
+
+        {isTeam && entry.revision && (
+          <More title={`Modifiche richieste dall'atleta${entry.revision.pins?.length ? ` · ${entry.revision.pins.length} punti` : ''}`} tone="var(--magenta)">
+            {entry.revision.note && <div style={{ fontSize: 13, marginBottom: 8 }}>{entry.revision.note}</div>}
+            {firstGraphicImg && urls[firstGraphicImg.storage_path] && (entry.revision.pins?.length > 0) && (
+              <div style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', marginBottom: 8 }}>
+                <img src={urls[firstGraphicImg.storage_path]} alt="" style={{ width: '100%', display: 'block' }} />
+                {entry.revision.pins.map((p: any, i: number) => (<div key={i} style={pinStyle(p.x, p.y)}>{i + 1}</div>))}
+              </div>
+            )}
+            {(entry.revision.pins || []).filter((p: any) => p.note).map((p: any, i: number) => (
+              <div key={i} style={{ fontSize: 12.5, color: 'var(--text-dim)' }}><b>{i + 1}.</b> {p.note}</div>
+            ))}
+          </More>
+        )}
+
+        {/* 2. Copy */}
         {entry.type !== 'partita' && entry.type !== 'story' && (
         <div>
           <div className="flex between" style={{ marginBottom: 6 }}>
             <div style={{ fontWeight: 650 }}>{t('Copy')}</div>
             <div className="flex gap">
-              <button className="btn btn-sm" onClick={copyToClipboard} disabled={!copy}>{copied ? t('Copiato ✓') : t('Copia')}</button>
+              <button className="btn btn-sm" onClick={copyToClipboard} disabled={!copy}>{copied ? t('Copiato') : t('Copia')}</button>
               <button className="btn btn-sm" onClick={downloadCopy} disabled={!copy}>{t('Scarica .txt')}</button>
               <button className="btn btn-primary btn-sm" disabled={saving} onClick={saveCopy}>{saving ? 'Salvo…' : 'Salva copy'}</button>
             </div>
@@ -748,12 +881,13 @@ function EntryModal({ entry, onClose, onChanged }: {
           <div>
             <div className="flex between" style={{ marginBottom: 6 }}>
               <div style={{ fontWeight: 650 }}>Hashtag {brandName ? `· da ${brandName}` : ''}</div>
-              <button className="btn btn-sm" onClick={copyHashtags}>{hCopied ? 'Copiati ✓' : 'Copia hashtag'}</button>
+              <button className="btn btn-sm" onClick={copyHashtags}>{hCopied ? 'Copiati' : 'Copia hashtag'}</button>
             </div>
             <div className="card" style={{ background: 'var(--bg-2)', fontSize: 13, color: 'var(--text-dim)', whiteSpace: 'pre-wrap' }}>{entry.hashtags}</div>
           </div>
         )}
 
+        {/* 3. Materiale da cui nasce la grafica */}
         <div>
           <div className="flex between" style={{ marginBottom: 6 }}>
             <div style={{ fontWeight: 650 }}>
@@ -771,7 +905,12 @@ function EntryModal({ entry, onClose, onChanged }: {
             <input ref={materialRef} type="file" multiple accept="image/*,video/*" hidden onChange={onUploadMaterial} />
           </div>
           {approvate.length === 0
-            ? <div className="faint" style={{ fontSize: 12.5, padding: '6px 0' }}>Carica qui le foto/video da cui il team preparerà la grafica.</div>
+            ? <div style={{ fontSize: 12.5, color: 'var(--gold)', background: 'var(--yellow-soft)', borderRadius: 10, padding: '8px 12px',
+                display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Icon name="clock" size={14} /> {entry.status !== 'pubblicato'
+                  ? 'Serve il materiale (foto/video da cui nasce la grafica): senza non si può segnare Pronto o Pubblicato.'
+                  : 'Nessun materiale collegato.'}
+              </div>
             : (
               <div className="asset-grid">
                 {approvate.map((m, i) => (
@@ -783,7 +922,7 @@ function EntryModal({ entry, onClose, onChanged }: {
                     </div>
                     {/* numero d'ordine nel carosello */}
                     <div style={{ position: 'absolute', top: 6, left: 6, minWidth: 20, height: 20, padding: '0 5px',
-                      borderRadius: 10, background: 'rgba(0,0,0,.72)', color: '#fff', fontSize: 11, fontWeight: 800,
+                      borderRadius: 10, background: 'var(--ink)', color: 'var(--surface)', fontSize: 11, fontWeight: 800,
                       display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{i + 1}</div>
                     {/* frecce per ordinare il carosello */}
                     {approvate.length > 1 && (
@@ -803,40 +942,21 @@ function EntryModal({ entry, onClose, onChanged }: {
             )}
         </div>
 
-        <div>
-          <div className="flex between" style={{ marginBottom: 6 }}>
-            <div style={{ fontWeight: 650 }}>{t('Grafiche pronte')}</div>
-            {isTeam && (
-              <>
-                <button className="btn btn-primary btn-sm" disabled={uploading} onClick={() => fileRef.current?.click()}>
-                  {uploading ? 'Carico…' : 'Carica grafica'}
-                </button>
-                <input ref={fileRef} type="file" multiple accept="image/*,video/*,.pdf,.psd,.ai" hidden onChange={onUpload} />
-              </>
-            )}
-          </div>
-          {grafiche.length === 0
-            ? <div className="faint" style={{ fontSize: 12.5, padding: '6px 0' }}>{isTeam ? 'Carica qui i file pronti da pubblicare: finiscono anche in Media → Pubblicati.' : 'Il team caricherà qui la grafica finale, pronta da pubblicare.'}</div>
-            : (
-              <div className="list">
-                {grafiche.map(m => (
-                  <div className="row" key={m.id}>
-                    {isImageFile(m.file_name) && urls[m.storage_path]
-                      ? <img className="row-thumb" src={urls[m.storage_path]} alt="" loading="lazy" onClick={() => openAsset(m)} />
-                      : <span className="row-thumb file-badge" onClick={() => openAsset(m)}>{fileExt(m.file_name)}</span>}
-                    <div className="row-main">
-                      <div className="row-title">{m.file_name}</div>
-                      <div className="row-sub">{fmtDateTime(m.created_at)}</div>
-                    </div>
-                    <button className="btn btn-sm" onClick={() => openAsset(m)}>{t('Scarica')}</button>
-                    {isAdmin && <ConfirmButton onConfirm={() => removeAsset(m)}>×</ConfirmButton>}
-                  </div>
-                ))}
-              </div>
-            )}
-        </div>
-
         </>)}
+
+        {mi && (
+          <More title={t('Info partita per le grafiche')}>
+            <div className="grid g3" style={{ gap: 10 }}>
+              <Info k={t("Match")} v={`${mi.home_team ?? '—'} vs ${mi.away_team ?? '—'}`} />
+              <Info k={t("Competizione")} v={mi.league} />
+              <Info k={t("Giornata")} v={mi.round} />
+              <Info k={t("Calcio d'inizio")} v={mi.kickoff ? fmtMatchDateTime(mi.kickoff, athleteTz) : null} />
+              <Info k={t("Stadio")} v={mi.stadium} />
+              <Info k={t("Casa/Trasferta")} v={(mi.venue || '').toLowerCase() === 'home' ? t('In casa') : (mi.venue || '').toLowerCase() === 'away' ? t('Trasferta') : mi.venue} />
+              {mi.status === 'FT' && <Info k={t("Risultato")} v={`${mi.team_score ?? '—'}–${mi.opponent_score ?? '—'}`} />}
+            </div>
+          </More>
+        )}
         {err && <div className="msg-err">{err}</div>}
       </div>
       {pickerOpen && (
@@ -917,7 +1037,7 @@ function InstagramExport({ caption, title, photos, urls, onClose }: {
         {/* azioni principali */}
         <div className="flex gap wrap" style={{ gap: 10 }}>
           <button className="btn btn-primary" onClick={copyCaption} disabled={!caption}>
-            <Icon name="copy" size={14} /> {copied ? t('Caption copiata ✓') : t('Copia caption')}
+            <Icon name="copy" size={14} /> {copied ? t('Caption copiata') : t('Copia caption')}
           </button>
           <button className="btn btn-primary" onClick={savePhotos} disabled={preparing || busy || files.length === 0}>
             <Icon name="image" size={14} /> {preparing ? 'Preparo le foto…' : busy ? 'Scarico…' : canShareFiles ? `Salva ${files.length} foto sul telefono` : `Scarica ${files.length} foto`}
@@ -944,6 +1064,16 @@ function InstagramExport({ caption, title, photos, urls, onClose }: {
         </div>
       </div>
     </Modal>
+  )
+}
+
+// Sezione richiudibile per le parti che servono di rado.
+function More({ title, tone, children }: { title: string; tone?: string; children: React.ReactNode }) {
+  return (
+    <details style={{ border: '1px solid var(--border)', borderRadius: 12, background: 'var(--bg-2)', padding: '10px 12px' }}>
+      <summary style={{ cursor: 'pointer', fontWeight: 650, fontSize: 13.5, color: tone || 'var(--text)' }}>{title}</summary>
+      <div style={{ marginTop: 10 }}>{children}</div>
+    </details>
   )
 }
 
@@ -1126,7 +1256,7 @@ function MediaPicker({ athleteId, excludeSourceIds, onClose, onConfirm }: {
                       <div style={{ position: 'absolute', top: 6, right: 6, width: 22, height: 22, borderRadius: '50%',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         background: on ? 'var(--accent)' : 'rgba(0,0,0,.5)',
-                        color: on ? 'var(--ink)' : '#fff', border: '1.5px solid ' + (on ? 'var(--accent)' : 'rgba(255,255,255,.6)') }}>
+                        color: on ? 'var(--ink)' : 'var(--surface)', border: '1.5px solid ' + (on ? 'var(--accent)' : 'rgba(255,255,255,.6)') }}>
                         {on && <Icon name="check" size={13} />}
                       </div>
                     </div>
@@ -1143,8 +1273,8 @@ function MediaPicker({ athleteId, excludeSourceIds, onClose, onConfirm }: {
 
 const pinStyle = (x: number, y: number): any => ({
   position: 'absolute', left: `${x * 100}%`, top: `${y * 100}%`, transform: 'translate(-50%, -50%)',
-  width: 22, height: 22, borderRadius: '50%', background: 'var(--magenta)', color: '#fff', fontWeight: 800, fontSize: 12,
-  display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #fff',
+  width: 22, height: 22, borderRadius: '50%', background: 'var(--magenta)', color: 'var(--surface)', fontWeight: 800, fontSize: 12,
+  display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--surface)',
   boxShadow: '0 1px 4px rgba(0,0,0,.5)', pointerEvents: 'none',
 })
 
@@ -1175,7 +1305,7 @@ function RevisionAnnotator({ url, onCancel, onSend }: {
         <button className="btn btn-sm" onClick={() => setZoom(z => Math.min(4, +(z + 0.5).toFixed(1)))} disabled={zoom >= 4}>+</button>
         {pins.length > 0 && <button className="btn btn-sm" onClick={() => setPins(p => p.slice(0, -1))}>Annulla ultimo punto</button>}
       </div>
-      <div style={{ maxHeight: 440, overflow: 'auto', border: '1px solid var(--border)', borderRadius: 10, background: '#000' }}>
+      <div style={{ maxHeight: 440, overflow: 'auto', border: '1px solid var(--border)', borderRadius: 10, background: 'var(--ink)' }}>
         <div ref={wrapRef} onClick={addPin} style={{ position: 'relative', width: `${zoom * 100}%`, cursor: 'crosshair' }}>
           <img src={url} alt="" style={{ display: 'block', width: '100%' }} draggable={false} />
           {pins.map((p, i) => (<div key={i} style={pinStyle(p.x, p.y)}>{i + 1}</div>))}
@@ -1183,7 +1313,7 @@ function RevisionAnnotator({ url, onCancel, onSend }: {
       </div>
       {pins.map((p, i) => (
         <div key={i} className="flex gap" style={{ alignItems: 'center', marginTop: 8 }}>
-          <div style={{ minWidth: 22, height: 22, borderRadius: '50%', background: 'var(--magenta)', color: '#fff', fontWeight: 800, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: '0 0 auto' }}>{i + 1}</div>
+          <div style={{ minWidth: 22, height: 22, borderRadius: '50%', background: 'var(--magenta)', color: 'var(--surface)', fontWeight: 800, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: '0 0 auto' }}>{i + 1}</div>
           <input style={inputStyle} placeholder={`Cosa cambiare nel punto ${i + 1}…`} value={p.note}
             onChange={e => setPins(arr => arr.map((q, j) => j === i ? { ...q, note: e.target.value } : q))} />
         </div>
