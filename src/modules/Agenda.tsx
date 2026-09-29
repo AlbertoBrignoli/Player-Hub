@@ -136,13 +136,13 @@ function ListView({ rows, canEdit, onEdit, onDel, canConfirm, onConfirm, goto }:
       {groups.filter(g => g.items.length).map(g => (
         <div key={g.label}>
           <div style={sectionLabel}>{g.label}</div>
-          {g.items.map(card)}
+          <div className="ev-list">{g.items.map(card)}</div>
         </div>
       ))}
       {past.length > 0 && (
         <div style={{ opacity: .55 }}>
           <div style={sectionLabel}>{tr('Passati')}</div>
-          {past.slice(0, 5).map(card)}
+          <div className="ev-list">{past.slice(0, 5).map(card)}</div>
         </div>
       )}
     </>
@@ -172,8 +172,17 @@ function CalendarView({ rows, canEdit, onEdit, onDel, canConfirm, onConfirm, got
   const now = Date.now()
   const next3 = rows.filter(e => new Date(e.start_at).getTime() >= now - 3600000).slice(0, 3)
 
+  const card = (e: EventItem) => <EvCard key={e.id} e={e} canEdit={canEdit(e)} onEdit={() => onEdit(e)} onDel={() => onDel(e)} canConfirm={canConfirm(e)} onConfirm={ok => onConfirm(e, ok)} goto={goto} />
+
+  // In alto ciò che arriva, sotto il calendario per spostarsi nei giorni;
+  // toccando un giorno i suoi impegni compaiono subito sotto il calendario.
   return (
     <>
+      <div style={{ ...sectionLabel, marginTop: 4 }}>{tr('Prossimi impegni')}</div>
+      {next3.length === 0
+        ? <div className="faint" style={{ padding: '4px 6px 8px' }}>{tr('Nessun impegno in programma.')}</div>
+        : <div className="ev-list">{next3.map(card)}</div>}
+
       <div className="card" style={{ padding: 16 }}>
         <div className="flex between" style={{ alignItems: 'center', marginBottom: 12 }}>
           <button className="btn btn-sm" onClick={prev}>‹</button>
@@ -201,25 +210,19 @@ function CalendarView({ rows, canEdit, onEdit, onDel, canConfirm, onConfirm, got
         </div>
       </div>
 
-      {sel ? (
+
+      {sel && (
         <>
           <div style={sectionLabel} className="flex between">
             <span>{sel.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}</span>
             <span className="flex gap">
               {onAdd && <button className="btn btn-sm" onClick={() => { const dd = new Date(sel); dd.setHours(12, 0, 0, 0); onAdd(dd.toISOString()) }}>+ {tr('Aggiungi')}</button>}
-              <button className="btn btn-sm" onClick={() => setSel(null)}>{tr('Chiudi')}</button>
+              <button className="btn btn-ghost btn-sm" onClick={() => setSel(null)}>{tr('Chiudi')}</button>
             </span>
           </div>
           {(byDay[dayKey(sel)] || []).length === 0
             ? <div className="faint" style={{ padding: '4px 6px' }}>{tr('Nessun impegno in questo giorno.')}</div>
-            : (byDay[dayKey(sel)] || []).map(e => <EvCard key={e.id} e={e} canEdit={canEdit(e)} onEdit={() => onEdit(e)} onDel={() => onDel(e)} canConfirm={canConfirm(e)} onConfirm={ok => onConfirm(e, ok)} goto={goto} />)}
-        </>
-      ) : (
-        <>
-          <div style={sectionLabel}>{tr('Prossimi impegni')}</div>
-          {next3.length === 0
-            ? <div className="faint" style={{ padding: '4px 6px' }}>{tr('Nessun impegno in programma.')}</div>
-            : next3.map(e => <EvCard key={e.id} e={e} canEdit={canEdit(e)} onEdit={() => onEdit(e)} onDel={() => onDel(e)} canConfirm={canConfirm(e)} onConfirm={ok => onConfirm(e, ok)} goto={goto} />)}
+            : <div className="ev-list">{(byDay[dayKey(sel)] || []).map(card)}</div>}
         </>
       )}
     </>
@@ -235,26 +238,26 @@ function EvCard({ e, canEdit, onEdit, onDel, canConfirm, onConfirm, goto }: { e:
   const day = d.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' })
   const time = d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
   return (
-    <div className="card" style={{ padding: 16, marginBottom: 10, display: 'flex', gap: 14, alignItems: 'flex-start', borderLeft: `3px solid ${t.c}` }}>
-      <span style={{ width: 42, height: 42, borderRadius: 12, background: t.c + '22', color: t.c, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: '0 0 auto' }}>
-        <Icon name={t.icon} size={20} />
+    <div className="card" style={{ padding: '12px 14px', display: 'flex', gap: 12, alignItems: 'flex-start', borderLeft: `3px solid ${t.c}` }}>
+      <span style={{ width: 34, height: 34, borderRadius: 10, background: t.c + '22', color: t.c, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: '0 0 auto' }}>
+        <Icon name={t.icon} size={17} />
       </span>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div className="flex between" style={{ alignItems: 'flex-start', gap: 10 }}>
-          <div style={{ fontSize: 16.5, fontWeight: 800, lineHeight: 1.25 }}>{e.title}</div>
+          <div style={{ fontSize: 14.5, fontWeight: 700, lineHeight: 1.3 }}>{e.title}</div>
           <span style={{ fontSize: 10.5, color: t.c, fontWeight: 700, whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: .6 }}>{tr(t.l)}</span>
         </div>
-        <div className="flex gap" style={{ alignItems: 'center', marginTop: 9, flexWrap: 'wrap' }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13.5, fontWeight: 600 }}>
-            <Icon name="calendar" size={14} /> {day}
+        <div className="flex gap" style={{ alignItems: 'center', marginTop: 4, flexWrap: 'wrap', gap: 10 }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12.5, fontWeight: 500, color: 'var(--text-dim)' }}>
+            <Icon name="calendar" size={13} /> {day}
           </span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 16, fontWeight: 800, color: t.c }}>
-            <Icon name="clock" size={15} /> {time}
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12.5, fontWeight: 700, color: 'var(--text)' }}>
+            <Icon name="clock" size={13} /> {time}
           </span>
         </div>
-        {e.location && <a className="faint" href={mapsUrl(e.location)} target="_blank" rel="noreferrer" title={tr("Apri in Maps")} style={{ fontSize: 13, marginTop: 7, display: 'inline-flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}><Icon name="pin" size={13} /> {e.location} <span style={{ opacity: .7 }}>↗</span></a>}
+        {e.location && <a className="faint" href={mapsUrl(e.location)} target="_blank" rel="noreferrer" title={tr("Apri in Maps")} style={{ fontSize: 12, marginTop: 4, display: 'inline-flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}><Icon name="pin" size={13} /> {e.location} <span style={{ opacity: .7 }}>↗</span></a>}
         {req && req !== 'confermata' && (
-          <div style={{ marginTop: 9 }}>
+          <div style={{ marginTop: 6 }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700,
                            padding: '4px 10px', borderRadius: 999,
                            background: req === 'rifiutata' ? 'rgba(229,63,0,.10)' : 'var(--yellow-soft)',
@@ -265,7 +268,7 @@ function EvCard({ e, canEdit, onEdit, onDel, canConfirm, onConfirm, goto }: { e:
           </div>
         )}
         {req === 'confermata' && (
-          <div style={{ marginTop: 9 }}>
+          <div style={{ marginTop: 6 }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700,
                            padding: '4px 10px', borderRadius: 999, background: 'rgba(18,161,80,.12)', color: 'var(--green)' }}>
               <Icon name="check" size={12} /> Confermato
@@ -284,25 +287,24 @@ function EvCard({ e, canEdit, onEdit, onDel, canConfirm, onConfirm, goto }: { e:
             ))}
           </div>
         )}
-        <div className="quick-actions" style={{ marginTop: 12 }}>
-          <button className="qa" onClick={() => downloadIcs({ title: e.title, start: e.start_at, end: e.end_at || undefined, location: e.location || undefined, description: e.notes || undefined })}>
-            <span className="qa-ico"><Icon name="calendar" size={14} /></span>{tr('Nel mio calendario')}
+        {/* un'unica riga di azioni: conferme e scheda a sinistra, icone a destra */}
+        <div className="ev-actions">
+          {isTraining && goto && <button className="btn btn-sm btn-primary" onClick={() => goto('fitness')}>{tr('Apri scheda →')}</button>}
+          {canConfirm && <button className="btn btn-sm" style={{ background: 'var(--green)', color: '#fff', borderColor: 'var(--green)' }} onClick={() => onConfirm(true)}>{tr('Conferma')}</button>}
+          {canConfirm && <button className="btn btn-ghost btn-sm" onClick={() => onConfirm(false)}>{tr('Rifiuta')}</button>}
+          <span style={{ flex: 1 }} />
+          <button className="ev-ic" title={tr('Nel mio calendario')} aria-label={tr('Nel mio calendario')}
+            onClick={() => downloadIcs({ title: e.title, start: e.start_at, end: e.end_at || undefined, location: e.location || undefined, description: e.notes || undefined })}>
+            <Icon name="calendar" size={16} />
           </button>
           {e.location && (
-            <a className="qa" href={mapsUrl(e.location)} target="_blank" rel="noreferrer">
-              <span className="qa-ico"><Icon name="pin" size={14} /></span>{tr('Indicazioni')}
+            <a className="ev-ic" href={mapsUrl(e.location)} target="_blank" rel="noreferrer" title={tr('Indicazioni')} aria-label={tr('Indicazioni')}>
+              <Icon name="pin" size={16} />
             </a>
           )}
+          {canEdit && <button className="ev-ic" onClick={onEdit} title={tr('Modifica')} aria-label={tr('Modifica')}><Icon name="edit" size={16} /></button>}
+          {canEdit && <button className="ev-ic ev-ic-danger" onClick={onDel} title={tr('Elimina')} aria-label={tr('Elimina')}><Icon name="trash" size={16} /></button>}
         </div>
-        {(isTraining || canEdit || canConfirm) && (
-          <div className="flex gap" style={{ marginTop: 12, flexWrap: 'wrap' }}>
-            {isTraining && goto && <button className="btn btn-sm" style={{ background: 'var(--yellow)', color: 'var(--ink)', fontWeight: 700 }} onClick={() => goto('fitness')}>{tr('Apri scheda →')}</button>}
-            {canConfirm && <button className="btn btn-sm" style={{ background: 'var(--green)', color: '#fff', fontWeight: 800 }} onClick={() => onConfirm(true)}>{tr('Conferma')}</button>}
-            {canConfirm && <button className="btn btn-ghost btn-sm" onClick={() => onConfirm(false)}>{tr('Rifiuta')}</button>}
-            {canEdit && <button className="btn btn-ghost btn-sm" onClick={onEdit}>{tr('Modifica')}</button>}
-            {canEdit && <button className="btn btn-danger btn-sm" onClick={onDel}>{tr('Elimina')}</button>}
-          </div>
-        )}
       </div>
     </div>
   )

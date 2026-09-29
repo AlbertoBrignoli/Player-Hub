@@ -686,3 +686,13 @@ p { text-wrap: pretty; }
   .nudge-s { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 11.5px; }
 }
 @media (max-width: 880px) { .desktop-only { display: none !important; } }
+
+/* Agenda: elenco impegni compatto */
+.ev-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.quick-actions.qa-sm .qa { min-height: 32px; padding: 5px 11px; font-size: 12px; }
+@media (pointer: coarse) { .quick-actions.qa-sm .qa { min-height: 36px; } }
+.ev-actions { display: flex; align-items: center; gap: 4px; margin-top: 2px; margin-bottom: -6px; flex-wrap: wrap; }
+.ev-ic { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; color: var(--text-dim); transition: background .15s, color .15s; }
+.ev-ic:hover { background: var(--surface-2); color: var(--text); }
+.ev-ic-danger:hover { background: rgba(229,63,0,.08); color: var(--red); }
+@media (pointer: coarse) { .ev-ic { width: 40px; height: 40px; } }
