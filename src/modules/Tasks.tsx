@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import { useAthlete } from '../lib/athlete'
 import { useCollection, insertRow, updateRow, deleteRow } from '../lib/useData'
-import { Modal, Field, Input, Textarea, Select, Badge, Spinner, ConfirmButton } from '../components/ui'
+import { Modal, Field, Input, Textarea, Select, Badge, Spinner } from '../components/ui'
+import { undoable } from '../lib/toast'
 import { fmtDate, daysUntil } from '../lib/format'
 import type { Task } from '../lib/types'
 
@@ -14,7 +15,7 @@ const empty = (): Partial<Task> => ({ title: '', status: 'todo', priority: 'medi
 export default function Tasks() {
   const { athleteId } = useAthlete()
   const { isAdmin, session } = useAuth()
-  const { rows, loading, reload } = useCollection<Task>('crm_tasks', { orderBy: 'created_at', match: { player_id: athleteId } })
+  const { rows, loading, reload, setRows } = useCollection<Task>('crm_tasks', { orderBy: 'created_at', match: { player_id: athleteId } })
   const [edit, setEdit] = useState<Partial<Task> | null>(null)
 
   if (loading) return <Spinner />
@@ -59,7 +60,10 @@ export default function Tasks() {
                         <div className="flex gap" style={{ marginTop: 10 }}>
                           {col.key !== 'todo' && <button className="btn btn-ghost btn-sm" onClick={() => move(t, col.key === 'done' ? 'doing' : 'todo')}>←</button>}
                           {col.key !== 'done' && <button className="btn btn-sm" onClick={() => move(t, col.key === 'todo' ? 'doing' : 'done')} style={{ flex: 1 }}>{col.key === 'todo' ? 'Avvia' : 'Completa'} →</button>}
-                          {isAdmin && <><button className="btn btn-ghost btn-sm" onClick={() => setEdit(t)}>✎</button><ConfirmButton onConfirm={async () => { await deleteRow('crm_tasks', t.id); reload() }}>×</ConfirmButton></>}
+                          {isAdmin && <><button className="btn btn-ghost btn-sm" onClick={() => setEdit(t)}>✎</button><button className="btn btn-danger btn-sm" aria-label="Elimina task" onClick={() => {
+                            setRows(rs => rs.filter(x => x.id !== t.id))
+                            undoable('Task eliminata', () => deleteRow('crm_tasks', t.id), reload)
+                          }}>×</button></>}
                         </div>
                       )}
                     </div>

@@ -1,8 +1,8 @@
-import { useState } from 'react'
 import { useAuth } from './auth/AuthContext'
 import Login from './auth/Login'
 import Shell from './components/Shell'
 import { Spinner } from './components/ui'
+import { useHashRoute } from './lib/route'
 
 import Dashboard from './modules/Dashboard'
 import Performance from './modules/Performance'
@@ -46,7 +46,7 @@ import TalentSearch from './modules/TalentSearch'
 
 export default function App() {
   const { session, profile, loading } = useAuth()
-  const [routeState, setRoute] = useState<string | null>(null)
+  const [routeState, setRoute] = useHashRoute()
 
   if (loading) return <Spinner />
   if (!session) return <Login />

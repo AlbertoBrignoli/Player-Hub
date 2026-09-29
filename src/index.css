@@ -32,6 +32,8 @@
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
   --club-soft: #ff6b73;
   --tabbar-h: 62px;
+  --card: var(--surface);     /* alias usato da alcuni moduli: prima non era definito */
+  --tap: 44px;               /* area minima di tocco (Apple HIG) */
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -54,11 +56,11 @@ button { cursor: pointer; border: none; background: none; -webkit-tap-highlight-
 ::-webkit-scrollbar-track { background: transparent; }
 
 /* ---------- Layout shell ---------- */
-.app { display: flex; min-height: 100vh; }
+.app { display: flex; min-height: 100vh; min-height: 100dvh; }
 .sidebar {
   width: 256px; flex-shrink: 0; background: var(--bg);
   border-right: 1px solid var(--border); padding: 26px 16px;
-  display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh;
+  display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; height: 100dvh;
 }
 .brand { display: flex; align-items: center; gap: 12px; padding: 4px 8px 26px; }
 .brand-logo {
@@ -205,7 +207,7 @@ button { cursor: pointer; border: none; background: none; -webkit-tap-highlight-
 }
 .modal {
   background: var(--surface); border: 1px solid var(--border-2); border-radius: 22px;
-  width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow);
+  width: 100%; max-width: 520px; max-height: 90vh; max-height: 90dvh; overflow-y: auto; box-shadow: var(--shadow);
   animation: modal-in .18s ease-out;
 }
 @keyframes modal-in { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: none; } }
@@ -247,7 +249,7 @@ button { cursor: pointer; border: none; background: none; -webkit-tap-highlight-
 .chart-v { font-size: 11.5px; font-weight: 750; }
 
 /* ---------- Login ---------- */
-.login-wrap { min-height: 100vh; display: grid; place-items: center; padding: 24px;
+.login-wrap { min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; padding: 24px;
   background:
     radial-gradient(900px 500px at 80% -10%, rgba(245,245,247,.05), transparent 60%),
     radial-gradient(700px 500px at 0% 110%, rgba(225,11,23,.06), transparent 55%),
@@ -390,7 +392,7 @@ button { cursor: pointer; border: none; background: none; -webkit-tap-highlight-
 /* ===== Toast ===== */
 .toaster { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(24px + env(safe-area-inset-bottom)); z-index: 300; display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; }
 @media (max-width: 880px) { .toaster { bottom: calc(var(--tabbar-h) + 20px + env(safe-area-inset-bottom)); } }
-.toast { background: var(--text); color: var(--bg); font-weight: 650; font-size: 13px; padding: 11px 18px; border-radius: 999px; box-shadow: 0 10px 30px rgba(0,0,0,.5); animation: toast-in .2s ease-out; max-width: min(420px, calc(100vw - 40px)); text-align: center; }
+.toast { display: flex; align-items: center; gap: 14px; justify-content: center; background: var(--text); color: var(--bg); font-weight: 650; font-size: 13px; padding: 11px 18px; border-radius: 999px; box-shadow: 0 10px 30px rgba(0,0,0,.5); animation: toast-in .2s ease-out; max-width: min(420px, calc(100vw - 40px)); text-align: center; }
 .toast-err { background: var(--red); color: #fff; }
 .toast-out { opacity: 0; transform: translateY(6px); transition: opacity .3s, transform .3s; }
 @keyframes toast-in { from { opacity: 0; transform: translateY(10px) scale(.96); } to { opacity: 1; transform: none; } }
@@ -564,3 +566,29 @@ button { cursor: pointer; border: none; background: none; -webkit-tap-highlight-
 .ed-statcol .v { font-family: var(--font-display); font-weight: 800; font-size: 30px; }
 .ed-statcol .l { font-weight: 600; font-size: 10px; color: var(--text-faint); text-transform: uppercase; letter-spacing: .6px; margin-top: 2px; }
 .ed-statdiv { width: 1px; background: var(--border); }
+
+/* ---------- Fase 1 UX (29/09/2026): accessibilità e tocco ---------- */
+/* Focus visibile solo da tastiera (il mouse non lo mostra) */
+:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; border-radius: 8px; }
+.input:focus-visible, .textarea:focus-visible, .select:focus-visible { outline: none; }
+
+/* Feedback alla pressione */
+.btn:active, .nav-item:active, .tab-item:active, .ed-action:active { transform: scale(.98); }
+.btn, .nav-item, .tab-item, .ed-action { transition: transform .12s ease, background .15s, border-color .15s, color .15s; }
+
+/* Toast con "Annulla" */
+.toast-action { pointer-events: auto; font-weight: 800; font-size: 13px; color: inherit; text-decoration: underline; text-underline-offset: 3px; padding: 6px 2px; min-height: 32px; }
+.toast:has(.toast-action) { pointer-events: auto; padding-right: 14px; }
+
+/* Selettore atleta nella barra in alto */
+.athlete-select { width: auto; max-width: 190px; padding: 6px 10px; font-size: 13px; min-height: 36px; }
+
+/* Su touch: ogni comando ha almeno 44px di area */
+@media (max-width: 880px), (pointer: coarse) {
+  .btn { min-height: var(--tap); }
+  .btn-sm { min-height: 40px; padding: 8px 14px; }
+  .close-x { width: var(--tap); height: var(--tap); }
+  .media-pick { width: 36px; height: 36px; }
+  .asset-del { width: 32px; height: 32px; }
+  .athlete-select { min-height: 40px; }
+}

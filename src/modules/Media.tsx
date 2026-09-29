@@ -6,6 +6,7 @@ import { useLang } from '../lib/i18n'
 import { useCollection, insertRow, updateRow, deleteRow } from '../lib/useData'
 import { notify } from '../lib/notify'
 import { toast } from '../lib/toast'
+import { useRouteParam } from '../lib/route'
 import Lightbox from '../components/Lightbox'
 import Icon from '../components/Icon'
 import { Badge, Empty, Spinner, ConfirmButton, Select } from '../components/ui'
@@ -23,6 +24,13 @@ export default function Media() {
   const { rows: entries } = useCollection<EditorialEntry>('crm_editorial', { orderBy: 'entry_date', ascending: true, match: { player_id: athleteId } })
   const [view, setView] = useState<'flusso' | 'cartelle'>('flusso')
   const [tab, setTab] = useState<'approvare' | 'approvate' | 'pubblicare' | 'pubblicati'>('approvare')
+  // link diretti (Home, notifiche): #/media?tab=approvate
+  const tabParam = useRouteParam('tab')
+  useEffect(() => {
+    if (tabParam === 'approvare' || tabParam === 'approvate' || tabParam === 'pubblicare' || tabParam === 'pubblicati') {
+      setView('flusso'); setTab(tabParam)
+    }
+  }, [tabParam])
   const [openFolder, setOpenFolder] = useState<string | null>(null) // NO_FOLDER = senza cartella
   const [limit, setLimit] = useState(30)
   const [urls, setUrls] = useState<Record<string, string>>({})
@@ -206,8 +214,12 @@ export default function Media() {
   }
 
   async function discard(m: MediaItem) {
+    const prev = m.status
     await updateRow('crm_media', m.id, { status: 'scartata' })
-    toast(t("Foto scartata"))
+    toast(t("Foto scartata"), 'ok', {
+      label: t('Annulla'),
+      onClick: async () => { await updateRow('crm_media', m.id, { status: prev }); reload() },
+    })
     setLightbox(null)
     reload()
   }

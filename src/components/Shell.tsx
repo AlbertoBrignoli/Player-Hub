@@ -9,39 +9,36 @@ import Toaster from './Toaster'
 import Icon from './Icon'
 import { Modal, Field, Input } from './ui'
 
-export const APP_VERSION = 'v4.6'
+export const APP_VERSION = 'v4.7'
 
 export interface NavDef { key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[] }
 
+// Menu principale (admin / player / creator): 5 gruppi, niente gruppi da una voce,
+// le azioni quotidiane (Messaggi, Agenda, Task) subito dopo i contenuti.
 export const NAV: { group: string; items: NavDef[] }[] = [
-  { group: 'Servizi AUVI', items: [
-    { key: 'services', label: 'Servizi AUVI', icon: 'star' },
-  ]},
-  { group: 'Il mio club', items: [
-    { key: 'my-team', label: 'Il mio team', icon: 'users' },
-  ]},
   { group: 'Panoramica', items: [
     { key: 'dashboard', label: 'Dashboard', icon: 'grid' },
     { key: 'performance', label: 'Performance', icon: 'activity' },
-    { key: 'fitness', label: 'AUVI Performance', icon: 'dumbbell' },
+    { key: 'fitness', label: 'Preparazione', icon: 'dumbbell' },
     { key: 'profile', label: 'Profilo', icon: 'user' },
   ]},
   { group: 'Contenuti', items: [
     { key: 'editorial', label: 'Cal. Editoriale', icon: 'calendar' },
     { key: 'media', label: 'Media', icon: 'image' },
   ]},
+  { group: 'Operatività', items: [
+    { key: 'messages', label: 'Messaggi', icon: 'message' },
+    { key: 'agenda', label: 'Agenda', icon: 'clock' },
+    { key: 'tasks', label: 'Task', icon: 'check-square' },
+  ]},
   { group: 'Gestione', items: [
     { key: 'archivio', label: 'Contratti e Documenti', icon: 'archive' },
     { key: 'sponsors', label: 'Sponsor', icon: 'award' },
     { key: 'commercial', label: 'Commercial Profile', icon: 'star', roles: ['admin', 'player', 'creator'] },
-    { key: 'coach-profile', label: 'Il mio profilo', icon: 'user', roles: ['preparatore'] },
   ]},
-  { group: 'Operatività · extra campo', items: [
-    { key: 'agenda', label: 'Agenda', icon: 'clock' },
-    { key: 'tasks', label: 'Task', icon: 'check-square' },
-    { key: 'messages', label: 'Messaggi', icon: 'message' },
-  ]},
-  { group: 'Sistema', items: [
+  { group: 'AUVI', items: [
+    { key: 'services', label: 'Servizi AUVI', icon: 'layers' },
+    { key: 'my-team', label: 'Il mio team', icon: 'users' },
     { key: 'access-requests', label: 'Collegamenti', icon: 'key' },
     { key: 'settings', label: 'Impostazioni', icon: 'sliders' },
   ]},
@@ -82,33 +79,30 @@ export const COACH_NAV: { group: string; items: NavDef[] }[] = [
 // Fuori solo le Impostazioni di sistema (whitelist accessi) e l'ufficio privato del preparatore.
 export const AGENT_NAV: { group: string; items: NavDef[] }[] = [
   { group: 'Procura', items: [
-    { key: 'agent-home', label: 'Home', icon: 'grid' },
+    { key: 'agent-home', label: 'Home', icon: 'home' },
     { key: 'agent-profile', label: 'Il mio profilo', icon: 'user' },
     { key: 'access-requests', label: 'Collegamenti', icon: 'key' },
   ]},
   { group: 'Atleta', items: [
-    { key: 'my-team', label: 'Il mio team', icon: 'users' },
-    { key: 'dashboard', label: 'Panoramica', icon: 'activity' },
+    { key: 'dashboard', label: 'Panoramica', icon: 'grid' },
     { key: 'performance', label: 'Performance', icon: 'activity' },
-    { key: 'profile', label: 'Scheda atleta', icon: 'user' },
+    { key: 'fitness', label: 'Preparazione', icon: 'dumbbell' },
+    { key: 'profile', label: 'Scheda atleta', icon: 'file' },
+    { key: 'my-team', label: 'Il mio team', icon: 'users' },
   ]},
   { group: 'Contenuti', items: [
     { key: 'editorial', label: 'Cal. Editoriale', icon: 'calendar' },
     { key: 'media', label: 'Media', icon: 'image' },
   ]},
-  { group: 'Gestione', items: [
-    { key: 'contracts', label: 'Contratti', icon: 'briefcase' },
-    { key: 'documents', label: 'Documenti', icon: 'archive' },
-    { key: 'sponsors', label: 'Sponsor', icon: 'award' },
-    { key: 'commercial', label: 'Commercial Profile', icon: 'star' },
-  ]},
-  { group: 'Fitness', items: [
-    { key: 'fitness', label: 'Area Fitness', icon: 'dumbbell' },
-  ]},
   { group: 'Operatività', items: [
+    { key: 'messages', label: 'Messaggi', icon: 'message' },
     { key: 'agenda', label: 'Agenda', icon: 'clock' },
     { key: 'tasks', label: 'Task', icon: 'check-square' },
-    { key: 'messages', label: 'Messaggi', icon: 'message' },
+  ]},
+  { group: 'Gestione', items: [
+    { key: 'archivio', label: 'Contratti e Documenti', icon: 'archive' },
+    { key: 'sponsors', label: 'Sponsor', icon: 'award' },
+    { key: 'commercial', label: 'Commercial Profile', icon: 'star' },
   ]},
 ]
 
@@ -161,7 +155,7 @@ export const PHYSIO_NAV: { group: string; items: NavDef[] }[] = [
 
 const TITLES: Record<string, { t: string; s: string }> = {
   dashboard: { t: 'Dashboard', s: 'Quadro generale della gestione' },
-  fitness: { t: 'AUVI Performance', s: 'Preparazione atletica e performance' },
+  fitness: { t: 'Preparazione', s: 'AUVI Performance · preparazione atletica' },
   'coach-profile': { t: 'Profilo Preparatore', s: 'Il tuo profilo professionale' },
   profile: { t: 'Profilo', s: 'Spedizioni, equipaggiamento e contatti club' },
   performance: { t: 'Performance', s: 'Statistiche, partite e rendimento' },
@@ -304,7 +298,7 @@ export default function Shell({ route, setRoute, right, children }: {
       <div className="main">
         <div className="topbar">
           <div className="flex gap">
-            <button className="menu-btn" onClick={() => setOpen(true)}><Icon name="menu" size={17} /></button>
+            <button className="menu-btn" onClick={() => setOpen(true)} aria-label="Menu"><Icon name="menu" size={17} /></button>
             <div>
               <div className="page-title">{tr(title.t)}</div>
               <div className="page-sub">{tr(title.s)}</div>
@@ -317,7 +311,7 @@ export default function Shell({ route, setRoute, right, children }: {
                 title="Atleta gestito"
                 value={athleteId ?? ''}
                 onChange={e => setAthleteId(Number(e.target.value))}
-                style={{ background: 'var(--card, #141416)', color: 'var(--text, #fff)', border: '1px solid var(--border, #2a2a2e)', borderRadius: 8, padding: '6px 10px', fontSize: 13, maxWidth: 190 }}
+                className="select athlete-select"
               >
                 {athletes.map(a => (
                   <option key={a.api_player_id} value={a.api_player_id}>{a.name || `#${a.api_player_id}`}</option>
@@ -364,7 +358,7 @@ export default function Shell({ route, setRoute, right, children }: {
           : isAgent
           ? [
               { key: 'agent-home', label: 'Home', icon: 'grid' },
-              { key: 'contracts', label: 'Contratti', icon: 'briefcase' },
+              { key: 'archivio', label: 'Archivio', icon: 'archive' },
               { key: 'agenda', label: 'Agenda', icon: 'clock' },
               { key: 'messages', label: 'Chat', icon: 'message' },
             ]
@@ -387,12 +381,10 @@ export default function Shell({ route, setRoute, right, children }: {
             <span className="tab-lbl">{t.label}</span>
           </button>
         ))}
-        {!isBrand && !isCoach && (
-          <button className={`tab-item ${open ? 'active' : ''}`} onClick={() => setOpen(true)}>
-            <span className="tab-ico"><Icon name="menu" size={21} strokeWidth={1.7} /></span>
-            <span className="tab-lbl">Altro</span>
-          </button>
-        )}
+        <button className={`tab-item ${open ? 'active' : ''}`} onClick={() => setOpen(true)} aria-label="Altre sezioni">
+          <span className="tab-ico"><Icon name="menu" size={21} strokeWidth={1.7} /></span>
+          <span className="tab-lbl">Altro</span>
+        </button>
       </nav>
 
       {pwOpen && <PasswordModal onClose={() => setPwOpen(false)} />}

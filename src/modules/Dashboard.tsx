@@ -214,7 +214,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
           <div className="ed-masthead"><div className="ed-masthead-t">{t('Da fare ora')}</div><div className="ed-rule" /></div>
           <div className="grid" style={{ gap: 10 }}>
             {toApprove.length > 0 && (
-              <button className="ed-action prio" onClick={() => goto('media')}>
+              <button className="ed-action prio" onClick={() => goto('media?tab=approvare')}>
                 <div className="ed-action-num">{toApprove.length}</div>
                 <div style={{ flex: 1 }}>
                   <div className="ed-action-t">{t('Foto da approvare')}</div>
@@ -224,7 +224,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
               </button>
             )}
             {nextContent ? (
-              <button className="ed-action" onClick={() => goto('editorial')}>
+              <button className="ed-action" onClick={() => goto(nextContent ? `editorial?entry=${nextContent.id}` : 'editorial')}>
                 {nextContentThumb
                   ? <img className="ed-action-thumb" src={nextContentThumb} alt="" />
                   : <div className="ed-action-thumb" style={{ display: 'grid', placeItems: 'center', color: 'var(--text-faint)' }}><Icon name="image" size={18} strokeWidth={1.5} /></div>}
@@ -327,7 +327,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
       </div>
 
       <div className="grid g2">
-        <button className="card dash-approve" onClick={() => goto('media')} style={{ textAlign: 'left', display: 'block', width: '100%' }}>
+        <button className="card dash-approve" onClick={() => goto('media?tab=approvare')} style={{ textAlign: 'left', display: 'block', width: '100%' }}>
           <div className="card-head">
             <div className="card-title">Foto da approvare{toApprove.length ? ` (${toApprove.length})` : ''}</div>
             <span className="btn btn-ghost btn-sm">Apri Media →</span>

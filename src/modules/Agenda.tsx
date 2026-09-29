@@ -1,11 +1,11 @@
 import { useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { toast } from '../lib/toast'
+import { toast, undoable } from '../lib/toast'
 import { useAuth } from '../auth/AuthContext'
 import { useAthlete } from '../lib/athlete'
 import { useLang } from '../lib/i18n'
 import { useCollection, insertRow, updateRow, deleteRow } from '../lib/useData'
-import { Modal, Field, Input, Textarea, Select, Empty, Spinner, ConfirmButton } from '../components/ui'
+import { Modal, Field, Input, Textarea, Select, Empty, Spinner } from '../components/ui'
 import Icon from '../components/Icon'
 import LuogoAutocomplete from '../components/LuogoAutocomplete'
 import type { EventItem, EventAttachment } from '../lib/types'
@@ -53,7 +53,7 @@ export default function Agenda({ goto }: { goto?: (r: string) => void }) {
   const { isAdmin, role, session } = useAuth()
   const uid = session?.user.id
   const canAdd = isAdmin || role === 'player'
-  const { rows, loading, reload } = useCollection<EventItem>('crm_events', { orderBy: 'start_at', ascending: true, match: { player_id: athleteId } })
+  const { rows, loading, reload, setRows } = useCollection<EventItem>('crm_events', { orderBy: 'start_at', ascending: true, match: { player_id: athleteId } })
   const [view, setView] = useState<'lista' | 'calendario'>('calendario')
   const [edit, setEdit] = useState<Partial<EventItem> | null>(null)
 
@@ -67,7 +67,10 @@ export default function Agenda({ goto }: { goto?: (r: string) => void }) {
     toast(ok ? 'Richiesta confermata' : 'Richiesta rifiutata')
     reload()
   }
-  const onDel = async (e: EventItem) => { await deleteRow('crm_events', e.id); reload() }
+  const onDel = (e: EventItem) => {
+    setRows(rs => rs.filter(x => x.id !== e.id))
+    undoable(tr('Impegno eliminato'), () => deleteRow('crm_events', e.id), reload)
+  }
   const onAdd = (dayIso: string) => setEdit({ ...emptyEv('personale'), start_at: dayIso })
   const shared = { canEdit, onEdit: setEdit, onDel, canConfirm, onConfirm, goto, onAdd }
 
@@ -281,7 +284,7 @@ function EvCard({ e, canEdit, onEdit, onDel, canConfirm, onConfirm, goto }: { e:
             {canConfirm && <button className="btn btn-sm" style={{ background: '#3fb984', color: '#111', fontWeight: 800 }} onClick={() => onConfirm(true)}>{tr('Conferma')}</button>}
             {canConfirm && <button className="btn btn-ghost btn-sm" onClick={() => onConfirm(false)}>{tr('Rifiuta')}</button>}
             {canEdit && <button className="btn btn-ghost btn-sm" onClick={onEdit}>{tr('Modifica')}</button>}
-            {canEdit && <ConfirmButton onConfirm={onDel}>{tr('Elimina')}</ConfirmButton>}
+            {canEdit && <button className="btn btn-danger btn-sm" onClick={onDel}>{tr('Elimina')}</button>}
           </div>
         )}
       </div>

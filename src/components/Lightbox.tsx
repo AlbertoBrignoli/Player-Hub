@@ -24,13 +24,14 @@ export default function Lightbox({ items, index, onIndex, onClose, actions }: {
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+      // fase di cattura + stop: ESC chiude solo la galleria, non la finestra sotto
+      if (e.key === 'Escape') { e.stopPropagation(); onClose() }
       if (e.key === 'ArrowLeft') prev()
       if (e.key === 'ArrowRight') next()
     }
-    window.addEventListener('keydown', h)
+    window.addEventListener('keydown', h, true)
     document.body.style.overflow = 'hidden'
-    return () => { window.removeEventListener('keydown', h); document.body.style.overflow = '' }
+    return () => { window.removeEventListener('keydown', h, true); document.body.style.overflow = '' }
   }, [index, items.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!item) return null

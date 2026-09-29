@@ -1,19 +1,41 @@
 import React, { useEffect } from 'react'
 
-export function Modal({ title, onClose, children, footer, wide }: {
+// Pila delle finestre aperte: ESC chiude solo quella in cima (prima un ESC le chiudeva tutte).
+const modalStack: number[] = []
+let modalSeq = 0
+
+export function Modal({ title, onClose, children, footer, wide, dismissable = false }: {
   title: string; onClose: () => void; children: React.ReactNode; footer?: React.ReactNode; wide?: boolean
+  /** true = anche un clic sullo sfondo chiude (solo per finestre senza form) */
+  dismissable?: boolean
 }) {
+  const closeRef = React.useRef(onClose)
+  closeRef.current = onClose
   useEffect(() => {
-    const h = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    const id = ++modalSeq
+    modalStack.push(id)
+    const h = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && modalStack[modalStack.length - 1] === id) {
+        e.stopPropagation()
+        closeRef.current()
+      }
+    }
     window.addEventListener('keydown', h)
-    return () => window.removeEventListener('keydown', h)
-  }, [onClose])
+    document.body.classList.add('modal-open')
+    return () => {
+      window.removeEventListener('keydown', h)
+      const i = modalStack.indexOf(id)
+      if (i >= 0) modalStack.splice(i, 1)
+      if (!modalStack.length) document.body.classList.remove('modal-open')
+    }
+  }, [])
   return (
-    <div className="overlay" onMouseDown={onClose}>
-      <div className="modal" style={wide ? { maxWidth: 680 } : undefined} onMouseDown={e => e.stopPropagation()}>
+    <div className="overlay" onMouseDown={dismissable ? onClose : undefined}>
+      <div className="modal" role="dialog" aria-modal="true" aria-label={title}
+        style={wide ? { maxWidth: 680 } : undefined} onMouseDown={e => e.stopPropagation()}>
         <div className="modal-head">
           <div className="modal-title">{title}</div>
-          <button className="close-x" onClick={onClose}>×</button>
+          <button className="close-x" onClick={onClose} aria-label="Chiudi">×</button>
         </div>
         <div className="modal-body">{children}</div>
         {footer && <div className="modal-foot">{footer}</div>}
@@ -40,12 +62,17 @@ export function Badge({ children, tone }: { children: React.ReactNode; tone?: 'g
   return <span className={`badge${tone ? ' badge-' + tone : ''}`}>{children}</span>
 }
 
-export function Empty({ icon, title, hint }: { icon?: React.ReactNode; title: string; hint?: string }) {
+export function Empty({ icon, title, hint, action }: {
+  icon?: React.ReactNode; title: string; hint?: string
+  /** pulsante che porta al passo successivo (es. "Carica foto") */
+  action?: { label: string; onClick: () => void }
+}) {
   return (
     <div className="empty">
       {icon && <div className="empty-ico">{icon}</div>}
       <div style={{ fontWeight: 600, color: 'var(--text-dim)' }}>{title}</div>
       {hint && <div style={{ fontSize: 12.5, marginTop: 4 }}>{hint}</div>}
+      {action && <button className="btn btn-primary btn-sm" style={{ marginTop: 14 }} onClick={action.onClick}>{action.label}</button>}
     </div>
   )
 }

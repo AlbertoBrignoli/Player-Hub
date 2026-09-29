@@ -6,6 +6,7 @@ import { useLang } from '../lib/i18n'
 import { useCollection, insertRow, updateRow, deleteRow } from '../lib/useData'
 import { notify } from '../lib/notify'
 import { toast } from '../lib/toast'
+import { useRouteParam, goto } from '../lib/route'
 import { Modal, Field, Input, Select, Textarea, Badge, Empty, Spinner, ConfirmButton } from '../components/ui'
 import Icon from '../components/Icon'
 import { fmtDate, fmtDateTime, fmtMatchTime, fmtMatchDateTime, isImageFile, fileExt } from '../lib/format'
@@ -60,6 +61,17 @@ export default function Editorial() {
   const [view, setView] = useState<'cal' | 'lista' | 'pubblicati'>('cal')
   const [openEntry, setOpenEntry] = useState<EditorialEntry | null>(null)
   const [creating, setCreating] = useState(false)
+  // link diretti (Home, notifiche): #/editorial?entry=<id> apre il contenuto
+  const entryParam = useRouteParam('entry')
+  useEffect(() => {
+    if (!entryParam) return
+    const e = rows.find(r => r.id === entryParam)
+    if (e) {
+      setOpenEntry(e)
+      const d = new Date(e.entry_date)
+      if (!isNaN(d.getTime())) setYm([d.getFullYear(), d.getMonth()])
+    }
+  }, [entryParam, rows])
   const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 880px)').matches)
 
   useEffect(() => {
@@ -210,7 +222,7 @@ export default function Editorial() {
       {openEntry && (
         <EntryModal
           entry={rows.find(e => e.id === openEntry.id) || openEntry}
-          onClose={() => setOpenEntry(null)}
+          onClose={() => { setOpenEntry(null); if (entryParam) goto('editorial') }}
           onChanged={reload}
         />
       )}
