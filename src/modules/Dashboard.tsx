@@ -24,6 +24,24 @@ const CHIP: Record<string, { l: string; c: string }> = {
 // 5 prossimi giorni, 6 stagione + ultima partita, 7 referenti.
 // Desktop (>880px): colonna sinistra 1-4, destra 5-7. Stesso DOM, nessun `order`.
 const HOME_CSS = `
+/* La tua stagione: giallo brand, numeri grandi */
+.home-season { width: 100%; text-align: left; display: block; cursor: pointer; background: var(--yellow); color: var(--ink); border: 0; border-radius: 20px; padding: 16px 16px 14px; box-shadow: 0 10px 28px -16px rgba(10,10,10,.45); transition: transform .12s; }
+.home-season:active { transform: scale(.985); }
+.home-season-head { display: flex; align-items: center; gap: 12px; }
+.home-season-ic { width: 38px; height: 38px; border-radius: 12px; background: var(--ink); color: var(--yellow); display: grid; place-items: center; flex-shrink: 0; }
+.home-season-k { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; opacity: .7; }
+.home-season-t { font-family: var(--font-display); font-stretch: 125%; font-weight: 700; font-size: 17px; text-transform: uppercase; line-height: 1.15; }
+.home-season-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 16px; }
+.home-season-grid > div { text-align: center; min-width: 0; }
+.home-season-grid > div + div { border-left: 1px solid rgba(10,10,10,.14); }
+.home-season-grid .v { font-family: var(--font-display); font-stretch: 125%; font-weight: 700; font-size: 24px; line-height: 1; font-variant-numeric: tabular-nums; }
+.home-season-grid .l { font-size: 11px; font-weight: 600; margin-top: 6px; opacity: .72; }
+.home-season-last { display: flex; align-items: center; gap: 8px; margin-top: 14px; padding: 10px 12px; border-radius: 12px; background: rgba(255,255,255,.55); font-size: 12.5px; }
+.home-season-last .k { font-weight: 700; flex-shrink: 0; }
+.home-season-last .m { flex: 1; min-width: 0; font-weight: 600; }
+.home-season-last .x { flex-shrink: 0; opacity: .7; font-variant-numeric: tabular-nums; }
+@media (max-width: 380px) { .home-season-grid .v { font-size: 20px; } }
+
 .home { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 28px; align-items: start; }
 .home-col { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
 .home-sec { min-width: 0; width: 100%; }
@@ -394,27 +412,32 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
     </section>
   )
 
-  // ---- 6 stagione + ultima partita ----
-  const useGoals = goals > 0
+  // ---- 6 la stagione: il calcio viene prima di tutto ----
+  // Card gialla del brand, ben riconoscibile: 4 numeri della stagione in corso,
+  // sotto l'ultima partita giocata. Un tocco apre Performance.
+  const seasonLabel = curSeason ? `${curSeason}/${String((Number(curSeason) + 1) % 100).padStart(2, '0')}` : ''
   const stats = (
     <section className="home-sec">
-      <div className="home-h">{t('In stagione')}</div>
-      <button className="home-card" onClick={() => goto('performance')}>
-        <div className="home-stats">
-          <div className="home-stat"><div className="v">{presenze}</div><div className="l">{t('Presenze')}</div></div>
-          <div className="home-stat"><div className="v">{useGoals ? goals : minutes}</div><div className="l">{useGoals ? t('Gol') : t('Minuti')}</div></div>
-          <div className="home-stat"><div className="v">{avgRating ? avgRating.toFixed(2) : '-'}</div><div className="l">{t('Rating')}</div></div>
+      <button className="home-season" onClick={() => goto('performance')} aria-label={`${t('La tua stagione')} ${seasonLabel}`}>
+        <div className="home-season-head">
+          <span className="home-season-ic"><Icon name="ball" size={18} strokeWidth={1.8} /></span>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div className="home-season-k">{t('La tua stagione')}{seasonLabel ? ` ${seasonLabel}` : ''}</div>
+            <div className="home-season-t">{t('Numeri in campo')}</div>
+          </div>
+          <Icon name="chevron-right" size={18} style={{ flexShrink: 0 }} />
+        </div>
+        <div className="home-season-grid">
+          <div><div className="v">{presenze}</div><div className="l">{t('Presenze')}</div></div>
+          <div><div className="v">{minutes.toLocaleString(locale)}</div><div className="l">{t('Minuti')}</div></div>
+          <div><div className="v">{goals}</div><div className="l">{t('Gol')}</div></div>
+          <div><div className="v">{avgRating ? avgRating.toFixed(2) : '-'}</div><div className="l">{t('Voto medio')}</div></div>
         </div>
         {lastMatch && (
-          <div className="home-last">
+          <div className="home-season-last">
             <span className="k">{t('Ultima')}</span>
             <span className="m home-trunc">{lastMatch.match_name}</span>
             <span className="x">{lastMatch.minutes}′ · {fmtDate(lastMatch.match_date)}</span>
-          </div>
-        )}
-        {nextContractExpiry && (
-          <div className="home-note" style={lastMatch ? { paddingTop: 0 } : undefined}>
-            {t('Contratto in scadenza il')} {fmtDate(nextContractExpiry.c.end_date)}
           </div>
         )}
       </button>
@@ -429,10 +452,10 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
         {quick}
         {todo}
         {hero}
+        {stats}
       </div>
       <div className="home-col">
         {agenda}
-        {stats}
         <HomeContacts goto={goto} title={t('I tuoi referenti')} />
       </div>
       {adding && <QuickAddModal initialKind={adding} onClose={() => setAdding(null)} />}

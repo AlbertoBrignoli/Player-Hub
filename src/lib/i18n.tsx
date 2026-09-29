@@ -1078,4 +1078,7 @@ const EN: Record<string, string> = {
   'Ultima': 'Last',
   'I tuoi referenti': 'Your contacts',
   'Scrivi a': 'Message',
+  'La tua stagione': 'Your season',
+  'Numeri in campo': 'On-pitch numbers',
+  'Voto medio': 'Avg rating',
 }
