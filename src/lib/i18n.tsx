@@ -1139,4 +1139,5 @@ const EN: Record<string, string> = {
   'Nessun atleta collegato': 'No athletes connected',
   'Quando un atleta accetta il tuo invito, qui trovi partite e impegni di tutti.': "When an athlete accepts your invite, you'll find everyone's matches and events here.",
   "Quest'area si riempie quando un atleta accetta il tuo invito.": 'This area fills up when an athlete accepts your invite.',
+  'Accedi': 'Sign in',
 }

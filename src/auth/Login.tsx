@@ -34,6 +34,9 @@ export default function Login() {
   const [notice, setNotice] = useState('')
   const [inviteMode, setInviteMode] = useState(false)
   const [inviteCode, setInviteCode] = useState('')
+  // Telefono: di base il video è a tutto schermo con una barra compatta;
+  // il modulo si apre solo quando si tocca Accedi / Registrati.
+  const [sheetOpen, setSheetOpen] = useState(false)
   const videoRef = useRef<HTMLVideoElement | null>(null)
 
   // autoplay: muted va forzato sul nodo prima di play() (altrimenti Safari blocca)
@@ -102,7 +105,7 @@ export default function Login() {
   }
 
   return (
-    <div className="ph-login">
+    <div className={`ph-login ${sheetOpen || notice ? 'is-open' : 'is-closed'}`}>
       <section className="ph-login__stage">
         <video
           ref={videoRef}
@@ -127,7 +130,7 @@ export default function Login() {
 
           <div className="ph-login__claimBlock">
             <p className="ph-login__kicker">{t('IL TUO SPAZIO RISERVATO')}</p>
-            <h1 className="ph-login__claim">Own your<br />image.</h1>
+            <h1 className="ph-login__claim">OWN YOUR<br />IMAGE</h1>
             <p className="ph-login__reason">{t('Contratti, compensi, sponsor, agenda, servizi: tutto in un unico posto. Tu pensi a giocare — Player Hub tiene insieme la tua carriera e la fa crescere.')}</p>
             <div className="ph-login__partners">
               <p className="ph-login__partnersLabel">{t('PARTNER NEL TUO HUB')}</p>
@@ -141,8 +144,15 @@ export default function Login() {
         </div>
       </section>
 
+      {/* barra compatta sopra il video (solo telefono, finché il modulo è chiuso) */}
+      <div className="ph-login__ctabar">
+        <button type="button" className="ph-login__cta" onClick={() => { setInviteMode(false); setSheetOpen(true) }}>{t('Accedi')}</button>
+        <button type="button" className="ph-login__ctalink" onClick={() => { setInviteMode(true); setSheetOpen(true) }}>{t('Registrati con codice invito →')}</button>
+      </div>
+
       <section className="ph-login__panel">
         <div className="ph-login__form">
+          <button type="button" className="ph-login__close" aria-label={t('Chiudi')} onClick={() => setSheetOpen(false)}>×</button>
           <div className="ph-login__tile">
             <img src="/brand/auvi-mark-yellow.svg" alt="" />
           </div>
