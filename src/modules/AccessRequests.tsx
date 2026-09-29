@@ -10,7 +10,7 @@ import { fmtDateTime } from '../lib/format'
 // Collegamenti fra professionisti e atleti.
 // Il professionista NON vede l'elenco degli atleti: inserisce il codice che gli
 // è stato consegnato. Agenzia e atleta approvano con un clic.
-const ACCENT = '#8b7ff0'
+const ACCENT = 'var(--ink)'
 
 const kicker: React.CSSProperties = {
   fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase', fontWeight: 800,
@@ -110,7 +110,7 @@ export default function AccessRequests() {
                       <div className="faint" style={{ fontSize: 11.5, marginTop: 6 }}>{fmtDateTime(r.created_at)}</div>
 
                       <div className="flex gap" style={{ marginTop: 13, flexWrap: 'wrap' }}>
-                        <button className="btn btn-sm" style={{ background: '#3fb984', color: '#111', fontWeight: 800, border: 'none' }}
+                        <button className="btn btn-sm" style={{ background: 'var(--green)', color: '#fff', fontWeight: 800, border: 'none' }}
                           onClick={() => decide(r.id, true)}>
                           <Icon name="check" size={13} /> Autorizza
                         </button>
@@ -138,7 +138,7 @@ export default function AccessRequests() {
                   {r.requester_name || ROLE_LABEL[r.requester_role]} · {athleteName(r.player_id)}
                 </span>
                 <span style={{ fontSize: 11.5, fontWeight: 800,
-                               color: r.status === 'approvata' ? '#3fb984' : '#e5484d' }}>
+                               color: r.status === 'approvata' ? 'var(--green)' : 'var(--red)' }}>
                   {r.status === 'approvata' ? 'APPROVATA' : 'RIFIUTATA'}
                 </span>
               </div>
@@ -254,7 +254,7 @@ function CodesManager({ athleteId, athleteName }: { athleteId: number | null; at
 
       <div className="flex gap" style={{ gap: 8, flexWrap: 'wrap', marginBottom: codes.length ? 14 : 0 }}>
         <select value={role} onChange={e => setRole(e.target.value)}
-          style={{ minWidth: 170, background: 'var(--card-dark, #101015)', border: '1px solid var(--border)',
+          style={{ minWidth: 170, background: 'var(--bg-2)', border: '1px solid var(--border)',
             borderRadius: 10, padding: '10px 12px', color: 'var(--text)', fontSize: 13.5 }}>
           <option value="">Figura professionale…</option>
           <option value="assicuratore">Assicuratore</option>
@@ -263,7 +263,7 @@ function CodesManager({ athleteId, athleteName }: { athleteId: number | null; at
           <option value="commercialista">Commercialista</option>
         </select>
         <input value={label} onChange={e => setLabel(e.target.value)} placeholder="Per chi? es. Anthea Assicurazioni (facoltativo)"
-          style={{ flex: 1, minWidth: 220, background: 'var(--card-dark, #101015)', border: '1px solid var(--border)',
+          style={{ flex: 1, minWidth: 220, background: 'var(--bg-2)', border: '1px solid var(--border)',
             borderRadius: 10, padding: '10px 12px', color: 'var(--text)', fontSize: 13.5 }} />
         <button className="btn btn-primary" disabled={busy || !athleteId} onClick={genera}>
           <Icon name="plus" size={15} /> Genera codice
@@ -282,8 +282,8 @@ function CodesManager({ athleteId, athleteName }: { athleteId: number | null; at
           {codes.map(c => {
             const used = c.status === 'used', revoked = c.status === 'revoked'
             const badge = used ? { t: c.used_by_name ? `Usato da ${c.used_by_name}` : 'Usato', col: 'var(--text-dim)' }
-                        : revoked ? { t: 'Revocato', col: '#e5484d' }
-                        : { t: 'Attivo', col: '#3fb984' }
+                        : revoked ? { t: 'Revocato', col: 'var(--red)' }
+                        : { t: 'Attivo', col: 'var(--green)' }
             return (
               <div key={c.id} className="flex between" style={{ alignItems: 'center', gap: 10,
                 border: '1px solid var(--border)', borderRadius: 10, padding: '10px 12px', opacity: revoked ? .55 : 1 }}>

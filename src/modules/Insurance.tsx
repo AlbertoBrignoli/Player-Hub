@@ -12,10 +12,10 @@ import { fmtDate, fmtMoney } from '../lib/format'
 
 // Area assicurativa dell'atleta: due mondi distinti (sport e personale),
 // ciascuno con la propria dashboard. I documenti li carica l'assicuratore.
-const ACCENT = '#2E9BD6'      // blu assicurativo, distinto da brand/fitness/procura
-const WARN = '#c9922b'
-const DANGER = '#e5484d'
-const OK = '#3fb984'
+const ACCENT = '#1F6FEB'      // blu assicurativo, distinto da brand/fitness/procura
+const WARN = '#8A6D00'
+const DANGER = '#E53F00'
+const OK = '#12A150'
 const BUCKET = 'insurance-docs'
 
 const kicker: React.CSSProperties = {

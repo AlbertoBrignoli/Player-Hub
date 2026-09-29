@@ -8,7 +8,7 @@ import { fmtDate } from '../lib/format'
 
 // Home del commercialista: la sua scheda, poi gli atleti seguiti.
 // Cliccando l'atleta si apre la sua area legale e fiscale.
-const ACCENT = '#B0663F'
+const ACCENT = '#9A5530'
 
 const kicker: React.CSSProperties = {
   fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase', fontWeight: 800,
@@ -80,7 +80,7 @@ export default function TaxAdvisorHome({ goto }: { goto?: (r: string) => void })
         <div className="flex gap" style={{ alignItems: 'center', gap: 15, flexWrap: 'wrap' }}>
           {me.photo_url
             ? <img src={me.photo_url} alt="" style={{ width: 60, height: 60, borderRadius: 15, objectFit: 'cover' }} />
-            : <div style={{ width: 60, height: 60, borderRadius: 15, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 23, color: '#111' }}>
+            : <div style={{ width: 60, height: 60, borderRadius: 15, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 23, color: '#fff' }}>
                 {nome.slice(0, 1)}
               </div>}
           <div style={{ minWidth: 0, flex: 1 }}>
@@ -157,7 +157,7 @@ export default function TaxAdvisorHome({ goto }: { goto?: (r: string) => void })
                   </div>
 
                   <div style={{ marginTop: 13, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
-                    <button className="btn btn-sm" style={{ width: '100%', justifyContent: 'center', background: ACCENT, color: '#111', fontWeight: 800, border: 'none' }}
+                    <button className="btn btn-sm" style={{ width: '100%', justifyContent: 'center', background: 'var(--yellow)', color: 'var(--ink)', fontWeight: 800, border: 'none' }}
                       onClick={e => { e.stopPropagation(); openAthlete(a.api_player_id) }}>
                       Apri area fiscale →
                     </button>

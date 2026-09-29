@@ -119,7 +119,7 @@ export default function MyTeam({ goto }: { goto?: (r: string) => void }) {
       <div>
         <div className="nav-label" style={{ paddingLeft: 2 }}>{t('Advisor')}</div>
         <MemberCard name="AUVI Agency" roleLabel={t("Il tuo advisor · gestione a 360°")}
-          icon="star" email="info@auviagency.com" accent="var(--accent, #C6FF3A)" />
+          icon="star" email="info@auviagency.com" accent="var(--ink)" />
       </div>
 
       {/* professionisti collegati */}
@@ -181,7 +181,7 @@ function MemberCard({ name, roleLabel, icon, title, agency, photo, email, phone,
           ) : (
             <div style={{ width: 46, height: 46, borderRadius: 12, flexShrink: 0, display: 'flex',
               alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 15,
-              background: accent ? 'rgba(198,255,58,.14)' : 'var(--card-dark, #101015)',
+              background: accent ? 'var(--yellow)' : 'var(--bg-2)',
               color: accent || 'var(--text)', border: '1px solid var(--border)' }}>
               {name ? initials(name) : <Icon name={icon} size={20} />}
             </div>
@@ -210,7 +210,7 @@ function MemberCard({ name, roleLabel, icon, title, agency, photo, email, phone,
         <button onClick={onArea} className="flex between"
           style={{ width: '100%', cursor: 'pointer', gap: 10, alignItems: 'center', textAlign: 'left',
             padding: '11px 14px', border: 'none', borderTop: '1px solid var(--border)',
-            background: 'var(--card-dark, #101015)', color: 'var(--text)' }}>
+            background: 'var(--surface-2)', color: 'var(--text)' }}>
           <span className="flex gap" style={{ alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 700 }}>
             <span style={{ color: 'var(--text-dim)', display: 'inline-flex' }}><Icon name="folder" size={15} /></span>
             {t(area.label)}

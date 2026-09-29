@@ -9,7 +9,7 @@ import type { CoachProfile } from '../lib/types'
 const ALL_SPEC = ['Performance', 'Strength', 'Return To Play', 'Speed', 'Mobility', 'Recovery', 'Prevenzione infortuni']
 const ALL_SERV = ['Allenamento Online', 'Allenamento in presenza', 'Programmi personalizzati', 'Test atletici', 'Valutazioni', 'Video Analisi']
 const label: React.CSSProperties = { fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: 'var(--text-dim)', fontWeight: 700, margin: '22px 2px 10px' }
-const chip = (on: boolean): React.CSSProperties => ({ padding: '7px 13px', borderRadius: 999, cursor: 'pointer', fontSize: 13, border: on ? '1.5px solid #C8FF2E' : '1px solid var(--border)', background: on ? 'rgba(200,255,46,.16)' : 'transparent' })
+const chip = (on: boolean): React.CSSProperties => ({ padding: '7px 13px', borderRadius: 999, cursor: 'pointer', fontSize: 13, border: on ? '1.5px solid var(--ink)' : '1px solid var(--border)', background: on ? 'var(--yellow-soft)' : 'transparent' })
 
 const empty = (tid: string): CoachProfile => ({ trainer_id: tid, verified: true, specializations: [], services: [], contacts: {} })
 
@@ -121,7 +121,7 @@ export default function FitnessCoachProfile({ goto }: { goto?: (r: string) => vo
         <div style={{ flex: 1, minWidth: 180 }}>
           <div className="flex gap" style={{ alignItems: 'center' }}>
             <div style={{ fontSize: 21, fontWeight: 800 }}>{p.name || 'Preparatore'}</div>
-            {p.verified && <span style={{ fontSize: 11, fontWeight: 700, color: '#3fb984', border: '1px solid #3fb984', borderRadius: 999, padding: '2px 8px' }}>✓ AUVI</span>}
+            {p.verified && <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--green)', border: '1px solid var(--green)', borderRadius: 999, padding: '2px 8px' }}>✓ AUVI</span>}
           </div>
           <div className="faint" style={{ fontSize: 13.5, marginTop: 2 }}>{p.headline || 'Preparatore Atletico'}{p.experience ? ` · ${p.experience}` : ''}</div>
         </div>
@@ -136,7 +136,7 @@ export default function FitnessCoachProfile({ goto }: { goto?: (r: string) => vo
           <button className="btn" onClick={() => request('messaggio')}>Invia messaggio</button>
         </div>
       )}
-      {sentReq && <div style={{ color: '#3fb984', fontSize: 13, marginTop: 8 }}>{sentReq}</div>}
+      {sentReq && <div style={{ color: 'var(--green)', fontSize: 13, marginTop: 8 }}>{sentReq}</div>}
 
       {(p.bio_method || p.bio_philosophy) && <>
         <div style={label}>Biografia</div>

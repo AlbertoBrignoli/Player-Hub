@@ -253,14 +253,14 @@ function EntryChip({ e, onOpen, preview, tz, full }: { e: EditorialEntry; onOpen
     )
   }
   const st = STATUSES[e.status]
-  const toneColor = (t?: string) => t === 'green' ? '#3ECF8E' : t === 'gold' ? '#E5A400' : t === 'blue' ? '#4A9EE8' : t === 'accent' ? '#E1306C' : 'var(--text-dim)'
+  const toneColor = (t?: string) => t === 'green' ? 'var(--green)' : t === 'gold' ? 'var(--gold)' : t === 'blue' ? 'var(--blue)' : t === 'accent' ? '#E1306C' : 'var(--text-dim)'
   const accent = toneColor(st?.tone)
   return (
     <button className={`cal-chip-rich ${full ? 'cal-w-full' : ''}`} onClick={() => onOpen(e)} title={`${e.title} · Instagram`}
       style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', padding: '6px 8px',
         borderRadius: 10, cursor: 'pointer', background: 'var(--card)', border: '1px solid var(--border)', borderLeft: `3px solid ${accent}`, color: 'var(--text)' }}>
       <div style={{ position: 'relative', width: 40, height: 40, borderRadius: 8, overflow: 'hidden', flexShrink: 0,
-        background: 'var(--surface-2, #17171d)', display: 'grid', placeItems: 'center', color: 'var(--text-dim)' }}>
+        background: 'var(--surface-2)', display: 'grid', placeItems: 'center', color: 'var(--text-dim)' }}>
         {preview
           ? <img src={preview} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           : <Icon name={TYPES[e.type]?.icon || 'image'} size={16} strokeWidth={1.5} />}
@@ -645,8 +645,8 @@ function EntryModal({ entry, onClose, onChanged }: {
           <span className="faint" style={{ fontSize: 12.5 }}>{fmtDate(entry.entry_date)}</span>
         </div>
         {approvate.length === 0 && entry.status !== 'pubblicato' && (
-          <div style={{ fontSize: 12.5, color: '#e5a400', background: 'rgba(229,164,0,.10)',
-            border: '1px solid rgba(229,164,0,.35)', borderRadius: 10, padding: '9px 12px',
+          <div style={{ fontSize: 12.5, color: 'var(--gold)', background: 'var(--yellow-soft)',
+            border: '1px solid rgba(154,134,0,.35)', borderRadius: 10, padding: '9px 12px',
             display: 'flex', alignItems: 'center', gap: 8 }}>
             <Icon name="clock" size={14} /> Per approvare (Pronto ✓) serve prima il materiale: carica o seleziona le foto qui sotto, così il team ha di che lavorare.
           </div>
@@ -690,8 +690,8 @@ function EntryModal({ entry, onClose, onChanged }: {
         )}
 
         {isTeam && entry.revision && (
-          <div className="card" style={{ background: 'var(--bg-2)', borderColor: '#E1306C' }}>
-            <div className="card-title" style={{ color: '#E1306C', marginBottom: 6 }}><Icon name="edit" size={14} /> Modifiche richieste dall'atleta</div>
+          <div className="card" style={{ background: 'var(--bg-2)', borderColor: 'var(--magenta)' }}>
+            <div className="card-title" style={{ color: 'var(--magenta)', marginBottom: 6 }}><Icon name="edit" size={14} /> Modifiche richieste dall'atleta</div>
             {entry.revision.note && <div style={{ fontSize: 13, marginBottom: 8 }}>{entry.revision.note}</div>}
             {firstGraphicImg && urls[firstGraphicImg.storage_path] && (entry.revision.pins?.length > 0) && (
               <div style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', marginBottom: 8 }}>
@@ -931,7 +931,7 @@ function InstagramExport({ caption, title, photos, urls, onClose }: {
           <div className="grid" style={{ gap: 8 }}>
             {photos.map((m, i) => (
               <div key={m.id} className="flex gap" style={{ alignItems: 'center', gap: 12, border: '1px solid var(--border)', borderRadius: 12, padding: 8 }}>
-                <div style={{ minWidth: 26, height: 26, borderRadius: 8, background: 'var(--accent, #C6FF3A)', color: '#0b0b0e', fontWeight: 800, fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{i + 1}</div>
+                <div style={{ minWidth: 26, height: 26, borderRadius: 8, background: 'var(--accent)', color: 'var(--ink)', fontWeight: 800, fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{i + 1}</div>
                 {urls[m.storage_path]
                   ? <img src={urls[m.storage_path]} alt="" style={{ width: 56, height: 56, borderRadius: 8, objectFit: 'cover' }} />
                   : <div style={{ width: 56, height: 56, borderRadius: 8, background: 'var(--surface-2)' }} />}
@@ -1112,21 +1112,21 @@ function MediaPicker({ athleteId, excludeSourceIds, onClose, onConfirm }: {
                     <div key={m.id} className="asset-card" onClick={() => toggle(m.id)}
                       title={m.file_name || ''}
                       style={{ position: 'relative', cursor: 'pointer',
-                        outline: on ? '2px solid var(--accent, #C6FF3A)' : 'none', outlineOffset: -2 }}>
+                        outline: on ? '2px solid var(--accent)' : 'none', outlineOffset: -2 }}>
                       {isImageFile(m.file_name) && urls[m.storage_path]
                         ? <img src={urls[m.storage_path].replace('/object/sign/', '/render/image/sign/') + '&width=220&quality=60'} alt="" loading="lazy" decoding="async" />
                         : <div className="asset-ph"><Icon name="camera" size={20} strokeWidth={1.4} /></div>}
                       {chosen && (
                         <div style={{ position: 'absolute', top: 6, left: 6, padding: '2px 7px', borderRadius: 8,
-                          background: 'var(--accent, #C6FF3A)', color: '#0b0b0e', fontSize: 10, fontWeight: 800,
+                          background: 'var(--accent)', color: 'var(--ink)', fontSize: 10, fontWeight: 800,
                           display: 'flex', alignItems: 'center', gap: 3 }}>
                           <Icon name="star" size={11} /> Scelta
                         </div>
                       )}
                       <div style={{ position: 'absolute', top: 6, right: 6, width: 22, height: 22, borderRadius: '50%',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        background: on ? 'var(--accent, #C6FF3A)' : 'rgba(0,0,0,.5)',
-                        color: on ? '#0b0b0e' : '#fff', border: '1.5px solid ' + (on ? 'var(--accent, #C6FF3A)' : 'rgba(255,255,255,.6)') }}>
+                        background: on ? 'var(--accent)' : 'rgba(0,0,0,.5)',
+                        color: on ? 'var(--ink)' : '#fff', border: '1.5px solid ' + (on ? 'var(--accent)' : 'rgba(255,255,255,.6)') }}>
                         {on && <Icon name="check" size={13} />}
                       </div>
                     </div>
@@ -1143,7 +1143,7 @@ function MediaPicker({ athleteId, excludeSourceIds, onClose, onConfirm }: {
 
 const pinStyle = (x: number, y: number): any => ({
   position: 'absolute', left: `${x * 100}%`, top: `${y * 100}%`, transform: 'translate(-50%, -50%)',
-  width: 22, height: 22, borderRadius: '50%', background: '#E1306C', color: '#fff', fontWeight: 800, fontSize: 12,
+  width: 22, height: 22, borderRadius: '50%', background: 'var(--magenta)', color: '#fff', fontWeight: 800, fontSize: 12,
   display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #fff',
   boxShadow: '0 1px 4px rgba(0,0,0,.5)', pointerEvents: 'none',
 })
@@ -1183,7 +1183,7 @@ function RevisionAnnotator({ url, onCancel, onSend }: {
       </div>
       {pins.map((p, i) => (
         <div key={i} className="flex gap" style={{ alignItems: 'center', marginTop: 8 }}>
-          <div style={{ minWidth: 22, height: 22, borderRadius: '50%', background: '#E1306C', color: '#fff', fontWeight: 800, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: '0 0 auto' }}>{i + 1}</div>
+          <div style={{ minWidth: 22, height: 22, borderRadius: '50%', background: 'var(--magenta)', color: '#fff', fontWeight: 800, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: '0 0 auto' }}>{i + 1}</div>
           <input style={inputStyle} placeholder={`Cosa cambiare nel punto ${i + 1}…`} value={p.note}
             onChange={e => setPins(arr => arr.map((q, j) => j === i ? { ...q, note: e.target.value } : q))} />
         </div>

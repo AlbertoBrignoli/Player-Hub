@@ -4,6 +4,7 @@ import { useAthlete } from '../lib/athlete'
 import { useAuth } from '../auth/AuthContext'
 import { toast } from '../lib/toast'
 import Icon from '../components/Icon'
+import { telUrl, whatsappUrl } from '../lib/ics'
 
 // I referenti dell'atleta: procuratore, assicuratore, preparatore.
 // Ognuno con la propria scheda e il canale di chat dedicato.
@@ -19,10 +20,10 @@ type Ref = {
   accent: string
 }
 
-const C_AGENTE = '#C9A227'
-const C_ASSIC = '#2E9BD6'
-const C_COACH = '#C8FF2E'
-const C_TAX = '#B0663F'
+const C_AGENTE = '#8A6D00'
+const C_ASSIC = '#1F6FEB'
+const C_COACH = '#3F7F00'
+const C_TAX = '#9A5530'
 
 const kicker: React.CSSProperties = {
   fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase', fontWeight: 800,
@@ -115,15 +116,15 @@ export default function ReferentiCard({ goto }: { goto?: (r: string) => void }) 
   return (
     <div style={{ marginTop: 4 }}>
       {isPlayer && pending > 0 && (
-        <div className="card" style={{ borderColor: '#8b7ff055', marginBottom: 14 }}>
+        <div className="card" style={{ borderColor: 'var(--yellow)', marginBottom: 14 }}>
           <div className="flex between" style={{ alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <div>
-              <div style={{ ...kicker, fontSize: 10, color: '#8b7ff0' }}>Da approvare</div>
+              <div style={{ ...kicker, fontSize: 10, color: 'var(--text)' }}>Da approvare</div>
               <div style={{ fontSize: 14.5, fontWeight: 700, marginTop: 2 }}>
                 {pending} {pending === 1 ? 'professionista chiede' : 'professionisti chiedono'} accesso alla tua area
               </div>
             </div>
-            <button className="btn btn-sm" style={{ background: '#8b7ff0', color: '#fff', fontWeight: 800, border: 'none' }}
+            <button className="btn btn-sm" style={{ background: 'var(--yellow)', color: 'var(--ink)', fontWeight: 800, border: 'none' }}
               onClick={() => goto?.('access-requests')}>Vedi richieste</button>
           </div>
         </div>
@@ -146,7 +147,7 @@ export default function ReferentiCard({ goto }: { goto?: (r: string) => void }) 
                   ? <img src={r.photo} alt="" style={{ width: 48, height: 48, borderRadius: 13, objectFit: 'cover' }} />
                   : <div style={{ width: 48, height: 48, borderRadius: 13, background: r.accent,
                                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                  fontWeight: 900, color: '#111', fontSize: 18 }}>
+                                  fontWeight: 900, color: '#fff', fontSize: 18 }}>
                       {r.name.slice(0, 1)}
                     </div>}
                 <div style={{ minWidth: 0 }}>
@@ -163,7 +164,7 @@ export default function ReferentiCard({ goto }: { goto?: (r: string) => void }) 
               </div>
 
               <div className="flex gap" style={{ marginTop: 12, flexWrap: 'wrap' }}>
-                <button className="btn btn-sm" style={{ background: r.accent, color: '#111', fontWeight: 800, border: 'none' }}
+                <button className="btn btn-sm" style={{ background: 'var(--yellow)', color: 'var(--ink)', fontWeight: 800, border: 'none' }}
                   onClick={() => { try { sessionStorage.setItem('chat_channel', r.key) } catch {} ; goto?.('messages') }}>
                   <Icon name="message" size={13} /> Scrivi
                 </button>
@@ -173,8 +174,13 @@ export default function ReferentiCard({ goto }: { goto?: (r: string) => void }) 
                   </a>
                 )}
                 {r.phone && (
-                  <a className="btn btn-ghost btn-sm" href={`tel:${r.phone}`}>
+                  <a className="btn btn-ghost btn-sm" href={telUrl(r.phone)}>
                     <Icon name="smartphone" size={13} /> Chiama
+                  </a>
+                )}
+                {r.phone && (
+                  <a className="btn btn-ghost btn-sm" href={whatsappUrl(r.phone)} target="_blank" rel="noreferrer">
+                    <Icon name="message" size={13} /> WhatsApp
                   </a>
                 )}
               </div>

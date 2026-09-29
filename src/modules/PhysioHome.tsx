@@ -7,7 +7,7 @@ import Icon from '../components/Icon'
 
 // Home del fisioterapista: la sua scheda e gli atleti seguiti.
 // Stessi componenti/pattern degli altri ruoli professionali.
-const ACCENT = '#3E8E9E'
+const ACCENT = '#2C7A8A'
 
 const kicker: React.CSSProperties = {
   fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase', fontWeight: 800,
@@ -46,7 +46,7 @@ export default function PhysioHome({ goto }: { goto?: (r: string) => void }) {
         <div className="flex gap" style={{ alignItems: 'center', gap: 15, flexWrap: 'wrap' }}>
           {me?.photo_url
             ? <img src={me.photo_url} alt="" style={{ width: 58, height: 58, borderRadius: 15, objectFit: 'cover' }} />
-            : <div style={{ width: 58, height: 58, borderRadius: 15, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 22, color: '#111' }}>
+            : <div style={{ width: 58, height: 58, borderRadius: 15, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 22, color: '#fff' }}>
                 {(me?.name || 'F').slice(0, 1)}
               </div>}
           <div style={{ minWidth: 0, flex: 1 }}>

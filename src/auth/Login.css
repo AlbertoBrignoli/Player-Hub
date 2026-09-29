@@ -10,14 +10,14 @@
   --ph-text-3: #8a8a96;
   --ph-muted: #6e6e7a;
   --ph-muted-2: #5c5c68;
-  --ph-accent: #FFD400;
+  --ph-accent: #FFEC00;       /* giallo brand AUVI */
   --ph-green: #4ade80;
   min-height: 100vh;
   display: grid;
   grid-template-columns: 1.25fr 1fr;
   background: var(--ph-bg);
   color: var(--ph-text);
-  font-family: "Archivo", system-ui, sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
 }
 
 /* ---------- stage (video) ---------- */
@@ -40,12 +40,12 @@
 .ph-login__brand { display: flex; align-items: center; gap: 14px; animation: ph-riseIn .7s ease both; }
 .ph-login__brand img { height: 26px; width: auto; opacity: .95; }
 .ph-login__rule { width: 1px; height: 22px; background: #3a3a44; }
-.ph-login__wordmark { font-family: "Archivo Expanded", "Archivo", sans-serif; font-weight: 900; font-size: 14px; letter-spacing: 1.5px; }
+.ph-login__wordmark { font-family: "termina", "Archivo", sans-serif; font-stretch: 125%; font-weight: 900; font-size: 14px; letter-spacing: 1.5px; }
 
 .ph-login__claimBlock { max-width: 620px; animation: ph-riseIn .9s .12s ease both; }
 .ph-login__kicker { margin: 0 0 20px; font-size: 10.5px; font-weight: 800; letter-spacing: 2.6px; color: var(--ph-accent); }
 .ph-login__claim {
-  margin: 0; font-family: "Archivo Expanded", "Archivo", sans-serif; font-weight: 900;
+  margin: 0; font-family: "termina", "Archivo", sans-serif; font-stretch: 125%; font-weight: 900;
   font-size: clamp(38px, 4.4vw, 62px); line-height: .95; letter-spacing: -1px;
 }
 .ph-login__reason {
@@ -72,7 +72,7 @@
   display: flex; align-items: center; justify-content: center; margin-bottom: 30px;
 }
 .ph-login__tile img { width: 26px; height: 26px; object-fit: contain; filter: brightness(0); }
-.ph-login__title { margin: 0; font-family: "Archivo Expanded", "Archivo", sans-serif; font-weight: 900; font-size: 30px; letter-spacing: -.4px; }
+.ph-login__title { margin: 0; font-family: "termina", "Archivo", sans-serif; font-stretch: 125%; font-weight: 900; font-size: 30px; letter-spacing: -.4px; }
 .ph-login__sub { margin: 10px 0 0; font-size: 14.5px; color: var(--ph-text-3); }
 
 .ph-login__fields { margin-top: 34px; display: flex; flex-direction: column; gap: 18px; }
@@ -83,11 +83,11 @@
 }
 .ph-login__field input {
   height: 52px; padding: 0 16px; border-radius: 14px; border: 1px solid var(--ph-border);
-  background: var(--ph-field); color: var(--ph-text); font: 500 15px "Archivo", sans-serif;
+  background: var(--ph-field); color: var(--ph-text); font: 500 15px "Inter", sans-serif;
   outline: none; transition: border-color .18s, box-shadow .18s;
 }
 .ph-login__field input::placeholder { color: var(--ph-muted-2); }
-.ph-login__field input:focus { border-color: var(--ph-accent); box-shadow: 0 0 0 3px rgba(255,212,0,.14); }
+.ph-login__field input:focus { border-color: var(--ph-accent); box-shadow: 0 0 0 3px rgba(255,236,0,.55); }
 
 .ph-login__pwToggle {
   border: 0; background: none; cursor: pointer; padding: 4px;
@@ -137,3 +137,24 @@
 @media (prefers-reduced-motion: reduce) {
   .ph-login__video, .ph-login__brand, .ph-login__claimBlock, .ph-login__form, .ph-login__dot { animation: none !important; }
 }
+
+/* v5 AUVI brand: pannello di accesso chiaro (bianco + nero + giallo),
+   il lato video resta scuro come nella brand identity (logo bianco su nero). */
+.ph-login__panel {
+  --ph-panel: #FFFFFF;
+  --ph-field: #FFFFFF;
+  --ph-border: #D4D4D1;
+  --ph-divider: #E6E6E4;
+  --ph-text: #0A0A0A;
+  --ph-text-2: #4F4F4F;
+  --ph-text-3: #4F4F4F;
+  --ph-muted: #767676;
+  --ph-muted-2: #767676;
+  --ph-green: #12A150;
+  color: var(--ph-text);
+}
+.ph-login__panel .ph-login__cta { color: #0A0A0A; }
+.ph-login__panel .ph-login__field input:focus { border-color: #0A0A0A; }
+.ph-login__panel .ph-login__link:hover, .ph-login__panel .ph-login__pwToggle:hover { color: #0A0A0A; text-decoration: underline; }
+.ph-login__tile { background: #0A0A0A; }
+.ph-login__tile img { filter: none; }

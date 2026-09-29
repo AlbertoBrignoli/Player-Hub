@@ -62,7 +62,7 @@ export default function BrandCampaigns() {
   return (
     <div style={{ maxWidth: 900 }} className="grid">
       <div className="card mk-social-head" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-        <div className="mk-ig-badge" style={{ background: 'linear-gradient(135deg,#e10b17,#7a0410)' }}><Icon name="image" size={20} /></div>
+        <div className="mk-ig-badge" style={{ background: 'var(--grad)' }}><Icon name="image" size={20} /></div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className="ed-kicker">Campagne & contenuti</div>
           <div style={{ fontWeight: 750, fontSize: 17 }}>Proponi contenuti a {athleteName}</div>

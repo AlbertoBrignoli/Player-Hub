@@ -7,7 +7,7 @@ import Icon from '../components/Icon'
 
 // Profilo del procuratore: contatti personali + agenzia per cui lavora.
 // L'agente lo modifica; l'atleta seguito lo vede in sola lettura.
-const ACCENT = '#B0663F' // oro sobrio: area procura, distinta da brand (rosso) e fitness (verde)
+const ACCENT = '#9A5530' // oro sobrio: area procura, distinta da brand (rosso) e fitness (verde)
 
 const kicker: React.CSSProperties = {
   fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase', fontWeight: 800,
@@ -80,7 +80,7 @@ export default function TaxAdvisorProfile() {
         <div className="flex gap" style={{ alignItems: 'center', gap: 14 }}>
           {p.photo_url
             ? <img src={p.photo_url} alt="" style={{ width: 56, height: 56, borderRadius: 14, objectFit: 'cover' }} />
-            : <div style={{ width: 56, height: 56, borderRadius: 14, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: '#111', fontSize: 20 }}>
+            : <div style={{ width: 56, height: 56, borderRadius: 14, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: '#fff', fontSize: 20 }}>
                 {(p.name || 'A').slice(0, 1)}
               </div>}
           <div style={{ minWidth: 0 }}>
@@ -107,7 +107,7 @@ export default function TaxAdvisorProfile() {
         <div className="flex gap" style={{ alignItems: 'center', gap: 15, flexWrap: 'wrap' }}>
           {p.photo_url
             ? <img src={p.photo_url} alt="" style={{ width: 58, height: 58, borderRadius: 15, objectFit: 'cover' }} />
-            : <div style={{ width: 58, height: 58, borderRadius: 15, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 22, color: '#111' }}>
+            : <div style={{ width: 58, height: 58, borderRadius: 15, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 22, color: '#fff' }}>
                 {(p.name || 'A').slice(0, 1)}
               </div>}
           <div style={{ minWidth: 0, flex: 1 }}>

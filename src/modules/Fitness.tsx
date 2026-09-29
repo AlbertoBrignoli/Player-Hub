@@ -9,7 +9,7 @@ import { toast } from '../lib/toast'
 import { notify } from '../lib/notify'
 import type { FitnessProgram, FitnessExercise, FitnessFeedback, FitnessLibraryItem } from '../lib/types'
 
-const ACCENT = '#C8FF2E' // verde fluo: identità del mondo fitness
+const ACCENT = '#3F7F00' // verde fitness (scurito per il tema chiaro)
 const label: React.CSSProperties = { fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: 'var(--text-dim)', fontWeight: 700, margin: '18px 0 10px' }
 const grid = (min = 150): React.CSSProperties => ({ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(${min}px, 1fr))`, gap: 12 })
 const todayKey = () => new Date().toISOString().slice(0, 10)
@@ -101,7 +101,7 @@ function TrainerFitness() {
                   <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }} onClick={() => restore(p)}>
                     <Icon name="rotate-ccw" size={14} /> Ripristina
                   </button>
-                  <button className="btn" style={{ color: '#e0574a' }} onClick={() => purge(p)} title="Elimina definitivamente">
+                  <button className="btn" style={{ color: 'var(--red)' }} onClick={() => purge(p)} title="Elimina definitivamente">
                     <Icon name="trash" size={14} />
                   </button>
                 </div>
@@ -268,7 +268,7 @@ function ProgramEditor({ program, athleteId, athleteName, trainerId, onClose, on
       onClose={onClose}
       footer={
         <>
-          {!isNew && <button className="btn" style={{ color: '#e0574a' }} onClick={del} disabled={!!busy}>Sposta nel cestino</button>}
+          {!isNew && <button className="btn" style={{ color: 'var(--red)' }} onClick={del} disabled={!!busy}>Sposta nel cestino</button>}
           <button className="btn" onClick={() => save('draft')} disabled={!!busy}>{busy === 'draft' ? 'Salvo…' : 'Salva bozza'}</button>
           <button className="btn btn-primary" disabled={!!busy}
             onClick={() => { if (!form.name?.trim()) { toast('Inserisci il nome del programma', 'err'); return } setReview(true) }}>
@@ -614,7 +614,7 @@ function ProgramDetail({ program, athleteId, onClose, onSaved }: {
         </Field>
         <div className="flex gap" style={{ marginTop: 12, alignItems: 'center' }}>
           <button className="btn btn-primary" onClick={send} disabled={busy || !fb.status || fb.status === 'programmato'}>{busy ? 'Invio…' : 'Invia'}</button>
-          {saved && <span style={{ color: '#35c26b', fontSize: 13 }}>Inviato ✓</span>}
+          {saved && <span style={{ color: 'var(--green)', fontSize: 13 }}>Inviato ✓</span>}
         </div>
       </div>
     </Modal>
@@ -625,7 +625,7 @@ function Info({ k, v }: { k: string; v: string }) {
   return <div><div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1 }}>{k}</div><div style={{ fontSize: 13, marginTop: 2 }}>{v}</div></div>
 }
 function Chip({ children }: { children: React.ReactNode }) {
-  return <span style={{ background: 'var(--card, #1a1a1e)', border: '1px solid var(--border)', borderRadius: 8, padding: '3px 9px', fontSize: 12.5 }}>{children}</span>
+  return <span style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 8, padding: '3px 9px', fontSize: 12.5 }}>{children}</span>
 }
 
 function FbQ({ title, children }: { title: string; children: React.ReactNode }) {
@@ -679,7 +679,7 @@ function TrainerSummary({ athletes, athleteId }: { athletes: { api_player_id: nu
             const disc = f.discomfort && f.discomfort !== 'nessuno' ? f.discomfort : ''
             const issue = f.status !== 'completato' || !!disc
             return (
-              <div key={f.id} className="row" style={{ alignItems: 'center', borderLeft: issue ? '2px solid #d98236' : '2px solid transparent', paddingLeft: 10 }}>
+              <div key={f.id} className="row" style={{ alignItems: 'center', borderLeft: issue ? '2px solid var(--orange)' : '2px solid transparent', paddingLeft: 10 }}>
                 <div className="row-main">
                   <div className="row-title">{name}</div>
                   <div className="row-sub">

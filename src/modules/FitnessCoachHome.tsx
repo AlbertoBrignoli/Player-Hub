@@ -9,7 +9,7 @@ import type { FitnessProgram } from '../lib/types'
 
 // Home del preparatore: la sua scheda in evidenza + i suoi atleti.
 // Ogni box apre l'atleta: schede, performance, agenda, chat.
-const ACCENT = '#C8FF2E' // verde fluo: identità del mondo fitness
+const ACCENT = '#3F7F00' // verde fitness (scurito per il tema chiaro)
 
 const kicker: React.CSSProperties = {
   fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase', fontWeight: 800,
@@ -89,7 +89,7 @@ export default function FitnessCoachHome({ goto }: { goto?: (r: string) => void 
         <div className="flex gap" style={{ alignItems: 'center', gap: 15, flexWrap: 'wrap' }}>
           {coach?.photo_url
             ? <img src={coach.photo_url} alt="" style={{ width: 58, height: 58, borderRadius: 15, objectFit: 'cover' }} />
-            : <div style={{ width: 58, height: 58, borderRadius: 15, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 22, color: '#111' }}>
+            : <div style={{ width: 58, height: 58, borderRadius: 15, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 22, color: '#fff' }}>
                 {name.slice(0, 1)}
               </div>}
           <div style={{ minWidth: 0, flex: 1 }}>
@@ -110,15 +110,15 @@ export default function FitnessCoachHome({ goto }: { goto?: (r: string) => void 
           <Metric label="Atleti seguiti" value={String(list.length)} />
           <Metric label="Sedute oggi" value={String(todayTrainings.length)} />
           <Metric label="Bozze" value={String(drafts.length)} />
-          <Metric label="Richieste aperte" value={String(requests.length)} tone={requests.length ? '#c9922b' : undefined} />
+          <Metric label="Richieste aperte" value={String(requests.length)} tone={requests.length ? 'var(--gold)' : undefined} />
         </div>
       </div>
 
       {/* --- Richieste aperte --- */}
       {requests.length > 0 && (
-        <div className="card" style={{ borderColor: '#c9922b55' }}>
+        <div className="card" style={{ borderColor: 'rgba(154,134,0,.35)' }}>
           <div className="flex between" style={{ alignItems: 'center', marginBottom: 10 }}>
-            <div style={{ ...kicker, color: '#c9922b' }}>Richieste da gestire</div>
+            <div style={{ ...kicker, color: 'var(--gold)' }}>Richieste da gestire</div>
             <span className="faint" style={{ fontSize: 12 }}>{requests.length}</span>
           </div>
           <div className="grid" style={{ gap: 8 }}>
@@ -187,7 +187,7 @@ export default function FitnessCoachHome({ goto }: { goto?: (r: string) => void 
                   onClick={() => open(a.api_player_id, 'fitness')}
                   role="button" tabIndex={0}
                   onKeyDown={e => { if (e.key === 'Enter') open(a.api_player_id, 'fitness') }}>
-                  <div style={{ height: 3, background: warn ? '#c9922b' : ACCENT }} />
+                  <div style={{ height: 3, background: warn ? 'var(--gold)' : ACCENT }} />
                   <div style={{ padding: 16 }}>
                     <div className="flex gap" style={{ alignItems: 'center', gap: 12 }}>
                       {a.photo_url
@@ -209,7 +209,7 @@ export default function FitnessCoachHome({ goto }: { goto?: (r: string) => void 
                     </div>
 
                     {warn && (
-                      <div style={{ marginTop: 10, fontSize: 11.5, fontWeight: 700, color: '#c9922b' }}>
+                      <div style={{ marginTop: 10, fontSize: 11.5, fontWeight: 700, color: 'var(--gold)' }}>
                         <Icon name="bell" size={11} /> {warn}
                       </div>
                     )}

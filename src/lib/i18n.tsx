@@ -41,16 +41,17 @@ export function LangToggle() {
     { code: 'en', flag: '🇬🇧', label: 'EN' },
   ]
   return (
-    <div style={{ display: 'inline-flex', background: 'var(--card, #141416)', border: '1px solid var(--border, #2a2a2e)', borderRadius: 9, padding: 2 }}>
+    <div className="lang-toggle" style={{ display: 'inline-flex', background: 'var(--bg-2)', borderRadius: 10, padding: 3 }}>
       {langs.map(l => (
         <button key={l.code} onClick={() => setLang(l.code)} title={l.label} aria-label={l.label}
           style={{
-            border: 'none', cursor: 'pointer', padding: '4px 8px', borderRadius: 7, fontSize: 12.5, fontWeight: 800,
+            border: 'none', cursor: 'pointer', padding: '6px 10px', borderRadius: 8, fontSize: 12, fontWeight: 700, minHeight: 30,
             display: 'inline-flex', alignItems: 'center', gap: 4, lineHeight: 1,
-            background: lang === l.code ? 'var(--accent, #c6ff3a)' : 'transparent',
-            color: lang === l.code ? '#0a0a0c' : 'var(--text-dim, #8b8b95)',
+            background: lang === l.code ? 'var(--surface)' : 'transparent',
+            boxShadow: lang === l.code ? '0 1px 3px rgba(10,10,10,.12)' : 'none',
+            color: lang === l.code ? 'var(--text)' : 'var(--text-faint)',
           }}>
-          <span style={{ fontSize: 14 }}>{l.flag}</span>{l.label}
+          {l.label}
         </button>
       ))}
     </div>

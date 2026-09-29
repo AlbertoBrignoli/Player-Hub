@@ -8,7 +8,6 @@ import { useLang } from '../lib/i18n'
 
 const HERO_VIDEO = '/login/auvi-sport-atleta.mp4'
 const HERO_POSTER = '/login/auvi-sport-atleta-poster.png'
-const AUVI_MARK = '/login/auvi-mark-white.png'
 const PARTNERS = ['NEST Football', 'EY', 'Delian & Co.', 'Banchero Costa', 'AUVI Flights']
 
 function friendlyError(error: any): string {
@@ -121,7 +120,7 @@ export default function Login() {
 
         <div className="ph-login__stageInner">
           <header className="ph-login__brand">
-            <img src={AUVI_MARK} alt="AUVI" />
+            <img src="/brand/auvi-wordmark-white.svg" alt="AUVI" />
             <span className="ph-login__rule" />
             <span className="ph-login__wordmark">PLAYER HUB</span>
           </header>
@@ -145,7 +144,7 @@ export default function Login() {
       <section className="ph-login__panel">
         <div className="ph-login__form">
           <div className="ph-login__tile">
-            <img src={AUVI_MARK} alt="" />
+            <img src="/brand/auvi-mark-yellow.svg" alt="" />
           </div>
 
           <h2 className="ph-login__title">{inviteMode ? t('Benvenuto.') : t('Bentornato.')}</h2>

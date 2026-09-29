@@ -9,6 +9,8 @@ import { Modal, Field, Input, Textarea, Select, Empty, Spinner } from '../compon
 import Icon from '../components/Icon'
 import LuogoAutocomplete from '../components/LuogoAutocomplete'
 import type { EventItem, EventAttachment } from '../lib/types'
+import CalendarSync from '../components/CalendarSync'
+import { downloadIcs, mapsUrl } from '../lib/ics'
 
 const DOC_BUCKET = 'crm-documents'
 function attSize(n?: number | null) {
@@ -26,14 +28,14 @@ async function openAttachment(a: EventAttachment) {
 type TypeDef = { l: string; icon: string; c: string }
 // Palette contenuta e coerente: l'ICONA e' il segnale principale, il colore un accento.
 const TYPES: Record<string, TypeDef> = {
-  allenamento: { l: 'Allenamento', icon: 'dumbbell',  c: '#3fb984' },
-  partita:     { l: 'Partita',     icon: 'ball',      c: '#8b7ff0' },
-  medico:      { l: 'Medico',      icon: 'plus',      c: '#e0574a' },
-  viaggio:     { l: 'Viaggio',     icon: 'send',      c: '#4a90d9' },
-  commerciale: { l: 'Commerciale', icon: 'briefcase', c: '#c9922b' },
-  sponsor:     { l: 'Sponsor',     icon: 'award',     c: '#c9922b' },
-  personale:   { l: 'Personale',   icon: 'user',      c: '#8b909a' },
-  scadenza:    { l: 'Scadenza',    icon: 'clock',     c: '#d98236' },
+  allenamento: { l: 'Allenamento', icon: 'dumbbell',  c: '#12A150' },
+  partita:     { l: 'Partita',     icon: 'ball',      c: '#6E56CF' },
+  medico:      { l: 'Medico',      icon: 'plus',      c: '#E53F00' },
+  viaggio:     { l: 'Viaggio',     icon: 'send',      c: '#1F6FEB' },
+  commerciale: { l: 'Commerciale', icon: 'briefcase', c: '#9A8600' },
+  sponsor:     { l: 'Sponsor',     icon: 'award',     c: '#9A8600' },
+  personale:   { l: 'Personale',   icon: 'user',      c: '#6B6F76' },
+  scadenza:    { l: 'Scadenza',    icon: 'clock',     c: '#C2570C' },
 }
 const typeOf = (t: string): TypeDef => TYPES[t] || TYPES.personale
 const ADMIN_TYPES = ['partita', 'commerciale', 'sponsor', 'personale', 'medico', 'viaggio', 'scadenza']
@@ -85,10 +87,13 @@ export default function Agenda({ goto }: { goto?: (r: string) => void }) {
       </div>
 
       {rows.length === 0 ? (
-        <Empty icon={<Icon name="clock" size={30} strokeWidth={1.4} />} title="Agenda vuota" hint="Aggiungi i tuoi impegni personali; allenamenti e partite compaiono in automatico." />
+        <Empty icon={<Icon name="clock" size={24} strokeWidth={1.6} />} title="Agenda vuota" hint="Aggiungi i tuoi impegni personali; allenamenti e partite compaiono in automatico."
+          action={canAdd ? { label: '+ Nuovo impegno', onClick: () => setEdit(emptyEv('personale')) } : undefined} />
       ) : view === 'lista'
         ? <ListView rows={rows} {...shared} />
         : <CalendarView rows={rows} {...shared} />}
+
+      <div style={{ marginTop: 16 }}><CalendarSync /></div>
 
       {edit && <EventForm value={edit} isAdmin={isAdmin} uid={uid} athleteId={athleteId} onClose={() => setEdit(null)} onSaved={() => { setEdit(null); reload() }} />}
     </div>
@@ -184,7 +189,7 @@ function CalendarView({ rows, canEdit, onEdit, onDel, canConfirm, onConfirm, got
             const isSel = sel && dayKey(sel) === k
             return (
               <div key={i} onClick={() => setSel(d)}
-                style={{ minHeight: 48, borderRadius: 10, cursor: 'pointer', border: isSel ? '1.5px solid var(--accent, #F4C430)' : isToday ? '1px solid var(--accent, #F4C430)' : '1px solid var(--border)', background: isSel ? 'rgba(244,196,48,.16)' : isToday ? 'rgba(244,196,48,.08)' : 'transparent', padding: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                style={{ minHeight: 48, borderRadius: 10, cursor: 'pointer', border: isSel ? '1.5px solid var(--ink)' : isToday ? '1px solid var(--accent)' : '1px solid var(--border)', background: isSel ? 'var(--yellow-soft)' : isToday ? 'rgba(255,236,0,.10)' : 'transparent', padding: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
                 <span style={{ fontSize: 12.5, fontWeight: isToday ? 800 : 500 }}>{d.getDate()}</span>
                 <span className="flex" style={{ gap: 2 }}>
                   {evs.slice(0, 4).map((e, j) => <span key={j} style={{ width: 5, height: 5, borderRadius: '50%', background: typeOf(e.type).c }} />)}
@@ -246,13 +251,13 @@ function EvCard({ e, canEdit, onEdit, onDel, canConfirm, onConfirm, goto }: { e:
             <Icon name="clock" size={15} /> {time}
           </span>
         </div>
-        {e.location && <a className="faint" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.location)}`} target="_blank" rel="noreferrer" title={tr("Apri in Maps")} style={{ fontSize: 13, marginTop: 7, display: 'inline-flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}><Icon name="pin" size={13} /> {e.location} <span style={{ opacity: .7 }}>↗</span></a>}
+        {e.location && <a className="faint" href={mapsUrl(e.location)} target="_blank" rel="noreferrer" title={tr("Apri in Maps")} style={{ fontSize: 13, marginTop: 7, display: 'inline-flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}><Icon name="pin" size={13} /> {e.location} <span style={{ opacity: .7 }}>↗</span></a>}
         {req && req !== 'confermata' && (
           <div style={{ marginTop: 9 }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700,
                            padding: '4px 10px', borderRadius: 999,
-                           background: req === 'rifiutata' ? 'rgba(229,72,77,.14)' : 'rgba(201,146,43,.16)',
-                           color: req === 'rifiutata' ? '#e5484d' : '#c9922b' }}>
+                           background: req === 'rifiutata' ? 'rgba(229,63,0,.10)' : 'var(--yellow-soft)',
+                           color: req === 'rifiutata' ? 'var(--red)' : 'var(--gold)' }}>
               <Icon name={req === 'rifiutata' ? 'x' : 'clock'} size={12} />
               {req === 'rifiutata' ? 'Richiesta non accolta' : "Richiesta dell'atleta · da confermare"}
             </span>
@@ -261,7 +266,7 @@ function EvCard({ e, canEdit, onEdit, onDel, canConfirm, onConfirm, goto }: { e:
         {req === 'confermata' && (
           <div style={{ marginTop: 9 }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700,
-                           padding: '4px 10px', borderRadius: 999, background: 'rgba(63,185,132,.14)', color: '#3fb984' }}>
+                           padding: '4px 10px', borderRadius: 999, background: 'rgba(18,161,80,.12)', color: 'var(--green)' }}>
               <Icon name="check" size={12} /> Confermato
             </span>
           </div>
@@ -278,10 +283,20 @@ function EvCard({ e, canEdit, onEdit, onDel, canConfirm, onConfirm, goto }: { e:
             ))}
           </div>
         )}
+        <div className="quick-actions" style={{ marginTop: 12 }}>
+          <button className="qa" onClick={() => downloadIcs({ title: e.title, start: e.start_at, end: e.end_at || undefined, location: e.location || undefined, description: e.notes || undefined })}>
+            <span className="qa-ico"><Icon name="calendar" size={14} /></span>{tr('Nel mio calendario')}
+          </button>
+          {e.location && (
+            <a className="qa" href={mapsUrl(e.location)} target="_blank" rel="noreferrer">
+              <span className="qa-ico"><Icon name="pin" size={14} /></span>{tr('Indicazioni')}
+            </a>
+          )}
+        </div>
         {(isTraining || canEdit || canConfirm) && (
           <div className="flex gap" style={{ marginTop: 12, flexWrap: 'wrap' }}>
-            {isTraining && goto && <button className="btn btn-sm" style={{ background: t.c, color: '#111', fontWeight: 700 }} onClick={() => goto('fitness')}>{tr('Apri scheda →')}</button>}
-            {canConfirm && <button className="btn btn-sm" style={{ background: '#3fb984', color: '#111', fontWeight: 800 }} onClick={() => onConfirm(true)}>{tr('Conferma')}</button>}
+            {isTraining && goto && <button className="btn btn-sm" style={{ background: 'var(--yellow)', color: 'var(--ink)', fontWeight: 700 }} onClick={() => goto('fitness')}>{tr('Apri scheda →')}</button>}
+            {canConfirm && <button className="btn btn-sm" style={{ background: 'var(--green)', color: '#fff', fontWeight: 800 }} onClick={() => onConfirm(true)}>{tr('Conferma')}</button>}
             {canConfirm && <button className="btn btn-ghost btn-sm" onClick={() => onConfirm(false)}>{tr('Rifiuta')}</button>}
             {canEdit && <button className="btn btn-ghost btn-sm" onClick={onEdit}>{tr('Modifica')}</button>}
             {canEdit && <button className="btn btn-danger btn-sm" onClick={onDel}>{tr('Elimina')}</button>}

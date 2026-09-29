@@ -19,7 +19,7 @@ type Roster = {
   status?: string          // partner = collaborazione attiva | proposto = offerto da AUVI
 }
 
-const DEFAULT_ACCENT = '#E31837'
+const DEFAULT_ACCENT = '#DD0088' // magenta AUVI (= var(--magenta)); hex perché il colore del brand è libero
 
 // Tipografia del brand: maiuscolo compatto, come sui loro materiali.
 const kicker: React.CSSProperties = {
@@ -76,7 +76,7 @@ export default function BrandHome({ goto }: { goto?: (r: string) => void }) {
       {/* --- HERO brandizzata --- */}
       <div style={{
         position: 'relative', overflow: 'hidden', borderRadius: 18,
-        background: '#0a0a0a', border: '1px solid var(--border)',
+        background: 'var(--surface)', border: '1px solid var(--border)',
         padding: '26px 24px',
       }}>
         {/* barra accento del brand */}

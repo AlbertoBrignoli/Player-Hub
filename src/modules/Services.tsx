@@ -20,17 +20,17 @@ const STUDIO_VIDEO = '/servizi/auvi-video.mp4'
 const AUVI_MARK = '/servizi/auvi-mark-white.png'
 const STUDIO_CAT = 'AUVI Studio'
 
-// --- token del design (store scuro) ---
+// --- token del design (store, tema chiaro AUVI) ---
 const T = {
-  card: '#141419',
-  cardDark: '#101015',
-  border: '#26262e',
-  borderSoft: '#1e1e26',
-  text: '#f2f2f5',
-  dim: '#9a9aa6',
-  muted: '#6e6e7a',
-  yellow: '#FFD400',
-  green: '#4ade80',
+  card: 'var(--surface)',
+  cardDark: 'var(--surface)',
+  border: 'var(--border)',
+  borderSoft: 'var(--border)',
+  text: 'var(--text)',
+  dim: 'var(--text-dim)',
+  muted: 'var(--text-faint)',
+  yellow: 'var(--yellow)',
+  green: 'var(--green)',
 }
 
 const kicker: React.CSSProperties = {
@@ -38,10 +38,10 @@ const kicker: React.CSSProperties = {
 }
 
 const STATUS: Record<string, { l: string; c: string; step: number }> = {
-  aperta: { l: 'Inviata', c: '#FBBF24', step: 1 },
-  in_carico: { l: 'In lavorazione', c: '#7DD3FC', step: 2 },
-  completata: { l: 'Completata', c: '#4ADE80', step: 3 },
-  annullata: { l: 'Annullata', c: '#e5484d', step: 3 },
+  aperta: { l: 'Inviata', c: 'var(--gold)', step: 1 },
+  in_carico: { l: 'In lavorazione', c: 'var(--blue)', step: 2 },
+  completata: { l: 'Completata', c: 'var(--green)', step: 3 },
+  annullata: { l: 'Annullata', c: 'var(--red)', step: 3 },
 }
 const st = (s: string) => STATUS[s] || STATUS.aperta
 
@@ -144,7 +144,7 @@ export default function Services() {
                 flex: 1, padding: '10px 14px', borderRadius: 12, cursor: 'pointer',
                 border: `1px solid ${on ? T.text : T.border}`,
                 background: on ? T.text : 'transparent',
-                color: on ? '#0b0b0e' : T.dim, fontWeight: 800, fontSize: 13,
+                color: on ? '#fff' : T.dim, fontWeight: 800, fontSize: 13,
               }}>
               {k === 'store' ? 'Store' : `Richieste${reqs.length ? ` · ${reqs.length}` : ''}`}
             </button>
@@ -198,7 +198,7 @@ export default function Services() {
                       whiteSpace: 'nowrap', padding: '8px 14px', borderRadius: 999, cursor: 'pointer',
                       border: `1px solid ${on ? T.text : T.border}`,
                       background: on ? T.text : 'transparent',
-                      color: on ? '#0b0b0e' : T.dim, fontWeight: 700, fontSize: 12.5,
+                      color: on ? '#fff' : T.dim, fontWeight: 700, fontSize: 12.5,
                     }}>
                     {c}
                   </button>
@@ -277,7 +277,7 @@ export default function Services() {
 function VerifiedCard({ s, onOpen }: { s: Service; onOpen: () => void }) {
   const { lang } = useLang()
   const { t } = useLang()
-  const accent = s.accent_color || `oklch(0.85 0.13 ${s.hue ?? 250})`
+  const accent = s.accent_color || `oklch(0.5 0.15 ${s.hue ?? 250})`
   return (
     <button onClick={onOpen}
       style={{
@@ -285,7 +285,7 @@ function VerifiedCard({ s, onOpen }: { s: Service; onOpen: () => void }) {
         background: T.card, border: `1px solid ${T.border}`, borderRadius: 18,
         display: 'flex', flexDirection: 'column',
       }}>
-      <div style={{ position: 'relative', height: 170, background: s.cover_url ? T.cardDark : `oklch(0.3 0.07 ${s.hue ?? 250})` }}>
+      <div style={{ position: 'relative', height: 170, background: s.cover_url ? 'var(--card-dark)' : `oklch(0.3 0.07 ${s.hue ?? 250})` }}>
         {s.cover_url ? (
           <>
             <div style={{
@@ -313,7 +313,7 @@ function VerifiedCard({ s, onOpen }: { s: Service; onOpen: () => void }) {
         )}
         <span style={{
           position: 'absolute', left: 10, top: 10, display: 'flex', alignItems: 'center', gap: 6,
-          background: 'rgba(11,11,14,.72)', color: T.green, padding: '4px 9px', borderRadius: 999,
+          background: 'rgba(11,11,14,.72)', color: '#4ade80', padding: '4px 9px', borderRadius: 999,
           fontSize: 9.5, letterSpacing: 1.4, fontWeight: 800, textTransform: 'uppercase',
         }}>● Verificato</span>
       </div>
@@ -338,7 +338,7 @@ function StudioHero({ studio, onOpen }: { studio: Service[]; onOpen: (s: Service
   const vidRef = useRef<HTMLVideoElement | null>(null)
   useEffect(() => { const v = vidRef.current; if (v) { v.muted = true; v.play().catch(() => {}) } }, [])
   return (
-    <div style={{ background: T.cardDark, border: '1px solid #3a3420', borderRadius: 20, overflow: 'hidden' }}>
+    <div style={{ background: T.cardDark, border: `1px solid ${T.border}`, borderRadius: 20, overflow: 'hidden' }}>
       <div style={{ position: 'relative', padding: '26px 20px', minHeight: 150 }}>
         <video ref={vidRef} poster={STUDIO_BG} muted loop playsInline autoPlay preload="metadata"
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}>
@@ -346,7 +346,7 @@ function StudioHero({ studio, onOpen }: { studio: Service[]; onOpen: (s: Service
         </video>
         <div style={{ position: 'absolute', inset: 0,
           background: 'linear-gradient(160deg, rgba(16,16,21,.35), rgba(16,16,21,.9))' }} />
-        <div style={{ position: 'relative' }}>
+        <div style={{ position: 'relative', color: '#fff' }}>
           <img src={AUVI_MARK} alt="AUVI" style={{ height: 22, opacity: .95 }} />
           <div style={{ ...kicker, fontSize: 10, color: T.yellow, letterSpacing: 2, marginTop: 14 }}>
             Il team creativo della tua agenzia
@@ -364,7 +364,7 @@ function StudioHero({ studio, onOpen }: { studio: Service[]; onOpen: (s: Service
             style={{ textAlign: 'left', cursor: 'pointer', width: '100%', gap: 12,
               background: T.cardDark, border: 'none', padding: 14 }}>
             <div className="flex gap" style={{ alignItems: 'center', gap: 12, minWidth: 0 }}>
-              <div style={{ width: 40, height: 40, borderRadius: 10, background: T.yellow, color: '#0b0b0e',
+              <div style={{ width: 40, height: 40, borderRadius: 10, background: T.yellow, color: 'var(--ink)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <img src="/servizi/auvi-mark-white.png" alt="AUVI"
                   style={{ width: 22, height: 22, objectFit: 'contain', filter: 'brightness(0)' }} />
@@ -408,7 +408,7 @@ function RequestsView({ reqs, isPlayer, isAdmin, athleteName, onManage, onEmptyG
           <div style={{ textAlign: 'center', marginTop: 12 }}>
             <button onClick={onEmptyGoStore}
               style={{ padding: '10px 18px', borderRadius: 999, border: 'none', cursor: 'pointer',
-                background: T.text, color: '#0b0b0e', fontWeight: 800 }}>
+                background: T.text, color: '#fff', fontWeight: 800 }}>
               Vai allo store
             </button>
           </div>
@@ -427,7 +427,7 @@ function RequestsView({ reqs, isPlayer, isAdmin, athleteName, onManage, onEmptyG
             <button key={k} onClick={() => setFilter(k)}
               style={{ padding: '7px 13px', borderRadius: 999, cursor: 'pointer',
                 border: `1px solid ${on ? T.text : T.border}`, background: on ? T.text : 'transparent',
-                color: on ? '#0b0b0e' : T.dim, fontWeight: 700, fontSize: 12 }}>
+                color: on ? '#fff' : T.dim, fontWeight: 700, fontSize: 12 }}>
               {l}
             </button>
           )
@@ -537,8 +537,8 @@ function ManageForm({ req, onClose, onSaved }: { req: Req; onClose: () => void; 
 
 const keyframes = `
 @keyframes auviPulse {
-  0% { box-shadow: 0 0 0 0 rgba(125,211,252,.45); }
-  70% { box-shadow: 0 0 0 8px rgba(125,211,252,0); }
-  100% { box-shadow: 0 0 0 0 rgba(125,211,252,0); }
+  0% { box-shadow: 0 0 0 0 rgba(31,111,235,.45); }
+  70% { box-shadow: 0 0 0 8px rgba(31,111,235,0); }
+  100% { box-shadow: 0 0 0 0 rgba(31,111,235,0); }
 }
 `

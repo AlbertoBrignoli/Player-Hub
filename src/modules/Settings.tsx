@@ -6,6 +6,7 @@ import { useCollection, insertRow, deleteRow } from '../lib/useData'
 import { Field, Input, Select, Badge, Spinner, ConfirmButton, Empty } from '../components/ui'
 import { fmtDate } from '../lib/format'
 import type { AllowedEmail, Profile } from '../lib/types'
+import CalendarSync from '../components/CalendarSync'
 
 export default function Settings() {
   const { isAdmin } = useAuth()
@@ -21,6 +22,7 @@ export default function Settings() {
   if (!isAdmin) {
     return (
       <div className="grid" style={{ gap: 16 }}>
+        <CalendarSync />
         <SecurityCard />
       </div>
     )
@@ -40,6 +42,7 @@ export default function Settings() {
 
   return (
     <div className="grid" style={{ gap: 16 }}>
+      <CalendarSync />
       <SecurityCard />
       <SocialCard />
 

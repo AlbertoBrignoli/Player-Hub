@@ -7,6 +7,7 @@ import { useCollection, insertRow, updateRow, deleteRow } from '../lib/useData'
 import { notify } from '../lib/notify'
 import { toast } from '../lib/toast'
 import { useRouteParam } from '../lib/route'
+import { shareFile, canShareFiles } from '../lib/share'
 import Lightbox from '../components/Lightbox'
 import Icon from '../components/Icon'
 import { Badge, Empty, Spinner, ConfirmButton, Select } from '../components/ui'
@@ -319,10 +320,10 @@ export default function Media() {
           <div className={`media-pick ${isPicked ? 'on' : ''}`} onClick={e => { e.stopPropagation(); togglePick(m.id) }}>{isPicked ? '✓' : ''}</div>
         )}
         {m.status === 'approvata' && (
-          <div title={t('Approvata')} style={{ position: 'absolute', top: 6, left: 6, width: 24, height: 24, borderRadius: '50%', background: '#22c55e', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 4px rgba(0,0,0,.45)' }}><Icon name="check" size={15} /></div>
+          <div title={t('Approvata')} style={{ position: 'absolute', top: 6, left: 6, width: 24, height: 24, borderRadius: '50%', background: 'var(--green)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 4px rgba(0,0,0,.45)' }}><Icon name="check" size={15} /></div>
         )}
         {m.status === 'scartata' && (
-          <div title={t('Scartata')} style={{ position: 'absolute', top: 6, left: 6, width: 24, height: 24, borderRadius: '50%', background: '#ef4444', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 4px rgba(0,0,0,.45)' }}><Icon name="x" size={15} /></div>
+          <div title={t('Scartata')} style={{ position: 'absolute', top: 6, left: 6, width: 24, height: 24, borderRadius: '50%', background: 'var(--red)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 4px rgba(0,0,0,.45)' }}><Icon name="x" size={15} /></div>
         )}
       </div>
     )
@@ -575,7 +576,17 @@ export default function Media() {
                 </>
               )
             }
-            return <button className="btn" onClick={() => download(m)}><Icon name="download" size={14} /> Scarica</button>
+            const url = urls[m.storage_path]
+            return (
+              <>
+                {url && canShareFiles() && (
+                  <button className="btn btn-primary" onClick={() => shareFile(url, m.file_name || 'foto.jpg', m.file_name || undefined)}>
+                    <Icon name="send" size={14} /> Condividi
+                  </button>
+                )}
+                <button className="btn" onClick={() => download(m)}><Icon name="download" size={14} /> Scarica</button>
+              </>
+            )
           }}
         />
       )}

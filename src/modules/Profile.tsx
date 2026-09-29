@@ -209,7 +209,7 @@ export default function Profile() {
           <button className="btn btn-primary" onClick={save} disabled={saving}>
             {saving ? t("Salvo…") : t("Salva")}
           </button>
-          {saved && <span className="faint" style={{ color: 'var(--green, #35c26b)', fontSize: 13 }}>{t("Salvato ✓")}</span>}
+          {saved && <span className="faint" style={{ color: 'var(--green)', fontSize: 13 }}>{t("Salvato ✓")}</span>}
         </div>
       </div>
     </div>

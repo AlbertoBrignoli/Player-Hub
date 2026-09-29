@@ -6,7 +6,7 @@ import Icon from '../components/Icon'
 
 // Il mio ufficio del fisioterapista: atleti collegati + spazio clinico
 // (valutazioni, trattamenti, esercizi). Dati privati del fisio (RLS: physio_id = auth.uid()).
-const ACCENT = '#3E8E9E'
+const ACCENT = '#2C7A8A'
 const kicker: React.CSSProperties = { fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase', fontWeight: 800 }
 const today = () => new Date().toISOString().slice(0, 10)
 
@@ -58,7 +58,7 @@ export default function PhysioOffice() {
           <div className="grid g2" style={{ gap: 10 }}>
             {athletes.map(a => (
               <button key={a.player_id} className="card" style={{ display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left', cursor: 'pointer' }} onClick={() => setSel(a)}>
-                <div style={{ width: 40, height: 40, borderRadius: 11, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: '#111' }}>{(a.name || 'A').slice(0, 1)}</div>
+                <div style={{ width: 40, height: 40, borderRadius: 11, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: '#fff' }}>{(a.name || 'A').slice(0, 1)}</div>
                 <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontWeight: 700 }}>{a.name}</div><div className="faint" style={{ fontSize: 11.5 }}>Apri cartella clinica</div></div>
                 <Icon name="chevron-right" size={16} />
               </button>

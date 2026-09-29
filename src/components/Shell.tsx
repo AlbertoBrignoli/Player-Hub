@@ -6,10 +6,14 @@ import { initials } from '../lib/format'
 import NotificationBell from './NotificationBell'
 import { useLang, LangToggle } from '../lib/i18n'
 import Toaster from './Toaster'
+import PushNudge from './PushNudge'
 import Icon from './Icon'
 import { Modal, Field, Input } from './ui'
 
-export const APP_VERSION = 'v4.7'
+// Schermate home dei vari ruoli: qui compare l'invito ad attivare le notifiche.
+const HOME_ROUTES = ['dashboard', 'brandhome', 'agent-home', 'insurer-home', 'tax-home', 'physio-home']
+
+export const APP_VERSION = 'v5.0'
 
 export interface NavDef { key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[] }
 
@@ -161,7 +165,7 @@ const TITLES: Record<string, { t: string; s: string }> = {
   performance: { t: 'Performance', s: 'Statistiche, partite e rendimento' },
   contracts: { t: 'Contratti', s: 'Accordi sportivi e scadenze' },
   documents: { t: 'Documenti', s: 'Archivio file riservato' },
-  editorial: { t: 'Calendario Editoriale', s: 'Partite, copy e grafiche pronte da pubblicare' },
+  editorial: { t: 'Calendario', s: 'Partite, copy e grafiche pronte da pubblicare' },
   media: { t: 'Media', s: 'Foto, selezioni e grafiche del team' },
   sponsors: { t: 'Sponsor & Commerciale', s: 'Accordi e deliverable' },
   commercial: { t: 'Commercial Profile', s: 'Misura il tuo valore, scopri i brand compatibili, costruisci opportunità' },
@@ -242,12 +246,9 @@ export default function Shell({ route, setRoute, right, children }: {
       <div className={`scrim ${open ? 'show' : ''}`} onClick={() => setOpen(false)} />
       <aside className={`sidebar ${open ? 'open' : ''}`}
         style={{ paddingBottom: 'calc(26px + env(safe-area-inset-bottom))' }}>
-        <div className="brand" style={{ flexShrink: 0 }}>
-          <img className="brand-logo-img" src="/icons/icon-192.png" alt="AUVI" />
-          <div>
-            <div className="brand-name">AUVI Player</div>
-            <div className="brand-sub">AUVI Agency · {APP_VERSION}</div>
-          </div>
+        <div className="brand" style={{ flexShrink: 0, flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
+          <img className="brand-wordmark" src="/brand/auvi-wordmark.svg" alt="AUVI" />
+          <div className="brand-sub">Player Hub · {APP_VERSION}</div>
         </div>
         <nav className="nav"
           style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}>
@@ -289,6 +290,7 @@ export default function Shell({ route, setRoute, right, children }: {
               </select>
             </div>
           )}
+          <div className="drawer-lang" style={{ marginTop: 10 }}><LangToggle /></div>
           <button className="btn" style={{ width: '100%', marginTop: 8, justifyContent: 'center' }} onClick={signOut}>
             <Icon name="logout" size={15} /> Esci
           </button>
@@ -318,11 +320,14 @@ export default function Shell({ route, setRoute, right, children }: {
                 ))}
               </select>
             )}
-            <LangToggle />
+            <span className="topbar-lang"><LangToggle /></span>
             {right}<NotificationBell goto={setRoute} />
           </div>
         </div>
-        <div className="content">{children}</div>
+        <div className="content">
+          {HOME_ROUTES.includes(route) && <PushNudge />}
+          {children}
+        </div>
       </div>
 
       {/* Tab bar mobile (iOS): pollice, zero frizioni. "Altro" apre il drawer completo. */}

@@ -9,9 +9,9 @@ import type { CoachClient, CoachSession, CoachLedger } from '../lib/types'
 // Ufficio del preparatore: agenda personale, clienti e cassa.
 // Sezione SEPARATA dal lavoro AUVI: qui non si toccano schede né atleti gestiti.
 // I dati sono privati del coach (RLS: trainer_id = auth.uid()).
-const ACCENT = '#C8FF2E'
-const IN = '#3fb984'
-const OUT = '#e5484d'
+const ACCENT = '#3F7F00'
+const IN = 'var(--green)'
+const OUT = 'var(--red)'
 
 const kicker: React.CSSProperties = { fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase', fontWeight: 800 }
 const today = () => new Date().toISOString().slice(0, 10)
@@ -80,7 +80,7 @@ export default function CoachOffice() {
           <Metric label="Entrate" value={fmtMoney(totals.inc)} tone={IN} />
           <Metric label="Uscite" value={fmtMoney(totals.out)} tone={OUT} />
           <Metric label="Saldo" value={fmtMoney(totals.saldo)} tone={totals.saldo >= 0 ? IN : OUT} />
-          <Metric label="Da incassare" value={fmtMoney(daIncassareTot)} tone={daIncassareTot ? '#c9922b' : undefined} />
+          <Metric label="Da incassare" value={fmtMoney(daIncassareTot)} tone={daIncassareTot ? 'var(--gold)' : undefined} />
           <Metric label="Clienti" value={String(clients.filter(c => !c.archived).length)} />
         </div>
         <div className="faint" style={{ fontSize: 11.5, marginTop: 14 }}>
@@ -91,7 +91,7 @@ export default function CoachOffice() {
       <div className="pill-tabs" style={{ alignSelf: 'start' }}>
         {([['agenda', 'Agenda', 'clock'], ['clienti', 'Clienti', 'users'], ['cassa', 'Entrate / Uscite', 'briefcase']] as const).map(([k, l, i]) => (
           <button key={k} className={`pill-tab ${tab === k ? 'active' : ''}`} onClick={() => setTab(k as Tab)}
-            style={tab === k ? { background: ACCENT, color: '#111', borderColor: ACCENT } : undefined}>
+            style={tab === k ? { background: ACCENT, color: '#fff', borderColor: ACCENT } : undefined}>
             <Icon name={i} size={13} /> {l}
           </button>
         ))}
@@ -103,7 +103,7 @@ export default function CoachOffice() {
           <CoachCalendar sessions={sessions} clientName={clientName} onPick={setEditS} />
           <div className="flex between" style={{ alignItems: 'center' }}>
             <div style={{ ...kicker, color: 'var(--text-dim)' }}>Prossime sedute</div>
-            <button className="btn btn-sm" style={{ background: ACCENT, color: '#111', fontWeight: 800, border: 'none' }}
+            <button className="btn btn-sm" style={{ background: 'var(--yellow)', color: 'var(--ink)', fontWeight: 800, border: 'none' }}
               onClick={() => setEditS({ session_date: today(), status: 'programmata' })}>
               <Icon name="plus" size={13} /> Nuova seduta
             </button>
@@ -132,8 +132,8 @@ export default function CoachOffice() {
           ))}
 
           {daIncassare.length > 0 && (
-            <div className="card" style={{ borderColor: '#c9922b55' }}>
-              <div style={{ ...kicker, color: '#c9922b', marginBottom: 10 }}>Da incassare · {fmtMoney(daIncassareTot)}</div>
+            <div className="card" style={{ borderColor: 'rgba(154,134,0,.35)' }}>
+              <div style={{ ...kicker, color: 'var(--gold)', marginBottom: 10 }}>Da incassare · {fmtMoney(daIncassareTot)}</div>
               <div className="grid" style={{ gap: 8 }}>
                 {daIncassare.map(s => (
                   <div key={s.id} className="flex between" style={{ alignItems: 'center', gap: 10 }}>
@@ -175,7 +175,7 @@ export default function CoachOffice() {
         <div className="grid" style={{ gap: 12 }}>
           <div className="flex between" style={{ alignItems: 'center' }}>
             <div style={{ ...kicker, color: 'var(--text-dim)' }}>I miei clienti</div>
-            <button className="btn btn-sm" style={{ background: ACCENT, color: '#111', fontWeight: 800, border: 'none' }} onClick={() => setEditC({})}>
+            <button className="btn btn-sm" style={{ background: 'var(--yellow)', color: 'var(--ink)', fontWeight: 800, border: 'none' }} onClick={() => setEditC({})}>
               <Icon name="plus" size={13} /> Nuovo cliente
             </button>
           </div>

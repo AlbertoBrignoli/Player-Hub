@@ -10,10 +10,10 @@ import { fmtDate, fmtMoney } from '../lib/format'
 
 // Area legale e fiscale: pagamenti, documenti del commercialista
 // e sue richieste che l'atleta deve smarcare.
-const ACCENT = '#B0663F'   // terra bruciata: distinto da brand/fitness/procura/assicurazioni
-const WARN = '#c9922b'
-const DANGER = '#e5484d'
-const OK = '#3fb984'
+const ACCENT = '#9A5530'   // terra bruciata: distinto da brand/fitness/procura/assicurazioni
+const WARN = '#8A6D00'
+const DANGER = '#E53F00'
+const OK = '#12A150'
 const BUCKET = 'tax-docs'
 
 const kicker: React.CSSProperties = {
@@ -130,7 +130,7 @@ export default function LegalTax() {
                     {i.due_date ? ` · entro il ${fmtDate(i.due_date)}` : ''}
                   </div>
                 </div>
-                <button className="btn btn-sm" style={{ background: WARN, color: '#111', fontWeight: 800, border: 'none' }}
+                <button className="btn btn-sm" style={{ background: 'var(--yellow)', color: 'var(--ink)', fontWeight: 800, border: 'none' }}
                   onClick={() => setRespond(i)}>
                   <Icon name="upload" size={13} /> Rispondi
                 </button>
@@ -235,7 +235,7 @@ export default function LegalTax() {
 
                       <div className="flex gap" style={{ marginTop: 13, flexWrap: 'wrap' }}>
                         {i.kind === 'pagamento' && i.status === 'aperto' && (
-                          <button className="btn btn-sm" style={{ background: OK, color: '#111', fontWeight: 800, border: 'none' }}
+                          <button className="btn btn-sm" style={{ background: OK, color: '#fff', fontWeight: 800, border: 'none' }}
                             onClick={() => marcaPagato(i)}>Segna pagato</button>
                         )}
                         {i.kind === 'richiesta' && i.status === 'aperto' && (

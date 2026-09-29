@@ -69,8 +69,8 @@ export default function LuogoAutocomplete({ value, onChange, placeholder }: {
       )}
       {open && items.length > 0 && (
         <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 40,
-          background: 'var(--card, #141419)', border: '1px solid var(--border)', borderRadius: 12,
-          boxShadow: '0 12px 34px rgba(0,0,0,.45)', overflow: 'hidden', maxHeight: 260, overflowY: 'auto' }}>
+          background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12,
+          boxShadow: '0 12px 34px rgba(10,10,10,.14)', overflow: 'hidden', maxHeight: 260, overflowY: 'auto' }}>
           {items.map((s, i) => (
             <button key={i} type="button" onClick={() => pick(s)}
               className="flex gap"

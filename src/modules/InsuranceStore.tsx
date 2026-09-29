@@ -6,7 +6,7 @@ import { toast } from '../lib/toast'
 import { Modal, Field, Input, Textarea, Select, Badge, Empty, Spinner, ConfirmButton } from '../components/ui'
 import Icon from '../components/Icon'
 
-const ACCENT = '#2E9BD6'
+const ACCENT = '#1F6FEB'
 const BUCKET = 'crm-documents'
 
 const TYPES: { k: string; l: string }[] = [

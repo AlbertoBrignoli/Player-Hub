@@ -9,7 +9,7 @@ import Icon from '../components/Icon'
 import { fmtDate, initials } from '../lib/format'
 
 const BUCKET = 'crm-documents'
-const ACCENT = '#2E9BD6'
+const ACCENT = '#1F6FEB'
 
 type Folder = { id: string; name: string; parent_id: string | null }
 type Doc = { id: string; name: string; file_path: string | null; mime: string | null; size: number | null; created_at: string; folder_id: string | null }

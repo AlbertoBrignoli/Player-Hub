@@ -10,9 +10,9 @@ import { useLang } from '../lib/i18n'
 // Tutto guidato dai dati del servizio: nessun contenuto scritto a mano.
 
 const T = {
-  bg: '#0b0b0e', card: '#141419', cardDark: '#101015',
-  border: '#26262e', text: '#f2f2f5', dim: '#c9c9d4', muted: '#8a8a96', faint: '#6e6e7a',
-  green: '#4ade80',
+  bg: 'var(--bg)', card: 'var(--surface)', cardDark: 'var(--bg-2)',
+  border: 'var(--border)', text: 'var(--text)', dim: 'var(--text-dim)', muted: 'var(--text-faint)', faint: 'var(--text-faint)',
+  green: '#12A150', // = var(--green); hex perché usato con suffisso alpha
 }
 const kicker: React.CSSProperties = {
   fontSize: 11, letterSpacing: 1.8, textTransform: 'uppercase', fontWeight: 800,
@@ -61,7 +61,7 @@ export type Service = {
 
 // colore accent: esplicito, oppure derivato dalla tinta (oklch) come nel prototipo
 function accentOf(s: Service) {
-  return s.accent_color || `oklch(0.85 0.13 ${s.hue ?? 250})`
+  return s.accent_color || `oklch(0.5 0.15 ${s.hue ?? 250})`
 }
 function tileBg(s: Service) { return `oklch(0.3 0.07 ${s.hue ?? 250})` }
 function initials(s: string) {
@@ -144,7 +144,7 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
             <div key={i} className="flex gap" style={{ gap: 12, alignItems: 'flex-start' }}>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <span style={{ width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
-                  background: r.done ? T.green : 'transparent', color: r.done ? '#0b0b0e' : T.muted,
+                  background: r.done ? T.green : 'transparent', color: r.done ? '#fff' : T.muted,
                   border: `1.5px solid ${r.done ? T.green : T.border}`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 900 }}>
                   {r.done ? '✓' : i + 1}</span>
@@ -174,7 +174,7 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
 
         <button onClick={onSent}
           style={{ padding: '13px 18px', borderRadius: 999, border: 'none', cursor: 'pointer',
-            background: T.text, color: '#0b0b0e', fontWeight: 800, fontSize: 14 }}>
+            background: T.text, color: '#fff', fontWeight: 800, fontSize: 14 }}>
           Torna allo store
         </button>
       </div>
@@ -260,7 +260,7 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
 
         <button onClick={next} disabled={busy}
           style={{ padding: '14px 18px', borderRadius: 999, border: 'none', cursor: 'pointer',
-            background: T.text, color: '#0b0b0e', fontWeight: 800, fontSize: 14 }}>
+            background: T.text, color: '#fff', fontWeight: 800, fontSize: 14 }}>
           {busy ? t('Invio…') : last ? t('Invia richiesta') : t('Continua')}
         </button>
         <div style={{ fontSize: 11.5, color: T.muted, textAlign: 'center' }}>
@@ -285,7 +285,7 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
 
       {/* hero */}
       <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 20,
-        minHeight: service.cover_url ? 300 : 190, background: service.cover_url ? T.cardDark : tileBg(service),
+        minHeight: service.cover_url ? 300 : 190, background: service.cover_url ? 'var(--card-dark)' : tileBg(service),
         padding: 22, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', color: '#fff' }}>
         {service.cover_url && (
           <>
@@ -296,7 +296,7 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
           </>
         )}
         <div style={{ position: 'relative' }}>
-          <div style={{ ...kicker, fontSize: 10, opacity: .85, color: accent }}>
+          <div style={{ ...kicker, fontSize: 10, opacity: .85, color: 'var(--yellow)' }}>
             {t('Servizio AUVI')} · {service.verified ? t('Partner verificato') : t('Su richiesta')}
           </div>
           {service.logo_url ? (
@@ -324,7 +324,7 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
             </div>
           )}
           {service.hero_claim && (
-            <div style={{ ...kicker, fontSize: 10.5, marginTop: 6, color: accent }}>{L('hero_claim')}</div>
+            <div style={{ ...kicker, fontSize: 10.5, marginTop: 6, color: 'var(--yellow)' }}>{L('hero_claim')}</div>
           )}
         </div>
       </div>
@@ -426,7 +426,7 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
           background: `linear-gradient(180deg, transparent, ${T.bg} 40%)` }}>
           <button onClick={() => { setStep(0); setMode('form') }}
             style={{ width: '100%', padding: '15px 18px', borderRadius: 999, border: 'none', cursor: 'pointer',
-              background: T.text, color: '#0b0b0e', fontWeight: 800, fontSize: 15 }}>
+              background: T.text, color: '#fff', fontWeight: 800, fontSize: 15 }}>
             {t('Compila il questionario')}
           </button>
           <div style={{ fontSize: 11.5, color: T.muted, textAlign: 'center', marginTop: 8 }}>
@@ -445,8 +445,8 @@ function Chip({ on, accent, onClick, children, min }: {
     <button onClick={onClick}
       style={{ padding: '9px 14px', borderRadius: 999, cursor: 'pointer', fontSize: 13, fontWeight: 700,
         minWidth: min, justifyContent: 'center', display: 'inline-flex', alignItems: 'center',
-        border: `1px solid ${on ? accent : '#2e2e3a'}`,
-        background: on ? accent : 'transparent', color: on ? '#0b0b0e' : '#c9c9d4' }}>
+        border: `1px solid ${on ? accent : 'var(--border-2)'}`,
+        background: on ? 'var(--ink)' : 'transparent', color: on ? '#fff' : 'var(--text-dim)' }}>
       {children}
     </button>
   )
