@@ -17,7 +17,7 @@ import type { MediaItem, EditorialEntry } from '../lib/types'
 const BUCKET = 'crm-media'
 const NO_FOLDER = '__none__'
 type Tab = 'approvare' | 'approvate' | 'pubblicare' | 'pubblicati' | 'cartelle'
-const TAB_KEYS: Tab[] = ['approvare', 'approvate', 'pubblicare', 'pubblicati', 'cartelle']
+const TAB_KEYS: Tab[] = ['cartelle', 'approvare', 'approvate', 'pubblicare', 'pubblicati']
 const asTab = (v: string | null): Tab | null => (TAB_KEYS as string[]).includes(v || '') ? v as Tab : null
 
 export default function Media() {
@@ -97,7 +97,8 @@ export default function Media() {
 
   // Scheda di partenza: il giocatore approva; il team parte da dove c'è lavoro
   // (foto approvate che aspettano la grafica), altrimenti da "Da approvare".
-  const defaultTab: Tab = role === 'player' ? 'approvare' : approvate.length ? 'approvate' : 'approvare'
+  // Media si apre sempre sulle Cartelle; le altre schede si raggiungono con un tocco o da link diretti
+  const defaultTab: Tab = 'cartelle'
   const tab: Tab = tabState ?? defaultTab
   const view: 'flusso' | 'cartelle' = tab === 'cartelle' ? 'cartelle' : 'flusso'
   useEffect(() => {
@@ -395,11 +396,11 @@ export default function Media() {
       {/* Una riga: schede a sinistra, caricamento a destra */}
       <div className="flex between wrap gap" style={{ alignItems: 'center' }}>
         <Tabs<Tab> value={tab} onChange={changeTab} tabs={[
+          { key: 'cartelle', label: t('Cartelle'), badge: folders.length },
           { key: 'approvare', label: t('Da approvare'), badge: daApprovare.length },
           { key: 'approvate', label: t('Approvate'), badge: approvate.length },
           { key: 'pubblicare', label: t('Da pubblicare'), badge: daPubblicare.length },
           { key: 'pubblicati', label: t('Pubblicati'), badge: pubblicati.length },
-          { key: 'cartelle', label: t('Cartelle'), badge: folders.length },
         ]} />
         <div className="flex gap wrap" style={{ alignItems: 'center' }}>
           {!openFolder && (

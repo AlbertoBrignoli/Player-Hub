@@ -272,8 +272,8 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
   const qas: QA[] = []
   // Foto per prima: sostituisce la vecchia card "Foto da approvare" (stesso posto, meno spazio)
   qas.push(isTeam
-    ? { key: 'media', label: t('Foto'), icon: 'image', run: () => goto(toApprove.length ? 'media?tab=approvare' : 'media?tab=approvate'), badge: toApprove.length }
-    : { key: 'media', label: t('Foto'), icon: 'image', run: () => goto('media?tab=approvare'), badge: toApprove.length })
+    ? { key: 'media', label: t('Foto'), icon: 'image', run: () => goto('media?tab=cartelle'), badge: toApprove.length }
+    : { key: 'media', label: t('Foto'), icon: 'image', run: () => goto('media?tab=cartelle'), badge: toApprove.length })
   if (canEvent) qas.push({ key: 'event', label: t('Impegno'), icon: 'calendar', run: () => setAdding('event') })
   if (canTask) qas.push({ key: 'task', label: t('Task'), icon: 'check-square', run: () => setAdding('task') })
   qas.push({ key: 'chat', label: t('Chat'), icon: 'message', run: () => goto('messages') })
