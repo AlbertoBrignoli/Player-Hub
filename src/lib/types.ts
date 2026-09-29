@@ -422,6 +422,14 @@ export interface FitnessExercise {
   mistakes?: string | null
   priority?: string | null
   order_index?: number
+  /** esercizio della libreria da cui nasce (null = esercizio libero) */
+  library_id?: string | null
+  duration?: string | null
+  distance?: string | null
+  load_unit?: string | null
+  rpe?: number | null
+  rir?: number | null
+  tempo?: string | null
 }
 
 export interface FitnessFeedback {
@@ -439,13 +447,40 @@ export interface FitnessFeedback {
 
 export interface FitnessLibraryItem {
   id: string
+  slug?: string | null
   name: string
+  name_it?: string | null
   category?: string | null
+  subcategory?: string | null
   muscle_group?: string | null
   equipment?: string | null
   difficulty?: string | null
   image_url?: string | null
+  image_3d_url?: string | null
+  video_url?: string | null
+  gif_url?: string | null
   description?: string | null
+  instructions?: string[] | null
+  coaching_cues?: string[] | null
+  common_mistakes?: string[] | null
+  primary_muscles?: string[] | null
+  secondary_muscles?: string[] | null
+  equipment_tags?: string[] | null
+  movement_pattern?: string | null
+  laterality?: string | null
+  source?: string | null
+  source_license?: string | null
+  is_custom?: boolean
+  created_by?: string | null
+  curated?: boolean
+  archived?: boolean
+  football_relevance?: number | null
+  performance_goals?: string[] | null
+  position_relevance?: string[] | null
+  injury_prevention?: string[] | null
+  energy_system?: string | null
+  phase?: string[] | null
+  updated_at?: string
 }
 
 export interface CoachProfile {

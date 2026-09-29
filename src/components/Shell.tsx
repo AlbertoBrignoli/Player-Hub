@@ -13,7 +13,7 @@ import { Modal, Field, Input, Tabs, Empty } from './ui'
 // Schermate home dei vari ruoli: qui compare l'invito ad attivare le notifiche.
 const HOME_ROUTES = ['dashboard', 'brandhome', 'agent-home', 'insurer-home', 'tax-home', 'physio-home']
 
-export const APP_VERSION = 'v6.0'
+export const APP_VERSION = 'v6.1'
 
 export interface NavDef {
   key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[]
@@ -111,7 +111,9 @@ export const PRO_ROLES: Record<ProRole, { home: string; profile: string; area: N
     home: 'dashboard', profile: 'coach-profile',
     area: [
       { key: 'fitness', label: 'Preparazione', icon: 'dumbbell', tabs: [
-        { key: 'fitness', label: 'Area Fitness' },
+        { key: 'fitness', label: 'Programmi' },
+        { key: 'training-builder', label: 'Crea scheda' },
+        { key: 'exercise-library', label: 'Libreria esercizi' },
         { key: 'performance', label: 'Performance' },
       ]},
       { key: 'coach-office', label: 'Clienti e cassa', icon: 'inbox' },
@@ -189,6 +191,8 @@ const TITLES: Record<string, { t: string; s: string }> = {
   legaltax: { t: 'Legal & Tax', s: 'Pagamenti, documenti e richieste' },
   services: { t: 'Servizi AUVI', s: 'Servizi e partner a tua disposizione' },
   'my-team': { t: 'Il mio team', s: 'Il tuo team di lavoro' },
+  'training-builder': { t: 'Crea scheda', s: 'Modelli di allenamento da assegnare ai tuoi atleti' },
+  'exercise-library': { t: 'Libreria esercizi', s: 'Cerca, filtra e crea esercizi per le sessioni' },
   'my-athletes': { t: 'I miei atleti', s: 'Collegamenti, inviti e accesso rapido a ogni atleta' },
   archivio: { t: 'Contratti e Documenti', s: 'Accordi, scadenze e archivio file riservato' },
   'tax-home': { t: 'Home', s: 'La tua scheda e gli atleti seguiti' },
@@ -252,7 +256,7 @@ export default function Shell({ route, setRoute, right, children }: {
   const isPro = isCoach || isAgent || isInsurer || isTax || isPhysio
   const nav = isBrand ? BRAND_NAV : isPro ? proNav(role as ProRole) : NAV
   // professionista senza atleti: le aree di lavoro non hanno dati da mostrare (evita caricamenti infiniti)
-  const proFree = isPro ? [PRO_ROLES[role as ProRole].home, PRO_ROLES[role as ProRole].profile, 'my-athletes', 'settings', 'access-requests', 'coach-office'] : []
+  const proFree = isPro ? [PRO_ROLES[role as ProRole].home, PRO_ROLES[role as ProRole].profile, 'my-athletes', 'settings', 'access-requests', 'coach-office', 'exercise-library', 'training-builder'] : []
   const needsAthlete = isPro && !athletesLoading && athletes.length === 0 && !proFree.includes(route)
 
   // Sezioni con schede: una voce di menu raggruppa più schermate (es. Calendario =

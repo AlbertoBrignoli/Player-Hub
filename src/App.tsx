@@ -40,6 +40,8 @@ import Archivio from './modules/Archivio'
 import TalentSearch from './modules/TalentSearch'
 import MyAthletes from './modules/MyAthletes'
 import ProHome from './modules/ProHome'
+import ExerciseLibrary from './modules/fitness/ExerciseLibrary'
+import TrainingBuilder from './modules/fitness/TrainingBuilder'
 
 export default function App() {
   const { session, profile, loading } = useAuth()
@@ -55,7 +57,7 @@ export default function App() {
   const isBrand = profile.role === 'brand'
   const brandAllowed = ['settings', 'brandhome', 'mediakit', 'campaigns', 'brandcard', 'talent', 'messages']
   // Il preparatore vede solo fitness, performance dell'atleta e chat.
-  const coachAllowed = ['my-athletes', 'settings', 'dashboard', 'fitness', 'coach-profile', 'coach-office', 'performance', 'agenda', 'messages', 'access-requests', 'my-team']
+  const coachAllowed = ['training-builder', 'exercise-library', 'my-athletes', 'settings', 'dashboard', 'fitness', 'coach-profile', 'coach-office', 'performance', 'agenda', 'messages', 'access-requests', 'my-team']
   const isCoach = profile.role === 'preparatore'
   // L'agente vede solo le competenze del procuratore.
   const agentAllowed = ['my-athletes', 'settings', 'agent-home', 'dashboard', 'performance', 'profile', 'editorial', 'media',
@@ -102,6 +104,8 @@ export default function App() {
       case 'services': return <Services />
       case 'my-team': return <MyTeam goto={setRoute} />
       case 'my-athletes': return <MyAthletes />
+      case 'exercise-library': return <ExerciseLibrary mode="browse" />
+      case 'training-builder': return <TrainingBuilder goto={setRoute} />
       case 'archivio': return <Archivio />
       case 'tax-home': return <ProHome goto={setRoute} />
       case 'tax-profile': return <TaxAdvisorProfile />
