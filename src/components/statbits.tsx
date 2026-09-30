@@ -23,27 +23,40 @@ export function SPct({ k, pct, n, d }: { k: string; pct: number | null; n?: numb
   )
 }
 
-// Griglia completa delle statistiche di una singola partita.
-export function LastMatchGrid({ m }: { m: StatsMatch }) {
+// Griglia statistiche di una singola partita: legge dal record `matches`
+// (tutti i dati che API-Football fornisce). Si adatta al ruolo portiere.
+export function LastMatchGrid({ m }: { m: any }) {
+  const isGK = String(m.position || '').toUpperCase().startsWith('G') || m.saves != null
+  const wpct = (n: any, d: any) => (d ? Math.round(Number(n) * 100 / Number(d)) : null)
+  const has = (v: any) => v !== null && v !== undefined
   return (
     <div className="grid g4" style={{ gap: 10 }}>
       <SFact k="Voto" v={m.rating != null ? Number(m.rating).toFixed(1) : '—'} />
       <SFact k="Minuti" v={`${m.minutes ?? '—'}′`} />
-      <SFact k="Gol / Assist" v={`${m.goal ?? 0} / ${m.assist ?? 0}`} />
-      <SFact k="xG" v={m.xg != null ? Number(m.xg).toFixed(2) : '—'} />
-      <SFact k="Gialli / Rossi" v={`${m.cartellini_gialli ?? 0} / ${m.cartellini_rossi ?? 0}`} />
-      <SPct k="Precisione passaggi" pct={m.pass_pct} n={m.passaggi_accurati} d={m.passaggi} />
-      <SPct k="Passaggi in avanti" pct={m.passaggi_avanti_pct} n={m.passaggi_avanti_accurati} d={m.passaggi_avanti} />
-      <SPct k="Lanci lunghi" pct={m.lanci_lunghi_pct} n={m.lanci_lunghi_accurati} d={m.lanci_lunghi} />
-      <SPct k="Azioni riuscite" pct={m.azioni_pct} n={m.azioni_riuscite} d={m.azioni_totali} />
-      <SPct k="Duelli vinti" pct={m.duelli_pct} n={m.duelli_vinti} d={m.duelli} />
-      <SPct k="Duelli aerei" pct={m.duelli_aerei_pct} n={m.duelli_aerei_vinti} d={m.duelli_aerei} />
-      <SPct k="Duelli difensivi" pct={m.duelli_dif_pct} n={m.duelli_dif_vinti} d={m.duelli_difensivi} />
-      <SFact k="Intercetti · Spazzate" v={`${m.intercetti ?? 0} · ${m.spazzate ?? 0}`} />
-      <SFact k="Palle recuperate" v={m.palle_recuperate ?? '—'} />
-      <SFact k="Palle perse" v={m.palle_perse ?? '—'} />
-      <SFact k="Falli" v={m.falli ?? 0} />
-      <SFact k="Tiri (in porta)" v={`${m.tiri ?? 0} (${m.tiri_porta ?? 0})`} />
+      {isGK ? (
+        <>
+          <SFact k="Parate" v={m.saves ?? '—'} />
+          <SFact k="Gol subiti" v={has(m.goals_conceded) ? m.goals_conceded : '—'} />
+        </>
+      ) : (
+        <>
+          <SFact k="Gol / Assist" v={`${m.goals ?? 0} / ${m.assists ?? 0}`} />
+          <SFact k="Tiri (in porta)" v={has(m.shots_total) ? `${m.shots_total} (${m.shots_on ?? 0})` : '—'} />
+        </>
+      )}
+      <SFact k="Gialli / Rossi" v={`${m.yellow_cards ?? 0} / ${m.red_cards ?? 0}`} />
+      <SPct k="Precisione passaggi" pct={m.passes_accuracy} />
+      <SFact k="Passaggi" v={m.passes_total ?? '—'} />
+      <SFact k="Passaggi chiave" v={has(m.passes_key) ? m.passes_key : '—'} />
+      {!isGK && <SPct k="Dribbling riusciti" pct={wpct(m.dribbles_success, m.dribbles_attempts)} n={m.dribbles_success} d={m.dribbles_attempts} />}
+      <SPct k="Duelli vinti" pct={wpct(m.duels_won, m.duels_total)} n={m.duels_won} d={m.duels_total} />
+      <SFact k="Contrasti" v={has(m.tackles) ? m.tackles : '—'} />
+      <SFact k="Intercetti" v={has(m.interceptions) ? m.interceptions : '—'} />
+      <SFact k="Falli (subiti / fatti)" v={`${m.fouls_drawn ?? 0} / ${m.fouls_committed ?? 0}`} />
+      <SFact k="Fuorigioco" v={has(m.offsides) ? m.offsides : '—'} />
+      {(m.penalty_scored || m.penalty_missed || m.penalty_saved || m.penalty_won || m.penalty_committed) ? (
+        <SFact k={isGK ? 'Rigori parati' : 'Rigori (seg/sbagl)'} v={isGK ? (m.penalty_saved ?? 0) : `${m.penalty_scored ?? 0} / ${m.penalty_missed ?? 0}`} />
+      ) : null}
     </div>
   )
 }

@@ -43,6 +43,12 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
     })()
   }, [athleteId])
 
+  // Ultima partita GIOCATA (dal record matches, che ha tutto il dettaglio API).
+  const lastMatch = useMemo(
+    () => (matches || []).find(x => x.status === 'FT' && x.minutes != null) || null,
+    [matches],
+  )
+
   const seasons = useMemo(() => {
     const s = new Set<string>([
       ...tech.map(t => seasonOf(t.match_date)),
@@ -131,14 +137,14 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
         ) : <div className="faint" style={{ padding: '8px 0' }}>Nessuna partita in programma al momento.</div>}
       </div>
 
-      {/* Ultima partita: tutte le stats */}
-      {lastTech && (
+      {/* Ultima partita: tutte le stats (dal record matches, dettaglio completo API) */}
+      {lastMatch && (
         <div className="card">
           <div className="card-head">
-            <div className="card-title">Ultima partita · {lastTech.match_name}</div>
-            <div className="card-hint">{fmtDate(lastTech.match_date)} · {lastTech.competition}</div>
+            <div className="card-title">Ultima partita · {lastMatch.home_team} - {lastMatch.away_team}</div>
+            <div className="card-hint">{fmtDate(lastMatch.match_date)} · {lastMatch.league}</div>
           </div>
-          <LastMatchGrid m={lastTech} />
+          <LastMatchGrid m={lastMatch} />
         </div>
       )}
 
