@@ -24,41 +24,57 @@ export function SPct({ k, pct, n, d }: { k: string; pct: number | null; n?: numb
 }
 
 // Griglia statistiche di una singola partita: legge dal record `matches`
-// (tutti i dati che API-Football fornisce). Si adatta al ruolo portiere.
+// (tutti i dati che API-Football fornisce) e mostra SOLO le voci pertinenti al
+// RUOLO del giocatore: Portiere, Difensore, Centrocampista, Attaccante.
 export function LastMatchGrid({ m }: { m: any }) {
-  const isGK = String(m.position || '').toUpperCase().startsWith('G') || m.saves != null
+  const role = String(m.position || '').toUpperCase().charAt(0) // G / D / M / F
+  const isGK = role === 'G' || (role === '' && Number(m.saves) > 0)
   const wpct = (n: any, d: any) => (d ? Math.round(Number(n) * 100 / Number(d)) : null)
   const has = (v: any) => v !== null && v !== undefined
-  return (
-    <div className="grid g4" style={{ gap: 10 }}>
-      <SFact k="Voto" v={m.rating != null ? Number(m.rating).toFixed(1) : '—'} />
-      <SFact k="Minuti" v={`${m.minutes ?? '—'}′`} />
-      {isGK ? (
-        <>
-          <SFact k="Parate" v={m.saves ?? '—'} />
-          <SFact k="Gol subiti" v={has(m.goals_conceded) ? m.goals_conceded : '—'} />
-        </>
-      ) : (
-        <>
-          <SFact k="Gol / Assist" v={`${m.goals ?? 0} / ${m.assists ?? 0}`} />
-          <SFact k="Tiri (in porta)" v={has(m.shots_total) ? `${m.shots_total} (${m.shots_on ?? 0})` : '—'} />
-        </>
-      )}
-      <SFact k="Gialli / Rossi" v={`${m.yellow_cards ?? 0} / ${m.red_cards ?? 0}`} />
-      <SPct k="Precisione passaggi" pct={m.passes_accuracy} />
-      <SFact k="Passaggi" v={m.passes_total ?? '—'} />
-      <SFact k="Passaggi chiave" v={has(m.passes_key) ? m.passes_key : '—'} />
-      {!isGK && <SPct k="Dribbling riusciti" pct={wpct(m.dribbles_success, m.dribbles_attempts)} n={m.dribbles_success} d={m.dribbles_attempts} />}
-      <SPct k="Duelli vinti" pct={wpct(m.duels_won, m.duels_total)} n={m.duels_won} d={m.duels_total} />
-      <SFact k="Contrasti" v={has(m.tackles) ? m.tackles : '—'} />
-      <SFact k="Intercetti" v={has(m.interceptions) ? m.interceptions : '—'} />
-      <SFact k="Falli (subiti / fatti)" v={`${m.fouls_drawn ?? 0} / ${m.fouls_committed ?? 0}`} />
-      <SFact k="Fuorigioco" v={has(m.offsides) ? m.offsides : '—'} />
-      {(m.penalty_scored || m.penalty_missed || m.penalty_saved || m.penalty_won || m.penalty_committed) ? (
-        <SFact k={isGK ? 'Rigori parati' : 'Rigori (seg/sbagl)'} v={isGK ? (m.penalty_saved ?? 0) : `${m.penalty_scored ?? 0} / ${m.penalty_missed ?? 0}`} />
-      ) : null}
-    </div>
-  )
+  const bits: any[] = []
+  const F = (k: string, v: any) => bits.push(<SFact key={k} k={k} v={v} />)
+  const P = (k: string, pct: any, n?: any, d?: any) => bits.push(<SPct key={k} k={k} pct={pct} n={n} d={d} />)
+  const shots = () => F('Tiri (in porta)', has(m.shots_total) ? `${m.shots_total} (${m.shots_on ?? 0})` : '—')
+  const dribbling = () => P('Dribbling riusciti', wpct(m.dribbles_success, m.dribbles_attempts), m.dribbles_success, m.dribbles_attempts)
+  const keyPass = () => F('Passaggi chiave', has(m.passes_key) ? m.passes_key : '—')
+  const duels = () => P('Duelli vinti', wpct(m.duels_won, m.duels_total), m.duels_won, m.duels_total)
+  const tackles = () => F('Contrasti', has(m.tackles) ? m.tackles : '—')
+  const interc = () => F('Intercetti', has(m.interceptions) ? m.interceptions : '—')
+
+  // Sempre in testa
+  F('Voto', m.rating != null ? Number(m.rating).toFixed(1) : '—')
+  F('Minuti', `${m.minutes ?? '—'}′`)
+
+  if (isGK) {
+    // PORTIERE
+    F('Parate', has(m.saves) ? m.saves : '—')
+    F('Gol subiti', has(m.goals_conceded) ? m.goals_conceded : '—')
+    if (m.penalty_saved) F('Rigori parati', m.penalty_saved)
+    duels()
+  } else {
+    // GIOCATORE DI MOVIMENTO — sempre gol/assist
+    F('Gol / Assist', `${m.goals ?? 0} / ${m.assists ?? 0}`)
+    if (role === 'F') {           // ATTACCANTE
+      shots(); dribbling(); keyPass(); duels()
+      F('Fuorigioco', has(m.offsides) ? m.offsides : '—')
+      if (m.penalty_scored || m.penalty_missed) F('Rigori (seg/sbagl)', `${m.penalty_scored ?? 0} / ${m.penalty_missed ?? 0}`)
+    } else if (role === 'M') {    // CENTROCAMPISTA
+      keyPass(); dribbling(); duels(); tackles(); interc(); shots()
+    } else if (role === 'D') {    // DIFENSORE
+      duels(); tackles(); interc()
+      F('Spazzate', has(m.blocks) ? m.blocks : '—')
+    } else {                      // ruolo non noto — set generale
+      shots(); duels(); tackles(); interc()
+    }
+  }
+
+  // Comuni finali
+  P('Precisione passaggi', m.passes_accuracy)
+  F('Passaggi', m.passes_total ?? '—')
+  F('Falli (subiti / fatti)', `${m.fouls_drawn ?? 0} / ${m.fouls_committed ?? 0}`)
+  F('Gialli / Rossi', `${m.yellow_cards ?? 0} / ${m.red_cards ?? 0}`)
+
+  return <div className="grid g4" style={{ gap: 10 }}>{bits}</div>
 }
 
 // Aggregato di una stagione: totali, percentuali sui totali, spacco per competizione.
