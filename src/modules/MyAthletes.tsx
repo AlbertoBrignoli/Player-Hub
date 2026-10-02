@@ -71,7 +71,7 @@ const STYLE = `
 .ma-count { font-size:34px; font-weight:900; line-height:1; letter-spacing:-.02em; color: var(--text); }
 .ma-kicker { font-size:11px; letter-spacing:1.6px; text-transform:uppercase; font-weight:800; color: var(--text-dim); }
 .ma-actions { display:flex; gap:8px; flex-wrap:wrap; }
-.ma-roster { display:grid; gap:10px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.ma-roster { display:grid; gap:10px; grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr)); }
 .ma-card { display:flex; align-items:center; gap:12px; background: var(--surface); border:1px solid var(--border);
   border-radius: var(--radius-sm); padding:12px 14px; }
 .ma-av { width:44px; height:44px; border-radius:50%; flex-shrink:0; object-fit:cover; background: var(--bg-2); }

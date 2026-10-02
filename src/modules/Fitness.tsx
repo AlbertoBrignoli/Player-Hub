@@ -13,7 +13,7 @@ import type { FitnessProgram, FitnessExercise, FitnessFeedback, FitnessLibraryIt
 
 const ACCENT = '#3F7F00' // verde fitness (scurito per il tema chiaro)
 const label: React.CSSProperties = { fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: 'var(--text-dim)', fontWeight: 700, margin: '18px 0 10px' }
-const grid = (min = 150): React.CSSProperties => ({ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(${min}px, 1fr))`, gap: 12 })
+const grid = (min = 150): React.CSSProperties => ({ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(min(${min}px, 100%), 1fr))`, gap: 12 })
 const todayKey = () => new Date().toISOString().slice(0, 10)
 
 export default function Fitness({ goto }: { goto?: (r: string) => void }) {
@@ -371,7 +371,7 @@ function ProgramEditor({ program, athleteId, athleteName, trainerId, onClose, on
       }
     >
       {loading ? <Spinner /> : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20, alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))', gap: 20, alignItems: 'start' }}>
           <div>
           {/* Dati programma */}
           <div style={grid(200)}>

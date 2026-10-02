@@ -713,7 +713,7 @@ const EXL_CSS = `
 .exl-more { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 18px 0 8px; font-size: 12.5px; }
 .exl-thumb { width: 100%; height: 100%; object-fit: cover; display: block; }
 .exl-ph.exl-thumb svg { width: 20px; height: 20px; }
-.exl-fgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0 12px; }
+.exl-fgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 0 12px; }
 @media (min-width: 881px) { .modal:has(.exl-pickwrap) { max-width: 1040px !important; } }
 
 .exl-detail { display: flex; flex-direction: column; gap: 14px; }
@@ -724,7 +724,7 @@ const EXL_CSS = `
 .exl-d-en { font-size: 12.5px; margin-top: 3px; }
 .exl-d-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .exl-d-diff { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--text-dim); }
-.exl-d-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; padding: 14px; background: var(--surface-2); border-radius: var(--radius-sm); }
+.exl-d-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(170px, 100%), 1fr)); gap: 12px; padding: 14px; background: var(--surface-2); border-radius: var(--radius-sm); }
 .exl-k { font-size: 10.5px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-faint); }
 .exl-v { font-size: 13px; margin-top: 2px; }
 .exl-bars { display: flex; align-items: flex-end; gap: 3px; margin-top: 5px; font-size: 12px; }

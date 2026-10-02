@@ -740,7 +740,7 @@ const PRO_CSS = `
 @media (prefers-reduced-motion: reduce) { .pro-ring-g circle + circle { transition: none; } }
 
 @media (min-width: 881px) {
-  .pro-aths { margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); overflow: visible; }
+  .pro-aths { margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(150px, 100%), 1fr)); overflow: visible; }
   .pro-ath { flex: none; width: 100%; }
 }
 @media (max-width: 880px) {

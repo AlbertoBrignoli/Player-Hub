@@ -9,7 +9,7 @@ import type { Player, ShippingInfo, EquipmentInfo, ClubContacts } from '../lib/t
 
 type Tab = 'spedizioni' | 'equipment' | 'contatti'
 
-const grid: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }
+const grid: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(220px, 100%), 1fr))', gap: 14 }
 const section: React.CSSProperties = { fontSize: 11, letterSpacing: 1.4, textTransform: 'uppercase', color: 'var(--text-dim)', margin: '20px 0 12px', fontWeight: 700 }
 
 export default function Profile() {

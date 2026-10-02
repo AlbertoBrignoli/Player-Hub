@@ -72,7 +72,7 @@ export default function FitnessCoachProfile({ goto }: { goto?: (r: string) => vo
             <button className="btn btn-primary" onClick={save} disabled={busy}>{busy ? 'Salvo…' : 'Salva'}</button>
           </div>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(220px, 100%), 1fr))', gap: 12 }}>
           <Field label="Nome"><Input value={p.name || ''} onChange={e => set('name', e.target.value)} /></Field>
           <Field label="Ruolo / Club attuale"><Input value={p.headline || ''} onChange={e => set('headline', e.target.value)} placeholder="Preparatore Atletico · AEK Athens" /></Field>
           <Field label="Esperienza"><Input value={p.experience || ''} onChange={e => set('experience', e.target.value)} placeholder="10+ anni" /></Field>
@@ -96,7 +96,7 @@ export default function FitnessCoachProfile({ goto }: { goto?: (r: string) => vo
         <div style={label}>Disponibilità</div>
         <Field label="Note disponibilità"><Textarea rows={2} value={p.availability || ''} onChange={e => set('availability', e.target.value)} placeholder="Es. Lun-Ven 9-18, allenamenti online su appuntamento" /></Field>
         <div style={label}>Contatti</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(200px, 100%), 1fr))', gap: 12 }}>
           <Field label="Email"><Input value={p.contacts?.email || ''} onChange={e => setC('email', e.target.value)} /></Field>
           <Field label="Telefono"><Input value={p.contacts?.phone || ''} onChange={e => setC('phone', e.target.value)} /></Field>
           <Field label="WhatsApp"><Input value={p.contacts?.whatsapp || ''} onChange={e => setC('whatsapp', e.target.value)} placeholder="https://wa.me/…" /></Field>

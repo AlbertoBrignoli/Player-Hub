@@ -722,3 +722,29 @@ p { text-wrap: pretty; }
 .ref-prof-facts dt { color: var(--text-faint); }
 .ref-prof-facts dd { margin: 0; font-weight: 500; white-space: pre-line; }
 .ref-prof-bio { margin-top: 16px; font-size: 13.5px; line-height: 1.55; color: var(--text-dim); white-space: pre-line; }
+
+/* ============================================================
+   v6.4 — telefono: mai scorrimento orizzontale
+   Su iPhone i campi data/ora hanno una larghezza minima nativa che
+   allargava le finestre (es. "Aggiungi") oltre lo schermo.
+   ============================================================ */
+html, body { overflow-x: hidden; }
+@supports (overflow-x: clip) { html, body { overflow-x: clip; } }
+.main, .content, .modal, .modal-body { min-width: 0; max-width: 100%; }
+.modal { overflow-x: hidden; }
+.field, .row2 > *, .grid > * { min-width: 0; }
+.input, .textarea, .select { min-width: 0; max-width: 100%; }
+/* campi data/ora iOS: niente larghezza minima nativa, testo allineato come gli altri */
+input[type="date"], input[type="datetime-local"], input[type="time"], input[type="month"] {
+  -webkit-appearance: none; appearance: none; display: block; width: 100%; min-width: 0; text-align: left;
+}
+input[type="date"]::-webkit-date-and-time-value,
+input[type="datetime-local"]::-webkit-date-and-time-value,
+input[type="time"]::-webkit-date-and-time-value { text-align: left; }
+@media (max-width: 880px) {
+  /* campi affiancati → uno sotto l'altro: nessun modulo più largo dello schermo */
+  .row2 { grid-template-columns: minmax(0, 1fr); }
+  .modal-foot { flex-wrap: wrap; }
+  .modal-foot .btn { flex: 1 1 auto; min-width: 0; }
+  .input, .textarea, .select { font-size: 16px; } /* niente zoom automatico di iOS sui campi */
+}

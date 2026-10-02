@@ -668,7 +668,7 @@ const TB_CSS = `
 .tb-section { font-size: 13px; font-weight: 700; color: var(--text-dim); margin: 0 0 12px; }
 .tb-section span { color: var(--text-faint); font-weight: 600; margin-left: 4px; }
 
-.tb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+.tb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr)); gap: 14px; }
 .tb-tcard { padding: 0; display: flex; flex-direction: column; overflow: hidden; transition: border-color .15s, box-shadow .15s; }
 .tb-tcard:hover { border-color: var(--border-2); box-shadow: var(--shadow-sm); }
 .tb-tcard-main { text-align: left; padding: 18px 18px 12px; display: flex; flex-direction: column; gap: 6px; flex: 1; cursor: pointer; background: none; border: 0; color: inherit; font: inherit; }
@@ -688,7 +688,7 @@ const TB_CSS = `
 
 .tb-assign-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .tb-label-inline { font-size: 12.5px; font-weight: 700; color: var(--text-dim); }
-.tb-athletes { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; }
+.tb-athletes { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(190px, 100%), 1fr)); gap: 8px; }
 .tb-ath { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); cursor: pointer; text-align: left; color: inherit; font: inherit; min-height: var(--tap); }
 .tb-ath:hover { border-color: var(--border-2); }
 .tb-ath.on { border-color: var(--ink); background: var(--yellow-soft); }
@@ -704,7 +704,7 @@ const TB_CSS = `
 .tb-seg button.on { border-color: var(--ink); background: var(--yellow-soft); }
 .tb-seg button.on span { color: var(--text-dim); }
 
-.tb-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0 12px; }
+.tb-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 1fr)); gap: 0 12px; }
 
 /* costruttore */
 .tb-bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
@@ -713,13 +713,13 @@ const TB_CSS = `
 .tb-state { font-size: 12px; color: var(--text-faint); }
 .tb-state.dirty { color: var(--text-dim); font-weight: 600; }
 .tb-bar-actions { display: flex; gap: 6px; flex-wrap: wrap; }
-.tb-panes { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(400px, 1fr); gap: 22px; align-items: start; }
+.tb-panes { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(min(400px, 100%), 1fr); gap: 22px; align-items: start; }
 .tb-lib { position: sticky; top: 12px; max-height: calc(100dvh - 24px); overflow: auto; overscroll-behavior: contain; padding: 16px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
-.tb-lib .exl-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.tb-lib .exl-grid { grid-template-columns: repeat(auto-fill, minmax(min(150px, 100%), 1fr)); }
 .tb-pane-label { font-size: 12.5px; font-weight: 700; color: var(--text-dim); margin-bottom: 12px; }
 .tb-card { padding: 18px 18px 6px; }
 .tb-name-input { font-size: 16px; font-weight: 700; }
-.tb-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; margin: 16px 0 20px; }
+.tb-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(110px, 100%), 1fr)); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; margin: 16px 0 20px; }
 .tb-summary > div { background: var(--surface); padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; }
 .tb-summary b { font-family: var(--font-display); font-stretch: 125%; font-size: 22px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
 .tb-summary span { font-size: 12px; color: var(--text-faint); }
