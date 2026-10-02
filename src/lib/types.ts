@@ -197,6 +197,19 @@ export interface EventItem {
   assignee_role?: string | null
   request_status?: string | null
   resolved_at?: string | null
+  proposed_by_role?: string | null
+  change_note?: string | null
+  visibility?: 'team' | 'privato' | null
+}
+
+export interface EventComment {
+  id: string
+  event_id: string
+  author_id: string
+  author_role: string | null
+  kind: 'commento' | 'modifica'
+  body: string
+  created_at: string
 }
 
 export interface Task {

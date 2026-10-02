@@ -65,12 +65,26 @@ Deno.serve(async (req: Request) => {
         ok = new Set((brands || []).map((b: any) => b.owner_id).filter(Boolean))
       }
       targets = targets.filter((s: any) => ok.has(s.user_id))
-    } else if (roles.includes('preparatore')) {
-      const { data: assigned } = await supa.from('fitness_trainer_athletes')
-        .select('trainer_id').eq('player_id', record.player_id)
-      const ok = new Set((assigned || []).map((a: any) => a.trainer_id))
-      targets = targets.filter((s: any) => ok.has(s.user_id))
+    } else {
+      // professionisti: solo chi è collegato a QUELL'atleta (prima assicuratore,
+      // commercialista, fisioterapista e procuratore ricevevano le notifiche di tutti)
+      const PRO_LINKS: Record<string, [string, string]> = {
+        preparatore: ['fitness_trainer_athletes', 'trainer_id'],
+        agente: ['crm_agent_athletes', 'agent_id'],
+        assicuratore: ['crm_insurer_athletes', 'insurer_id'],
+        commercialista: ['crm_tax_athletes', 'advisor_id'],
+        fisioterapista: ['crm_physio_athletes', 'physio_id'],
+      }
+      const link = PRO_LINKS[roles[0]]
+      if (link) {
+        const { data: assigned } = await supa.from(link[0]).select(link[1]).eq('player_id', record.player_id)
+        const ok = new Set((assigned || []).map((a: any) => a[link[1]]))
+        targets = targets.filter((s: any) => ok.has(s.user_id))
+      }
     }
+  } else if (['preparatore', 'agente', 'assicuratore', 'commercialista', 'fisioterapista'].includes(roles[0])) {
+    // notifica per un professionista senza atleta: non si manda a tutti quelli del ruolo
+    targets = []
   }
 
   // Agente/procuratore: riceve le notifiche dei soli atleti che segue.

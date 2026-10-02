@@ -183,6 +183,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
   const [nextContentThumb, setNextContentThumb] = useState<string | null>(null)
   const [toApprove, setToApprove] = useState<MediaItem[]>([])
   const [accessPending, setAccessPending] = useState(0)
+  const [proposals, setProposals] = useState(0)
   const [adding, setAdding] = useState<'event' | 'task' | null>(null)
   const isPlayer = role === 'player'
 
@@ -191,7 +192,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
     (async () => {
       const todayKey = new Date().toISOString().slice(0, 10)
       const pid = athleteId
-      const [p, m, t, ev, ct, ed, ph, rq] = await Promise.all([
+      const [p, m, t, ev, ct, ed, ph, rq, pr] = await Promise.all([
         supabase.from('player').select('*').eq('api_player_id', pid).maybeSingle(),
         supabase.from('matches').select('*').eq('player_id', pid).order('match_date', { ascending: true }),
         supabase.from('player_stats_match').select('*').eq('player_id', pid).order('match_date', { ascending: false }).limit(1),
@@ -203,6 +204,11 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
         isPlayer
           ? supabase.from('crm_access_requests').select('id').eq('player_id', pid).eq('status', 'pending')
           : Promise.resolve({ data: [] as any[] }),
+        // proposte del team (preparatore, procuratore...) che aspettano la conferma dell'atleta
+        isPlayer
+          ? supabase.from('crm_events').select('id', { count: 'exact', head: true }).eq('player_id', pid)
+              .eq('request_status', 'da_confermare').in('proposed_by_role', ['agente', 'preparatore', 'assicuratore', 'commercialista', 'fisioterapista'])
+          : Promise.resolve({ count: 0 }),
       ])
       setPlayer(p.data as Player)
       setMatches((m.data as Match[]) || [])
@@ -225,6 +231,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
       setEvents((ev.data as EventItem[]) || [])
       setContracts((ct.data as Contract[]) || [])
       setAccessPending(((rq.data as any[]) || []).length)
+      setProposals((pr as { count: number | null }).count || 0)
       const content = ed.data as EditorialEntry | null
       setNextContent(content)
       const photos = (ph.data as MediaItem[]) || []
@@ -312,17 +319,27 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
 
   // ---- 3 da fare ora: solo ciò che non ha già un posto in Home ----
   // (foto → icona Foto delle azioni rapide; prossimo contenuto → tabellone partita)
-  const todo = accessPending > 0 ? (
+  const todo = accessPending > 0 || proposals > 0 ? (
     <section className="home-sec">
       <div className="home-todo">
-        <button className="ed-action prio" onClick={() => goto('access-requests')}>
+        {proposals > 0 && (
+          <button className="ed-action prio" onClick={() => goto('agenda')}>
+            <div className="ed-action-num">{proposals}</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="ed-action-t">{t('Proposte da confermare')}</div>
+              <div className="ed-action-s">{t('Impegni proposti dal tuo team: conferma, chiedi una modifica o rifiuta')}</div>
+            </div>
+            <Icon name="chevron-right" size={18} style={{ color: 'var(--text-faint)', flexShrink: 0 }} />
+          </button>
+        )}
+        {accessPending > 0 && <button className="ed-action prio" onClick={() => goto('access-requests')}>
           <div className="ed-action-num">{accessPending}</div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div className="ed-action-t">{t('Richieste di accesso')}</div>
             <div className="ed-action-s">{t('Professionisti che chiedono di entrare nella tua area')}</div>
           </div>
           <Icon name="chevron-right" size={18} style={{ color: 'var(--text-faint)', flexShrink: 0 }} />
-        </button>
+        </button>}
       </div>
     </section>
   ) : null
