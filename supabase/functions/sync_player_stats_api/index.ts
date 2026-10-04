@@ -1,5 +1,5 @@
 // sync_player_stats_api — statistiche per competizione, STAGIONE CORRENTE + PRECEDENTE.
-// Nessun body -> tutti i giocatori, stagioni [2025, 2024].
+// Nessun body -> tutti i giocatori, stagione corrente + precedente (calcolate dalla data).
 // Body {"player_id":123,"season":2024} -> solo quel giocatore/stagione.
 // Accesso: header x-sync-secret (cron), service key (onboard_player) o admin loggato.
 
@@ -12,7 +12,10 @@ const supabase = createClient(
 );
 
 const API_KEY = Deno.env.get("API_FOOTBALL_KEY")!;
-const SEASONS = [2025, 2024]; // corrente + precedente
+// stagione calcistica luglio-giugno: a ottobre 2026 la corrente e' 2026 (2026/27)
+const now = new Date();
+const CURRENT = now.getUTCMonth() >= 6 ? now.getUTCFullYear() : now.getUTCFullYear() - 1;
+const SEASONS = [CURRENT, CURRENT - 1]; // corrente + precedente
 
 async function authorized(req: Request): Promise<boolean> {
   const secret = req.headers.get("x-sync-secret");

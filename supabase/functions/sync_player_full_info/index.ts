@@ -1,7 +1,7 @@
 // sync_player_full_info — compila la tabella `player` da API-Football.
 // Nessun body            -> tutti i giocatori della tabella `player`.
 // Body {"player_id":128461,"team_id":500} -> solo quel giocatore.
-// Opzioni body: "season" (default 2025), "force" (true = sovrascrive anche i campi gia' pieni).
+// Opzioni body: "season" (default stagione corrente), "force" (true = sovrascrive anche i campi gia' pieni).
 // Default: riempie SOLO i campi vuoti (non tocca i dati inseriti a mano).
 // Accesso: header x-sync-secret (cron), service key (onboard_player) o admin loggato.
 
@@ -15,7 +15,8 @@ const supabase = createClient(
 
 const API_KEY = Deno.env.get("API_FOOTBALL_KEY")!;
 const API = "https://v3.football.api-sports.io";
-const DEFAULT_SEASON = 2025;
+const _now = new Date();
+const DEFAULT_SEASON = _now.getUTCMonth() >= 6 ? _now.getUTCFullYear() : _now.getUTCFullYear() - 1;
 
 async function authorized(req: Request): Promise<boolean> {
   const secret = req.headers.get("x-sync-secret");
