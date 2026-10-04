@@ -1,6 +1,9 @@
 // sync_player_stats_api — statistiche per competizione, STAGIONE CORRENTE + PRECEDENTE.
 // Nessun body -> tutti i giocatori, stagione corrente + precedente (calcolate dalla data).
 // Body {"player_id":123,"season":2024} -> solo quel giocatore/stagione.
+// Body {"career":true} -> TUTTE le stagioni disponibili + profilo, trasferimenti, trofei e
+//   infortuni (player_api_extra). Pesante: lo lancia il cron settimanale, non quello post-partita.
+// Ogni riga salva in `raw` l'oggetto statistiche completo di API-Football.
 // Accesso: header x-sync-secret (cron), service key (onboard_player) o admin loggato.
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
@@ -36,12 +39,18 @@ Deno.serve(async (req) => {
   try {
     if (!(await authorized(req))) return json({ ok: false, error: "unauthorized" }, 401);
 
-    const { players, seasons } = await resolveTargets(req);
+    const { players, seasons, career } = await resolveTargets(req);
     if (players.length === 0) return json({ ok: false, error: "No players to sync" }, 400);
 
     const results = [];
     for (const PLAYER_ID of players) {
-      for (const SEASON of seasons) {
+      let list = seasons;
+      if (career) {
+        const extra = await syncExtra(PLAYER_ID);
+        results.push({ player_id: PLAYER_ID, extra });
+        if (extra.seasons?.length) list = extra.seasons;
+      }
+      for (const SEASON of list) {
         const r = await syncOne(PLAYER_ID, SEASON);
         results.push({ player_id: PLAYER_ID, season: SEASON, ...r });
       }
@@ -57,9 +66,10 @@ async function resolveTargets(req: Request) {
   try { body = await req.json(); } catch (_) { /* no body */ }
 
   const seasons = body && body.season ? [Number(body.season)] : SEASONS;
+  const career = body?.career === true;
 
   if (body && body.player_id) {
-    return { players: [Number(body.player_id)], seasons };
+    return { players: [Number(body.player_id)], seasons, career };
   }
 
   const { data } = await supabase
@@ -67,7 +77,38 @@ async function resolveTargets(req: Request) {
     .select("api_player_id")
     .not("api_player_id", "is", null);
 
-  return { players: (data || []).map((p: any) => p.api_player_id), seasons };
+  return { players: (data || []).map((p: any) => p.api_player_id), seasons, career };
+}
+
+async function apiGet(path: string) {
+  const res = await fetch(`https://v3.football.api-sports.io${path}`, { headers: { "x-apisports-key": API_KEY } });
+  return (await res.json())?.response ?? [];
+}
+
+// profilo + stagioni disponibili + trasferimenti + trofei + infortuni
+async function syncExtra(PLAYER_ID: number) {
+  const [seasonsR, transfersR, trophiesR, sidelinedR] = await Promise.all([
+    apiGet(`/players/seasons?player=${PLAYER_ID}`),
+    apiGet(`/transfers?player=${PLAYER_ID}`),
+    apiGet(`/trophies?player=${PLAYER_ID}`),
+    apiGet(`/sidelined?player=${PLAYER_ID}`),
+  ]);
+  const seasons = (seasonsR as number[]).map(Number).filter(n => n > 1990 && n <= CURRENT).sort((a, b) => b - a);
+  const prof = (await apiGet(`/players?id=${PLAYER_ID}&season=${seasons[0] ?? CURRENT}`))[0]?.player ?? null;
+  const row = {
+    player_id: PLAYER_ID,
+    profile: prof,
+    seasons,
+    transfers: transfersR[0]?.transfers ?? [],
+    trophies: trophiesR,
+    sidelined: sidelinedR,
+    updated_at: new Date().toISOString(),
+  };
+  const { error } = await supabase.from("player_api_extra").upsert(row, { onConflict: "player_id" });
+  return {
+    seasons, error: error?.message,
+    transfers: row.transfers.length, trophies: trophiesR.length, sidelined: sidelinedR.length,
+  };
 }
 
 async function syncOne(PLAYER_ID: number, SEASON: number) {
@@ -105,12 +146,13 @@ async function syncOne(PLAYER_ID: number, SEASON: number) {
       rating: games.rating ? parseFloat(games.rating) : null,
       yellow_cards: cards.yellow || 0,
       red_cards: cards.red || 0,
+      raw: stat,
       updated_at: new Date().toISOString(),
     };
 
     const { error } = await supabase
       .from("player_stats_api")
-      .upsert(payload, { onConflict: "player_id,season,competition" });
+      .upsert(payload, { onConflict: "player_id,season,competition,team_id" });
 
     if (error) { console.error("Upsert error:", error); continue; }
     updated++;

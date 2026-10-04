@@ -1,7 +1,7 @@
 // sync_player_stats_game — cattura TUTTE le statistiche per-partita che API-Football
 // fornisce. Smart-merge: non sovrascrive dati gia' presenti nel DB.
 // Body {} = tutti. {"player_id":N} = uno. {"last":N} = finestra (def 10, max 99).
-// {"force":true} = rielabora anche partite gia' collezionate (backfill nuovi campi).
+// {"force":true} = riscarica anche partite gia' collezionate e il dato API sovrascrive tutto.
 // Partite dei 4 giorni precedenti: i valori API SOVRASCRIVONO quelli salvati, perche' subito
 // dopo il fischio API-Football da' dati provvisori (es. 0 minuti / voto 0 a un subentrato).
 // Auth: header x-sync-secret (cron), service key, o admin loggato.
@@ -79,8 +79,8 @@ async function syncOne(PLAYER_ID: number, lastN: number, force: boolean) {
     if (!player) continue;
 
     const s = player.statistics?.[0] || {};
-    // partita fresca: vale il dato API; piu' vecchia: smart-merge sul dato salvato
-    const e: any = fresh ? {} : match;
+    // partita fresca o force: vale il dato API; piu' vecchia: smart-merge sul dato salvato
+    const e: any = fresh || force ? {} : match;
     const num = (v: any) => (v === null || v === undefined ? null : Number(v));
 
     const payload: Record<string, unknown> = {

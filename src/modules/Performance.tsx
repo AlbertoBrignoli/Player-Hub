@@ -2,11 +2,12 @@ import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAthlete } from '../lib/athlete'
 import { useLang } from '../lib/i18n'
-import { Spinner, Stat, Badge, Empty, Select } from '../components/ui'
+import { Spinner, Stat, Badge, Select } from '../components/ui'
 import { SeasonBlock, LastMatchGrid } from '../components/statbits'
+import { ApiSeason, ApiMatchList, ApiCareer, ApiTrophies, ApiTransfers, ApiInjuries, type ApiSeasonRow, type ApiExtra } from '../components/apistats'
 import Icon from '../components/Icon'
-import { fmtDate, fmtDateTime, fmtMatchDateTime, seasonOf } from '../lib/format'
-import type { Player, Match, SeasonStat, StatsMatch } from '../lib/types'
+import { fmtDate, fmtMatchDateTime, seasonOf } from '../lib/format'
+import type { Player, Match, StatsMatch } from '../lib/types'
 
 interface News { id: string; title: string; source: string | null; url: string | null; published_at: string | null }
 
@@ -17,7 +18,8 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
   const [loading, setLoading] = useState(true)
   const [player, setPlayer] = useState<Player | null>(null)
   const [matches, setMatches] = useState<Match[]>([])
-  const [stats, setStats] = useState<SeasonStat[]>([])
+  const [stats, setStats] = useState<ApiSeasonRow[]>([])
+  const [extra, setExtra] = useState<ApiExtra | null>(null)
   const [news, setNews] = useState<News[]>([])
   const [tech, setTech] = useState<StatsMatch[]>([])
   const currentSeason = seasonOf(new Date())
@@ -27,16 +29,18 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
     if (!athleteId) return
     (async () => {
       const pid = athleteId
-      const [p, m, s, n, t] = await Promise.all([
+      const [p, m, s, n, t, x] = await Promise.all([
         supabase.from('player').select('*').eq('api_player_id', pid).maybeSingle(),
         supabase.from('matches').select('*').eq('player_id', pid).order('match_date', { ascending: false }),
         supabase.from('player_stats_api').select('*').eq('player_id', pid).order('season', { ascending: false }),
         supabase.from('news').select('id,title,source,url,published_at').eq('player_id', pid).order('published_at', { ascending: false }).limit(6),
         supabase.from('player_stats_match').select('*').eq('player_id', pid).order('match_date', { ascending: false }),
+        supabase.from('player_api_extra').select('*').eq('player_id', pid).maybeSingle(),
       ])
       setPlayer(p.data as Player)
       setMatches((m.data as Match[]) || [])
-      setStats((s.data as SeasonStat[]) || [])
+      setStats((s.data as ApiSeasonRow[]) || [])
+      setExtra((x.data as ApiExtra) || null)
       setNews((n.data as News[]) || [])
       setTech((t.data as StatsMatch[]) || [])
       setLoading(false)
@@ -45,7 +49,7 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
 
   // Ultima partita GIOCATA (dal record matches, che ha tutto il dettaglio API).
   const lastMatch = useMemo(
-    () => (matches || []).find(x => x.status === 'FT' && x.minutes != null) || null,
+    () => (matches || []).find(x => x.status === 'FT' && (x.minutes || 0) > 0) || null,
     [matches],
   )
 
@@ -53,45 +57,43 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
     const s = new Set<string>([
       ...tech.map(t => seasonOf(t.match_date)),
       ...matches.filter(m => m.match_date).map(m => seasonOf(m.match_date!)),
+      ...stats.filter(r => r.season && (r.appearances || 0) > 0).map(r => `${r.season}/${String((r.season! + 1) % 100).padStart(2, '0')}`),
     ])
     s.add(currentSeason)
     return [...s].sort().reverse()
-  }, [tech, matches, currentSeason])
+  }, [tech, matches, stats, currentSeason])
 
   if (loading) return <Spinner />
 
   const nextMatch = [...matches].reverse().find(m => m.match_date && new Date(m.match_date).getTime() > Date.now())
-  const lastTech = tech[0] || null
+  const seasonYear = Number(season.slice(0, 4))
 
-  const seasonTech = tech.filter(t => seasonOf(t.match_date) === season)
-  const seasonMatches = matches.filter(m => m.match_date && seasonOf(m.match_date) === season)
-  const played = seasonMatches.filter(m => m.minutes != null && m.minutes > 0)
-  const totMin = played.reduce((s, m) => s + (m.minutes || 0), 0)
+  // Stagione: fonte principale = statistiche di stagione API-Football (player_stats_api.raw).
+  const seasonApi = stats.filter(s => s.season === seasonYear && ((s.appearances || 0) > 0 || s.raw))
+    .sort((a, b) => (b.appearances || 0) - (a.appearances || 0))
+  const seasonMatches = matches.filter(m => m.match_date && seasonOf(m.match_date) === season
+    && new Date(m.match_date).getTime() < Date.now() && m.status === 'FT')
+  // Ripiego se API non ha ancora la stagione: totali dalle partite giocate.
+  const played = seasonMatches.filter(m => (m.minutes || 0) > 0)
   const ratings = played.map(m => Number(m.rating)).filter(r => !isNaN(r) && r > 0)
-  const avgRating = ratings.length ? (ratings.reduce((a, b) => a + b, 0) / ratings.length) : null
-  const goals = seasonMatches.reduce((s, m) => s + (m.goals || 0), 0)
-  const assists = seasonMatches.reduce((s, m) => s + (m.assists || 0), 0)
+  const avgRating = ratings.length ? ratings.reduce((a, b) => a + b, 0) / ratings.length : null
 
-  // Fallback: se mancano i dati partita-per-partita, usa l'aggregato dello storico (player_stats_api)
-  const seasonApi = stats.filter(s => String(s.season) === season.slice(0, 4))
-  const useApi = played.length === 0 && seasonApi.length > 0
-  const apiApps = seasonApi.reduce((a, s) => a + (s.appearances || 0), 0)
-  const apiMin = seasonApi.reduce((a, s) => a + (s.minutes || 0), 0)
-  const apiGoals = seasonApi.reduce((a, s) => a + (s.goals || 0), 0)
-  const apiAssists = seasonApi.reduce((a, s) => a + (s.assists || 0), 0)
-  const apiRated = seasonApi.filter(s => s.rating && s.appearances)
-  const apiAppsRated = apiRated.reduce((a, s) => a + (s.appearances || 0), 0)
-  const apiAvg = apiAppsRated ? apiRated.reduce((a, s) => a + (Number(s.rating) || 0) * (s.appearances || 0), 0) / apiAppsRated : null
-  const dPres = useApi ? apiApps : played.length
-  const dMin = useApi ? apiMin : totMin
-  const dRating = useApi ? apiAvg : avgRating
-  const dRatingsN = useApi ? apiAppsRated : ratings.length
-  const dGoals = useApi ? apiGoals : goals
-  const dAssists = useApi ? apiAssists : assists
+  // Dati avanzati (report partita importati a parte: xG, lanci, duelli aerei...): solo se ci sono.
+  const seasonTech = tech.filter(x => seasonOf(x.match_date) === season)
+  const hasAdvanced = seasonTech.some(x => x.xg != null || x.passaggi_avanti != null || x.lanci_lunghi != null
+    || x.duelli_aerei != null || x.azioni_totali != null || x.palle_recuperate != null)
 
-  // Ultime 5 giocate in assoluto (rating), indipendenti dalla stagione selezionata.
-  const last5 = matches.filter(m => m.minutes != null && Number(m.rating) > 0).slice(0, 5).reverse()
+  // Ultime 5 giocate in assoluto (voto), indipendenti dalla stagione selezionata.
+  const last5 = matches.filter(m => (m.minutes || 0) > 0 && Number(m.rating) > 0).slice(0, 5).reverse()
   const maxR = Math.max(10, ...last5.map(m => Number(m.rating) || 0))
+
+  // Profilo API: luogo di nascita, infortunio in corso, numero di maglia della stagione.
+  const prof = extra?.profile
+  const curRaw = stats.find(s => s.season === Number(currentSeason.slice(0, 4)) && s.raw?.games?.number)?.raw
+  const shirt = curRaw?.games?.number ?? player?.shirt_number
+  const trophies = extra?.trophies || []
+  const transfers = extra?.transfers || []
+  const sidelined = extra?.sidelined || []
 
   return (
     <div className="grid" style={{ gap: 18 }}>
@@ -100,15 +102,24 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
         <div className="grid g2" style={{ gap: 14 }}>
           <div className="card card-lg flex gap" style={{ gap: 18, alignItems: 'center' }}>
             {player.photo_url && <img src={player.photo_url} alt="" style={{ width: 72, height: 72, borderRadius: 14, objectFit: 'cover', border: '1px solid var(--border-2)' }} />}
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 19, fontWeight: 750 }}>{player.name}</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="flex wrap" style={{ gap: 8, alignItems: 'center' }}>
+                <div style={{ fontSize: 19, fontWeight: 750 }}>{player.name}</div>
+                {prof?.injured && <Badge tone="red">Infortunato</Badge>}
+              </div>
               <div className="muted">{player.position} · {player.team_name} ({player.team_country})</div>
               <div className="flex wrap gap" style={{ gap: 16, marginTop: 10 }}>
                 <MiniFact k="Età" v={player.age} />
-                <MiniFact k="Altezza" v={player.height} />
-                <MiniFact k="Piede" v={player.preferred_foot} />
-                <MiniFact k="Maglia" v={player.shirt_number ? '#' + player.shirt_number : '—'} />
+                <MiniFact k="Altezza" v={player.height ? `${String(player.height).replace(/\s*cm/i, '')} cm` : null} />
+                {player.weight && <MiniFact k="Peso" v={`${String(player.weight).replace(/\s*kg/i, '')} kg`} />}
+                <MiniFact k="Piede" v={player.preferred_foot === 'Right' ? 'Destro' : player.preferred_foot === 'Left' ? 'Sinistro' : player.preferred_foot} />
+                <MiniFact k="Maglia" v={shirt ? '#' + shirt : '—'} />
               </div>
+              {prof?.birth?.place && (
+                <div className="faint" style={{ fontSize: 12, marginTop: 8 }}>
+                  Nato a {prof.birth.place}{prof.birth.country ? ` (${prof.birth.country})` : ''}{prof.birth.date ? ` il ${fmtDate(prof.birth.date)}` : ''}
+                </div>
+              )}
             </div>
           </div>
           <div className="card stadium-card">
@@ -137,7 +148,7 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
         ) : <div className="faint" style={{ padding: '8px 0' }}>Nessuna partita in programma al momento.</div>}
       </div>
 
-      {/* Ultima partita: tutte le stats (dal record matches, dettaglio completo API) */}
+      {/* Ultima partita: tutte le stats fornite da API-Football */}
       {lastMatch && (
         <div className="card">
           <div className="card-head">
@@ -148,7 +159,7 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
         </div>
       )}
 
-      {/* Ultime 5: andamento rating */}
+      {/* Ultime 5: andamento voto */}
       {last5.length > 0 && (
         <div className="card">
           <div className="card-head"><div className="card-title">{t("Ultime 5 · andamento rating")}</div><div className="card-hint">scala 0–10</div></div>
@@ -175,80 +186,70 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
             {seasons.map(s => <option key={s} value={s}>{s}</option>)}
           </Select>
         </div>
-        <div className="grid g4" style={{ gap: 10, marginBottom: seasonTech.length ? 14 : 0 }}>
-          <Stat icon={<Icon name="check" size={13} />} label={t("Presenze")} value={dPres} sub={`${dMin}' giocati`} />
-          <Stat icon={<Icon name="star" size={13} />} label={t("Rating medio")} value={dRating ? dRating.toFixed(2) : '—'} tone="var(--accent)" sub={`${dRatingsN} valutazioni`} />
-          <Stat icon={<Icon name="ball" size={13} />} label={t("Gol")} value={dGoals} />
-          <Stat icon={<Icon name="send" size={13} />} label={t("Assist")} value={dAssists} />
-        </div>
-        {seasonTech.length === 0 ? (
-          <div className="faint" style={{ padding: '6px 0' }}>
-            {useApi
-              ? 'Riepilogo aggregato dallo storico competizioni (dettaglio partita-per-partita non disponibile).'
-              : season === currentSeason
-                ? 'I dati tecnici della nuova stagione arrivano con le prime partite.'
-                : 'Nessun dato tecnico registrato per questa stagione.'}
+        {seasonApi.length > 0 ? (
+          <ApiSeason rows={seasonApi} />
+        ) : played.length > 0 ? (
+          <div className="grid g4" style={{ gap: 10 }}>
+            <Stat icon={<Icon name="check" size={13} />} label={t("Presenze")} value={played.length} sub={`${played.reduce((a, m) => a + (m.minutes || 0), 0)}' giocati`} />
+            <Stat icon={<Icon name="star" size={13} />} label={t("Rating medio")} value={avgRating ? avgRating.toFixed(2) : '—'} tone="var(--accent)" />
+            <Stat icon={<Icon name="ball" size={13} />} label={t("Gol")} value={played.reduce((a, m) => a + (m.goals || 0), 0)} />
+            <Stat icon={<Icon name="send" size={13} />} label={t("Assist")} value={played.reduce((a, m) => a + (m.assists || 0), 0)} />
           </div>
         ) : (
-          <SeasonBlock stats={seasonTech} />
+          <div className="faint" style={{ padding: '6px 0' }}>
+            {season === currentSeason ? 'Le statistiche della nuova stagione arrivano con le prime partite.' : 'Nessuna statistica per questa stagione.'}
+          </div>
         )}
       </div>
 
-      {/* Dettaglio tecnico partita per partita (stagione selezionata) */}
-      {seasonTech.length > 0 && (
+      {/* Partita per partita (stagione selezionata) */}
+      {seasonMatches.length > 0 && (
         <div className="card">
           <div className="card-head">
             <div className="card-title">Partita per partita · {season}</div>
-            <div className="card-hint">{seasonTech.length} partite</div>
+            <div className="card-hint">{played.length} giocate</div>
           </div>
-          <div style={{ overflowX: 'auto' }}>
-            <table className="table">
-              <thead><tr>
-                <th>{t("Data")}</th><th>{t("Match")}</th><th>{t("Comp.")}</th><th>{t("Min.")}</th>
-                <th>{t("Pass %")}</th><th>{t("Avanti %")}</th><th>{t("Lanci %")}</th><th>{t("Duelli %")}</th><th>{t("Aerei %")}</th><th>{t("Azioni %")}</th><th>{t("Int.")}</th><th>{t("Rec.")}</th><th>xG</th>
-              </tr></thead>
-              <tbody>
-                {seasonTech.map(t => (
-                  <tr key={t.id}>
-                    <td className="faint">{fmtDate(t.match_date)}</td>
-                    <td><b>{t.match_name}</b></td>
-                    <td className="muted">{t.competition === 'UEFA Champions League' ? 'UCL' : 'SL'}</td>
-                    <td className="mono">{t.minutes ?? '—'}</td>
-                    <Pct v={t.pass_pct} n={t.passaggi_accurati} d={t.passaggi} />
-                    <Pct v={t.passaggi_avanti_pct} n={t.passaggi_avanti_accurati} d={t.passaggi_avanti} />
-                    <Pct v={t.lanci_lunghi_pct} n={t.lanci_lunghi_accurati} d={t.lanci_lunghi} />
-                    <Pct v={t.duelli_pct} n={t.duelli_vinti} d={t.duelli} />
-                    <Pct v={t.duelli_aerei_pct} n={t.duelli_aerei_vinti} d={t.duelli_aerei} />
-                    <Pct v={t.azioni_pct} n={t.azioni_riuscite} d={t.azioni_totali} />
-                    <td className="mono">{t.intercetti ?? '—'}</td>
-                    <td className="mono">{t.palle_recuperate ?? '—'}</td>
-                    <td className="mono">{t.xg ? Number(t.xg).toFixed(2) : '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ApiMatchList matches={seasonMatches} />
         </div>
       )}
 
-      {/* Storico competizioni (API) */}
+      {/* Dati avanzati da report partita (non API-Football): solo se presenti */}
+      {hasAdvanced && (
+        <div className="card">
+          <div className="card-head">
+            <div className="card-title">Dati avanzati · {season}</div>
+            <div className="card-hint">report partita</div>
+          </div>
+          <SeasonBlock stats={seasonTech} />
+        </div>
+      )}
+
+      {/* Carriera */}
       {stats.length > 0 && (
         <div className="card">
-          <div className="card-head"><div className="card-title">{t("Storico competizioni")}</div></div>
-          <div style={{ overflowX: 'auto' }}>
-            <table className="table">
-              <thead><tr><th>{t("Stagione")}</th><th>{t("Competizione")}</th><th>{t("Pres.")}</th><th>{t("Min.")}</th><th>{t("Gol")}</th><th>{t("Assist")}</th><th>Rating</th></tr></thead>
-              <tbody>
-                {stats.map(s => (
-                  <tr key={s.id}>
-                    <td><b>{s.season}</b></td><td>{s.competition || '—'}</td><td>{s.appearances ?? '—'}</td>
-                    <td className="mono">{s.minutes ?? '—'}</td><td>{s.goals ?? 0}</td><td>{s.assists ?? 0}</td>
-                    <td>{s.rating ? <Badge tone={s.rating >= 7 ? 'green' : undefined}>{s.rating.toFixed(2)}</Badge> : '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <div className="card-head"><div className="card-title">{t("Carriera")}</div></div>
+          <ApiCareer rows={stats} />
+        </div>
+      )}
+
+      {trophies.length > 0 && (
+        <div className="card">
+          <div className="card-head"><div className="card-title">Trofei</div></div>
+          <ApiTrophies list={trophies} />
+        </div>
+      )}
+
+      {transfers.length > 0 && (
+        <div className="card">
+          <div className="card-head"><div className="card-title">Trasferimenti</div></div>
+          <ApiTransfers list={transfers} />
+        </div>
+      )}
+
+      {sidelined.length > 0 && (
+        <div className="card">
+          <div className="card-head"><div className="card-title">Storico infortuni</div></div>
+          <ApiInjuries list={sidelined} />
         </div>
       )}
 
@@ -268,20 +269,16 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
           </div>
         </div>
       )}
+
+      {extra?.updated_at && (
+        <div className="faint" style={{ fontSize: 11.5, textAlign: 'center' }}>
+          Dati API-Football · carriera aggiornata il {fmtDate(extra.updated_at)}
+        </div>
+      )}
     </div>
   )
 }
 
 function MiniFact({ k, v }: { k: string; v: any }) {
   return <div><div className="faint" style={{ fontSize: 11 }}>{k}</div><div style={{ fontWeight: 700, fontSize: 15 }}>{v ?? '—'}</div></div>
-}
-
-function Pct({ v, n, d }: { v: number | null; n: number | null; d: number | null }) {
-  const val = v == null ? null : Number(v)
-  const color = val == null ? undefined : val >= 70 ? 'var(--green)' : val < 50 ? 'var(--gold)' : undefined
-  return (
-    <td className="mono" title={n != null && d != null ? `${n}/${d}` : undefined} style={{ color }}>
-      {val == null ? '—' : `${val}%`}
-    </td>
-  )
 }
