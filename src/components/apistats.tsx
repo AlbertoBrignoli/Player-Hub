@@ -18,15 +18,21 @@ export interface ApiExtra {
   transfers: Raw[] | null; trophies: Raw[] | null; sidelined: Raw[] | null; updated_at: string
 }
 
-// ruolo dal testo API ("Attacker", "Goalkeeper"...) o dalla sigla partita ("F", "G"...)
+// ruolo dal testo API ("Attacker", "Goalkeeper"), dal profilo ("Centre Back") o dalla
+// sigla partita ("F", "G"...)
 export function roleOf(pos: string | null | undefined): 'G' | 'D' | 'M' | 'F' | '' {
-  const c = String(pos || '').trim().toUpperCase().charAt(0)
-  if (c === 'G' || c === 'P') return 'G'
-  if (c === 'D') return 'D'
-  if (c === 'M' || c === 'C') return 'M'
-  if (c === 'F' || c === 'A') return 'F'
-  return ''
+  const t = String(pos || '').trim().toLowerCase()
+  if (!t) return ''
+  if (/goal|keeper|portier/.test(t)) return 'G'
+  if (/back|defen|difens/.test(t)) return 'D'
+  if (/mid|centrocamp/.test(t)) return 'M'
+  if (/forw|attack|attacc|strik|wing|punta/.test(t)) return 'F'
+  const c = t.charAt(0)
+  return c === 'g' ? 'G' : c === 'd' ? 'D' : c === 'm' ? 'M' : c === 'f' ? 'F' : ''
 }
+
+// porta inviolata: portiere in campo almeno 60′ senza subire gol
+export const isCleanSheet = (m: any) => (m.minutes || 0) >= 60 && m.goals_conceded != null && Number(m.goals_conceded) === 0
 
 const n = (v: any) => (v === null || v === undefined || v === '' || isNaN(Number(v)) ? null : Number(v))
 const pct = (a: number | null, b: number | null) => (a != null && b ? Math.round((a * 100) / b) : null)
@@ -43,7 +49,9 @@ function KV({ k, v, sub, tone }: { k: string; v: React.ReactNode; sub?: React.Re
 const pctTone = (p: number | null) => (p == null ? undefined : p >= 70 ? 'var(--green)' : p >= 50 ? undefined : 'var(--gold)')
 
 // ── Stagione: somma delle competizioni della stagione scelta ─────────────────
-export function ApiSeason({ rows }: { rows: ApiSeasonRow[] }) {
+// `matches` (partite giocate della stagione) serve ai portieri per le porte inviolate,
+// che API-Football non da' nel riepilogo di stagione.
+export function ApiSeason({ rows, matches = [], role: roleHint }: { rows: ApiSeasonRow[]; matches?: any[]; role?: string | null }) {
   const raws = rows.map(r => r.raw).filter(Boolean) as Raw[]
   // somma una voce su tutte le competizioni; null se API non la fornisce in nessuna
   const s = (f: (x: Raw) => any) => {
@@ -66,7 +74,8 @@ export function ApiSeason({ rows }: { rows: ApiSeasonRow[] }) {
   let pw = 0, pt = 0
   for (const x of raws) { const acc = n(x.passes?.accuracy), tot = n(x.passes?.total); if (acc != null && tot) { pw += acc * tot; pt += tot } }
   const passAcc = pt ? Math.round(pw / pt) : null
-  const role = roleOf(raws.find(x => x.games?.position)?.games?.position)
+  const role = roleOf(raws.find(x => x.games?.position)?.games?.position) || roleOf(roleHint)
+  const isGK = role === 'G'
 
   const shots = s(x => x.shots?.total), shotsOn = s(x => x.shots?.on)
   const keyP = s(x => x.passes?.key), passes = s(x => x.passes?.total)
@@ -104,10 +113,29 @@ export function ApiSeason({ rows }: { rows: ApiSeasonRow[] }) {
     drPast != null ? ['Superato in dribbling', drPast] : null,
     pCom ? ['Rigori causati', pCom] : null,
   ])
-  const portiere = sec('Porta', [
-    saves != null ? ['Parate', saves] : null,
-    conc != null ? ['Gol subiti', conc, apps ? `${(conc / apps).toFixed(2)} a partita` : undefined] : null,
+  // PORTIERE: parate, % parate (parate / tiri in porta subiti = parate + gol), ogni 90′,
+  // porte inviolate dalle partite, rigori parati
+  const savePct = saves != null && conc != null && saves + conc > 0 ? Math.round(saves * 100 / (saves + conc)) : null
+  const gkPlayed = matches.filter(m => (m.minutes || 0) > 0 && m.goals_conceded != null)
+  const cleanSheets = gkPlayed.filter(isCleanSheet).length
+  const portiere = sec('In porta', [
+    saves != null ? ['Parate', saves, mins ? `${per90(saves)} ogni 90′` : undefined] : null,
+    savePct != null ? ['Parate su tiri in porta', `${savePct}%`, `${saves}/${saves! + conc!}`, savePct >= 70 ? 'var(--green)' : savePct < 60 ? 'var(--gold)' : undefined] : null,
+    gkPlayed.length ? ['Porta inviolata', cleanSheets, `su ${gkPlayed.length} partite giocate`, cleanSheets ? 'var(--green)' : undefined] : null,
     pSav != null ? ['Rigori parati', pSav] : null,
+  ])
+  const piedi = sec('Gioco con i piedi', [
+    passes != null ? ['Passaggi', passes, mins ? `${per90(passes)} ogni 90′` : undefined] : null,
+    passAcc != null ? ['Precisione passaggi', `${passAcc}%`, undefined, pctTone(passAcc)] : null,
+    duT ? ['Duelli vinti', `${duW ?? 0}/${duT}`, `${pct(duW, duT)}%`] : null,
+  ])
+  // per un portiere conta anche la disponibilita': convocazioni, titolarita', panchina
+  const convocazioni = apps != null || bench != null ? (apps || 0) + (bench || 0) : null
+  const disponibilita = sec('Disponibilità', [
+    convocazioni ? ['Convocazioni', convocazioni, 'in campo o in panchina'] : null,
+    lineups != null && convocazioni ? ['Titolare', `${lineups}/${convocazioni}`, `${pct(lineups, convocazioni)}% delle convocazioni`] : null,
+    bench != null ? ['In panchina', bench, 'senza entrare'] : null,
+    subIn ? ['Entrato a gara in corso', subIn] : null,
   ])
   const disciplina = sec('Disciplina', [
     fC != null ? ['Falli commessi', fC] : null,
@@ -115,7 +143,11 @@ export function ApiSeason({ rows }: { rows: ApiSeasonRow[] }) {
     yr ? ['Doppi gialli', yr] : null,
     rc != null ? ['Rossi', rc] : null,
   ])
-  const order = role === 'G' ? [portiere, gioco, difesa, disciplina]
+  const disciplinaGK = sec('Disciplina', [
+    ...disciplina.items,
+    pCom ? ['Rigori causati', pCom] as Item : null,
+  ])
+  const order = isGK ? [portiere, piedi, disponibilita, disciplinaGK]
     : role === 'D' ? [difesa, gioco, attacco, disciplina]
     : role === 'M' ? [gioco, attacco, difesa, disciplina]
     : [attacco, gioco, difesa, disciplina]
@@ -127,9 +159,11 @@ export function ApiSeason({ rows }: { rows: ApiSeasonRow[] }) {
         <KV k="Presenze" v={apps}
           sub={lineups != null ? `${lineups} da titolare${subIn ? ` · ${subIn} da subentrato` : ''}` : undefined} />
         {mins != null && <KV k="Minuti" v={`${mins}′`} sub={apps ? `${Math.round(mins / apps)}′ a presenza` : undefined} />}
-        <KV k="Gol · Assist" v={`${goals} · ${assists}`} />
+        {isGK
+          ? conc != null && <KV k="Gol subiti" v={conc} sub={mins ? `${per90(conc)} ogni 90′` : undefined} />
+          : <KV k="Gol · Assist" v={`${goals} · ${assists}`} />}
         {rating != null && <KV k="Voto medio" v={rating.toFixed(2)} tone={rating >= 7 ? 'var(--green)' : undefined} />}
-        {bench ? <KV k="In panchina" v={bench} sub="senza entrare" /> : null}
+        {!isGK && bench ? <KV k="In panchina" v={bench} sub="senza entrare" /> : null}
       </div>
       {sections.map(sc => (
         <div key={sc.title}>
@@ -151,7 +185,9 @@ export function ApiSeason({ rows }: { rows: ApiSeasonRow[] }) {
                   <div className="row-main">
                     <div className="row-title">{r.competition}</div>
                     <div className="row-sub">
-                      {r.appearances ?? 0} pres.{m ? ` · ${m}′` : ''} · {r.goals ?? 0} gol · {r.assists ?? 0} assist
+                      {r.appearances ?? 0} pres.{m ? ` · ${m}′` : ''} · {isGK
+                        ? `${n(r.raw?.goals?.conceded) ?? '—'} subiti${n(r.raw?.goals?.saves) != null ? ` · ${r.raw.goals.saves} parate` : ''}`
+                        : `${r.goals ?? 0} gol · ${r.assists ?? 0} assist`}
                     </div>
                   </div>
                   {r.rating ? <Badge tone={r.rating >= 7 ? 'green' : undefined}>{Number(r.rating).toFixed(2)}</Badge> : null}
@@ -178,7 +214,10 @@ export function ApiMatchList({ matches }: { matches: any[] }) {
           const bits: string[] = []
           const add = (label: string, v: any) => { if (v != null) bits.push(`${label} ${v}`) }
           if (role === 'G') {
-            add('Parate', m.saves); add('Subiti', m.goals_conceded)
+            add('Parate', m.saves); add('Gol subiti', m.goals_conceded)
+            const sv = n(m.saves), gc = n(m.goals_conceded)
+            if (sv != null && gc != null && sv + gc > 0) bits.push(`${Math.round(sv * 100 / (sv + gc))}% parate`)
+            if (m.penalty_saved) bits.push(`${m.penalty_saved} rigore parato`)
           } else {
             if (m.shots_total != null) bits.push(`Tiri ${m.shots_total}${m.shots_on != null ? ` (${m.shots_on})` : ''}`)
             add('Pass. chiave', m.passes_key)
@@ -196,6 +235,7 @@ export function ApiMatchList({ matches }: { matches: any[] }) {
                 <div className="row-title">
                   {(m.venue || '').toLowerCase() === 'home' ? 'vs' : '@'} {m.opponent}
                   {score && <span className={`api-res api-res-${res}`}>{score}</span>}
+                  {role === 'G' && isCleanSheet(m) && <span className="api-res api-res-V">porta inviolata</span>}
                 </div>
                 <div className="row-sub">
                   {fmtDate(m.match_date)} · {m.league}{m.is_substitute ? ' · subentrato' : m.is_substitute === false ? ' · titolare' : ''}
@@ -226,7 +266,8 @@ export function ApiMatchList({ matches }: { matches: any[] }) {
 }
 
 // ── Carriera: stagione per stagione, squadre e competizioni ──────────────────
-export function ApiCareer({ rows }: { rows: ApiSeasonRow[] }) {
+export function ApiCareer({ rows, role: roleHint }: { rows: ApiSeasonRow[]; role?: string | null }) {
+  const isGK = (roleOf(rows.find(r => r.raw?.games?.position)?.raw?.games?.position) || roleOf(roleHint)) === 'G'
   const [all, setAll] = useState(false)
   // fuori: amichevoli, competizioni senza presenze, e i doppioni di API-Football
   // (a volte ripete la stessa riga identica su due squadre della stessa stagione)
@@ -253,7 +294,9 @@ export function ApiCareer({ rows }: { rows: ApiSeasonRow[] }) {
       <div className="kv-grid kv-grid-hero">
         <KV k="Stagioni" v={seasons.length} sub={`dal ${first}/${String((first + 1) % 100).padStart(2, '0')}`} />
         <KV k="Presenze" v={totApps} sub="campionati e coppe" />
-        <KV k="Gol · Assist" v={`${totGoals} · ${totAssists}`} />
+        {isGK
+          ? <KV k="Gol subiti" v={clean.reduce((a, r) => a + (n(r.raw?.goals?.conceded) || 0), 0)} sub="dove API li riporta" />
+          : <KV k="Gol · Assist" v={`${totGoals} · ${totAssists}`} />}
         <KV k="Squadre" v={teams.size} />
       </div>
       <div className="list">
@@ -277,7 +320,13 @@ export function ApiCareer({ rows }: { rows: ApiSeasonRow[] }) {
                     </div>
                     {list.sort((a, b) => (b.appearances || 0) - (a.appearances || 0)).map(r => (
                       <div className="row-sub" key={r.id}>
-                        {r.competition}: {r.appearances ?? 0} pres. · {r.goals ?? 0} gol{r.assists ? ` · ${r.assists} assist` : ''}
+                        {r.competition}: {[
+                          `${r.appearances ?? 0} pres.`,
+                          ...(isGK
+                            ? [n(r.raw?.goals?.conceded) != null ? `${r.raw.goals.conceded} subiti` : '',
+                               n(r.raw?.goals?.saves) != null ? `${r.raw.goals.saves} parate` : '']
+                            : [`${r.goals ?? 0} gol`, r.assists ? `${r.assists} assist` : '']),
+                        ].filter(Boolean).join(' · ')}
                         {r.rating ? ` · voto ${Number(r.rating).toFixed(2)}` : ''}
                       </div>
                     ))}

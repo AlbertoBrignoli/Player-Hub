@@ -68,13 +68,15 @@ alter table public.player_stats_api drop constraint if exists player_stats_api_p
 alter table public.player_stats_api add constraint player_stats_api_player_season_comp_team_key
   unique (player_id, season, competition, team_id);
 
--- ogni lunedi' alle 5: carriera completa + profilo/trasferimenti/trofei/infortuni,
--- una chiamata per atleta (in parallelo, cosi' nessuna supera il tempo massimo della funzione)
-select cron.schedule('sync-player-career', '0 5 * * 1', $$
+-- ogni lunedi' dalle 5:00: carriera completa + profilo/trasferimenti/trofei/infortuni,
+-- UN atleta ogni 5 minuti (tutti insieme superavano il limite al minuto di API-Football
+-- e intere stagioni restavano vuote). Copre fino a 12 atleti.
+select cron.schedule('sync-player-career', '*/5 5 * * 1', $$
   select net.http_post(
     url := 'https://irdphiphumxsymttvfzq.supabase.co/functions/v1/sync_player_stats_api',
     headers := jsonb_build_object('Content-Type','application/json','x-sync-secret',(select value from public.cp_secrets where key = 'sync_secret')),
-    body := jsonb_build_object('player_id', api_player_id, 'career', true),
+    body := jsonb_build_object('player_id', p.api_player_id, 'career', true),
     timeout_milliseconds := 150000)
-  from public.player where api_player_id is not null
+  from (select api_player_id from public.player where api_player_id is not null
+        order by api_player_id offset (extract(minute from now())::int / 5) limit 1) p
 $$);

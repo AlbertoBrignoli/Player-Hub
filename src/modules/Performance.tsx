@@ -187,7 +187,7 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
           </Select>
         </div>
         {seasonApi.length > 0 ? (
-          <ApiSeason rows={seasonApi} />
+          <ApiSeason rows={seasonApi} matches={seasonMatches} role={player?.position} />
         ) : played.length > 0 ? (
           <div className="grid g4" style={{ gap: 10 }}>
             <Stat icon={<Icon name="check" size={13} />} label={t("Presenze")} value={played.length} sub={`${played.reduce((a, m) => a + (m.minutes || 0), 0)}' giocati`} />
@@ -228,7 +228,7 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
       {stats.length > 0 && (
         <div className="card">
           <div className="card-head"><div className="card-title">{t("Carriera")}</div></div>
-          <ApiCareer rows={stats} />
+          <ApiCareer rows={stats} role={player?.position} />
         </div>
       )}
 

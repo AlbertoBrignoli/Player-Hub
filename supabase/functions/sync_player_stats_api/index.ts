@@ -80,9 +80,17 @@ async function resolveTargets(req: Request) {
   return { players: (data || []).map((p: any) => p.api_player_id), seasons, career };
 }
 
+// API-Football limita le richieste al minuto: quando risponde con un errore (es. rateLimit)
+// aspetto e riprovo, invece di salvare "nessun dato" (prima mancavano stagioni intere).
 async function apiGet(path: string) {
-  const res = await fetch(`https://v3.football.api-sports.io${path}`, { headers: { "x-apisports-key": API_KEY } });
-  return (await res.json())?.response ?? [];
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const res = await fetch(`https://v3.football.api-sports.io${path}`, { headers: { "x-apisports-key": API_KEY } });
+    const j = await res.json().catch(() => null);
+    const errs = j?.errors && (Array.isArray(j.errors) ? j.errors.length : Object.keys(j.errors).length);
+    if (j && !errs && res.ok) return j.response ?? [];
+    await new Promise(r => setTimeout(r, 6000 * (attempt + 1)));
+  }
+  return [];
 }
 
 // profilo + stagioni disponibili + trasferimenti + trofei + infortuni
@@ -94,6 +102,8 @@ async function syncExtra(PLAYER_ID: number) {
     apiGet(`/sidelined?player=${PLAYER_ID}`),
   ]);
   const seasons = (seasonsR as number[]).map(Number).filter(n => n > 1990 && n <= CURRENT).sort((a, b) => b - a);
+  // API non ha risposto: non sovrascrivo con liste vuote quello che c'e' gia'
+  if (!seasons.length) return { seasons, error: "API-Football non disponibile, dati precedenti mantenuti" };
   const prof = (await apiGet(`/players?id=${PLAYER_ID}&season=${seasons[0] ?? CURRENT}`))[0]?.player ?? null;
   const row = {
     player_id: PLAYER_ID,
@@ -112,17 +122,10 @@ async function syncExtra(PLAYER_ID: number) {
 }
 
 async function syncOne(PLAYER_ID: number, SEASON: number) {
-  const res = await fetch(
-    `https://v3.football.api-sports.io/players?id=${PLAYER_ID}&season=${SEASON}`,
-    { headers: { "x-apisports-key": API_KEY } },
-  );
+  const response = await apiGet(`/players?id=${PLAYER_ID}&season=${SEASON}`);
+  if (!response.length) return { updated: 0, error: "No player data" };
 
-  const data = await res.json();
-  if (!data.response || data.response.length === 0) {
-    return { updated: 0, error: "No player data" };
-  }
-
-  const statsArray = data.response[0].statistics || [];
+  const statsArray = response[0].statistics || [];
   let updated = 0;
 
   for (const stat of statsArray) {

@@ -1,6 +1,7 @@
 // Mattoncini condivisi per le statistiche (Dashboard + Performance).
 import { Badge } from './ui'
 import type { StatsMatch } from '../lib/types'
+import { roleOf, isCleanSheet } from './apistats'
 
 export function SFact({ k, v, big }: { k: string; v: any; big?: boolean }) {
   return (
@@ -13,7 +14,7 @@ export function SFact({ k, v, big }: { k: string; v: any; big?: boolean }) {
 
 export function SPct({ k, pct, n, d }: { k: string; pct: number | null; n?: number | null; d?: number | null }) {
   const val = pct == null ? null : Number(pct)
-  const color = val == null ? undefined : val >= 70 ? 'var(--green)' : val >= 50 ? 'var(--accent)' : 'var(--gold)'
+  const color = val == null ? undefined : val >= 70 ? 'var(--green)' : val >= 50 ? undefined : 'var(--gold)'
   return (
     <div title={n != null && d != null ? `${n}/${d}` : undefined}>
       <div className="faint" style={{ fontSize: 11 }}>{k}</div>
@@ -28,7 +29,7 @@ export function SPct({ k, pct, n, d }: { k: string; pct: number | null; n?: numb
 // RUOLO del giocatore: Portiere, Difensore, Centrocampista, Attaccante.
 // Una voce che API non fornisce per quella partita non compare (niente "—").
 export function LastMatchGrid({ m }: { m: any }) {
-  const role = String(m.position || '').toUpperCase().charAt(0) // G / D / M / F
+  const role = roleOf(m.position) // G / D / M / F
   const isGK = role === 'G' || (role === '' && Number(m.saves) > 0)
   const wpct = (n: any, d: any) => (d ? Math.round(Number(n) * 100 / Number(d)) : null)
   const has = (v: any) => v !== null && v !== undefined && v !== ''
@@ -50,6 +51,10 @@ export function LastMatchGrid({ m }: { m: any }) {
     // PORTIERE
     F('Parate', m.saves)
     F('Gol subiti', m.goals_conceded)
+    // parate sui tiri in porta subiti (parate + gol)
+    if (has(m.saves) && has(m.goals_conceded) && Number(m.saves) + Number(m.goals_conceded) > 0)
+      P('Parate su tiri in porta', wpct(m.saves, Number(m.saves) + Number(m.goals_conceded)), m.saves, Number(m.saves) + Number(m.goals_conceded))
+    if (isCleanSheet(m)) F('Porta inviolata', 'Sì')
     if (m.penalty_saved) F('Rigori parati', m.penalty_saved)
     duels()
   } else {
