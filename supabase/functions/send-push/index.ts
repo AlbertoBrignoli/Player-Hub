@@ -48,7 +48,19 @@ Deno.serve(async (req: Request) => {
 
   // Destinatari diretti, isolati per atleta.
   let targets = subs || []
-  if (record.player_id && targets.length) {
+  if (roles[0] === 'partner') {
+    // partner dei servizi: solo il titolare del servizio di QUELLA richiesta (route ...?req=<id>)
+    const reqId = /req=([0-9a-f-]{36})/.exec(record.route || '')?.[1]
+    let owner: string | null = null
+    if (reqId) {
+      const { data: r } = await supa.from('crm_service_requests').select('service_id').eq('id', reqId).maybeSingle()
+      if (r?.service_id) {
+        const { data: s } = await supa.from('crm_services').select('partner_user_id').eq('id', r.service_id).maybeSingle()
+        owner = s?.partner_user_id ?? null
+      }
+    }
+    targets = targets.filter((s: any) => owner && s.user_id === owner)
+  } else if (record.player_id && targets.length) {
     if (roles.includes('player')) {
       const { data: profs } = await supa.from('crm_profiles')
         .select('id').eq('player_api_id', record.player_id)

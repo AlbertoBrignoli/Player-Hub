@@ -9,6 +9,7 @@ import Icon from '../components/Icon'
 import { fmtDate } from '../lib/format'
 import { useRouteParam } from '../lib/route'
 import ServiceDetail from '../components/ServiceDetail'
+import RequestThread from '../components/RequestThread'
 import type { Service } from '../components/ServiceDetail'
 
 // Store dei servizi AUVI (redesign UX handoff): l'atleta sfoglia i servizi
@@ -93,6 +94,10 @@ export default function Services() {
   }
   useEffect(() => { load() }, [athleteId]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // link diretto a una richiesta (dalle notifiche): #/services?req=<id>
+  const wantedReq = useRouteParam('req')
+  useEffect(() => { if (wantedReq) setTab('requests') }, [wantedReq])
+
   // link diretto a una scheda: #/services?service=<id o nome partner> (es. dalla Performance)
   const wanted = useRouteParam('service')
   useEffect(() => {
@@ -165,7 +170,7 @@ export default function Services() {
       </div>
 
       {tab === 'requests' ? (
-        <RequestsView reqs={reqs} isPlayer={isPlayer} isAdmin={isAdmin}
+        <RequestsView reqs={reqs} isPlayer={isPlayer} isAdmin={isAdmin} openReq={wantedReq}
           athleteName={athleteName} onManage={setManage} onEmptyGoStore={() => setTab('store')} />
       ) : (
         <>
@@ -400,12 +405,15 @@ function StudioHero({ studio, onOpen }: { studio: Service[]; onOpen: (s: Service
 }
 
 // --- vista Richieste ---
-function RequestsView({ reqs, isPlayer, isAdmin, athleteName, onManage, onEmptyGoStore }: {
-  reqs: Req[]; isPlayer: boolean; isAdmin: boolean
+function RequestsView({ reqs, isPlayer, isAdmin, openReq, athleteName, onManage, onEmptyGoStore }: {
+  reqs: Req[]; isPlayer: boolean; isAdmin: boolean; openReq: string | null
   athleteName: (r: Req) => string; onManage: (r: Req) => void; onEmptyGoStore: () => void
 }) {
   const { t } = useLang()
   const [filter, setFilter] = useState<'tutte' | 'corso' | 'fatte'>('tutte')
+  // richiesta aperta: mostra il thread con il partner (messaggi, report, file)
+  const [expanded, setExpanded] = useState<string | null>(openReq)
+  useEffect(() => { if (openReq) setExpanded(openReq) }, [openReq])
   const active = (r: Req) => r.status === 'aperta' || r.status === 'in_carico'
   const list = reqs.filter(r =>
     filter === 'tutte' ? true : filter === 'corso' ? active(r) : r.status === 'completata')
@@ -490,9 +498,17 @@ function RequestsView({ reqs, isPlayer, isAdmin, athleteName, onManage, onEmptyG
                 <div style={{ fontSize: 12, marginTop: 8, color: T.dim }}>{r.message}</div>
               )}
 
-              {isAdmin && r.status !== 'completata' && r.status !== 'annullata' && (
-                <div style={{ marginTop: 12 }}>
+              <div className="flex gap wrap" style={{ gap: 8, marginTop: 12 }}>
+                <button className="btn btn-sm" onClick={() => setExpanded(expanded === r.id ? null : r.id)}>
+                  <Icon name="message" size={13} /> {expanded === r.id ? t('Chiudi') : t('Messaggi e file')}
+                </button>
+                {isAdmin && r.status !== 'completata' && r.status !== 'annullata' && (
                   <button className="btn btn-sm" onClick={() => onManage(r)}>{t('Gestisci')}</button>
+                )}
+              </div>
+              {expanded === r.id && (
+                <div style={{ marginTop: 12 }}>
+                  <RequestThread requestId={r.id} placeholder={isPlayer ? 'Scrivi al partner o allega un video…' : 'Scrivi all\'atleta e al partner…'} />
                 </div>
               )}
             </div>

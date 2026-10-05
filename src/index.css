@@ -782,3 +782,25 @@ input[type="time"]::-webkit-date-and-time-value { text-align: left; }
 .scout-cta-txt b { font-size: 13.5px; }
 .scout-cta-txt span { font-size: 11.5px; color: rgba(255,255,255,.65); }
 .scout-cta-go { color: #A8872F; font-size: 18px; font-weight: 700; }
+
+/* ===== Thread richiesta servizio (atleta · AUVI · partner) ===== */
+.rq-thread { display: grid; gap: 12px; }
+.rq-msgs { display: grid; gap: 8px; max-height: 420px; overflow-y: auto; padding-right: 2px; }
+.rq-msg { background: var(--bg-2); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; max-width: 92%; justify-self: start; min-width: 0; }
+.rq-msg.mine { justify-self: end; background: var(--surface); }
+.rq-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 11.5px; color: var(--text-faint); }
+.rq-meta b { color: var(--text); font-weight: 700; }
+.rq-tag { font-size: 10px; font-weight: 800; letter-spacing: .4px; text-transform: uppercase; padding: 1px 6px; border-radius: 999px; background: var(--ink); color: #fff; }
+.rq-body { font-size: 13.5px; margin-top: 4px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.rq-file { display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; padding: 7px 10px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); cursor: pointer; font-size: 12.5px; font-weight: 600; max-width: 100%; }
+.rq-file span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rq-compose { display: grid; gap: 8px; }
+
+/* ===== Area partner ===== */
+.partner-hero { display: flex; gap: 18px; align-items: center; background: #0f0f10; color: #fff; border-radius: 20px; padding: 22px; flex-wrap: wrap; }
+.partner-hero img { height: 40px; max-width: 220px; object-fit: contain; }
+.partner-hero-k { font-size: 10.5px; letter-spacing: 1.6px; text-transform: uppercase; font-weight: 800; color: var(--yellow); }
+.partner-hero-t { font-family: var(--font-display); font-stretch: 125%; font-size: 22px; font-weight: 800; margin-top: 2px; }
+.partner-hero-s { font-size: 12.5px; color: rgba(255,255,255,.7); margin-top: 4px; max-width: 520px; }
+.partner-ava { width: 44px; height: 44px; border-radius: 12px; object-fit: cover; background: var(--bg-2); border: 1px solid var(--border); flex-shrink: 0; display: inline-block; }
+.partner-ava.lg { width: 64px; height: 64px; border-radius: 16px; }

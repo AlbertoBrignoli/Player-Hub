@@ -42,6 +42,7 @@ import MyAthletes from './modules/MyAthletes'
 import ProHome from './modules/ProHome'
 import ExerciseLibrary from './modules/fitness/ExerciseLibrary'
 import TrainingBuilder from './modules/fitness/TrainingBuilder'
+import PartnerHome from './modules/PartnerHome'
 
 export default function App() {
   const { session, profile, loading } = useAuth()
@@ -73,7 +74,10 @@ export default function App() {
   // Il fisioterapista vede la sua area: home, profilo, chat e collegamenti.
   const physioAllowed = ['agenda', 'my-athletes', 'settings', 'physio-home', 'physio-profile', 'physio-office', 'messages', 'access-requests', 'my-team']
   const isPhysio = profile.role === 'fisioterapista'
-  const home = isBrand ? 'brandhome' : isAgent ? 'agent-home' : isInsurer ? 'insurer-home' : isTax ? 'tax-home' : isPhysio ? 'physio-home' : 'dashboard'
+  // Il partner dei servizi (es. Scouting Department) vede solo la sua area di lavoro.
+  const partnerAllowed = ['partner-home', 'settings']
+  const isPartner = profile.role === 'partner'
+  const home = isPartner ? 'partner-home' : isBrand ? 'brandhome' : isAgent ? 'agent-home' : isInsurer ? 'insurer-home' : isTax ? 'tax-home' : isPhysio ? 'physio-home' : 'dashboard'
   let route = routeState ?? home
   if (isBrand && !brandAllowed.includes(route)) route = 'brandhome'
   if (isCoach && !coachAllowed.includes(route)) route = 'dashboard'
@@ -81,6 +85,7 @@ export default function App() {
   if (isInsurer && !insurerAllowed.includes(route)) route = 'insurer-home'
   if (isTax && !taxAllowed.includes(route)) route = 'tax-home'
   if (isPhysio && !physioAllowed.includes(route)) route = 'physio-home'
+  if (isPartner && !partnerAllowed.includes(route)) route = 'partner-home'
 
   const view = (() => {
     switch (route) {
@@ -110,6 +115,7 @@ export default function App() {
       case 'tax-home': return <ProHome goto={setRoute} />
       case 'tax-profile': return <TaxAdvisorProfile />
       case 'physio-home': return <ProHome goto={setRoute} />
+      case 'partner-home': return <PartnerHome />
       case 'physio-profile': return <PhysioProfile />
       case 'physio-office': return <PhysioOffice />
       case 'agent-profile': return <AgentProfile />

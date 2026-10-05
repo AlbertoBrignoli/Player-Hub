@@ -11,9 +11,9 @@ import Icon from './Icon'
 import { Modal, Field, Input, Tabs, Empty } from './ui'
 
 // Schermate home dei vari ruoli: qui compare l'invito ad attivare le notifiche.
-const HOME_ROUTES = ['dashboard', 'brandhome', 'agent-home', 'insurer-home', 'tax-home', 'physio-home']
+const HOME_ROUTES = ['dashboard', 'brandhome', 'agent-home', 'insurer-home', 'tax-home', 'physio-home', 'partner-home']
 
-export const APP_VERSION = 'v6.9'
+export const APP_VERSION = 'v7.0'
 
 export interface NavDef {
   key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[]
@@ -61,6 +61,13 @@ export const BRAND_NAV: { group: string; items: NavDef[] }[] = [
     { key: 'talent', label: 'Ricerca talent', icon: 'star' },
     { key: 'brandcard', label: 'La mia scheda', icon: 'award' },
     { key: 'messages', label: 'Messaggi', icon: 'message' },
+  ]},
+]
+
+// Menu del partner dei Servizi AUVI: una sola area di lavoro (le impostazioni dal profilo in basso).
+export const PARTNER_NAV: { group: string; items: NavDef[] }[] = [
+  { group: 'Area partner', items: [
+    { key: 'partner-home', label: 'Richieste', icon: 'inbox' },
   ]},
 ]
 
@@ -198,6 +205,7 @@ const TITLES: Record<string, { t: string; s: string }> = {
   'tax-home': { t: 'Home', s: 'La tua scheda e gli atleti seguiti' },
   'tax-profile': { t: 'Il mio profilo', s: 'Contatti e studio' },
   'physio-home': { t: 'Home', s: 'La tua scheda e gli atleti seguiti' },
+  'partner-home': { t: 'Area partner', s: 'Richieste degli atleti AUVI per i tuoi servizi' },
   'physio-profile': { t: 'Il mio profilo', s: 'Anagrafica, contatti e biografia' },
   'physio-office': { t: 'Il mio ufficio', s: 'Atleti seguiti e spazio clinico' },
   'agent-profile': { t: 'Il mio profilo', s: 'Contatti personali e agenzia' },
@@ -254,7 +262,8 @@ export default function Shell({ route, setRoute, right, children }: {
     window.location.reload()
   }
   const isPro = isCoach || isAgent || isInsurer || isTax || isPhysio
-  const nav = isBrand ? BRAND_NAV : isPro ? proNav(role as ProRole) : NAV
+  const isPartner = role === 'partner'
+  const nav = isPartner ? PARTNER_NAV : isBrand ? BRAND_NAV : isPro ? proNav(role as ProRole) : NAV
   // professionista senza atleti: le aree di lavoro non hanno dati da mostrare (evita caricamenti infiniti)
   const proFree = isPro ? [PRO_ROLES[role as ProRole].home, PRO_ROLES[role as ProRole].profile, 'my-athletes', 'settings', 'access-requests', 'coach-office', 'exercise-library', 'training-builder'] : []
   const needsAthlete = isPro && !athletesLoading && athletes.length === 0 && !proFree.includes(route)
@@ -285,7 +294,12 @@ export default function Shell({ route, setRoute, right, children }: {
   const isActiveItem = (key: string) => hub?.key === key
 
   // Voci della barra in basso (telefono). Nel menu "Altro" su telefono non si ripetono.
-  const tabbarItems: { key: string; label: string; icon: string }[] = isBrand
+  const tabbarItems: { key: string; label: string; icon: string }[] = isPartner
+    ? [
+              { key: 'partner-home', label: 'Richieste', icon: 'inbox' },
+              { key: 'settings', label: 'Profilo', icon: 'user' },
+            ]
+    : isBrand
     ? [
               { key: 'brandhome', label: 'Home', icon: 'grid' },
               { key: 'mediakit', label: 'Numeri', icon: 'activity' },
@@ -335,7 +349,7 @@ export default function Shell({ route, setRoute, right, children }: {
             <div className="avatar">{initials(agentName || profile?.full_name || profile?.email)}</div>
             <div className="user-meta">
               <div className="user-name">{agentName || profile?.full_name || profile?.email}</div>
-              <div className="user-role">{role === 'admin' ? 'AUVI · Advisor' : role === 'creator' ? 'Team · Creator' : role === 'preparatore' ? 'Preparatore Atletico' : role === 'brand' ? 'Brand · Partner' : role === 'agente' ? 'Procuratore' : role === 'assicuratore' ? 'Assicuratore' : role === 'commercialista' ? 'Commercialista' : role === 'fisioterapista' ? 'Fisioterapista' : 'Giocatore'}</div>
+              <div className="user-role">{role === 'admin' ? 'AUVI · Advisor' : role === 'creator' ? 'Team · Creator' : role === 'preparatore' ? 'Preparatore Atletico' : role === 'brand' ? 'Brand · Partner' : role === 'agente' ? 'Procuratore' : role === 'assicuratore' ? 'Assicuratore' : role === 'commercialista' ? 'Commercialista' : role === 'fisioterapista' ? 'Fisioterapista' : role === 'partner' ? 'Partner servizi' : 'Giocatore'}</div>
             </div>
             <span style={{ marginLeft: 'auto', color: 'var(--text-faint)', display: 'grid' }}><Icon name="sliders" size={16} /></span>
           </button>
