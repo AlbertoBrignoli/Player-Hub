@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAthlete } from '../lib/athlete'
+import { useAuth } from '../auth/AuthContext'
+import { goto as go } from '../lib/route'
 import { useLang } from '../lib/i18n'
 import { Spinner, Stat, Badge, Select } from '../components/ui'
 import { SeasonBlock, LastMatchGrid } from '../components/statbits'
@@ -15,6 +17,9 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
   void goto
   const { athleteId, athleteTz } = useAthlete()
   const { t } = useLang()
+  const { role } = useAuth()
+  // l'atleta (e AUVI) puo' chiedere l'analisi personale della partita al partner scouting
+  const canAskAnalysis = role === 'player' || role === 'admin' || role === 'creator'
   const [loading, setLoading] = useState(true)
   const [player, setPlayer] = useState<Player | null>(null)
   const [matches, setMatches] = useState<Match[]>([])
@@ -156,6 +161,16 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
             <div className="card-hint">{fmtDate(lastMatch.match_date)} · {lastMatch.league}</div>
           </div>
           <LastMatchGrid m={lastMatch} />
+          {canAskAnalysis && (
+            <button className="scout-cta" onClick={() => go('services?service=Scouting Department')}>
+              <img src="/servizi/scouting-logo-white.png" alt="" />
+              <span className="scout-cta-txt">
+                <b>Analisi personale di questa partita</b>
+                <span>Video e dati sul tuo gioco con gli scout di Scouting Department</span>
+              </span>
+              <span className="scout-cta-go">→</span>
+            </button>
+          )}
         </div>
       )}
 

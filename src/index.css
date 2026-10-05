@@ -774,3 +774,11 @@ input[type="time"]::-webkit-date-and-time-value { text-align: left; }
   .kv-grid-hero .kv-v { font-size: 20px; }
 }
 .api-team { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+
+/* CTA analisi partita (Performance → Servizi · Scouting Department) */
+.scout-cta { display: flex; align-items: center; gap: 12px; width: 100%; margin-top: 14px; padding: 12px 14px; border-radius: 14px; border: 0; cursor: pointer; text-align: left; background: #111; color: #fff; }
+.scout-cta img { height: 22px; width: auto; max-width: 96px; object-fit: contain; object-position: left; flex-shrink: 0; }
+.scout-cta-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.scout-cta-txt b { font-size: 13.5px; }
+.scout-cta-txt span { font-size: 11.5px; color: rgba(255,255,255,.65); }
+.scout-cta-go { color: #A8872F; font-size: 18px; font-weight: 700; }

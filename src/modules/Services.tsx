@@ -7,6 +7,7 @@ import { useLang } from '../lib/i18n'
 import { Modal, Field, Textarea, Select, Empty, Spinner } from '../components/ui'
 import Icon from '../components/Icon'
 import { fmtDate } from '../lib/format'
+import { useRouteParam } from '../lib/route'
 import ServiceDetail from '../components/ServiceDetail'
 import type { Service } from '../components/ServiceDetail'
 
@@ -90,6 +91,16 @@ export default function Services() {
     setLoading(false)
   }
   useEffect(() => { load() }, [athleteId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // link diretto a una scheda: #/services?service=<id o nome partner> (es. dalla Performance)
+  const wanted = useRouteParam('service')
+  useEffect(() => {
+    if (!wanted || !services.length) return
+    const w = wanted.toLowerCase()
+    const hit = services.find(s => s.id === wanted)
+      || services.find(s => (s.partner_name || '').toLowerCase().includes(w))
+    if (hit) setOpen(hit)
+  }, [wanted, services])
 
   const studio = useMemo(() => services.filter(isStudio), [services])
   const verificati = useMemo(() => services.filter(s => s.verified && !isStudio(s)), [services])
