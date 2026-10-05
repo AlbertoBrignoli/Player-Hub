@@ -76,3 +76,9 @@ update public.crm_services set
     "quote":"“A system where the human eye, video and data analysis work in synergy.”"
   }'::jsonb)
 where partner_name = 'Scouting Department';
+
+-- domande obbligatorie (il questionario non si invia senza)
+update public.crm_services set form_schema = (
+  select jsonb_agg(case when f->>'key' in ('servizio','partite','obiettivo','consegna','contatto') then f || '{"required":true}' else f end order by ord)
+  from jsonb_array_elements(form_schema) with ordinality as e(f, ord))
+where partner_name = 'Scouting Department';

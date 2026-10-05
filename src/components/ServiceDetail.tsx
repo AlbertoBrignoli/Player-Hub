@@ -185,7 +185,13 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
   if (mode === 'form') {
     const cur = steps[step]
     const last = step === steps.length - 1
-    const next = () => { if (last) invia(); else setStep(s => s + 1) }
+    // domande obbligatorie del passo: finche' mancano non si va avanti
+    const filled = (v: any) => v != null && v !== '' && (!Array.isArray(v) || v.length > 0)
+    const missing = (cur?.fields || []).filter(f => f.required && !filled(answers[f.key]))
+    const next = () => {
+      if (missing.length) { toast(t('Rispondi a: ') + missing.map(f => t(f.label)).join(', '), 'err'); return }
+      if (last) invia(); else setStep(s => s + 1)
+    }
     return (
       <div className="grid" style={{ gap: 18, color: T.text }}>
         <button onClick={() => (step === 0 ? setMode('detail') : setStep(s => s - 1))}
@@ -214,7 +220,9 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
             <div className="grid" style={{ gap: 18 }}>
               {cur.fields.map(f => (
                 <div key={f.key}>
-                  <div style={{ fontSize: 13.5, fontWeight: 700, marginBottom: 3 }}>{t(f.label)}</div>
+                  <div style={{ fontSize: 13.5, fontWeight: 700, marginBottom: 3 }}>
+                    {t(f.label)}{f.required && <span style={{ color: accent }}> *</span>}
+                  </div>
                   {f.help && <div style={{ fontSize: 11.5, color: T.muted, marginBottom: 7 }}>{t(f.help)}</div>}
 
                   {f.type === 'textarea' && (
@@ -260,7 +268,7 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
 
         <button onClick={next} disabled={busy}
           style={{ padding: '14px 18px', borderRadius: 999, border: 'none', cursor: 'pointer',
-            background: T.text, color: '#fff', fontWeight: 800, fontSize: 14 }}>
+            background: T.text, color: '#fff', fontWeight: 800, fontSize: 14, opacity: missing.length ? 0.45 : 1 }}>
           {busy ? t('Invio…') : last ? t('Invia richiesta') : t('Continua')}
         </button>
         <div style={{ fontSize: 11.5, color: T.muted, textAlign: 'center' }}>

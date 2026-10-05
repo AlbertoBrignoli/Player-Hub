@@ -57,6 +57,7 @@ type Req = {
   status: string
   internal_note: string | null
   created_at: string
+  answers: Record<string, any> | null
 }
 
 const isStudio = (s: Service) => s.category === STUDIO_CAT
@@ -278,7 +279,9 @@ export default function Services() {
       )}
 
       {manage && (
-        <ManageForm req={manage} onClose={() => setManage(null)} onSaved={() => { setManage(null); load() }} />
+        <ManageForm req={manage} service={services.find(x => x.id === manage.service_id) || null}
+          athlete={athleteName(manage)}
+          onClose={() => setManage(null)} onSaved={() => { setManage(null); load() }} />
       )}
     </div>
   )
@@ -501,8 +504,37 @@ function RequestsView({ reqs, isPlayer, isAdmin, athleteName, onManage, onEmptyG
 }
 
 // --- gestione richiesta (admin) ---
-function ManageForm({ req, onClose, onSaved }: { req: Req; onClose: () => void; onSaved: () => void }) {
+// risposte del questionario nell'ordine delle domande (etichette dallo schema del servizio;
+// se il servizio non c'e' piu' nel catalogo, la chiave grezza)
+function answerRows(req: Req, service: Service | null) {
+  const a = req.answers || {}
+  const filled = (v: any) => v != null && v !== '' && (!Array.isArray(v) || v.length > 0)
+  const fmt = (v: any) => (Array.isArray(v) ? v.join(', ') : String(v))
+  const schema = service?.form_schema || []
+  const rows = schema.filter(f => filled(a[f.key])).map(f => ({ k: f.label, v: fmt(a[f.key]) }))
+  const known = new Set(schema.map(f => f.key))
+  for (const [k, v] of Object.entries(a)) if (!known.has(k) && filled(v)) rows.push({ k, v: fmt(v) })
+  return rows
+}
+
+export function ManageForm({ req, service, athlete, onClose, onSaved }: {
+  req: Req; service: Service | null; athlete: string; onClose: () => void; onSaved: () => void
+}) {
   const { t } = useLang()
+  const rows = answerRows(req, service)
+  // riepilogo da girare al partner (copia o email precompilata: l'invio lo fa AUVI)
+  const summary = [
+    `Richiesta AUVI · ${req.service_title}`,
+    `Atleta: ${athlete}`,
+    `Inviata il ${fmtDate(req.created_at)}`,
+    '',
+    ...rows.map(r => `${r.k}: ${r.v}`),
+  ].join('\n')
+  const partnerMail = service?.contact_email
+  async function copy() {
+    try { await navigator.clipboard.writeText(summary); toast(t('Riepilogo copiato')) }
+    catch { toast(t('Copia non riuscita'), 'err') }
+  }
   const [status, setStatus] = useState(req.status)
   const [note, setNote] = useState(req.internal_note || '')
   const [busy, setBusy] = useState(false)
@@ -525,11 +557,35 @@ function ManageForm({ req, onClose, onSaved }: { req: Req; onClose: () => void; 
         <button className="btn btn-ghost" onClick={onClose}>{t('Annulla')}</button>
         <button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? 'Salvo…' : 'Salva'}</button>
       </>}>
-      {req.message && (
+      <div style={{ fontSize: 12.5, color: T.dim, marginBottom: 10 }}>
+        {athlete} · inviata {fmtDate(req.created_at)}
+      </div>
+      {rows.length > 0 ? (
+        <div style={{ background: 'var(--bg-2)', border: `1px solid ${T.border}`, borderRadius: 12, padding: 12, marginBottom: 12 }}>
+          <div style={{ ...kicker, fontSize: 10, color: T.muted, marginBottom: 8 }}>{t('Risposte del questionario')}</div>
+          <div className="grid" style={{ gap: 8 }}>
+            {rows.map(r => (
+              <div key={r.k}>
+                <div style={{ fontSize: 11.5, color: T.muted }}>{r.k}</div>
+                <div style={{ fontSize: 13.5, marginTop: 1 }}>{r.v}</div>
+              </div>
+            ))}
+          </div>
+          <div className="flex gap wrap" style={{ gap: 8, marginTop: 12 }}>
+            <button className="btn btn-sm" onClick={copy}><Icon name="copy" size={13} /> {t('Copia riepilogo')}</button>
+            {partnerMail && (
+              <a className="btn btn-sm"
+                href={`mailto:${partnerMail}?subject=${encodeURIComponent(`Richiesta AUVI · ${req.service_title} · ${athlete}`)}&body=${encodeURIComponent(summary)}`}>
+                <Icon name="mail" size={13} /> {t('Scrivi a')} {service?.partner_name || partnerMail}
+              </a>
+            )}
+          </div>
+        </div>
+      ) : req.message ? (
         <div className="faint" style={{ fontSize: 12.5, marginBottom: 12, borderLeft: '2px solid var(--border)', paddingLeft: 10 }}>
           {req.message}
         </div>
-      )}
+      ) : null}
       <Field label={t("Stato")}>
         <Select value={status} onChange={e => setStatus(e.target.value)}>
           <option value="aperta">{t('Inviata')}</option>
