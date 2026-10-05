@@ -179,6 +179,8 @@ export interface EventAttachment {
   path: string
   size?: number | null
   mime?: string | null
+  /** archivio del file: crm-documents (default) o service-files (report dei partner) */
+  bucket?: string | null
 }
 
 export interface EventItem {
@@ -200,6 +202,10 @@ export interface EventItem {
   proposed_by_role?: string | null
   change_note?: string | null
   visibility?: 'team' | 'privato' | null
+  /** impegno nato da una richiesta servizio (call o report del partner) */
+  service_request_id?: string | null
+  /** link della call o link scaricabile (video, file pesanti) */
+  link_url?: string | null
 }
 
 export interface EventComment {

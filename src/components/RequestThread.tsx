@@ -36,6 +36,11 @@ export default function RequestThread({ requestId, placeholder }: { requestId: s
     if (!text && !file) return
     setBusy(true)
     let file_path: string | null = null
+    if (file && file.size > 45 * 1048576) {
+      setBusy(false)
+      toast('File oltre 45 MB: per video e file pesanti incolla un link scaricabile (WeTransfer, Drive)', 'err')
+      return
+    }
     if (file) {
       const safe = file.name.replace(/[^\w.\-]+/g, '_')
       file_path = `${requestId}/${Date.now()}-${safe}`

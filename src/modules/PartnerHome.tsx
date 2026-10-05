@@ -6,11 +6,11 @@ import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { toast } from '../lib/toast'
 import { useRouteParam, goto } from '../lib/route'
-import { Spinner, Empty, Badge, Textarea } from '../components/ui'
+import { Spinner, Empty, Badge, Textarea, Input, Field, Select } from '../components/ui'
 import Icon from '../components/Icon'
 import RequestThread from '../components/RequestThread'
 import { ApiSeason, ApiMatchList, type ApiSeasonRow } from '../components/apistats'
-import { fmtDate, seasonOf } from '../lib/format'
+import { fmtDate, fmtDateTime, seasonOf } from '../lib/format'
 
 type Req = {
   id: string; player_id: number; player_name: string | null; service_id: string | null
@@ -225,6 +225,8 @@ function RequestDetail({ req, svc, athlete, onBack, onChanged }: {
         </div>
       )}
 
+      <CalendarActions req={req} />
+
       <div className="card">
         <div className="card-head">
           <div className="card-title">Lavoro con l'atleta</div>
@@ -246,6 +248,158 @@ function RequestDetail({ req, svc, athlete, onBack, onChanged }: {
         <div className="card">
           <div className="card-head"><div className="card-title">Ultime partite</div><div className="card-hint">per scegliere cosa analizzare</div></div>
           <ApiMatchList matches={matches} />
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Documenti fino a questa dimensione si caricano nell'app; oltre, link scaricabile.
+const MAX_UPLOAD_MB = 45
+const BUCKET = 'service-files'
+
+type Ev = { id: string; type: string; title: string; start_at: string; request_status: string | null; change_note: string | null; link_url: string | null; attachments: any[] | null }
+
+// Tutto passa dal calendario dell'atleta: la call da confermare con un tocco, il report che si apre
+// dall'impegno. Il partner non tocca il calendario: usa due funzioni controllate (RPC).
+function CalendarActions({ req }: { req: Req }) {
+  const [evs, setEvs] = useState<Ev[]>([])
+  const [mode, setMode] = useState<'call' | 'report' | null>(null)
+  const [busy, setBusy] = useState(false)
+  // call
+  const [when, setWhen] = useState('')
+  const [mins, setMins] = useState('45')
+  const [meet, setMeet] = useState('')
+  const [cnote, setCnote] = useState('')
+  // report
+  const [title, setTitle] = useState('')
+  const [file, setFile] = useState<File | null>(null)
+  const [link, setLink] = useState('')
+  const [rnote, setRnote] = useState('')
+
+  async function load() {
+    const { data } = await supabase.from('crm_events')
+      .select('id, type, title, start_at, request_status, change_note, link_url, attachments')
+      .eq('service_request_id', req.id).order('start_at', { ascending: false })
+    setEvs((data as Ev[]) || [])
+  }
+  useEffect(() => { load() }, [req.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function proposeCall() {
+    if (!when) { toast('Scegli giorno e ora della call', 'err'); return }
+    setBusy(true)
+    const { error } = await supabase.rpc('crm_partner_propose_call', {
+      p_req: req.id, p_start: new Date(when).toISOString(), p_minutes: Number(mins), p_link: meet || null, p_note: cnote || null,
+    })
+    setBusy(false)
+    if (error) { toast(error.message, 'err'); return }
+    toast("Call proposta: l'atleta la trova nel calendario da confermare")
+    setMode(null); setWhen(''); setMeet(''); setCnote(''); load()
+  }
+
+  async function deliver() {
+    if (!file && !link.trim()) { toast('Carica il report o incolla un link scaricabile', 'err'); return }
+    if (file && file.size > MAX_UPLOAD_MB * 1048576) {
+      toast(`File oltre ${MAX_UPLOAD_MB} MB: caricalo su WeTransfer/Drive e incolla il link`, 'err'); return
+    }
+    setBusy(true)
+    let path: string | null = null
+    if (file) {
+      path = `${req.id}/${Date.now()}-${file.name.replace(/[^\w.\-]+/g, '_')}`
+      const up = await supabase.storage.from(BUCKET).upload(path, file, { upsert: false })
+      if (up.error) { setBusy(false); toast(up.error.message, 'err'); return }
+    }
+    const { error } = await supabase.rpc('crm_partner_deliver', {
+      p_req: req.id, p_title: title || 'Report', p_file_path: path, p_file_name: file?.name || null,
+      p_file_size: file?.size || null, p_link: link || null, p_note: rnote || null,
+    })
+    setBusy(false)
+    if (error) { toast(error.message, 'err'); return }
+    toast("Consegnato: l'atleta lo apre dal suo calendario")
+    setMode(null); setTitle(''); setFile(null); setLink(''); setRnote(''); load()
+  }
+
+  async function withdraw(ev: Ev) {
+    const { error } = await supabase.from('crm_events').delete().eq('id', ev.id)
+    if (error) { toast(error.message, 'err'); return }
+    toast('Proposta ritirata'); load()
+  }
+
+  const ST: Record<string, { l: string; tone: 'gold' | 'green' | 'red' | 'blue' }> = {
+    da_confermare: { l: 'Da confermare', tone: 'gold' }, confermata: { l: 'Confermata', tone: 'green' },
+    rifiutata: { l: 'Non accettata', tone: 'red' }, modifica_richiesta: { l: 'Chiede modifica', tone: 'blue' },
+  }
+
+  return (
+    <div className="card">
+      <div className="card-head">
+        <div className="card-title">Nel calendario dell'atleta</div>
+        <div className="card-hint">l'atleta riceve la notifica e apre tutto dal calendario</div>
+      </div>
+      <div className="flex gap wrap" style={{ gap: 8 }}>
+        <button className={`btn ${mode === 'call' ? 'btn-primary' : ''}`} onClick={() => setMode(mode === 'call' ? null : 'call')}>
+          <Icon name="calendar" size={14} /> Proponi una call
+        </button>
+        <button className={`btn ${mode === 'report' ? 'btn-primary' : ''}`} onClick={() => setMode(mode === 'report' ? null : 'report')}>
+          <Icon name="file" size={14} /> Consegna report
+        </button>
+      </div>
+
+      {mode === 'call' && (
+        <div className="grid" style={{ gap: 10, marginTop: 14 }}>
+          <div className="row2">
+            <Field label="Giorno e ora"><Input type="datetime-local" value={when} onChange={e => setWhen(e.target.value)} /></Field>
+            <Field label="Durata">
+              <Select value={mins} onChange={e => setMins(e.target.value)}>
+                {['20', '30', '45', '60', '90'].map(m => <option key={m} value={m}>{m} minuti</option>)}
+              </Select>
+            </Field>
+          </div>
+          <Field label="Link della call (Meet, Zoom, Teams)"><Input value={meet} placeholder="https://meet.google.com/…" onChange={e => setMeet(e.target.value)} /></Field>
+          <Field label="Di cosa parliamo (facoltativo)"><Input value={cnote} placeholder="Es. analisi OFI – Asteras" onChange={e => setCnote(e.target.value)} /></Field>
+          <button className="btn btn-primary" disabled={busy} onClick={proposeCall} style={{ justifySelf: 'start' }}>
+            {busy ? 'Invio…' : "Proponi all'atleta"}
+          </button>
+        </div>
+      )}
+
+      {mode === 'report' && (
+        <div className="grid" style={{ gap: 10, marginTop: 14 }}>
+          <Field label="Titolo"><Input value={title} placeholder="Es. Report post-partita · OFI – Asteras" onChange={e => setTitle(e.target.value)} /></Field>
+          <Field label={`Documento (PDF, fino a ${MAX_UPLOAD_MB} MB: si apre nell'app)`}>
+            <input type="file" className="input" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.png,.jpg,.jpeg"
+              onChange={e => setFile(e.target.files?.[0] || null)} />
+          </Field>
+          <Field label="Video o file pesanti: link scaricabile (WeTransfer, Drive, Dropbox)">
+            <Input value={link} placeholder="https://…" onChange={e => setLink(e.target.value)} />
+          </Field>
+          <Field label="Nota per l'atleta (facoltativo)"><Textarea rows={2} value={rnote} onChange={e => setRnote(e.target.value)} /></Field>
+          <button className="btn btn-primary" disabled={busy} onClick={deliver} style={{ justifySelf: 'start' }}>
+            {busy ? 'Caricamento…' : 'Consegna nel calendario'}
+          </button>
+        </div>
+      )}
+
+      {evs.length > 0 && (
+        <div className="list" style={{ marginTop: 12 }}>
+          {evs.map(ev => {
+            const st = ev.request_status ? ST[ev.request_status] : null
+            return (
+              <div key={ev.id} className="row" style={{ padding: '10px 2px', alignItems: 'flex-start' }}>
+                <Icon name={ev.type === 'call' ? 'calendar' : 'file'} size={16} />
+                <div className="row-main">
+                  <div className="row-title">{ev.title}</div>
+                  <div className="row-sub">{ev.type === 'call' ? fmtDateTime(ev.start_at) : `consegnato ${fmtDate(ev.start_at)}`}
+                    {ev.attachments?.length ? ' · documento' : ''}{ev.link_url ? ' · link' : ''}</div>
+                  {ev.request_status === 'modifica_richiesta' && ev.change_note && <div className="row-sub" style={{ color: 'var(--magenta)' }}>«{ev.change_note}»</div>}
+                </div>
+                {st && <Badge tone={st.tone}>{st.l}</Badge>}
+                {ev.type === 'call' && ev.request_status !== 'confermata' && (
+                  <button className="btn btn-ghost btn-sm" onClick={() => withdraw(ev)}>Ritira</button>
+                )}
+              </div>
+            )
+          })}
         </div>
       )}
     </div>

@@ -10,6 +10,7 @@ import Icon from '../components/Icon'
 import LuogoAutocomplete from '../components/LuogoAutocomplete'
 import type { EventItem, EventAttachment, EventComment } from '../lib/types'
 import { downloadIcs, mapsUrl } from '../lib/ics'
+import { useRouteParam } from '../lib/route'
 
 const DOC_BUCKET = 'crm-documents'
 function attSize(n?: number | null) {
@@ -19,7 +20,7 @@ function attSize(n?: number | null) {
   return (n / 1048576).toFixed(1) + ' MB'
 }
 async function openAttachment(a: EventAttachment) {
-  const { data, error } = await supabase.storage.from(DOC_BUCKET).createSignedUrl(a.path, 120)
+  const { data, error } = await supabase.storage.from(a.bucket || DOC_BUCKET).createSignedUrl(a.path, 300)
   if (error || !data?.signedUrl) { toast('Impossibile aprire il file', 'err'); return }
   window.open(data.signedUrl, '_blank')
 }
@@ -38,6 +39,7 @@ const TYPES: Record<string, TypeDef> = {
   call:        { l: 'Call',        icon: 'message',   c: '#0E7490' },
   nutrizione:  { l: 'Piano alimentare / nutrizione', icon: 'layers', c: '#4D7C0F' },
   visita:      { l: 'Visita / controllo', icon: 'activity', c: '#B42318' },
+  report:      { l: 'Report',      icon: 'file',      c: '#A8872F' },
 }
 const typeOf = (t: string): TypeDef => TYPES[t] || TYPES.personale
 // Partite ufficiali (tabella matches): voci di sola lettura, colore ink.
@@ -69,11 +71,12 @@ const TEAM_TYPES: Record<string, string[]> = {
 const ROLE_LABEL: Record<string, string> = {
   preparatore: 'Preparatore', fisioterapista: 'Fisioterapista', agente: 'Procuratore',
   assicuratore: 'Assicuratore', commercialista: 'Commercialista',
-  player: 'Atleta', admin: 'AUVI', creator: 'AUVI',
+  player: 'Atleta', admin: 'AUVI', creator: 'AUVI', partner: 'Partner AUVI',
 }
 // stati in cui chi ha proposto puo' ancora correggere o ritirare la proposta
 const OPEN_STATES = ['da_confermare', 'modifica_richiesta', 'rifiutata']
-const isTeamProposal = (e: EventItem) => !!e.proposed_by_role && PRO_ROLES.includes(e.proposed_by_role)
+// proposte del team o di un partner dei Servizi AUVI (es. call con Scouting Department)
+const isTeamProposal = (e: EventItem) => !!e.proposed_by_role && (PRO_ROLES.includes(e.proposed_by_role) || e.proposed_by_role === 'partner')
 const typesFor = (isAdmin: boolean, role?: string | null): string[] =>
   isAdmin ? ADMIN_TYPES : role === 'player' ? PLAYER_TYPES : (role && TEAM_TYPES[role]) || PLAYER_TYPES
 
@@ -106,6 +109,17 @@ export default function Agenda({ goto }: { goto?: (r: string) => void }) {
   const idsKey = ids.join(',')
   const [rows, setRows] = useState<AgItem[]>([])
   const [loading, setLoading] = useState(true)
+
+  // aperto da una notifica (#/agenda?event=<id>): porta sull'atleta e sul giorno dell'impegno
+  const focusId = useRouteParam('event')
+  useEffect(() => {
+    if (!focusId) return
+    supabase.from('crm_events').select('player_id').eq('id', focusId).maybeSingle().then(({ data }) => {
+      const pid = (data as { player_id: number | null } | null)?.player_id
+      if (pid != null && pid !== athleteId && athletes.some(a => a.api_player_id === pid)) { setScope('one'); setAthleteId(pid) }
+      setView('calendario')
+    })
+  }, [focusId, athletes.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Impegni (crm_events, RLS filtra per ruolo) + partite dei giocatori in vista.
   const reload = useCallback(async () => {
@@ -208,7 +222,7 @@ export default function Agenda({ goto }: { goto?: (r: string) => void }) {
           action={canAdd ? { label: '+ ' + addLabel, onClick: () => setEdit(emptyEv(defType)) } : undefined} />
       ) : view === 'lista'
         ? <ListView rows={rows} {...shared} />
-        : <CalendarView rows={rows} {...shared} />}
+        : <CalendarView rows={rows} focusId={focusId} {...shared} />}
 
       {/* la scheda completa sta in Impostazioni: qui solo un rimando di una riga */}
       <button className="ed-more" style={{ marginTop: 12, display: 'inline-flex', alignItems: 'center', gap: 6 }} onClick={() => goto?.('settings')}>
@@ -244,6 +258,7 @@ const AG_CSS = `
 .ag-cm-btns { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: wrap; }
 .ev-row-dot.mod { background: var(--magenta); }
 .ev-row-dot.no { background: var(--red); }
+.ev-focus { box-shadow: 0 0 0 2px var(--ink), 0 8px 24px rgba(10,10,10,.12); }
 `
 
 function Chips({ e, tagOf }: { e: AgItem; tagOf: TagOf }) {
@@ -270,8 +285,8 @@ type SharedProps = {
   uid?: string; isPro: boolean
 }
 
-function cardFor(p: SharedProps, e: AgItem) {
-  return <EvCard key={e.id} e={e} canEdit={p.canEdit(e)} onEdit={() => p.onEdit(e)} onDel={() => p.onDel(e)}
+function cardFor(p: SharedProps & { focusId?: string | null }, e: AgItem) {
+  return <EvCard key={e.id} e={e} focus={p.focusId === e.id} canEdit={p.canEdit(e)} onEdit={() => p.onEdit(e)} onDel={() => p.onDel(e)}
     canConfirm={p.canConfirm(e)} onConfirm={ok => p.onConfirm(e, ok)}
     canRespond={p.canRespond(e)} onRespond={st => p.onRespond(e, st)} onAsk={() => p.onAsk(e)}
     count={p.counts[e.id] || 0} onCount={d => p.bump(e.id, d)} uid={p.uid} isPro={p.isPro}
@@ -320,11 +335,19 @@ function ListView(props: SharedProps) {
   )
 }
 
-function CalendarView(props: SharedProps) {
-  const { rows, onAdd, tagOf, onOpenMatch } = props
+function CalendarView(props: SharedProps & { focusId?: string | null }) {
+  const { rows, onAdd, tagOf, onOpenMatch, focusId } = props
   const { t: tr } = useLang()
-  const [cur, setCur] = useState(() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() } })
-  const [sel, setSel] = useState<Date | null>(null)
+  const focused = focusId ? rows.find(r => r.id === focusId) : undefined
+  const [cur, setCur] = useState(() => { const d = focused ? new Date(focused.start_at) : new Date(); return { y: d.getFullYear(), m: d.getMonth() } })
+  const [sel, setSel] = useState<Date | null>(() => focused ? new Date(focused.start_at) : null)
+  // dalla notifica: apre il giorno dell'impegno e lo porta in vista
+  useEffect(() => {
+    if (!focused) return
+    const d = new Date(focused.start_at)
+    setCur({ y: d.getFullYear(), m: d.getMonth() }); setSel(d)
+    setTimeout(() => document.getElementById('ev-' + focused.id)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 120)
+  }, [focused?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const byDay: Record<string, AgItem[]> = {}
   rows.forEach(e => { const k = localKey(e.start_at); (byDay[k] = byDay[k] || []).push(e) })
@@ -430,7 +453,7 @@ function StatusChip({ e }: { e: AgItem }) {
   const who = tr(ROLE_LABEL[e.proposed_by_role || ''] || '')
   const conf: Record<string, { bg: string; c: string; ic: string; l: string }> = {
     da_confermare: { bg: 'var(--yellow-soft)', c: 'var(--gold)', ic: 'clock',
-      l: team ? `${tr('Proposta da')} ${who} · ${tr('da confermare')}` : tr("Richiesta dell'atleta · da confermare") },
+      l: e.proposed_by_role === 'partner' ? tr('Da confermare') : team ? `${tr('Proposta da')} ${who} · ${tr('da confermare')}` : tr("Richiesta dell'atleta · da confermare") },
     modifica_richiesta: { bg: 'rgba(221,0,136,.10)', c: 'var(--magenta)', ic: 'edit', l: tr('Modifica richiesta') },
     rifiutata: { bg: 'rgba(229,63,0,.10)', c: 'var(--red)', ic: 'x', l: team ? tr('Non accettata') : tr('Richiesta non accolta') },
     confermata: { bg: 'rgba(18,161,80,.12)', c: 'var(--green)', ic: 'check', l: tr('Confermato') },
@@ -447,8 +470,8 @@ function StatusChip({ e }: { e: AgItem }) {
   )
 }
 
-function EvCard({ e, canEdit, onEdit, onDel, canConfirm, onConfirm, canRespond, onRespond, onAsk, count, onCount, uid, isPro, goto, tagOf, onOpenMatch }: {
-  e: AgItem; canEdit: boolean; onEdit: () => void; onDel: () => void; canConfirm: boolean; onConfirm: (ok: boolean) => void
+export function EvCard({ e, focus, canEdit, onEdit, onDel, canConfirm, onConfirm, canRespond, onRespond, onAsk, count, onCount, uid, isPro, goto, tagOf, onOpenMatch }: {
+  e: AgItem; focus?: boolean; canEdit: boolean; onEdit: () => void; onDel: () => void; canConfirm: boolean; onConfirm: (ok: boolean) => void
   canRespond: boolean; onRespond: (st: 'confermata' | 'rifiutata') => void; onAsk: () => void
   count: number; onCount: (d: number) => void; uid?: string; isPro: boolean
   goto?: (r: string) => void; tagOf: TagOf; onOpenMatch?: (e: AgItem) => void
@@ -463,7 +486,7 @@ function EvCard({ e, canEdit, onEdit, onDel, canConfirm, onConfirm, canRespond, 
   // chi ha proposto e si e' visto rimandare indietro la proposta la corregge e la ripropone
   const canRepropose = isPro && !!uid && e.created_by === uid && (e.request_status === 'modifica_richiesta' || e.request_status === 'rifiutata')
   return (
-    <div className="card" style={{ padding: '12px 14px', display: 'flex', gap: 12, alignItems: 'flex-start', borderLeft: `3px solid ${t.c}`, minWidth: 0 }}>
+    <div id={'ev-' + e.id} className={'card' + (focus ? ' ev-focus' : '')} style={{ padding: '12px 14px', display: 'flex', gap: 12, alignItems: 'flex-start', borderLeft: `3px solid ${t.c}`, minWidth: 0 }}>
       <span style={{ width: 34, height: 34, borderRadius: 10, background: t.c + '22', color: t.c, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: '0 0 auto' }}>
         <Icon name={t.icon} size={17} />
       </span>
@@ -489,16 +512,27 @@ function EvCard({ e, canEdit, onEdit, onDel, canConfirm, onConfirm, canRespond, 
         </div>
         {e.location && <a className="faint" href={mapsUrl(e.location)} target="_blank" rel="noreferrer" title={tr("Apri in Maps")} style={{ fontSize: 12, marginTop: 4, display: 'inline-flex', alignItems: 'center', gap: 6, textDecoration: 'none', maxWidth: '100%', overflowWrap: 'anywhere' }}><Icon name="pin" size={13} style={{ flexShrink: 0 }} /> {e.location} <span style={{ opacity: .7 }}>↗</span></a>}
         <StatusChip e={e} />
+        {e.notes && !e._match && e.service_request_id && <div className="faint" style={{ fontSize: 12.5, marginTop: 6, overflowWrap: 'anywhere' }}>{e.notes}</div>}
         {e.attachments && e.attachments.length > 0 && (
           <div className="flex gap" style={{ marginTop: 11, flexWrap: 'wrap' }}>
             {e.attachments.map(a => (
-              <button key={a.path} className="btn btn-sm" title={a.name}
+              <button key={a.path} className={'btn btn-sm' + (e.type === 'report' ? ' btn-primary' : '')} title={a.name}
                 style={{ display: 'inline-flex', alignItems: 'center', gap: 6, maxWidth: '100%' }}
                 onClick={() => openAttachment(a)}>
-                <Icon name="download" size={13} />
-                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</span>
+                <Icon name={e.type === 'report' ? 'file' : 'download'} size={13} />
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.type === 'report' ? tr('Apri report') : a.name}</span>
               </button>
             ))}
+          </div>
+        )}
+        {/* materiali del servizio: report caricato nell'app, call o link scaricabile (video, file pesanti) */}
+        {e.link_url && (
+          <div className="flex gap" style={{ marginTop: 11, flexWrap: 'wrap' }}>
+            <a className={'btn btn-sm' + (e.type === 'call' && e.request_status === 'confermata' ? ' btn-primary' : '')}
+              href={e.link_url} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <Icon name={e.type === 'call' ? 'smartphone' : 'download'} size={13} />
+              {e.type === 'call' ? tr('Entra nella call') : tr('Scarica video e materiali')}
+            </a>
           </div>
         )}
         {/* un'unica riga di azioni: conferme e scheda a sinistra, icone a destra */}
@@ -519,7 +553,7 @@ function EvCard({ e, canEdit, onEdit, onDel, canConfirm, onConfirm, canRespond, 
           )}
           <span style={{ flex: 1 }} />
           <button className="ev-ic" title={tr('Nel mio calendario')} aria-label={tr('Nel mio calendario')}
-            onClick={() => downloadIcs({ title: e.title, start: e.start_at, end: e.end_at || undefined, location: e.location || undefined, description: e.notes || undefined })}>
+            onClick={() => downloadIcs({ title: e.title, start: e.start_at, end: e.end_at || undefined, location: e.location || e.link_url || undefined, description: [e.notes, e.link_url].filter(Boolean).join('\n') || undefined })}>
             <Icon name="calendar" size={16} />
           </button>
           {e.location && (
