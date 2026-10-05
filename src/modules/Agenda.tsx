@@ -11,6 +11,7 @@ import LuogoAutocomplete from '../components/LuogoAutocomplete'
 import type { EventItem, EventAttachment, EventComment } from '../lib/types'
 import { downloadIcs, mapsUrl } from '../lib/ics'
 import { useRouteParam } from '../lib/route'
+import WeekPlanModal from '../components/WeekPlan'
 
 const DOC_BUCKET = 'crm-documents'
 function attSize(n?: number | null) {
@@ -89,7 +90,7 @@ const sectionLabel: React.CSSProperties = { fontSize: 11, letterSpacing: 1.2, te
 const emptyEv = (type: string): Partial<EventItem> => ({ title: '', type, start_at: '' })
 
 export default function Agenda({ goto }: { goto?: (r: string) => void }) {
-  const { athleteId, athletes, setAthleteId, loading: athletesLoading } = useAthlete()
+  const { athleteId, athletes, setAthleteId, loading: athletesLoading, athleteTz } = useAthlete()
   const { t: tr } = useLang()
   const { isAdmin, role, session } = useAuth()
   const uid = session?.user.id
@@ -104,6 +105,11 @@ export default function Agenda({ goto }: { goto?: (r: string) => void }) {
   const [edit, setEdit] = useState<Partial<EventItem> | null>(null)
   const [askFor, setAskFor] = useState<EventItem | null>(null)
   const [counts, setCounts] = useState<Record<string, number>>({})
+  // programma settimanale: lo carica l'atleta (o AUVI/procuratore per lui); si apre anche da Home (#/agenda?plan=1)
+  const canPlan = role === 'player' || isAdmin || role === 'agente'
+  const [planOpen, setPlanOpen] = useState(false)
+  const planParam = useRouteParam('plan')
+  useEffect(() => { if (planParam && canPlan) setPlanOpen(true) }, [planParam]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const ids = scope === 'all' ? athletes.map(a => a.api_player_id) : (athleteId != null ? [athleteId] : [])
   const idsKey = ids.join(',')
@@ -214,7 +220,12 @@ export default function Agenda({ goto }: { goto?: (r: string) => void }) {
         <div className="flex gap">
           <Tabs tabs={[{ key: 'calendario', label: tr('Calendario') }, { key: 'lista', label: tr('Lista') }]} value={view} onChange={setView} />
         </div>
-        {canAdd && <button className="btn btn-primary" style={{ flexShrink: 0 }} onClick={() => setEdit(emptyEv(defType))}>+ {addLabel}</button>}
+        <div className="flex gap" style={{ gap: 6, flexShrink: 0 }}>
+          {canPlan && athleteId != null && (
+            <button className="btn btn-primary" onClick={() => setPlanOpen(true)}><Icon name="upload" size={14} /> {tr('Programma settimana')}</button>
+          )}
+          {canAdd && <button className={'btn' + (canPlan ? '' : ' btn-primary')} onClick={() => setEdit(emptyEv(defType))}>+ {canPlan ? tr('Impegno') : addLabel}</button>}
+        </div>
       </div>
 
       {rows.length === 0 ? (
@@ -228,6 +239,11 @@ export default function Agenda({ goto }: { goto?: (r: string) => void }) {
       <button className="ed-more" style={{ marginTop: 12, display: 'inline-flex', alignItems: 'center', gap: 6 }} onClick={() => goto?.('settings')}>
         <Icon name="smartphone" size={14} /> {tr("Vedi l'agenda nel calendario del telefono")} →
       </button>
+
+      {planOpen && athleteId != null && (
+        <WeekPlanModal playerId={athleteId} tz={athleteTz} onClose={() => setPlanOpen(false)}
+          onSaved={() => { setPlanOpen(false); reload() }} />
+      )}
 
       {askFor && <AskChangeModal ev={askFor} onClose={() => setAskFor(null)}
         onSend={async note => { await onRespond(askFor, 'modifica_richiesta', note); setAskFor(null) }} />}

@@ -804,3 +804,22 @@ input[type="time"]::-webkit-date-and-time-value { text-align: left; }
 .partner-hero-s { font-size: 12.5px; color: rgba(255,255,255,.7); margin-top: 4px; max-width: 520px; }
 .partner-ava { width: 44px; height: 44px; border-radius: 12px; object-fit: cover; background: var(--bg-2); border: 1px solid var(--border); flex-shrink: 0; display: inline-block; }
 .partner-ava.lg { width: 64px; height: 64px; border-radius: 16px; }
+
+/* ===== Programma settimanale (upload → lettura → spunta) ===== */
+.wp-drop { display: grid; justify-items: center; gap: 6px; text-align: center; padding: 26px 18px; border: 2px dashed var(--border-2, var(--border)); border-radius: 16px; cursor: pointer; background: var(--bg-2); }
+.wp-drop b { font-size: 15px; }
+.wp-drop span { font-size: 12.5px; color: var(--text-dim); max-width: 320px; }
+.wp-existing { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; background: rgba(18,161,80,.08); color: var(--text); font-size: 13px; }
+.wp-existing > svg { color: var(--green); flex-shrink: 0; }
+.wp-note { font-size: 12.5px; padding: 8px 12px; border-radius: 10px; background: var(--yellow-soft, rgba(255,236,0,.18)); }
+.wp-day { border-top: 1px solid var(--border); padding-top: 10px; display: grid; gap: 8px; }
+.wp-day-h { display: flex; justify-content: space-between; align-items: center; font-weight: 800; font-size: 13.5px; }
+.wp-row { display: flex; gap: 10px; align-items: flex-start; }
+.wp-row input[type=checkbox] { width: 20px; height: 20px; margin-top: 8px; accent-color: var(--ink); flex-shrink: 0; }
+.wp-row.off .wp-fields { opacity: .4; }
+.wp-fields { flex: 1; min-width: 0; display: grid; gap: 6px; }
+.wp-line { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); gap: 6px; align-items: center; }
+.wp-line2 { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.3fr); gap: 6px; }
+.wp-line .wp-time, .wp-line2 > * { width: 100%; min-width: 0; }
+.link-btn { background: none; border: 0; padding: 0; color: var(--text); text-decoration: underline; cursor: pointer; font: inherit; }
+.wp-line2 select { font-size: 13px; padding-left: 8px; padding-right: 22px; }

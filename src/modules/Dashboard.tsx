@@ -6,6 +6,7 @@ import { useAthlete } from '../lib/athlete'
 import { useLang } from '../lib/i18n'
 import { Spinner } from '../components/ui'
 import Icon from '../components/Icon'
+import { defaultWeek } from '../components/WeekPlan'
 import { QuickAddModal, useQuickAddPermissions } from '../components/QuickAdd'
 import HomeContacts from './home/HomeContacts'
 import { fmtDate, fmtMatchTime, daysUntil, isImageFile } from '../lib/format'
@@ -184,6 +185,8 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
   const [toApprove, setToApprove] = useState<MediaItem[]>([])
   const [accessPending, setAccessPending] = useState(0)
   const [proposals, setProposals] = useState(0)
+  // l'unica azione attiva dell'atleta: il programma settimanale del club
+  const [planMissing, setPlanMissing] = useState(false)
   const [adding, setAdding] = useState<'event' | 'task' | null>(null)
   const isPlayer = role === 'player'
 
@@ -192,7 +195,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
     (async () => {
       const todayKey = new Date().toISOString().slice(0, 10)
       const pid = athleteId
-      const [p, m, t, ev, ct, ed, ph, rq, pr] = await Promise.all([
+      const [p, m, t, ev, ct, ed, ph, rq, pr, wp] = await Promise.all([
         supabase.from('player').select('*').eq('api_player_id', pid).maybeSingle(),
         supabase.from('matches').select('*').eq('player_id', pid).order('match_date', { ascending: true }),
         supabase.from('player_stats_match').select('*').eq('player_id', pid).order('match_date', { ascending: false }).limit(1),
@@ -209,6 +212,10 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
           ? supabase.from('crm_events').select('id', { count: 'exact', head: true }).eq('player_id', pid)
               .eq('request_status', 'da_confermare').in('proposed_by_role', ['agente', 'preparatore', 'assicuratore', 'commercialista', 'fisioterapista', 'partner'])
           : Promise.resolve({ count: 0 }),
+        isPlayer
+          ? supabase.from('crm_week_plans').select('id', { count: 'exact', head: true }).eq('player_id', pid)
+              .eq('week_start', defaultWeek()).eq('status', 'confermato')
+          : Promise.resolve({ count: 1 }),
       ])
       setPlayer(p.data as Player)
       setMatches((m.data as Match[]) || [])
@@ -232,6 +239,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
       setContracts((ct.data as Contract[]) || [])
       setAccessPending(((rq.data as any[]) || []).length)
       setProposals((pr as { count: number | null }).count || 0)
+      setPlanMissing(isPlayer && !((wp as { count: number | null }).count))
       const content = ed.data as EditorialEntry | null
       setNextContent(content)
       const photos = (ph.data as MediaItem[]) || []
@@ -319,9 +327,19 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
 
   // ---- 3 da fare ora: solo ciò che non ha già un posto in Home ----
   // (foto → icona Foto delle azioni rapide; prossimo contenuto → tabellone partita)
-  const todo = accessPending > 0 || proposals > 0 ? (
+  const todo = accessPending > 0 || proposals > 0 || planMissing ? (
     <section className="home-sec">
       <div className="home-todo">
+        {planMissing && (
+          <button className="ed-action prio" onClick={() => goto('agenda?plan=1')}>
+            <div className="ed-action-num"><Icon name="upload" size={18} /></div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="ed-action-t">{t('Carica il programma della settimana')}</div>
+              <div className="ed-action-s">{t('Il PDF o la foto del club: lo leggo io, tu spunti e salvi. Al resto pensa il tuo team.')}</div>
+            </div>
+            <Icon name="chevron-right" size={18} style={{ color: 'var(--text-faint)', flexShrink: 0 }} />
+          </button>
+        )}
         {proposals > 0 && (
           <button className="ed-action prio" onClick={() => goto('agenda')}>
             <div className="ed-action-num">{proposals}</div>
