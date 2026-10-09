@@ -823,3 +823,11 @@ input[type="time"]::-webkit-date-and-time-value { text-align: left; }
 .wp-line .wp-time, .wp-line2 > * { width: 100%; min-width: 0; }
 .link-btn { background: none; border: 0; padding: 0; color: var(--text); text-decoration: underline; cursor: pointer; font: inherit; }
 .wp-line2 select { font-size: 13px; padding-left: 8px; padding-right: 22px; }
+
+/* anteprima video (materiale editoriale): primo fotogramma + simbolo play */
+.vid-thumb { position: relative; display: block; overflow: hidden; background: #111; cursor: pointer; width: 100%; height: 100%; }
+.vid-thumb video { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
+.vid-thumb::after { content: ''; position: absolute; left: 50%; top: 50%; width: 0; height: 0; transform: translate(-35%, -50%);
+  border-style: solid; border-width: 9px 0 9px 15px; border-color: transparent transparent transparent #fff; filter: drop-shadow(0 1px 4px rgba(0,0,0,.6)); }
+.row-thumb.vid-thumb { padding: 0; width: 46px; height: 46px; flex-shrink: 0; border-radius: 11px; }
+.asset-card > div:first-child { height: 100%; }

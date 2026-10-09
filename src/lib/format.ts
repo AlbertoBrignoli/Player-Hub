@@ -46,6 +46,10 @@ export function isImageFile(name: string | null | undefined) {
   return /\.(jpe?g|png|webp|gif|avif|heic|heif|bmp|svg)$/i.test(name || '')
 }
 
+export function isVideoFile(name: string | null | undefined) {
+  return /\.(mp4|mov|m4v|webm|3gp|avi)$/i.test(name || '')
+}
+
 export function fileExt(name: string | null | undefined) {
   const m = (name || '').match(/\.([a-z0-9]+)$/i)
   return m ? m[1].toUpperCase() : 'FILE'

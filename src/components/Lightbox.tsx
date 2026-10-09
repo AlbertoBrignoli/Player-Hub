@@ -4,6 +4,8 @@ export interface LightboxItem {
   id: string
   url: string | null
   name?: string | null
+  /** video: si riproduce nella galleria (play, audio, schermo intero) */
+  video?: boolean
 }
 
 // Galleria a tutto schermo: frecce/tastiera su desktop, swipe su telefono.
@@ -60,7 +62,10 @@ export default function Lightbox({ items, index, onIndex, onClose, actions }: {
 
       {items.length > 1 && <button className="lightbox-arrow lightbox-l" onClick={e => { e.stopPropagation(); prev() }}>‹</button>}
       <div className="lightbox-stage" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
-        {item.url
+        {item.url && item.video
+          ? <video key={item.id} src={item.url} controls autoPlay playsInline onClick={e => e.stopPropagation()}
+              style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: 8, background: '#000' }} />
+          : item.url
           ? <img src={item.url} alt={item.name || ''} onClick={e => e.stopPropagation()}
               style={{ transform: dx ? `translateX(${dx}px)` : undefined, transition: dx ? 'none' : 'transform .2s' }} />
           : <div className="lightbox-ph">Anteprima non disponibile</div>}

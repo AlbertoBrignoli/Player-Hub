@@ -9,7 +9,7 @@ import { toast } from '../lib/toast'
 import { useRouteParam, goto } from '../lib/route'
 import { Modal, Field, Input, Select, Textarea, Badge, Empty, Spinner, ConfirmButton, Tabs } from '../components/ui'
 import Icon from '../components/Icon'
-import { fmtDate, fmtDateTime, fmtMatchTime, fmtMatchDateTime, isImageFile, fileExt } from '../lib/format'
+import { fmtDate, fmtDateTime, fmtMatchTime, fmtMatchDateTime, isImageFile, isVideoFile, fileExt } from '../lib/format'
 import type { EditorialEntry, MediaItem } from '../lib/types'
 
 const BUCKET = 'crm-media'
@@ -62,6 +62,7 @@ async function uploadEntryGraphics(entry: EditorialEntry, files: File[], ctx: {
   let ok = 0
   let error: string | undefined
   for (const file of files) {
+    if (file.size > MAX_UPLOAD) { error = tooBig(file); continue }
     const path = `editorial/${entry.id}/${Date.now()}-${file.name.replace(/[^\w.\-]/g, '_')}`
     const up = await supabase.storage.from(BUCKET).upload(path, file, { upsert: false })
     if (up.error) { error = up.error.message; continue }
@@ -82,6 +83,10 @@ async function uploadEntryGraphics(entry: EditorialEntry, files: File[], ctx: {
   }
   return { ok, error }
 }
+
+// limite del progetto per singolo file: i mini video stanno sotto, i girati lunghi vanno esportati più leggeri
+const MAX_UPLOAD = 50 * 1048576
+const tooBig = (f: File) => `"${f.name}" supera 50 MB: esporta il video più leggero (1080p, pochi secondi) e ricaricalo`
 
 const MONTHS = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre']
 const DOW = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom']
@@ -504,6 +509,9 @@ function EntryModal({ entry, onClose, onChanged }: {
     } catch { /* ignore */ }
   }
 
+  // video del contenuto: un tocco apre il lettore (guarda + scarica), le immagini si scaricano come prima
+  const [viewer, setViewer] = useState<MediaItem | null>(null)
+  const openOrPlay = (m: MediaItem) => (isVideoFile(m.file_name) ? setViewer(m) : openAsset(m))
   const grafiche = media.filter(m => m.kind !== 'foto')
   const approvate = media.filter(m => m.kind === 'foto' && m.status === 'approvata')
     .sort((a, b) => (a.sort ?? 9999) - (b.sort ?? 9999) || (a.created_at < b.created_at ? -1 : 1))
@@ -588,6 +596,7 @@ function EntryModal({ entry, onClose, onChanged }: {
     let ok = 0
     try {
       for (const file of files) {
+        if (file.size > MAX_UPLOAD) { toast(tooBig(file), 'err'); continue }
         const path = `editorial/${entry.id}/mat-${Date.now()}-${file.name.replace(/[^\w.\-]/g, '_')}`
         const up = await supabase.storage.from(BUCKET).upload(path, file, { upsert: false })
         if (up.error) { toast(up.error.message, 'err'); continue }
@@ -700,6 +709,7 @@ function EntryModal({ entry, onClose, onChanged }: {
 
   const isMatchDayAthlete = !isTeam && entry.type === 'partita'
   const firstGraphicImg = grafiche.find(m => isImageFile(m.file_name))
+  const firstGraphicVideo = !firstGraphicImg ? grafiche.find(m => isVideoFile(m.file_name)) : undefined
 
   async function acceptGraphic() {
     const { error } = await updateRow('crm_editorial', entry.id, { status: 'pronto', revision: null })
@@ -799,6 +809,15 @@ function EntryModal({ entry, onClose, onChanged }: {
               </>
             )}
           </div>
+          {!isTeam && firstGraphicVideo && urls[firstGraphicVideo.storage_path] && (
+            <div style={{ marginBottom: 10 }}>
+              <video src={urls[firstGraphicVideo.storage_path]} controls playsInline preload="metadata"
+                style={{ width: '100%', maxHeight: 460, borderRadius: 12, display: 'block', background: '#000' }} />
+              <button className="btn btn-sm" style={{ marginTop: 8 }} onClick={() => openAsset(firstGraphicVideo)}>
+                <Icon name="download" size={13} /> {t('Scarica video')}
+              </button>
+            </div>
+          )}
           {!isTeam && firstGraphicImg && urls[firstGraphicImg.storage_path] && (
             <img src={urls[firstGraphicImg.storage_path]} alt="" onClick={() => openAsset(firstGraphicImg)}
               style={{ width: '100%', maxHeight: 460, objectFit: 'contain', borderRadius: 12, display: 'block',
@@ -826,17 +845,22 @@ function EntryModal({ entry, onClose, onChanged }: {
           )}
           {grafiche.length === 0
             ? <div className="faint" style={{ fontSize: 12.5, padding: '6px 0' }}>{isTeam ? 'Carica qui i file pronti da pubblicare: finiscono anche in Media → Pubblicati.' : 'Il team caricherà qui la grafica finale, pronta da pubblicare.'}</div>
-            : (isTeam || grafiche.length > 1 || !firstGraphicImg) && (
+            : (isTeam || grafiche.length > 1 || (!firstGraphicImg && !firstGraphicVideo)) && (
               <div className="list">
                 {grafiche.map(m => (
                   <div className="row" key={m.id}>
                     {isImageFile(m.file_name) && urls[m.storage_path]
                       ? <img className="row-thumb" src={urls[m.storage_path]} alt="" loading="lazy" onClick={() => openAsset(m)} />
-                      : <span className="row-thumb file-badge" onClick={() => openAsset(m)}>{fileExt(m.file_name)}</span>}
+                      : isVideoFile(m.file_name) && urls[m.storage_path]
+                        ? <span className="row-thumb vid-thumb" onClick={() => setViewer(m)}>
+                            <video src={urls[m.storage_path] + '#t=0.1'} muted playsInline preload="metadata" />
+                          </span>
+                        : <span className="row-thumb file-badge" onClick={() => openAsset(m)}>{fileExt(m.file_name)}</span>}
                     <div className="row-main">
                       <div className="row-title">{m.file_name}</div>
                       <div className="row-sub">{fmtDateTime(m.created_at)}</div>
                     </div>
+                    {isVideoFile(m.file_name) && <button className="btn btn-sm" onClick={() => setViewer(m)}>{t('Guarda')}</button>}
                     <button className="btn btn-sm" onClick={() => openAsset(m)}><Icon name="download" size={13} /> {t('Scarica')}</button>
                     {isAdmin && <ConfirmButton onConfirm={() => removeAsset(m)}><Icon name="x" size={13} /></ConfirmButton>}
                   </div>
@@ -915,10 +939,12 @@ function EntryModal({ entry, onClose, onChanged }: {
               <div className="asset-grid">
                 {approvate.map((m, i) => (
                   <div className="asset-card" key={m.id} title={m.file_name || ''} style={{ position: 'relative' }}>
-                    <div onClick={() => openAsset(m)}>
+                    <div onClick={() => openOrPlay(m)}>
                       {isImageFile(m.file_name) && urls[m.storage_path]
                         ? <img src={urls[m.storage_path].replace('/object/sign/', '/render/image/sign/') + '&width=220&quality=60'} alt="" loading="lazy" decoding="async" />
-                        : <div className="asset-ph"><Icon name="camera" size={20} strokeWidth={1.4} /></div>}
+                        : isVideoFile(m.file_name) && urls[m.storage_path]
+                          ? <div className="vid-thumb"><video src={urls[m.storage_path] + '#t=0.1'} muted playsInline preload="metadata" /></div>
+                          : <div className="asset-ph"><Icon name="camera" size={20} strokeWidth={1.4} /></div>}
                     </div>
                     {/* numero d'ordine nel carosello */}
                     <div style={{ position: 'absolute', top: 6, left: 6, minWidth: 20, height: 20, padding: '0 5px',
@@ -958,6 +984,16 @@ function EntryModal({ entry, onClose, onChanged }: {
           </More>
         )}
         {err && <div className="msg-err">{err}</div>}
+        {viewer && urls[viewer.storage_path] && (
+          <Modal title={viewer.file_name || t('Video')} onClose={() => setViewer(null)}
+            footer={<>
+              <button className="btn btn-ghost" onClick={() => setViewer(null)}>{t('Chiudi')}</button>
+              <button className="btn btn-primary" onClick={() => openAsset(viewer)}><Icon name="download" size={14} /> {t('Scarica video')}</button>
+            </>}>
+            <video src={urls[viewer.storage_path]} controls autoPlay playsInline
+              style={{ width: '100%', maxHeight: '70vh', borderRadius: 12, background: '#000', display: 'block' }} />
+          </Modal>
+        )}
       </div>
       {pickerOpen && (
         <MediaPicker athleteId={athleteId}
@@ -1052,7 +1088,9 @@ function InstagramExport({ caption, title, photos, urls, onClose }: {
             {photos.map((m, i) => (
               <div key={m.id} className="flex gap" style={{ alignItems: 'center', gap: 12, border: '1px solid var(--border)', borderRadius: 12, padding: 8 }}>
                 <div style={{ minWidth: 26, height: 26, borderRadius: 8, background: 'var(--accent)', color: 'var(--ink)', fontWeight: 800, fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{i + 1}</div>
-                {urls[m.storage_path]
+                {urls[m.storage_path] && isVideoFile(m.file_name)
+                  ? <span className="vid-thumb" style={{ width: 56, height: 56, borderRadius: 8, flexShrink: 0 }}><video src={urls[m.storage_path] + '#t=0.1'} muted playsInline preload="metadata" /></span>
+                  : urls[m.storage_path]
                   ? <img src={urls[m.storage_path]} alt="" style={{ width: 56, height: 56, borderRadius: 8, objectFit: 'cover' }} />
                   : <div style={{ width: 56, height: 56, borderRadius: 8, background: 'var(--surface-2)' }} />}
                 <div className="row-main" style={{ minWidth: 0 }}>
@@ -1245,7 +1283,9 @@ function MediaPicker({ athleteId, excludeSourceIds, onClose, onConfirm }: {
                         outline: on ? '2px solid var(--accent)' : 'none', outlineOffset: -2 }}>
                       {isImageFile(m.file_name) && urls[m.storage_path]
                         ? <img src={urls[m.storage_path].replace('/object/sign/', '/render/image/sign/') + '&width=220&quality=60'} alt="" loading="lazy" decoding="async" />
-                        : <div className="asset-ph"><Icon name="camera" size={20} strokeWidth={1.4} /></div>}
+                        : isVideoFile(m.file_name) && urls[m.storage_path]
+                          ? <div className="vid-thumb"><video src={urls[m.storage_path] + '#t=0.1'} muted playsInline preload="metadata" /></div>
+                          : <div className="asset-ph"><Icon name="camera" size={20} strokeWidth={1.4} /></div>}
                       {chosen && (
                         <div style={{ position: 'absolute', top: 6, left: 6, padding: '2px 7px', borderRadius: 8,
                           background: 'var(--accent)', color: 'var(--ink)', fontSize: 10, fontWeight: 800,

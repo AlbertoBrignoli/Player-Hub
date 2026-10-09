@@ -11,7 +11,7 @@ import { shareFile, canShareFiles } from '../lib/share'
 import Lightbox from '../components/Lightbox'
 import Icon from '../components/Icon'
 import { Badge, Empty, Spinner, ConfirmButton, Select, Tabs } from '../components/ui'
-import { fmtDate, isImageFile, fileExt } from '../lib/format'
+import { fmtDate, isImageFile, isVideoFile, fileExt } from '../lib/format'
 import type { MediaItem, EditorialEntry } from '../lib/types'
 
 const BUCKET = 'crm-media'
@@ -326,6 +326,10 @@ export default function Media() {
               loading="lazy" decoding="async"
               onError={() => onThumbError(m.storage_path)}
               onClick={() => setLightbox(idx)} />
+          : isVideoFile(m.file_name) && urls[m.storage_path]
+          ? <div className="media-thumb vid-thumb" onClick={() => setLightbox(idx)}>
+              <video src={urls[m.storage_path] + '#t=0.1'} muted playsInline preload="metadata" />
+            </div>
           : <div className="media-thumb media-ph" onClick={() => download(m)} style={{ cursor: 'pointer' }}>
               <div style={{ textAlign: 'center' }}>
                 <Icon name={m.kind === 'foto' ? 'camera' : 'edit'} size={26} strokeWidth={1.4} />
@@ -557,7 +561,7 @@ export default function Media() {
 
       {lightbox != null && visible[lightbox] && (
         <Lightbox
-          items={visible.map(m => ({ id: m.id, url: isImageFile(m.file_name) ? urls[m.storage_path] || null : null, name: m.file_name }))}
+          items={visible.map(m => ({ id: m.id, url: isImageFile(m.file_name) || isVideoFile(m.file_name) ? urls[m.storage_path] || null : null, name: m.file_name, video: isVideoFile(m.file_name) }))}
           index={lightbox}
           onIndex={setLightbox}
           onClose={() => setLightbox(null)}
