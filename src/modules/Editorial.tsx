@@ -176,12 +176,13 @@ export default function Editorial() {
     const live = rows.filter(e => e.status !== 'pubblicato' && e.entry_date >= from)
       .sort((a, b) => a.entry_date.localeCompare(b.entry_date))
     const groups: { key: string; title: string; hint: string; entries: EditorialEntry[]; action: 'grafica' | 'apri' }[] = isTeam ? [
+      // in alto ciò che è pronto e va solo pubblicato; in fondo la lista lunga da preparare
+      { key: 'pub', title: 'Da pubblicare', hint: 'Grafica pronta: manca la pubblicazione', action: 'apri',
+        entries: live.filter(e => !e.revision && (e.status === 'grafica_caricata' || e.status === 'pronto')) },
       { key: 'rev', title: 'Modifiche richieste', hint: "L'atleta ha chiesto di ritoccare la grafica", action: 'grafica',
         entries: live.filter(e => !!e.revision) },
       { key: 'prep', title: 'Da preparare', hint: 'Manca il copy o la grafica', action: 'grafica',
         entries: live.filter(e => !e.revision && (e.status === 'da_preparare' || e.status === 'copy_pronto')) },
-      { key: 'pub', title: 'Da pubblicare', hint: 'Grafica pronta: manca la pubblicazione', action: 'apri',
-        entries: live.filter(e => !e.revision && (e.status === 'grafica_caricata' || e.status === 'pronto')) },
     ] : [
       { key: 'pub', title: 'Da pubblicare', hint: 'Pronti: copia il testo, pubblica e conferma', action: 'apri',
         entries: live.filter(e => e.status === 'pronto') },
