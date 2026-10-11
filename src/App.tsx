@@ -35,6 +35,7 @@ import TaxAdvisorProfile from './modules/TaxAdvisorProfile'
 import PhysioProfile from './modules/PhysioProfile'
 import PhysioOffice from './modules/PhysioOffice'
 import NutriProfile from './modules/NutriProfile'
+import NutriMenu from './modules/NutriMenu'
 import BrandCampaigns from './modules/BrandCampaigns'
 import MyTeam from './modules/MyTeam'
 import Archivio from './modules/Archivio'
@@ -76,7 +77,7 @@ export default function App() {
   const physioAllowed = ['agenda', 'my-athletes', 'settings', 'physio-home', 'physio-profile', 'physio-office', 'messages', 'access-requests', 'my-team']
   const isPhysio = profile.role === 'fisioterapista'
   // Il nutrizionista lavora sul calendario dell'atleta: piano alimentare e integratori.
-  const nutriAllowed = ['agenda', 'my-athletes', 'settings', 'nutri-home', 'nutri-profile', 'messages', 'access-requests', 'my-team']
+  const nutriAllowed = ['agenda', 'my-athletes', 'settings', 'nutri-home', 'nutri-profile', 'nutri-menu', 'messages', 'access-requests', 'my-team']
   const isNutri = profile.role === 'nutrizionista'
   // Il partner dei servizi (es. Scouting Department) vede solo la sua area di lavoro.
   const partnerAllowed = ['partner-home', 'settings']
@@ -125,6 +126,7 @@ export default function App() {
       case 'physio-office': return <PhysioOffice />
       case 'nutri-home': return <ProHome goto={setRoute} />
       case 'nutri-profile': return <NutriProfile />
+      case 'nutri-menu': return <NutriMenu />
       case 'agent-profile': return <AgentProfile />
       case 'contracts': return <Contracts />
       case 'documents': return isInsurer ? <InsuranceDocuments /> : <Documents />

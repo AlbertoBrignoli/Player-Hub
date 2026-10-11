@@ -12,6 +12,7 @@ import type { EventItem, EventAttachment, EventComment, EventNutrition } from '.
 import { downloadIcs, mapsUrl } from '../lib/ics'
 import { useRouteParam } from '../lib/route'
 import WeekPlanModal from '../components/WeekPlan'
+import { useNutriLibrary, mealCategoryOf, MEAL_CATS, SUP_WHEN, type LibItem } from '../lib/nutriLibrary'
 
 const DOC_BUCKET = 'crm-documents'
 function attSize(n?: number | null) {
@@ -273,6 +274,14 @@ const AG_CSS = `
 .nut-sups { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
 .nut-sup { font-size: 12px; padding: 3px 9px; border-radius: 999px; background: var(--card); border: 1px solid rgba(77,124,15,.3); }
 .nut-add { border-color: rgba(77,124,15,.45); color: #4D7C0F; }
+.lib-pick { display: grid; gap: 6px; }
+.lib-pick-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 11px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; color: #4D7C0F; }
+.lib-q { height: 28px; width: 130px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); padding: 0 8px; font: inherit; font-size: 12.5px; text-transform: none; letter-spacing: 0; color: var(--text); }
+.lib-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.lib-chip { padding: 6px 10px; border-radius: 999px; border: 1px solid rgba(77,124,15,.35); background: rgba(77,124,15,.06); color: var(--text); font-size: 12.5px; font-weight: 600; cursor: pointer; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lib-chip span { color: var(--text-dim); font-weight: 500; }
+.lib-chip:hover { background: rgba(77,124,15,.14); }
+.lib-more { border-style: dashed; background: transparent; color: #4D7C0F; }
 .nut-row { display: grid; grid-template-columns: minmax(0,1.3fr) minmax(0,1fr) minmax(0,1fr) auto; gap: 6px; align-items: center; }
 @media (max-width: 560px) { .nut-row { grid-template-columns: minmax(0,1fr) minmax(0,1fr); } .nut-row > :nth-child(3) { grid-column: 1; } }
 .ag-chip { display: inline-flex; align-items: center; max-width: 140px; padding: 1px 8px; border-radius: 999px; border: 1px solid; font-size: 11px; font-weight: 700; line-height: 1.5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0; }
@@ -842,7 +851,33 @@ function NutritionBlock({ n }: { n: EventNutrition }) {
 }
 
 type Sup = { name: string; dose: string; when: string }
-const SUP_WHEN = ['Prima', 'Durante', 'Dopo', 'Al risveglio', 'Ai pasti', 'Prima di dormire']
+
+// Scelta rapida dal menu del nutrizionista: i più usati in vista, il resto con "Tutti" o cercando.
+function LibPicker({ items, onPick, hint }: { items: LibItem[]; onPick: (i: LibItem) => void; hint: string }) {
+  const [all, setAll] = useState(false)
+  const [q, setQ] = useState('')
+  const s = q.trim().toLowerCase()
+  const found = s ? items.filter(i => [i.name, i.details, i.dose].some(x => (x || '').toLowerCase().includes(s))) : items
+  const shown = all || s ? found : found.slice(0, 8)
+  if (items.length === 0) return null
+  return (
+    <div className="lib-pick">
+      <div className="lib-pick-h">
+        <span>{hint}</span>
+        {items.length > 8 && <input className="lib-q" value={q} onChange={e => setQ(e.target.value)} placeholder="Cerca…" />}
+      </div>
+      <div className="lib-chips">
+        {shown.map(i => (
+          <button key={i.id} type="button" className="lib-chip" title={i.details || [i.dose, i.timing].filter(Boolean).join(' · ')} onClick={() => onPick(i)}>
+            + {i.name}{i.kind === 'integratore' && i.dose ? <span> · {i.dose}</span> : null}
+          </button>
+        ))}
+        {!s && items.length > 8 && <button type="button" className="lib-chip lib-more" onClick={() => setAll(a => !a)}>{all ? 'Meno' : `Tutti (${items.length})`}</button>}
+        {s && found.length === 0 && <span className="faint" style={{ fontSize: 12 }}>Nessun risultato: scrivilo a mano, resterà nel menu.</span>}
+      </div>
+    </div>
+  )
+}
 
 function NutritionModal({ ev, onClose, onSaved }: { ev: EventItem; onClose: () => void; onSaved: () => void }) {
   const { t: tr } = useLang()
@@ -853,6 +888,15 @@ function NutritionModal({ ev, onClose, onSaved }: { ev: EventItem; onClose: () =
   const [busy, setBusy] = useState(false)
   const when = new Date(ev.start_at).toLocaleString('it-IT', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
   const setSup = (i: number, patch: Partial<Sup>) => setSups(xs => xs.map((x, j) => j === i ? { ...x, ...patch } : x))
+  // menu personale: pasti della categoria giusta per questo impegno prima, integratori più usati prima
+  const lib = useNutriLibrary()
+  const mealCat = mealCategoryOf(ev.title, ev.type)
+  const meals = lib.items.filter(i => i.kind === 'pasto')
+  const mealsSorted = mealCat ? [...meals.filter(i => i.category === mealCat), ...meals.filter(i => i.category !== mealCat)] : meals
+  const supsLib = lib.items.filter(i => i.kind === 'integratore' && !sups.some(x => x.name.trim().toLowerCase() === i.name.toLowerCase()))
+  const catLabel = MEAL_CATS.find(c => c.key === mealCat)?.label
+  const pickMeal = (i: LibItem) => setMenu(m => m.trim() ? m.trim() + '\n' + (i.details || i.name) : (i.details || i.name))
+  const pickSup = (i: LibItem) => setSups(xs => [...xs, { name: i.name, dose: i.dose || '', when: i.timing || '' }])
 
   async function save(clear = false) {
     setBusy(true)
@@ -876,6 +920,7 @@ function NutritionModal({ ev, onClose, onSaved }: { ev: EventItem; onClose: () =
       </>}>
       <div className="grid" style={{ gap: 12 }}>
         <div className="faint" style={{ fontSize: 12.5 }}><b style={{ color: 'var(--text)' }}>{ev.title}</b> · {when}</div>
+        <LibPicker items={mealsSorted} onPick={pickMeal} hint={catLabel ? `Dal tuo menu · ${catLabel} prima` : 'Dal tuo menu'} />
         <Field label={tr('Cosa mangiare')}>
           <Textarea rows={3} value={menu} onChange={e => setMenu(e.target.value)}
             placeholder={tr('Es. Avena 80 g, yogurt greco, frutti rossi, 2 uova · oppure: pasto pre-gara 3 ore prima, carboidrati semplici')} />
@@ -885,7 +930,8 @@ function NutritionModal({ ev, onClose, onSaved }: { ev: EventItem; onClose: () =
             <span style={{ fontSize: 12.5, fontWeight: 700 }}>{tr('Integratori')}</span>
             <button className="btn btn-ghost btn-sm" onClick={() => setSups(xs => [...xs, { name: '', dose: '', when: '' }])}>+ {tr('Aggiungi')}</button>
           </div>
-          {sups.length === 0 && <div className="faint" style={{ fontSize: 12 }}>{tr('Nessun integratore')}</div>}
+          <LibPicker items={supsLib} onPick={pickSup} hint="Tocca per aggiungere" />
+          {sups.length === 0 && <div className="faint" style={{ fontSize: 12, marginTop: 6 }}>{tr('Nessun integratore')}</div>}
           <div className="grid" style={{ gap: 8 }}>
             {sups.map((x, i) => (
               <div key={i} className="nut-row">
@@ -900,6 +946,7 @@ function NutritionModal({ ev, onClose, onSaved }: { ev: EventItem; onClose: () =
             ))}
           </div>
         </div>
+        <div className="faint" style={{ fontSize: 11.5 }}>{tr('Quello che scrivi a mano resta nel tuo menu per la prossima volta.')}</div>
         <Field label={tr('Note')}>
           <Input value={note} onChange={e => setNote(e.target.value)} placeholder={tr('Es. idratazione 500 ml nelle 2 ore prima')} />
         </Field>

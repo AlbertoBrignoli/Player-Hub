@@ -13,7 +13,7 @@ import { Modal, Field, Input, Tabs, Empty } from './ui'
 // Schermate home dei vari ruoli: qui compare l'invito ad attivare le notifiche.
 const HOME_ROUTES = ['dashboard', 'brandhome', 'agent-home', 'insurer-home', 'tax-home', 'physio-home', 'partner-home']
 
-export const APP_VERSION = 'v7.6'
+export const APP_VERSION = 'v7.7'
 
 export interface NavDef {
   key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[]
@@ -137,9 +137,9 @@ export const PRO_ROLES: Record<ProRole, { home: string; profile: string; area: N
   // il nutrizionista lavora sul calendario dell'atleta: lì integra pasti e integratori
   nutrizionista: {
     home: 'nutri-home', profile: 'nutri-profile',
-    area: [],
+    area: [{ key: 'nutri-menu', label: 'Il mio menu', icon: 'layers' }],
     extra: [],
-    tab: { key: 'messages', label: 'Chat', icon: 'message' },
+    tab: { key: 'nutri-menu', label: 'Menu', icon: 'layers' },
   },
 }
 
@@ -219,6 +219,7 @@ const TITLES: Record<string, { t: string; s: string }> = {
   'physio-office': { t: 'Il mio ufficio', s: 'Atleti seguiti e spazio clinico' },
   'nutri-home': { t: 'Home', s: 'I tuoi atleti e la loro settimana a tavola' },
   'nutri-profile': { t: 'Il mio profilo', s: 'Anagrafica, contatti e specializzazioni' },
+  'nutri-menu': { t: 'Il mio menu', s: 'Pasti e integratori pronti da assegnare agli atleti' },
   'agent-profile': { t: 'Il mio profilo', s: 'Contatti personali e agenzia' },
   mediakit: { t: 'Media Kit', s: "I numeri dell'atleta" },
   campaigns: { t: 'Campagne', s: 'Proponi contenuti e carica lo shooting' },
@@ -277,7 +278,7 @@ export default function Shell({ route, setRoute, right, children }: {
   const isPartner = role === 'partner'
   const nav = isPartner ? PARTNER_NAV : isBrand ? BRAND_NAV : isPro ? proNav(role as ProRole) : NAV
   // professionista senza atleti: le aree di lavoro non hanno dati da mostrare (evita caricamenti infiniti)
-  const proFree = isPro ? [PRO_ROLES[role as ProRole].home, PRO_ROLES[role as ProRole].profile, 'my-athletes', 'settings', 'access-requests', 'coach-office', 'exercise-library', 'training-builder'] : []
+  const proFree = isPro ? [PRO_ROLES[role as ProRole].home, PRO_ROLES[role as ProRole].profile, 'my-athletes', 'settings', 'access-requests', 'coach-office', 'exercise-library', 'training-builder', 'nutri-menu'] : []
   const needsAthlete = isPro && !athletesLoading && athletes.length === 0 && !proFree.includes(route)
 
   // Sezioni con schede: una voce di menu raggruppa più schermate (es. Calendario =
