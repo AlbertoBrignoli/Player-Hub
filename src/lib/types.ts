@@ -1,4 +1,4 @@
-export type Role = 'admin' | 'player' | 'creator' | 'brand' | 'preparatore' | 'agente' | 'assicuratore' | 'commercialista' | 'fisioterapista' | 'partner'
+export type Role = 'admin' | 'player' | 'creator' | 'brand' | 'preparatore' | 'agente' | 'assicuratore' | 'commercialista' | 'fisioterapista' | 'nutrizionista' | 'partner'
 
 export interface Brand {
   id: string
@@ -206,6 +206,17 @@ export interface EventItem {
   service_request_id?: string | null
   /** link della call o link scaricabile (video, file pesanti) */
   link_url?: string | null
+  /** indicazioni del nutrizionista su questo impegno */
+  nutrition?: EventNutrition | null
+}
+
+export interface EventNutrition {
+  menu?: string | null
+  note?: string | null
+  supplements?: { name: string; dose?: string | null; when?: string | null }[]
+  by?: string
+  by_name?: string
+  updated_at?: string
 }
 
 export interface EventComment {

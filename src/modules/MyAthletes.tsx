@@ -23,6 +23,7 @@ export const PRO_HOME: Record<string, string> = {
   commercialista: 'legaltax',
   preparatore: 'fitness',
   fisioterapista: 'physio-office',
+  nutrizionista: 'agenda',
 }
 
 type Ath = {

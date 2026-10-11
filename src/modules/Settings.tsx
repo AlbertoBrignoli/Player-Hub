@@ -13,7 +13,7 @@ export default function Settings() {
   const { rows, loading, reload } = useCollection<AllowedEmail>('crm_allowed_emails', { orderBy: 'created_at', ascending: true })
   const { rows: profiles } = useCollection<Profile>('crm_profiles', { orderBy: 'created_at', ascending: true })
   const [email, setEmail] = useState('')
-  const [role, setRole] = useState<'player' | 'admin' | 'creator' | 'brand'>('player')
+  const [role, setRole] = useState<string>('player')
   const [note, setNote] = useState('')
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
@@ -53,7 +53,7 @@ export default function Settings() {
         </div>
         <div className="flex gap wrap" style={{ alignItems: 'flex-end' }}>
           <div style={{ flex: 2, minWidth: 200 }}><Field label="Email"><Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="giocatore@email.com" /></Field></div>
-          <div style={{ flex: 1, minWidth: 130 }}><Field label="Ruolo"><Select value={role} onChange={e => setRole(e.target.value as any)}><option value="player">Giocatore</option><option value="admin">AUVI · Advisor</option><option value="creator">Team · Creator</option><option value="brand">Brand</option></Select></Field></div>
+          <div style={{ flex: 1, minWidth: 130 }}><Field label="Ruolo"><Select value={role} onChange={e => setRole(e.target.value as any)}><option value="player">Giocatore</option><option value="admin">AUVI · Advisor</option><option value="creator">Team · Creator</option><option value="brand">Brand</option><option value="agente">Procuratore</option><option value="preparatore">Preparatore atletico</option><option value="fisioterapista">Fisioterapista</option><option value="nutrizionista">Nutrizionista</option><option value="assicuratore">Assicuratore</option><option value="commercialista">Commercialista</option></Select></Field></div>
           <div style={{ flex: 1, minWidth: 130 }}><Field label="Nota"><Input value={note} onChange={e => setNote(e.target.value)} placeholder="es. Lorenzo" /></Field></div>
           <button className="btn btn-primary" style={{ marginBottom: 14 }} disabled={busy || !email} onClick={add}>+ Autorizza</button>
         </div>

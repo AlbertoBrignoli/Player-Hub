@@ -210,7 +210,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
         // proposte del team (preparatore, procuratore...) che aspettano la conferma dell'atleta
         isPlayer
           ? supabase.from('crm_events').select('id', { count: 'exact', head: true }).eq('player_id', pid)
-              .eq('request_status', 'da_confermare').in('proposed_by_role', ['agente', 'preparatore', 'assicuratore', 'commercialista', 'fisioterapista', 'partner'])
+              .eq('request_status', 'da_confermare').in('proposed_by_role', ['agente', 'preparatore', 'assicuratore', 'commercialista', 'fisioterapista', 'nutrizionista', 'partner'])
           : Promise.resolve({ count: 0 }),
         isPlayer
           ? supabase.from('crm_week_plans').select('id', { count: 'exact', head: true }).eq('player_id', pid)

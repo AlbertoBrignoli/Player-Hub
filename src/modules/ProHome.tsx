@@ -7,12 +7,12 @@ import Icon from '../components/Icon'
 import { fmtMatchTime } from '../lib/format'
 
 /* Ufficio del professionista: UNA Home per agente, assicuratore, commercialista,
-   preparatore e fisioterapista. Tutti gli atleti insieme (non uno alla volta):
+   preparatore, fisioterapista e nutrizionista. Tutti gli atleti insieme (non uno alla volta):
    chi seguo, cosa scade, cosa succede questa settimana.
    RLS: ogni tabella è già ristretta agli atleti del professionista, quindi le
    query trasversali sono semplici .in('player_id', ids), tutte in parallelo. */
 
-type ProRole = 'agente' | 'assicuratore' | 'commercialista' | 'preparatore' | 'fisioterapista'
+type ProRole = 'agente' | 'assicuratore' | 'commercialista' | 'preparatore' | 'fisioterapista' | 'nutrizionista'
 
 type RoleCfg = {
   label: string
@@ -59,6 +59,13 @@ const ROLES: Record<ProRole, RoleCfg> = {
     profileRoute: 'physio-profile', mainRoute: 'physio-office',
     action: { label: 'Studio', icon: 'activity', route: 'physio-office' },
     fields: ['name', 'photo_url', 'title', 'phone', 'email', 'clinic_name', 'city', 'bio'],
+    nameField: 'name',
+  },
+  nutrizionista: {
+    label: 'Nutrizionista sportivo', table: 'crm_nutri_profile', idCol: 'nutri_id',
+    profileRoute: 'nutri-profile', mainRoute: 'agenda',
+    action: { label: 'Piano alimentare', icon: 'calendar', route: 'agenda' },
+    fields: ['name', 'photo_url', 'title', 'phone', 'email', 'city', 'specialties', 'bio'],
     nameField: 'name',
   },
 }
@@ -182,6 +189,11 @@ export default function ProHome({ goto }: { goto: (r: string) => void }) {
             .eq('program_date', plus(0))
         } else if (pro === 'fisioterapista') {
           roleQ = supabase.from('physio_assessments').select('player_id').in('player_id', ids)
+        } else if (pro === 'nutrizionista') {
+          // allenamenti e partite dei prossimi 7 giorni ancora senza indicazioni alimentari
+          roleQ = supabase.from('crm_events').select('id, player_id, type')
+            .in('player_id', ids).in('type', ['allenamento', 'partita']).is('nutrition', null)
+            .gte('start_at', today.toISOString()).lt('start_at', weekEnd.toISOString())
         }
       }
 
@@ -259,6 +271,15 @@ export default function ProHome({ goto }: { goto: (r: string) => void }) {
           title: s.name || t('Seduta'),
           sub: [pname(s.player_id), s.start_time ? String(s.start_time).slice(0, 5) : null].filter(Boolean).join(' · '),
           days: 0, route: 'fitness',
+        }))
+      } else if (pro === 'nutrizionista') {
+        const per: Record<number, number> = {}
+        rows.forEach(r => { per[r.player_id] = (per[r.player_id] || 0) + 1 })
+        Object.entries(per).forEach(([pid, n]) => list.push({
+          key: 'nut' + pid, pid: Number(pid), icon: 'layers',
+          title: n === 1 ? t('1 impegno senza piano alimentare') : t('{n} impegni senza piano alimentare').replace('{n}', String(n)),
+          sub: pname(Number(pid)) + ' · ' + t('prossimi 7 giorni'),
+          days: null, route: 'agenda',
         }))
       } else if (pro === 'fisioterapista') {
         const assessed = new Set(rows.map(a => a.player_id))

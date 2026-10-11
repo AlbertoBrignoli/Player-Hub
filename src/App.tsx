@@ -34,6 +34,7 @@ import Services from './modules/Services'
 import TaxAdvisorProfile from './modules/TaxAdvisorProfile'
 import PhysioProfile from './modules/PhysioProfile'
 import PhysioOffice from './modules/PhysioOffice'
+import NutriProfile from './modules/NutriProfile'
 import BrandCampaigns from './modules/BrandCampaigns'
 import MyTeam from './modules/MyTeam'
 import Archivio from './modules/Archivio'
@@ -74,10 +75,13 @@ export default function App() {
   // Il fisioterapista vede la sua area: home, profilo, chat e collegamenti.
   const physioAllowed = ['agenda', 'my-athletes', 'settings', 'physio-home', 'physio-profile', 'physio-office', 'messages', 'access-requests', 'my-team']
   const isPhysio = profile.role === 'fisioterapista'
+  // Il nutrizionista lavora sul calendario dell'atleta: piano alimentare e integratori.
+  const nutriAllowed = ['agenda', 'my-athletes', 'settings', 'nutri-home', 'nutri-profile', 'messages', 'access-requests', 'my-team']
+  const isNutri = profile.role === 'nutrizionista'
   // Il partner dei servizi (es. Scouting Department) vede solo la sua area di lavoro.
   const partnerAllowed = ['partner-home', 'settings']
   const isPartner = profile.role === 'partner'
-  const home = isPartner ? 'partner-home' : isBrand ? 'brandhome' : isAgent ? 'agent-home' : isInsurer ? 'insurer-home' : isTax ? 'tax-home' : isPhysio ? 'physio-home' : 'dashboard'
+  const home = isPartner ? 'partner-home' : isBrand ? 'brandhome' : isAgent ? 'agent-home' : isInsurer ? 'insurer-home' : isTax ? 'tax-home' : isPhysio ? 'physio-home' : isNutri ? 'nutri-home' : 'dashboard'
   let route = routeState ?? home
   if (isBrand && !brandAllowed.includes(route)) route = 'brandhome'
   if (isCoach && !coachAllowed.includes(route)) route = 'dashboard'
@@ -85,6 +89,7 @@ export default function App() {
   if (isInsurer && !insurerAllowed.includes(route)) route = 'insurer-home'
   if (isTax && !taxAllowed.includes(route)) route = 'tax-home'
   if (isPhysio && !physioAllowed.includes(route)) route = 'physio-home'
+  if (isNutri && !nutriAllowed.includes(route)) route = 'nutri-home'
   if (isPartner && !partnerAllowed.includes(route)) route = 'partner-home'
 
   const view = (() => {
@@ -118,6 +123,8 @@ export default function App() {
       case 'partner-home': return <PartnerHome />
       case 'physio-profile': return <PhysioProfile />
       case 'physio-office': return <PhysioOffice />
+      case 'nutri-home': return <ProHome goto={setRoute} />
+      case 'nutri-profile': return <NutriProfile />
       case 'agent-profile': return <AgentProfile />
       case 'contracts': return <Contracts />
       case 'documents': return isInsurer ? <InsuranceDocuments /> : <Documents />

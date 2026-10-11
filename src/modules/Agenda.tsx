@@ -8,7 +8,7 @@ import { insertRow, updateRow, deleteRow } from '../lib/useData'
 import { Modal, Field, Input, Textarea, Select, Empty, Spinner, Tabs } from '../components/ui'
 import Icon from '../components/Icon'
 import LuogoAutocomplete from '../components/LuogoAutocomplete'
-import type { EventItem, EventAttachment, EventComment } from '../lib/types'
+import type { EventItem, EventAttachment, EventComment, EventNutrition } from '../lib/types'
 import { downloadIcs, mapsUrl } from '../lib/ics'
 import { useRouteParam } from '../lib/route'
 import WeekPlanModal from '../components/WeekPlan'
@@ -56,7 +56,7 @@ const ATHLETE_PALETTE = ['#1F6FEB', '#12A150', '#DD0088', '#FF6700', '#0A0A0A', 
 type Tag = { name: string; color: string }
 type TagOf = ((pid: number) => Tag | null) | null
 
-const PRO_ROLES = ['agente', 'assicuratore', 'commercialista', 'preparatore', 'fisioterapista']
+const PRO_ROLES = ['agente', 'assicuratore', 'commercialista', 'preparatore', 'fisioterapista', 'nutrizionista']
 // Ruoli che hanno accesso a Performance: solo per loro la partita e' toccabile.
 const PERF_ROLES = ['admin', 'creator', 'player', 'agente', 'preparatore']
 const ADMIN_TYPES = ['partita', 'commerciale', 'sponsor', 'personale', 'medico', 'viaggio', 'scadenza', 'call', 'visita', 'nutrizione']
@@ -65,12 +65,13 @@ const PLAYER_TYPES = ['personale', 'medico', 'viaggio']
 const TEAM_TYPES: Record<string, string[]> = {
   preparatore: ['allenamento', 'call', 'nutrizione', 'visita'],
   fisioterapista: ['visita', 'allenamento', 'call'],
+  nutrizionista: ['nutrizione', 'call', 'visita'],
   agente: ['call', 'commerciale', 'viaggio', 'personale'],
   assicuratore: ['call', 'scadenza', 'personale'],
   commercialista: ['call', 'scadenza', 'personale'],
 }
 const ROLE_LABEL: Record<string, string> = {
-  preparatore: 'Preparatore', fisioterapista: 'Fisioterapista', agente: 'Procuratore',
+  preparatore: 'Preparatore', fisioterapista: 'Fisioterapista', nutrizionista: 'Nutrizionista', agente: 'Procuratore',
   assicuratore: 'Assicuratore', commercialista: 'Commercialista',
   player: 'Atleta', admin: 'AUVI', creator: 'AUVI', partner: 'Partner AUVI',
 }
@@ -97,7 +98,11 @@ export default function Agenda({ goto }: { goto?: (r: string) => void }) {
   const isPro = !!role && PRO_ROLES.includes(role)
   const canAdd = isAdmin || role === 'player' || isPro
   const defType = typesFor(isAdmin, role)[0]
-  const addLabel = isPro && !isAdmin ? tr('Proponi impegno') : tr('Nuovo impegno')
+  const isNutri = role === 'nutrizionista'
+  const addLabel = isNutri ? tr('Pasto o integratore') : isPro && !isAdmin ? tr('Proponi impegno') : tr('Nuovo impegno')
+  // piano alimentare sugli impegni: lo scrive il nutrizionista (o AUVI per lui)
+  const canNutri = (e: AgItem) => !e._match && (isNutri || role === 'admin' || role === 'creator')
+  const [nutriFor, setNutriFor] = useState<EventItem | null>(null)
   const showScope = (isPro || role === 'admin' || role === 'creator') && athletes.length > 1
   const [scopeState, setScope] = useState<'all' | 'one'>(isPro ? 'all' : 'one')
   const scope = showScope ? scopeState : 'one'
@@ -183,7 +188,9 @@ export default function Agenda({ goto }: { goto?: (r: string) => void }) {
 
   // Il team non tocca il calendario dell'atleta: corregge solo la PROPRIA proposta finche' non e' confermata.
   const canEdit = (e: AgItem) => !e._match && (isAdmin || role === 'player'
-    || (isPro && !!uid && e.created_by === uid && OPEN_STATES.includes(e.request_status || '')))
+    || (isPro && !!uid && e.created_by === uid && OPEN_STATES.includes(e.request_status || ''))
+    // pasti e integratori del nutrizionista: sono indicazioni, li corregge quando vuole
+    || (isNutri && !!uid && e.created_by === uid && e.type === 'nutrizione'))
   // Richieste dell'atleta: l'agenzia conferma o rifiuta.
   const canConfirm = (e: AgItem) => !e._match && isAdmin && e.request_status === 'da_confermare' && !isTeamProposal(e)
   const onConfirm = async (e: EventItem, ok: boolean) => {
@@ -207,7 +214,7 @@ export default function Agenda({ goto }: { goto?: (r: string) => void }) {
     undoable(tr('Impegno eliminato'), () => deleteRow('crm_events', e.id), reload)
   }
   const onAdd = canAdd ? (dayIso: string) => setEdit({ ...emptyEv(defType), start_at: dayIso }) : undefined
-  const shared = { canEdit, onEdit: setEdit, onDel, canConfirm, onConfirm, goto, onAdd, tagOf, onOpenMatch, canRespond, onRespond, onAsk, counts, bump, uid, isPro: isPro && !isAdmin }
+  const shared = { canEdit, onEdit: setEdit, onDel, canConfirm, onConfirm, goto, onAdd, tagOf, onOpenMatch, canRespond, onRespond, onAsk, counts, bump, uid, isPro: isPro && !isAdmin, canNutri, onNutri: setNutriFor }
   const selName = athletes.find(a => a.api_player_id === athleteId)?.name || tr('Atleta')
 
   return (
@@ -245,6 +252,8 @@ export default function Agenda({ goto }: { goto?: (r: string) => void }) {
           onSaved={() => { setPlanOpen(false); reload() }} />
       )}
 
+      {nutriFor && <NutritionModal ev={nutriFor} onClose={() => setNutriFor(null)} onSaved={() => { setNutriFor(null); reload() }} />}
+
       {askFor && <AskChangeModal ev={askFor} onClose={() => setAskFor(null)}
         onSend={async note => { await onRespond(askFor, 'modifica_richiesta', note); setAskFor(null) }} />}
 
@@ -257,6 +266,15 @@ export default function Agenda({ goto }: { goto?: (r: string) => void }) {
 }
 
 const AG_CSS = `
+.nut-box { margin-top: 10px; padding: 9px 12px; border-radius: 12px; background: rgba(77,124,15,.07); border: 1px solid rgba(77,124,15,.22); }
+.nut-head { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; color: #4D7C0F; }
+.nut-head .faint { text-transform: none; letter-spacing: 0; font-weight: 600; }
+.nut-menu { font-size: 13px; margin-top: 4px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.nut-sups { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
+.nut-sup { font-size: 12px; padding: 3px 9px; border-radius: 999px; background: var(--card); border: 1px solid rgba(77,124,15,.3); }
+.nut-add { border-color: rgba(77,124,15,.45); color: #4D7C0F; }
+.nut-row { display: grid; grid-template-columns: minmax(0,1.3fr) minmax(0,1fr) minmax(0,1fr) auto; gap: 6px; align-items: center; }
+@media (max-width: 560px) { .nut-row { grid-template-columns: minmax(0,1fr) minmax(0,1fr); } .nut-row > :nth-child(3) { grid-column: 1; } }
 .ag-chip { display: inline-flex; align-items: center; max-width: 140px; padding: 1px 8px; border-radius: 999px; border: 1px solid; font-size: 11px; font-weight: 700; line-height: 1.5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0; }
 .ag-chips { display: inline-flex; gap: 4px; flex-shrink: 0; }
 .ag-row-static { cursor: default; }
@@ -299,6 +317,7 @@ type SharedProps = {
   onAsk: (e: EventItem) => void
   counts: Record<string, number>; bump: (id: string, d: number) => void
   uid?: string; isPro: boolean
+  canNutri: (e: AgItem) => boolean; onNutri: (e: EventItem) => void
 }
 
 function cardFor(p: SharedProps & { focusId?: string | null }, e: AgItem) {
@@ -306,7 +325,8 @@ function cardFor(p: SharedProps & { focusId?: string | null }, e: AgItem) {
     canConfirm={p.canConfirm(e)} onConfirm={ok => p.onConfirm(e, ok)}
     canRespond={p.canRespond(e)} onRespond={st => p.onRespond(e, st)} onAsk={() => p.onAsk(e)}
     count={p.counts[e.id] || 0} onCount={d => p.bump(e.id, d)} uid={p.uid} isPro={p.isPro}
-    goto={p.goto} tagOf={p.tagOf} onOpenMatch={p.onOpenMatch} />
+    goto={p.goto} tagOf={p.tagOf} onOpenMatch={p.onOpenMatch}
+    canNutri={p.canNutri(e)} onNutri={() => p.onNutri(e)} />
 }
 
 function ListView(props: SharedProps) {
@@ -486,11 +506,12 @@ function StatusChip({ e }: { e: AgItem }) {
   )
 }
 
-export function EvCard({ e, focus, canEdit, onEdit, onDel, canConfirm, onConfirm, canRespond, onRespond, onAsk, count, onCount, uid, isPro, goto, tagOf, onOpenMatch }: {
+export function EvCard({ e, focus, canEdit, onEdit, onDel, canConfirm, onConfirm, canRespond, onRespond, onAsk, count, onCount, uid, isPro, goto, tagOf, onOpenMatch, canNutri, onNutri }: {
   e: AgItem; focus?: boolean; canEdit: boolean; onEdit: () => void; onDel: () => void; canConfirm: boolean; onConfirm: (ok: boolean) => void
   canRespond: boolean; onRespond: (st: 'confermata' | 'rifiutata') => void; onAsk: () => void
   count: number; onCount: (d: number) => void; uid?: string; isPro: boolean
   goto?: (r: string) => void; tagOf: TagOf; onOpenMatch?: (e: AgItem) => void
+  canNutri?: boolean; onNutri?: () => void
 }) {
   const { t: tr } = useLang()
   const [open, setOpen] = useState(false)
@@ -551,6 +572,8 @@ export function EvCard({ e, focus, canEdit, onEdit, onDel, canConfirm, onConfirm
             </a>
           </div>
         )}
+        {e.nutrition && <NutritionBlock n={e.nutrition} />}
+        {e.notes && !e._match && e.type === 'nutrizione' && !e.service_request_id && <div className="faint" style={{ fontSize: 12.5, marginTop: 6, overflowWrap: 'anywhere' }}>{e.notes}</div>}
         {/* un'unica riga di azioni: conferme e scheda a sinistra, icone a destra */}
         <div className="ev-actions">
           {e._match && onOpenMatch && <button className="btn btn-sm" onClick={() => onOpenMatch(e)}>{tr('Apri partita →')}</button>}
@@ -561,6 +584,11 @@ export function EvCard({ e, focus, canEdit, onEdit, onDel, canConfirm, onConfirm
           {canRespond && <button className="btn btn-sm" onClick={onAsk}>{tr('Chiedi modifica')}</button>}
           {canRespond && <button className="btn btn-ghost btn-sm" onClick={() => onRespond('rifiutata')}>{tr('Rifiuta')}</button>}
           {canRepropose && <button className="btn btn-sm btn-primary" onClick={onEdit}>{tr('Correggi e riproponi')}</button>}
+          {canNutri && onNutri && !(e.type === 'nutrizione' && !!uid && e.created_by === uid) && (
+            <button className={'btn btn-sm' + (e.nutrition ? '' : ' nut-add')} onClick={onNutri} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <Icon name="layers" size={13} /> {e.nutrition ? tr('Modifica piano') : tr('Piano alimentare')}
+            </button>
+          )}
           {!e._match && (
             <button className="btn btn-ghost btn-sm" onClick={() => setOpen(o => !o)} aria-expanded={open}
               style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
@@ -670,7 +698,6 @@ function EventForm({ value, isAdmin, role, uid, athleteId, nameOf, athleteChoice
   const [pid, setPid] = useState<number | null>(athleteChoices ? (athleteChoices.find(a => a.id === athleteId)?.id ?? athleteChoices[0]?.id ?? null) : athleteId)
   const [f, setF] = useState<Partial<EventItem>>({ ...value, start_at: value.start_at ? toLocal(value.start_at) : '', end_at: value.end_at ? toLocal(value.end_at) : '' })
   const isPlayer = role === 'player' && !isAdmin
-  const proposing = !isAdmin && !!role && PRO_ROLES.includes(role)
   // privato: di default acceso per le visite mediche, finche' l'atleta non sceglie a mano
   const [priv, setPriv] = useState<boolean>(value.id ? value.visibility === 'privato' : value.type === 'medico')
   const [privTouched, setPrivTouched] = useState(!!value.id)
@@ -679,6 +706,8 @@ function EventForm({ value, isAdmin, role, uid, athleteId, nameOf, athleteChoice
   const [uploading, setUploading] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const set = (k: keyof EventItem, v: any) => setF(p => ({ ...p, [k]: v }))
+  const direct = role === 'nutrizionista' && f.type === 'nutrizione'
+  const proposing = !isAdmin && !!role && PRO_ROLES.includes(role) && !direct
   const baseTypes = typesFor(isAdmin, role)
   const types = f.type && !baseTypes.includes(f.type) ? [...baseTypes, f.type] : baseTypes
   const onType = (v: string) => { set('type', v); if (isPlayer && !privTouched) setPriv(v === 'medico') }
@@ -719,12 +748,14 @@ function EventForm({ value, isAdmin, role, uid, athleteId, nameOf, athleteChoice
     setBusy(false)
     if (error) { toast(error.message, 'err'); return }
     if (proposing) toast(f.id ? tr('Proposta aggiornata') : tr('Proposta inviata'))
+    else if (direct) toast(f.id ? tr('Indicazione aggiornata') : tr("Aggiunto al calendario: l'atleta riceve la notifica"))
     onSaved()
   }
 
   return (
     <Modal title={proposing
         ? (f.id ? tr('Correggi la proposta') : `${tr('Proponi un impegno a')} ${who}`)
+        : direct ? (f.id ? tr('Modifica pasto o integratore') : `${tr('Pasto o integratore per')} ${who}`)
         : (f.id ? tr('Modifica impegno') : tr('Nuovo impegno'))} onClose={onClose}
       footer={<>
         <button className="btn btn-ghost" onClick={onClose}>{tr('Annulla')}</button>
@@ -733,6 +764,7 @@ function EventForm({ value, isAdmin, role, uid, athleteId, nameOf, athleteChoice
         </button>
       </>}>
       {proposing && <div className="faint" style={{ fontSize: 12.5, marginBottom: 10 }}>{tr("L'atleta riceve la proposta e la conferma")}</div>}
+      {direct && <div className="faint" style={{ fontSize: 12.5, marginBottom: 10 }}>{tr("Entra subito nel calendario dell'atleta, che riceve la notifica. Es. Integratore: creatina 5 g · Spuntino pre-gara")}</div>}
       {athleteChoices && (
         <Field label={tr("Atleta")}>
           <Select value={pid ?? ''} onChange={e => setPid(Number(e.target.value))}>
@@ -787,4 +819,91 @@ function EventForm({ value, isAdmin, role, uid, athleteId, nameOf, athleteChoice
 function toLocal(iso: string) {
   const d = new Date(iso); const off = d.getTimezoneOffset()
   return new Date(d.getTime() - off * 60000).toISOString().slice(0, 16)
+}
+
+// Indicazioni del nutrizionista su un impegno: cosa mangiare e integratori.
+function NutritionBlock({ n }: { n: EventNutrition }) {
+  const { t: tr } = useLang()
+  const sup = n.supplements || []
+  return (
+    <div className="nut-box">
+      <div className="nut-head"><Icon name="layers" size={13} /> {tr('Piano alimentare')}{n.by_name ? <span className="faint"> · {n.by_name}</span> : null}</div>
+      {n.menu && <div className="nut-menu">{n.menu}</div>}
+      {sup.length > 0 && (
+        <div className="nut-sups">
+          {sup.map((x, i) => (
+            <span key={i} className="nut-sup"><b>{x.name}</b>{x.dose ? ' · ' + x.dose : ''}{x.when ? ' · ' + x.when : ''}</span>
+          ))}
+        </div>
+      )}
+      {n.note && <div className="faint" style={{ fontSize: 12, marginTop: 4 }}>{n.note}</div>}
+    </div>
+  )
+}
+
+type Sup = { name: string; dose: string; when: string }
+const SUP_WHEN = ['Prima', 'Durante', 'Dopo', 'Al risveglio', 'Ai pasti', 'Prima di dormire']
+
+function NutritionModal({ ev, onClose, onSaved }: { ev: EventItem; onClose: () => void; onSaved: () => void }) {
+  const { t: tr } = useLang()
+  const n = ev.nutrition || {}
+  const [menu, setMenu] = useState(n.menu || '')
+  const [note, setNote] = useState(n.note || '')
+  const [sups, setSups] = useState<Sup[]>((n.supplements || []).map(s => ({ name: s.name, dose: s.dose || '', when: s.when || '' })))
+  const [busy, setBusy] = useState(false)
+  const when = new Date(ev.start_at).toLocaleString('it-IT', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+  const setSup = (i: number, patch: Partial<Sup>) => setSups(xs => xs.map((x, j) => j === i ? { ...x, ...patch } : x))
+
+  async function save(clear = false) {
+    setBusy(true)
+    const { error } = await supabase.rpc('crm_set_event_nutrition', {
+      p_event: ev.id,
+      p_nutrition: clear ? null : { menu, note, supplements: sups.filter(s => s.name.trim()) },
+    })
+    setBusy(false)
+    if (error) { toast(error.message, 'err'); return }
+    toast(clear ? tr('Indicazioni tolte') : tr("Piano salvato: l'atleta riceve la notifica"))
+    onSaved()
+  }
+
+  return (
+    <Modal title={tr('Piano alimentare')} onClose={onClose}
+      footer={<>
+        {ev.nutrition && <button className="btn btn-ghost" disabled={busy} onClick={() => save(true)}>{tr('Togli')}</button>}
+        <span style={{ flex: 1 }} />
+        <button className="btn btn-ghost" onClick={onClose}>{tr('Annulla')}</button>
+        <button className="btn btn-primary" disabled={busy} onClick={() => save()}>{busy ? tr('Salvo…') : tr('Salva')}</button>
+      </>}>
+      <div className="grid" style={{ gap: 12 }}>
+        <div className="faint" style={{ fontSize: 12.5 }}><b style={{ color: 'var(--text)' }}>{ev.title}</b> · {when}</div>
+        <Field label={tr('Cosa mangiare')}>
+          <Textarea rows={3} value={menu} onChange={e => setMenu(e.target.value)}
+            placeholder={tr('Es. Avena 80 g, yogurt greco, frutti rossi, 2 uova · oppure: pasto pre-gara 3 ore prima, carboidrati semplici')} />
+        </Field>
+        <div>
+          <div className="flex between" style={{ alignItems: 'center', marginBottom: 6 }}>
+            <span style={{ fontSize: 12.5, fontWeight: 700 }}>{tr('Integratori')}</span>
+            <button className="btn btn-ghost btn-sm" onClick={() => setSups(xs => [...xs, { name: '', dose: '', when: '' }])}>+ {tr('Aggiungi')}</button>
+          </div>
+          {sups.length === 0 && <div className="faint" style={{ fontSize: 12 }}>{tr('Nessun integratore')}</div>}
+          <div className="grid" style={{ gap: 8 }}>
+            {sups.map((x, i) => (
+              <div key={i} className="nut-row">
+                <Input value={x.name} onChange={e => setSup(i, { name: e.target.value })} placeholder={tr('Es. Creatina')} aria-label={tr('Integratore')} />
+                <Input value={x.dose} onChange={e => setSup(i, { dose: e.target.value })} placeholder={tr('Dose, es. 5 g')} aria-label={tr('Dose')} />
+                <Select value={x.when} onChange={e => setSup(i, { when: e.target.value })} aria-label={tr('Quando')}>
+                  <option value="">{tr('Quando…')}</option>
+                  {SUP_WHEN.map(w => <option key={w} value={w}>{tr(w)}</option>)}
+                </Select>
+                <button className="ev-ic ev-ic-danger" onClick={() => setSups(xs => xs.filter((_, j) => j !== i))} aria-label={tr('Togli')}><Icon name="x" size={15} /></button>
+              </div>
+            ))}
+          </div>
+        </div>
+        <Field label={tr('Note')}>
+          <Input value={note} onChange={e => setNote(e.target.value)} placeholder={tr('Es. idratazione 500 ml nelle 2 ore prima')} />
+        </Field>
+      </div>
+    </Modal>
+  )
 }

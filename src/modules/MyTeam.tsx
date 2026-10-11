@@ -24,6 +24,7 @@ const ROLE: Record<string, { label: string; icon: string; area?: Area }> = {
   preparatore:    { label: 'Preparatore atletico', icon: 'activity',  area: { route: 'fitness',  label: 'Area Fitness' } },
   assicuratore:   { label: 'Assicuratore',         icon: 'lock',      area: { route: 'insurance', label: 'Polizze e coperture' } },
   commercialista: { label: 'Commercialista',       icon: 'briefcase', area: { route: 'legaltax', label: 'Legal & Tax' } },
+  nutrizionista:  { label: 'Nutrizionista',        icon: 'layers',    area: { route: 'agenda', label: 'Piano alimentare' } },
 }
 
 const PRO = ['preparatore', 'agente', 'assicuratore', 'commercialista', 'brand']

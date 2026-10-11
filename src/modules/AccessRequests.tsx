@@ -19,10 +19,10 @@ const kicker: React.CSSProperties = {
 
 export const ROLE_LABEL: Record<string, string> = {
   assicuratore: 'Assicuratore', agente: 'Procuratore', preparatore: 'Preparatore atletico',
-  fisioterapista: 'Fisioterapista', commercialista: 'Commercialista',
+  fisioterapista: 'Fisioterapista', commercialista: 'Commercialista', nutrizionista: 'Nutrizionista',
 }
 
-export const PRO_ROLES = ['assicuratore', 'agente', 'preparatore', 'fisioterapista', 'commercialista']
+export const PRO_ROLES = ['assicuratore', 'agente', 'preparatore', 'fisioterapista', 'nutrizionista', 'commercialista']
 
 export type Req = {
   id: string
@@ -318,6 +318,7 @@ function CodesManager({ athleteId, athleteName }: { athleteId: number | null; at
             <option value="preparatore">Preparatore atletico</option>
             <option value="commercialista">Commercialista</option>
             <option value="fisioterapista">Fisioterapista</option>
+            <option value="nutrizionista">Nutrizionista</option>
           </Select>
         </div>
         <div style={{ flex: 1, minWidth: 220 }}>
