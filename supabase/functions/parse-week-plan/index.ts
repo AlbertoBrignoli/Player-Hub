@@ -10,7 +10,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const URL = Deno.env.get("SUPABASE_URL")!;
 const service = createClient(URL, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-const MODEL = "claude-sonnet-5-5";
+const MODEL = "claude-opus-5-5";
 const cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -38,32 +38,31 @@ function b64(buf: ArrayBuffer): string {
   return btoa(s);
 }
 
-const TOOL = {
-  name: "programma_settimanale",
-  description: "Tutti gli impegni letti dal programma del club, di tutte le settimane presenti nel documento.",
-  input_schema: {
-    type: "object",
-    properties: {
+// risposta JSON garantita (structured outputs): stringa vuota dove il dato non c'è
+const SCHEMA = {
+  type: "object",
+  properties: {
+    items: {
+      type: "array",
       items: {
-        type: "array",
-        items: {
-          type: "object",
-          properties: {
-            date: { type: "string", description: "YYYY-MM-DD: la data reale dell'impegno" },
-            start: { type: "string", description: "HH:MM 24h (ora di ritrovo/inizio)" },
-            end: { type: "string", description: "HH:MM 24h se indicata, altrimenti stringa vuota" },
-            type: { type: "string", enum: ["allenamento", "partita", "viaggio", "medico", "personale", "visita", "nutrizione", "call"] },
-            title: { type: "string", description: "Breve, in italiano (es. Allenamento, Palestra, Video analisi, Partenza per Salonicco, Partita vs Aris)" },
-            location: { type: "string", description: "Luogo se indicato, altrimenti stringa vuota" },
-            notes: { type: "string", description: "Dettagli utili (es. ritrovo, abbigliamento), altrimenti stringa vuota" },
-          },
-          required: ["date", "start", "type", "title"],
+        type: "object",
+        properties: {
+          date: { type: "string", description: "YYYY-MM-DD: la data reale dell'impegno" },
+          start: { type: "string", description: "HH:MM 24h (ora di ritrovo/inizio)" },
+          end: { type: "string", description: "HH:MM 24h se indicata, altrimenti stringa vuota" },
+          type: { type: "string", enum: ["allenamento", "partita", "viaggio", "medico", "personale", "visita", "nutrizione", "call"] },
+          title: { type: "string", description: "Breve, in italiano (es. Allenamento, Palestra, Video analisi, Partenza per Salonicco, Partita vs Aris)" },
+          location: { type: "string", description: "Luogo se indicato, altrimenti stringa vuota" },
+          notes: { type: "string", description: "Dettagli utili (es. ritrovo, abbigliamento), altrimenti stringa vuota" },
         },
+        required: ["date", "start", "end", "type", "title", "location", "notes"],
+        additionalProperties: false,
       },
-      warnings: { type: "string", description: "Cose poco leggibili o ambigue, in italiano; stringa vuota se nessuna" },
     },
-    required: ["items"],
+    warnings: { type: "string", description: "Cose poco leggibili o ambigue, in italiano; stringa vuota se nessuna" },
   },
+  required: ["items", "warnings"],
+  additionalProperties: false,
 };
 
 Deno.serve(async (req) => {
@@ -75,9 +74,14 @@ Deno.serve(async (req) => {
     const user = createClient(URL, Deno.env.get("SUPABASE_ANON_KEY")!, { global: { headers: { Authorization: auth } } });
     const { plan_id, probe } = await req.json();
     // controllo di configurazione: dice solo se la chiave c'è ed è valida, non la espone mai
-    if (probe) {
+    // x-sync-secret = chiamata di servizio (diagnostica dal database): niente RLS
+    let trusted = false;
+    if (req.headers.get("x-sync-secret")) {
       const { data: sec } = await service.from("cp_secrets").select("value").eq("key", "sync_secret").maybeSingle();
-      if (!sec?.value || req.headers.get("x-sync-secret") !== sec.value) return json({ error: "forbidden" }, 403);
+      trusted = !!sec?.value && req.headers.get("x-sync-secret") === sec.value;
+    }
+    if (probe && !plan_id) {
+      if (!trusted) return json({ error: "forbidden" }, 403);
       const k = await apiKey();
       if (!k) return json({ configured: false });
       const r = await fetch("https://api.anthropic.com/v1/messages", {
@@ -91,7 +95,7 @@ Deno.serve(async (req) => {
     if (!plan_id) return json({ error: "plan_id mancante" }, 400);
 
     // RLS: legge il programma solo chi gestisce l'atleta
-    const { data: plan } = await user.from("crm_week_plans").select("id, player_id, week_start, file_path, file_name").eq("id", plan_id).maybeSingle();
+    const { data: plan } = await (trusted ? service : user).from("crm_week_plans").select("id, player_id, week_start, file_path, file_name").eq("id", plan_id).maybeSingle();
     if (!plan) return json({ error: "Programma non trovato" }, 404);
     if (!plan.file_path) return json({ error: "Nessun file caricato" }, 400);
 
@@ -129,19 +133,26 @@ In warnings segnala in italiano solo ciò che è davvero illeggibile o ambiguo.`
       headers: aiHeaders(key),
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 8000,
-        tools: [TOOL],
-        tool_choice: { type: "tool", name: TOOL.name },
+        max_tokens: 16000,
+        output_config: { effort: "medium", format: { type: "json_schema", schema: SCHEMA } },
         messages: [{ role: "user", content: [media, { type: "text", text: prompt }] }],
       }),
     });
     const out = await res.json();
-    if (!res.ok) return json({ error: out?.error?.message || "Lettura non riuscita" }, 502);
-    const use = (out.content || []).find((c: any) => c.type === "tool_use");
-    const items = (use?.input?.items || [])
+    if (!res.ok) {
+      console.error("anthropic", res.status, JSON.stringify(out?.error || out).slice(0, 500));
+      return json({ error: out?.error?.message || "Lettura non riuscita" }, 502);
+    }
+    if (out.stop_reason === "refusal" || out.stop_reason === "max_tokens") {
+      console.error("anthropic stop", out.stop_reason);
+      return json({ error: "Lettura non riuscita" }, 502);
+    }
+    const text = (out.content || []).find((c: any) => c.type === "text")?.text || "{}";
+    const parsed = JSON.parse(text);
+    const items = (parsed.items || [])
       .filter((it: any) => /^\d{4}-\d{2}-\d{2}$/.test(it.date || "") && it.date >= from && it.date <= to)
       .sort((a: any, b: any) => (a.date + a.start).localeCompare(b.date + b.start));
-    const warnings = use?.input?.warnings || "";
+    const warnings = parsed.warnings || "";
 
     await service.from("crm_week_plans").update({ ai_items: { items, warnings } }).eq("id", plan.id);
     return json({ items, warnings });
