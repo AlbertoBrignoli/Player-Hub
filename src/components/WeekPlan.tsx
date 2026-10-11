@@ -24,6 +24,7 @@ export function mondayOf(d: Date) { const x = new Date(d); x.setHours(12, 0, 0, 
 export function defaultWeek(now = new Date()) { const m = mondayOf(now); if (now.getDay() === 5 || now.getDay() === 6 || now.getDay() === 0) m.setDate(m.getDate() + 7); return iso(m) }
 const addDays = (s: string, n: number) => { const d = new Date(s + 'T12:00:00'); d.setDate(d.getDate() + n); return iso(d) }
 const label = (s: string) => new Date(s + 'T12:00:00').toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })
+const weekOf = (s: string) => iso(mondayOf(new Date(s + 'T12:00:00')))
 let seq = 0
 const mk = (p: Partial<Item>): Item => ({ key: 'i' + (++seq), on: true, date: '', start: '', end: '', type: 'allenamento', title: '', location: '', notes: '', ...p })
 
@@ -44,7 +45,8 @@ export default function WeekPlanModal({ playerId, tz, onClose, onSaved }: {
   const [items, setItems] = useState<Item[]>([])
   const [note, setNote] = useState('')
   const [busy, setBusy] = useState(false)
-  const days = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(week, i)), [week])
+  // settimane in revisione: quella scelta + quelle trovate nel documento (un PDF può averne più d'una)
+  const weeks = useMemo(() => [...new Set([week, ...items.map(i => weekOf(i.date)).filter(Boolean)])].sort(), [week, items])
 
   // programma già salvato per quella settimana: si riapre per modificarlo
   useEffect(() => {
@@ -68,6 +70,7 @@ export default function WeekPlanModal({ playerId, tz, onClose, onSaved }: {
 
   async function createPlan(file?: File): Promise<Plan | null> {
     let file_path: string | null = null
+    if (file && file.type.startsWith('image/')) file = await shrinkImage(file)
     if (file) {
       if (file.size > 20 * 1048576) { toast('File troppo grande (max 20 MB): fai una foto del programma', 'err'); return null }
       file_path = `${playerId}/${Date.now()}-${file.name.replace(/[^\w.\-]+/g, '_')}`
@@ -126,18 +129,21 @@ export default function WeekPlanModal({ playerId, tz, onClose, onSaved }: {
     if (!plan) return
     const keep = items.filter(i => i.on && i.date && /^\d{1,2}:\d{2}$/.test(i.start))
     setBusy(true)
-    const { data, error } = await supabase.rpc('crm_save_week_plan', {
+    const { data, error } = await supabase.rpc('crm_save_week_plans', {
       p_plan: plan.id,
       p_items: keep.map(i => ({ date: i.date, start: i.start, end: i.end, type: i.type, title: i.title || TYPES[i.type], location: i.location, notes: i.notes })),
+      p_weeks: weeks,
     })
     setBusy(false)
     if (error) { toast(error.message, 'err'); return }
-    toast(`Programma salvato: ${data} impegni nel calendario, il tuo team è avvisato`)
+    const r = (data || {}) as { events?: number; weeks?: number }
+    toast(`Programma salvato: ${r.events ?? keep.length} impegni${(r.weeks || 1) > 1 ? ` in ${r.weeks} settimane` : ''}, il tuo team è avvisato`)
     onSaved()
   }
 
   const set = (key: string, patch: Partial<Item>) => setItems(xs => xs.map(x => x.key === key ? { ...x, ...patch } : x))
   const onCount = items.filter(i => i.on).length
+  const tickWeek = (w: string, on: boolean) => setItems(xs => xs.map(x => weekOf(x.date) === w ? { ...x, on } : x))
 
   return (
     <Modal title="Programma della settimana" onClose={onClose}
@@ -191,37 +197,56 @@ export default function WeekPlanModal({ playerId, tz, onClose, onSaved }: {
       {step === 'review' && (
         <div className="grid" style={{ gap: 12 }}>
           <div className="faint" style={{ fontSize: 12.5 }}>
-            Settimana {label(week)} – {label(addDays(week, 6))} · togli la spunta a ciò che non ti riguarda, correggi un orario se serve.
+            {weeks.length > 1 ? `Ho trovato ${weeks.length} settimane` : `Settimana ${label(week)} – ${label(addDays(week, 6))}`} · ✓ entra nel calendario, ✕ resta fuori. Correggi un orario se serve.
             {plan?.file_path && <> · <button className="link-btn" onClick={openFile}>vedi il file</button></>}
           </div>
           {note && <div className="wp-note">{note}</div>}
-          {days.map((d, i) => {
-            const rows = items.filter(x => x.date === d).sort((a, b) => a.start.localeCompare(b.start))
+          {weeks.map(w => {
+            const wi = items.filter(x => weekOf(x.date) === w)
+            const on = wi.filter(x => x.on).length
             return (
-              <div key={d} className="wp-day">
-                <div className="wp-day-h">
-                  <span>{WD[i]} <span className="faint">{label(d)}</span></span>
-                  <button className="btn btn-ghost btn-sm" onClick={() => setItems(xs => [...xs, mk({ date: d, start: '10:00', title: 'Allenamento' })])}>+ Aggiungi</button>
-                </div>
-                {rows.length === 0 ? <div className="faint" style={{ fontSize: 12 }}>Riposo</div> : rows.map(r => (
-                  <div key={r.key} className={`wp-row ${r.on ? '' : 'off'}`}>
-                    <input type="checkbox" checked={r.on} onChange={e => set(r.key, { on: e.target.checked })} aria-label="Tieni" />
-                    <div className="wp-fields">
-                      <div className="wp-line">
-                        <input className="input wp-time" type="time" value={r.start} aria-label="Inizio" onChange={e => set(r.key, { start: e.target.value })} />
-                        <span className="faint">–</span>
-                        <input className="input wp-time" type="time" value={r.end} aria-label="Fine" onChange={e => set(r.key, { end: e.target.value })} />
-                      </div>
-                      <div className="wp-line2">
-                        <select className="input" value={r.type} aria-label="Tipo" onChange={e => set(r.key, { type: e.target.value })}>
-                          {Object.entries(TYPES).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
-                        </select>
-                        <input className="input" value={r.title} placeholder="Titolo" onChange={e => set(r.key, { title: e.target.value })} />
-                      </div>
-                      {(r.location || r.notes) && <div className="faint" style={{ fontSize: 11.5 }}>{[r.location, r.notes].filter(Boolean).join(' · ')}</div>}
+              <div key={w} className="wp-week">
+                <div className="wp-week-h">
+                  <div><b>Settimana {label(w)} – {label(addDays(w, 6))}</b><span className="faint"> · {on}/{wi.length} da inserire</span></div>
+                  {wi.length > 0 && (
+                    <div className="flex" style={{ gap: 6 }}>
+                      <button className="btn btn-sm" onClick={() => tickWeek(w, true)}>✓ Tutto</button>
+                      <button className="btn btn-sm btn-ghost" onClick={() => tickWeek(w, false)}>✕ Niente</button>
                     </div>
-                  </div>
-                ))}
+                  )}
+                </div>
+                {Array.from({ length: 7 }, (_, i) => addDays(w, i)).map((d, i) => {
+                  const rows = items.filter(x => x.date === d).sort((a, b) => a.start.localeCompare(b.start))
+                  return (
+                    <div key={d} className="wp-day">
+                      <div className="wp-day-h">
+                        <span>{WD[i]} <span className="faint">{label(d)}</span></span>
+                        <button className="btn btn-ghost btn-sm" onClick={() => setItems(xs => [...xs, mk({ date: d, start: '10:00', title: 'Allenamento' })])}>+ Aggiungi</button>
+                      </div>
+                      {rows.length === 0 ? <div className="faint" style={{ fontSize: 12 }}>Riposo</div> : rows.map(r => (
+                        <div key={r.key} className={`wp-row ${r.on ? '' : 'off'}`}>
+                          <button type="button" className={`wp-tick ${r.on ? 'on' : ''}`} aria-pressed={r.on}
+                            aria-label={r.on ? 'Inserito: tocca per togliere' : 'Escluso: tocca per inserire'}
+                            onClick={() => set(r.key, { on: !r.on })}>{r.on ? '✓' : '✕'}</button>
+                          <div className="wp-fields">
+                            <div className="wp-line">
+                              <input className="input wp-time" type="time" value={r.start} aria-label="Inizio" onChange={e => set(r.key, { start: e.target.value })} />
+                              <span className="faint">–</span>
+                              <input className="input wp-time" type="time" value={r.end} aria-label="Fine" onChange={e => set(r.key, { end: e.target.value })} />
+                            </div>
+                            <div className="wp-line2">
+                              <select className="input" value={r.type} aria-label="Tipo" onChange={e => set(r.key, { type: e.target.value })}>
+                                {Object.entries(TYPES).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+                              </select>
+                              <input className="input" value={r.title} placeholder="Titolo" onChange={e => set(r.key, { title: e.target.value })} />
+                            </div>
+                            {(r.location || r.notes) && <div className="faint" style={{ fontSize: 11.5 }}>{[r.location, r.notes].filter(Boolean).join(' · ')}</div>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )
+                })}
               </div>
             )
           })}
@@ -229,4 +254,18 @@ export default function WeekPlanModal({ playerId, tz, onClose, onSaved }: {
       )}
     </Modal>
   )
+}
+
+// foto del telefono: lato lungo max 2200px in JPEG (resta leggibile e sta nei limiti della lettura AI)
+async function shrinkImage(file: File): Promise<File> {
+  try {
+    const bmp = await createImageBitmap(file)
+    const k = Math.min(1, 2200 / Math.max(bmp.width, bmp.height))
+    if (k === 1 && file.size < 3 * 1048576 && /jpe?g|png|webp/.test(file.type)) return file
+    const c = document.createElement('canvas')
+    c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k)
+    c.getContext('2d')!.drawImage(bmp, 0, 0, c.width, c.height)
+    const blob: Blob | null = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.85))
+    return blob ? new File([blob], file.name.replace(/\.\w+$/, '') + '.jpg', { type: 'image/jpeg' }) : file
+  } catch { return file }
 }

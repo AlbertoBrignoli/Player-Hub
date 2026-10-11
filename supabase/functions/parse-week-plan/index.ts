@@ -1,6 +1,6 @@
-// parse-week-plan — legge il programma settimanale del club (PDF o foto) con Claude e
-// restituisce gli impegni come lista da spuntare. Non scrive nel calendario: lo fa l'atleta
-// con "Salva" (RPC crm_save_week_plan).
+// parse-week-plan — legge il programma del club (PDF o foto, anche con più settimane) con Claude e
+// restituisce gli impegni come lista da spuntare, ciascuno con la sua data. Non scrive nel calendario:
+// lo fa l'atleta con "Salva" (RPC crm_save_week_plans, che divide per settimana).
 // Body {"plan_id":"<uuid>"}. Auth: JWT dell'utente (deve poter gestire l'atleta: RLS su crm_week_plans).
 // Chiave: secret ANTHROPIC_API_KEY delle Edge Functions (o cp_secrets.anthropic_api_key).
 // Senza chiave risponde 503 {error:"ai_not_configured"} e l'app passa all'inserimento a mano.
@@ -31,7 +31,7 @@ function b64(buf: ArrayBuffer): string {
 
 const TOOL = {
   name: "programma_settimanale",
-  description: "Impegni della settimana letti dal programma del club.",
+  description: "Tutti gli impegni letti dal programma del club, di tutte le settimane presenti nel documento.",
   input_schema: {
     type: "object",
     properties: {
@@ -40,7 +40,7 @@ const TOOL = {
         items: {
           type: "object",
           properties: {
-            date: { type: "string", description: "YYYY-MM-DD, dentro la settimana indicata" },
+            date: { type: "string", description: "YYYY-MM-DD: la data reale dell'impegno" },
             start: { type: "string", description: "HH:MM 24h (ora di ritrovo/inizio)" },
             end: { type: "string", description: "HH:MM 24h se indicata, altrimenti stringa vuota" },
             type: { type: "string", enum: ["allenamento", "partita", "viaggio", "medico", "personale", "visita", "nutrizione", "call"] },
@@ -85,21 +85,28 @@ Deno.serve(async (req) => {
 
     const { data: pl } = await service.from("player").select("name, team_name, position").eq("api_player_id", plan.player_id).maybeSingle();
     const ws = new Date(plan.week_start + "T00:00:00Z");
-    const days = Array.from({ length: 7 }, (_, i) => new Date(ws.getTime() + i * 864e5).toISOString().slice(0, 10));
+    const day = (n: number) => new Date(ws.getTime() + n * 864e5).toISOString().slice(0, 10);
+    const today = new Date().toISOString().slice(0, 10);
+    // finestra utile: dalla settimana prima di quella scelta a 6 settimane dopo
+    const from = day(-7), to = day(48);
 
-    const prompt = `Questo è il programma settimanale del club di ${pl?.name || "un calciatore"} (${pl?.team_name || ""}, ruolo ${pl?.position || "n.d."}).
-La settimana va da lunedì ${days[0]} a domenica ${days[6]}: assegna a ogni impegno la data giusta tra queste: ${days.join(", ")}.
-Il documento può essere in greco, inglese, italiano o altra lingua: traduci i titoli in italiano, brevi.
-Estrai SOLO gli impegni con un orario (allenamenti, palestra, riunioni/video, partenze, partite, visite mediche, pasti di squadra).
-Salta i giorni di riposo/OFF. Se ci sono sessioni diverse per reparto, tieni quelle generali e quelle per il ruolo dell'atleta (es. portieri).
-Usa l'orario di ritrovo/inizio come start, il 24h, e l'ora di fine solo se scritta. Non inventare nulla che non sia nel documento.`;
+    const prompt = `Questo è il programma del club di ${pl?.name || "un calciatore"} (${pl?.team_name || ""}, ruolo ${pl?.position || "n.d."}).
+Oggi è ${today}. L'atleta ha scelto la settimana che inizia lunedì ${day(0)}.
+Il documento può contenere UNA O PIÙ SETTIMANE (es. due tabelle, o giorni che proseguono oltre la domenica): leggile TUTTE e assegna a ogni impegno la sua data reale YYYY-MM-DD.
+- Se il documento scrive le date (es. 12/10, 12.10, Δευτέρα 12/10, Mon 12 Oct), usa quelle; l'anno è quello più vicino a oggi.
+- Se ci sono solo i nomi dei giorni, la prima settimana è quella di lunedì ${day(0)} e le successive proseguono in ordine (${day(7)}, ${day(14)}…).
+Il documento può essere in greco, inglese, italiano o altra lingua: traduci titoli e note in italiano, brevi.
+Estrai ogni impegno con un orario: allenamenti, palestra, riunioni/video, ritrovi, partenze/viaggi, partite (titolo "Partita vs <avversario>", type partita), visite mediche, pasti di squadra.
+Salta i giorni di riposo/OFF/day off. Se ci sono sessioni diverse per reparto, tieni quelle generali e quelle per il ruolo dell'atleta (es. portieri).
+Usa l'orario di ritrovo/inizio come start (24h) e l'ora di fine solo se scritta. Non inventare nulla che non sia nel documento.
+In warnings segnala in italiano solo ciò che è davvero illeggibile o ambiguo.`;
 
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 3000,
+        max_tokens: 8000,
         tools: [TOOL],
         tool_choice: { type: "tool", name: TOOL.name },
         messages: [{ role: "user", content: [media, { type: "text", text: prompt }] }],
@@ -108,7 +115,9 @@ Usa l'orario di ritrovo/inizio come start, il 24h, e l'ora di fine solo se scrit
     const out = await res.json();
     if (!res.ok) return json({ error: out?.error?.message || "Lettura non riuscita" }, 502);
     const use = (out.content || []).find((c: any) => c.type === "tool_use");
-    const items = (use?.input?.items || []).filter((it: any) => days.includes(it.date));
+    const items = (use?.input?.items || [])
+      .filter((it: any) => /^\d{4}-\d{2}-\d{2}$/.test(it.date || "") && it.date >= from && it.date <= to)
+      .sort((a: any, b: any) => (a.date + a.start).localeCompare(b.date + b.start));
     const warnings = use?.input?.warnings || "";
 
     await service.from("crm_week_plans").update({ ai_items: { items, warnings } }).eq("id", plan.id);
