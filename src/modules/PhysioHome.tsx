@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthContext'
 import { useAthlete } from '../lib/athlete'
 import { Spinner, Empty } from '../components/ui'
 import Icon from '../components/Icon'
+import { useLang } from '../lib/i18n'
 
 // Home del fisioterapista: la sua scheda e gli atleti seguiti.
 // Stessi componenti/pattern degli altri ruoli professionali.
@@ -16,6 +17,7 @@ const kicker: React.CSSProperties = {
 export default function PhysioHome({ goto }: { goto?: (r: string) => void }) {
   const { session } = useAuth()
   const { athletes, setAthleteId } = useAthlete()
+  const { t } = useLang()
   const [me, setMe] = useState<any>({})
   const [loading, setLoading] = useState(true)
 
@@ -50,33 +52,33 @@ export default function PhysioHome({ goto }: { goto?: (r: string) => void }) {
                 {(me?.name || 'F').slice(0, 1)}
               </div>}
           <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ ...kicker, color: ACCENT }}>Fisioterapista</div>
+            <div style={{ ...kicker, color: ACCENT }}>{t('Fisioterapista')}</div>
             <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: -0.3, marginTop: 2 }}>
-              {me?.name || 'Benvenuto'}
+              {me?.name || t('Benvenuto')}
             </div>
             <div className="faint" style={{ fontSize: 12.5, marginTop: 2 }}>
-              {me?.title || 'Completa il tuo profilo per iniziare'}
+              {me?.title || t('Completa il tuo profilo per iniziare')}
             </div>
           </div>
           <button className="btn btn-sm" onClick={() => goto?.('physio-profile')}>
-            <Icon name="user" size={13} /> {complete ? 'Il mio profilo' : 'Completa il profilo'}
+            <Icon name="user" size={13} /> {complete ? t('Il mio profilo') : t('Completa il profilo')}
           </button>
         </div>
       </div>
 
       {/* --- atleti seguiti --- */}
       <div className="card">
-        <div className="card-head"><div className="card-title">Atleti seguiti</div></div>
+        <div className="card-head"><div className="card-title">{t('Atleti seguiti')}</div></div>
         {athletes.length === 0 ? (
           <Empty icon={<Icon name="users" size={30} strokeWidth={1.4} />}
-            title="Nessun atleta collegato"
-            hint="Chiedi ad AUVI di collegarti agli atleti che segui." />
+            title={t('Nessun atleta collegato')}
+            hint={t('Chiedi ad AUVI di collegarti agli atleti che segui.')} />
         ) : (
           <div className="grid g2" style={{ gap: 10 }}>
             {athletes.map(a => (
               <button key={a.api_player_id} className="card" style={{ textAlign: 'left', cursor: 'pointer' }}
                 onClick={() => { setAthleteId(a.api_player_id); goto?.('performance') }}>
-                <div style={{ fontWeight: 700 }}>{a.name || 'Atleta'}</div>
+                <div style={{ fontWeight: 700 }}>{a.name || t('Atleta')}</div>
               </button>
             ))}
           </div>

@@ -9,12 +9,15 @@ import { useRouteParam } from '../lib/route'
 import ExerciseLibrary, { ExerciseDetail, ExMedia, ExlStyle, exImage, exName, exThumb } from './fitness/ExerciseLibrary'
 import { toast } from '../lib/toast'
 import { notify } from '../lib/notify'
+import { useLang } from '../lib/i18n'
 import type { FitnessProgram, FitnessExercise, FitnessFeedback, FitnessLibraryItem } from '../lib/types'
 
 const ACCENT = '#3F7F00' // verde fitness (scurito per il tema chiaro)
 const label: React.CSSProperties = { fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: 'var(--text-dim)', fontWeight: 700, margin: '18px 0 10px' }
 const grid = (min = 150): React.CSSProperties => ({ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(min(${min}px, 100%), 1fr))`, gap: 12 })
 const todayKey = () => new Date().toISOString().slice(0, 10)
+type T = (s: string) => string
+const noT: T = s => s
 
 export default function Fitness({ goto }: { goto?: (r: string) => void }) {
   const { role } = useAuth()
@@ -38,11 +41,12 @@ function setViewParam(v: TrainerView) {
 
 function TrainerFitness() {
   const view: TrainerView = useRouteParam('view') === 'libreria' ? 'libreria' : 'programmi'
+  const { t } = useLang()
   return (
     <div>
       <Tabs<TrainerView> value={view} onChange={setViewParam} style={{ marginBottom: 18 }} tabs={[
-        { key: 'programmi', label: 'Programmi', icon: <Icon name="layers" size={13} /> },
-        { key: 'libreria', label: 'Libreria esercizi', icon: <Icon name="dumbbell" size={13} /> },
+        { key: 'programmi', label: t('Programmi'), icon: <Icon name="layers" size={13} /> },
+        { key: 'libreria', label: t('Libreria esercizi'), icon: <Icon name="dumbbell" size={13} /> },
       ]} />
       {view === 'libreria' ? <ExerciseLibrary mode="browse" /> : <TrainerPrograms />}
     </div>
@@ -56,6 +60,7 @@ function TrainerPrograms() {
   const [trash, setTrash] = useState<FitnessProgram[]>([])
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState<FitnessProgram | 'new' | null>(null)
+  const { t } = useLang()
 
   async function load() {
     if (!athleteId) { setPrograms([]); setTrash([]); setLoading(false); return }
@@ -79,15 +84,15 @@ function TrainerPrograms() {
     load()
   }
   async function purge(p: FitnessProgram) {
-    if (!confirm(`Eliminare DEFINITIVAMENTE "${p.name}"? Questa operazione non è reversibile.`)) return
+    if (!confirm(t('Eliminare DEFINITIVAMENTE "{name}"? Questa operazione non è reversibile.').replace('{name}', p.name))) return
     await supabase.from('fitness_programs').delete().eq('id', p.id)
     load()
   }
 
   if (loading) return <Spinner />
-  if (!athleteId) return <Empty title="Nessun atleta selezionato" hint="Seleziona un atleta dal menù in alto per gestire i suoi programmi." />
+  if (!athleteId) return <Empty title={t('Nessun atleta selezionato')} hint={t('Seleziona un atleta dal menù in alto per gestire i suoi programmi.')} />
 
-  const athleteName = athletes.find(a => a.api_player_id === athleteId)?.name || 'Atleta'
+  const athleteName = athletes.find(a => a.api_player_id === athleteId)?.name || t('Atleta')
   const bozze = programs.filter(p => p.status === 'draft')
   const pubblicate = programs.filter(p => p.status === 'published')
 
@@ -95,40 +100,40 @@ function TrainerPrograms() {
     <div style={{ maxWidth: 1080 }}>
       <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
         <div>
-          <div style={{ fontSize: 18, fontWeight: 800 }}>Programmi di {athleteName}</div>
-          <div className="faint" style={{ fontSize: 13 }}>{programs.length} totali · {bozze.length} bozze · {pubblicate.length} pubblicati</div>
+          <div style={{ fontSize: 18, fontWeight: 800 }}>{t('Programmi di {name}').replace('{name}', athleteName)}</div>
+          <div className="faint" style={{ fontSize: 13 }}>{t('{n} totali · {d} bozze · {p} pubblicati').replace('{n}', String(programs.length)).replace('{d}', String(bozze.length)).replace('{p}', String(pubblicate.length))}</div>
         </div>
         <button className="btn btn-primary" onClick={() => setEditing('new')}>
-          <Icon name="plus" size={14} /> Nuovo programma
+          <Icon name="plus" size={14} /> {t('Nuovo programma')}
         </button>
       </div>
 
       <TrainerSummary athletes={athletes} athleteId={athleteId} />
 
-      <ProgramList title="Schede pubblicate" tone="published" items={pubblicate} onOpen={setEditing} />
-      <ProgramList title="Schede in bozza" tone="draft" items={bozze} onOpen={setEditing} />
+      <ProgramList title={t('Schede pubblicate')} tone="published" items={pubblicate} onOpen={setEditing} />
+      <ProgramList title={t('Schede in bozza')} tone="draft" items={bozze} onOpen={setEditing} />
 
       {trash.length > 0 && (
         <div style={{ marginTop: 8, marginBottom: 22 }}>
-          <div style={label}>Cestino · {trash.length}</div>
+          <div style={label}>{t('Cestino')} · {trash.length}</div>
           <div className="faint" style={{ fontSize: 12.5, margin: '0 0 10px' }}>
-            I programmi eliminati restano qui e si possono ripristinare in qualsiasi momento.
+            {t('I programmi eliminati restano qui e si possono ripristinare in qualsiasi momento.')}
           </div>
           <div style={grid(260)}>
             {trash.map(p => (
               <div key={p.id} className="card" style={{ padding: 16, border: '1px dashed var(--border)', opacity: .85 }}>
                 <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div style={{ fontWeight: 700 }}>{p.name}</div>
-                  <Badge tone="red">Eliminato</Badge>
+                  <Badge tone="red">{t('Eliminato')}</Badge>
                 </div>
                 <div className="faint" style={{ fontSize: 12.5, marginTop: 6 }}>
-                  {p.program_date ? fmtDate(p.program_date) : 'Data da definire'}{p.start_time ? ` · ${p.start_time.slice(0, 5)}` : ''}
+                  {p.program_date ? fmtDate(p.program_date) : t('Data da definire')}{p.start_time ? ` · ${p.start_time.slice(0, 5)}` : ''}
                 </div>
                 <div className="flex gap" style={{ marginTop: 12 }}>
                   <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }} onClick={() => restore(p)}>
-                    <Icon name="rotate-ccw" size={14} /> Ripristina
+                    <Icon name="rotate-ccw" size={14} /> {t('Ripristina')}
                   </button>
-                  <button className="btn" style={{ color: 'var(--red)' }} onClick={() => purge(p)} title="Elimina definitivamente">
+                  <button className="btn" style={{ color: 'var(--red)' }} onClick={() => purge(p)} title={t('Elimina definitivamente')}>
                     <Icon name="trash" size={14} />
                   </button>
                 </div>
@@ -155,6 +160,7 @@ function TrainerPrograms() {
 function ProgramList({ title, items, tone, onOpen }: {
   title: string; items: FitnessProgram[]; tone: 'draft' | 'published'; onOpen: (p: FitnessProgram) => void
 }) {
+  const { t } = useLang()
   if (items.length === 0) return null
   return (
     <div style={{ marginBottom: 22 }}>
@@ -164,10 +170,10 @@ function ProgramList({ title, items, tone, onOpen }: {
           <button key={p.id} className="card" style={{ padding: 16, textAlign: 'left', cursor: 'pointer', border: '1px solid var(--border)' }} onClick={() => onOpen(p)}>
             <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div style={{ fontWeight: 700 }}>{p.name}</div>
-              <Badge tone={tone === 'published' ? 'green' : 'gold'}>{tone === 'published' ? 'Pubblicata' : 'Bozza'}</Badge>
+              <Badge tone={tone === 'published' ? 'green' : 'gold'}>{tone === 'published' ? t('Pubblicata') : t('Bozza')}</Badge>
             </div>
             <div className="faint" style={{ fontSize: 12.5, marginTop: 6 }}>
-              {p.program_date ? fmtDate(p.program_date) : 'Data da definire'}{p.start_time ? ` · ${p.start_time.slice(0, 5)}` : ''}
+              {p.program_date ? fmtDate(p.program_date) : t('Data da definire')}{p.start_time ? ` · ${p.start_time.slice(0, 5)}` : ''}
             </div>
             {p.focus && <div style={{ fontSize: 13, marginTop: 4, color: 'var(--text-dim)' }}>{p.focus}</div>}
           </button>
@@ -193,19 +199,19 @@ const SIDES = ['Entrambi', 'Destro', 'Sinistro', 'Alternato']
 const RPE_VALUES = Array.from({ length: 19 }, (_, i) => 1 + i * 0.5)
 
 /** carico leggibile: "20 kg", "70 % 1RM", "peso corporeo" */
-export function loadText(e: FitnessExercise) {
-  const unit = e.load_unit === 'bw' ? 'peso corporeo' : e.load_unit === '%1RM' ? '% 1RM' : e.load_unit || ''
-  if (e.load && unit) return e.load_unit === 'bw' ? `${e.load} + peso corporeo` : `${e.load} ${unit}`
-  return e.load || (e.load_unit === 'bw' ? 'peso corporeo' : '')
+export function loadText(e: FitnessExercise, t: T = noT) {
+  const unit = e.load_unit === 'bw' ? t('peso corporeo') : e.load_unit === '%1RM' ? '% 1RM' : e.load_unit || ''
+  if (e.load && unit) return e.load_unit === 'bw' ? `${e.load} + ${t('peso corporeo')}` : `${e.load} ${unit}`
+  return e.load || (e.load_unit === 'bw' ? t('peso corporeo') : '')
 }
 /** riga di prescrizione compatta, usata in editor, anteprima, vista atleta e PDF */
-export function prescParts(e: FitnessExercise): string[] {
-  const vol = e.sets != null ? (e.reps ? `${e.sets}×${e.reps}` : `${e.sets} serie`) : (e.reps ? `${e.reps} rip` : '')
+export function prescParts(e: FitnessExercise, t: T = noT): string[] {
+  const vol = e.sets != null ? (e.reps ? `${e.sets}×${e.reps}` : t('{n} serie').replace('{n}', String(e.sets))) : (e.reps ? t('{n} rip').replace('{n}', e.reps) : '')
   return [
-    vol, e.duration ? e.duration : '', e.distance ? e.distance : '', loadText(e),
-    e.isometry_time ? `iso ${e.isometry_time}` : '',
+    vol, e.duration ? e.duration : '', e.distance ? e.distance : '', loadText(e, t),
+    e.isometry_time ? t('iso {v}').replace('{v}', e.isometry_time) : '',
     e.rpe != null ? `RPE ${String(e.rpe).replace('.', ',')}` : '', e.rir != null ? `RIR ${e.rir}` : '',
-    e.tempo ? `tempo ${e.tempo}` : '', e.recovery ? `rec ${e.recovery}` : '', e.side || '',
+    e.tempo ? t('tempo {v}').replace('{v}', e.tempo) : '', e.recovery ? t('rec {v}').replace('{v}', e.recovery) : '', e.side ? t(e.side) : '',
   ].filter(Boolean)
 }
 
@@ -261,6 +267,7 @@ function ProgramEditor({ program, athleteId, athleteName, trainerId, onClose, on
   const [dragIdx, setDragIdx] = useState<number | null>(null)
   const [uploadingImg, setUploadingImg] = useState<number | null>(null)
   const [review, setReview] = useState(false)
+  const { t } = useLang()
 
   async function uploadImage(i: number, file: File) {
     setUploadingImg(i)
@@ -272,7 +279,7 @@ function ProgramEditor({ program, athleteId, athleteName, trainerId, onClose, on
     if (up.error) { toast(up.error.message, 'err'); return }
     const url = supabase.storage.from('exercise-images').getPublicUrl(path).data.publicUrl
     setEx(i, 'image_url', url)
-    toast('Immagine caricata')
+    toast(t('Immagine caricata'))
   }
 
   useEffect(() => {
@@ -295,7 +302,7 @@ function ProgramEditor({ program, athleteId, athleteName, trainerId, onClose, on
   }
   function confirmPresc(d: FitnessExercise) {
     if (!presc) return
-    if (presc.index < 0) { setExercises(prev => [...prev, withKey(d)]); toast(`Aggiunto: ${d.name}`) }
+    if (presc.index < 0) { setExercises(prev => [...prev, withKey(d)]); toast(t('Aggiunto: {name}').replace('{name}', d.name)) }
     else setExercises(prev => prev.map((e, i) => (i === presc.index ? { ...e, ...d } : e)))
     setPresc(null)
   }
@@ -308,8 +315,8 @@ function ProgramEditor({ program, athleteId, athleteName, trainerId, onClose, on
   // Salva un esercizio libero come esercizio personalizzato in libreria e lo collega alla sessione.
   async function saveToLibrary(i: number) {
     const ex = exercises[i]
-    if (!ex?.name?.trim()) { toast('Dai un nome all\'esercizio prima di salvarlo in libreria.', 'err'); return }
-    if (!trainerId) { toast('Sessione non valida: rientra e riprova.', 'err'); return }
+    if (!ex?.name?.trim()) { toast(t('Dai un nome all\'esercizio prima di salvarlo in libreria.'), 'err'); return }
+    if (!trainerId) { toast(t('Sessione non valida: rientra e riprova.'), 'err'); return }
     const muscles = (ex.muscle_group || '').split(',').map(x => x.trim()).filter(Boolean)
     const { data, error } = await supabase.from('fitness_exercise_library').insert({
       name: ex.name.trim(), name_it: ex.name.trim(), muscle_group: ex.muscle_group || null, primary_muscles: muscles,
@@ -319,7 +326,7 @@ function ProgramEditor({ program, athleteId, athleteName, trainerId, onClose, on
     }).select('id').single()
     if (error) { toast(error.message, 'err'); return }
     setEx(i, 'library_id', (data as { id: string }).id)
-    toast('Salvato in libreria')
+    toast(t('Salvato in libreria'))
   }
   const onDrop = (target: number) => {
     if (dragIdx === null || dragIdx === target) return
@@ -328,7 +335,7 @@ function ProgramEditor({ program, athleteId, athleteName, trainerId, onClose, on
   }
 
   async function save(status: 'draft' | 'published') {
-    if (!form.name?.trim()) { alert('Inserisci il nome del programma'); return }
+    if (!form.name?.trim()) { alert(t('Inserisci il nome del programma')); return }
     setBusy(status)
     const payload: any = { player_id: athleteId, trainer_id: trainerId, status, ...programFields(form) }
     let pid = isNew ? undefined : (program as FitnessProgram).id
@@ -348,7 +355,7 @@ function ProgramEditor({ program, athleteId, athleteName, trainerId, onClose, on
 
   async function del() {
     if (isNew) return
-    if (!confirm('Spostare questo programma nel cestino? Potrai ripristinarlo dal cestino in fondo alla pagina.')) return
+    if (!confirm(t('Spostare questo programma nel cestino? Potrai ripristinarlo dal cestino in fondo alla pagina.'))) return
     setBusy('draft')
     await supabase.from('fitness_programs').update({ deleted_at: new Date().toISOString() }).eq('id', (program as FitnessProgram).id)
     setBusy(''); onSaved()
@@ -357,15 +364,15 @@ function ProgramEditor({ program, athleteId, athleteName, trainerId, onClose, on
   return (
     <Modal
       wide
-      title={isNew ? 'Nuovo programma' : 'Modifica programma'}
+      title={isNew ? t('Nuovo programma') : t('Modifica programma')}
       onClose={onClose}
       footer={
         <>
-          {!isNew && <button className="btn" style={{ color: 'var(--red)' }} onClick={del} disabled={!!busy}>Sposta nel cestino</button>}
-          <button className="btn" onClick={() => save('draft')} disabled={!!busy}>{busy === 'draft' ? 'Salvo…' : 'Salva bozza'}</button>
+          {!isNew && <button className="btn" style={{ color: 'var(--red)' }} onClick={del} disabled={!!busy}>{t('Sposta nel cestino')}</button>}
+          <button className="btn" onClick={() => save('draft')} disabled={!!busy}>{busy === 'draft' ? t('Salvo…') : t('Salva bozza')}</button>
           <button className="btn btn-primary" disabled={!!busy}
-            onClick={() => { if (!form.name?.trim()) { toast('Inserisci il nome del programma', 'err'); return } setReview(true) }}>
-            Rivedi e invia
+            onClick={() => { if (!form.name?.trim()) { toast(t('Inserisci il nome del programma'), 'err'); return } setReview(true) }}>
+            {t('Rivedi e invia')}
           </button>
         </>
       }
@@ -375,39 +382,39 @@ function ProgramEditor({ program, athleteId, athleteName, trainerId, onClose, on
           <div>
           {/* Dati programma */}
           <div style={grid(200)}>
-            <Field label="Nome programma"><Input value={form.name || ''} onChange={e => set('name', e.target.value)} placeholder="Es. Forza arti inferiori" /></Field>
-            <Field label="Data"><Input type="date" value={form.program_date || ''} onChange={e => set('program_date', e.target.value)} /></Field>
-            <Field label="Orario"><Input type="time" value={form.start_time || ''} onChange={e => set('start_time', e.target.value)} /></Field>
-            <Field label="Durata (min)"><Input type="number" value={form.duration_min ?? ''} onChange={e => set('duration_min', e.target.value ? Number(e.target.value) : null)} /></Field>
-            <Field label="Focus"><Input value={form.focus || ''} onChange={e => set('focus', e.target.value)} placeholder="Gambe, core…" /></Field>
-            <Field label="Intensità">
+            <Field label={t('Nome programma')}><Input value={form.name || ''} onChange={e => set('name', e.target.value)} placeholder={t('Es. Forza arti inferiori')} /></Field>
+            <Field label={t('Data')}><Input type="date" value={form.program_date || ''} onChange={e => set('program_date', e.target.value)} /></Field>
+            <Field label={t('Orario')}><Input type="time" value={form.start_time || ''} onChange={e => set('start_time', e.target.value)} /></Field>
+            <Field label={t('Durata (min)')}><Input type="number" value={form.duration_min ?? ''} onChange={e => set('duration_min', e.target.value ? Number(e.target.value) : null)} /></Field>
+            <Field label={t('Focus')}><Input value={form.focus || ''} onChange={e => set('focus', e.target.value)} placeholder={t('Gambe, core…')} /></Field>
+            <Field label={t('Intensità')}>
               <Select value={form.intensity || 'Media'} onChange={e => set('intensity', e.target.value)}>
-                <option>Bassa</option><option>Media</option><option>Alta</option>
+                <option value="Bassa">{t('Bassa')}</option><option value="Media">{t('Media')}</option><option value="Alta">{t('Alta')}</option>
               </Select>
             </Field>
           </div>
-          <Field label="Obiettivo seduta"><Input value={form.objective || ''} onChange={e => set('objective', e.target.value)} /></Field>
+          <Field label={t('Obiettivo seduta')}><Input value={form.objective || ''} onChange={e => set('objective', e.target.value)} /></Field>
           <div style={grid(180)}>
-            <Field label="Riscaldamento"><Input value={form.warmup || ''} onChange={e => set('warmup', e.target.value)} /></Field>
-            <Field label="Recupero tra serie"><Input value={form.recovery_between_sets || ''} onChange={e => set('recovery_between_sets', e.target.value)} placeholder="Es. 90s" /></Field>
-            <Field label="Recupero tra esercizi"><Input value={form.recovery_between_exercises || ''} onChange={e => set('recovery_between_exercises', e.target.value)} placeholder="Es. 2 min" /></Field>
-            <Field label="Defaticamento"><Input value={form.cooldown || ''} onChange={e => set('cooldown', e.target.value)} /></Field>
+            <Field label={t('Riscaldamento')}><Input value={form.warmup || ''} onChange={e => set('warmup', e.target.value)} /></Field>
+            <Field label={t('Recupero tra serie')}><Input value={form.recovery_between_sets || ''} onChange={e => set('recovery_between_sets', e.target.value)} placeholder={t('Es. 90s')} /></Field>
+            <Field label={t('Recupero tra esercizi')}><Input value={form.recovery_between_exercises || ''} onChange={e => set('recovery_between_exercises', e.target.value)} placeholder={t('Es. 2 min')} /></Field>
+            <Field label={t('Defaticamento')}><Input value={form.cooldown || ''} onChange={e => set('cooldown', e.target.value)} /></Field>
           </div>
-          <Field label="Note generali"><Textarea rows={2} value={form.general_notes || ''} onChange={e => set('general_notes', e.target.value)} /></Field>
+          <Field label={t('Note generali')}><Textarea rows={2} value={form.general_notes || ''} onChange={e => set('general_notes', e.target.value)} /></Field>
 
           {/* Esercizi */}
           <ExlStyle />
           <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'center', ...label }}>
-            <span>Esercizi ({exercises.length})</span>
+            <span>{t('Esercizi')} ({exercises.length})</span>
           </div>
           {exercises.length === 0 && (
             <div className="faint" style={{ fontSize: 13, marginBottom: 12 }}>
-              Nessun esercizio. Scegli dalla libreria AUVI e imposta la prescrizione (serie, ripetizioni, carico, RPE…).
+              {t('Nessun esercizio. Scegli dalla libreria AUVI e imposta la prescrizione (serie, ripetizioni, carico, RPE…).')}
             </div>
           )}
           {exercises.map((ex, i) => {
             const open = expanded.has(ex._k)
-            const parts = prescParts(ex)
+            const parts = prescParts(ex, t)
             return (
             <div key={ex._k} className="card"
               draggable onDragStart={() => setDragIdx(i)} onDragOver={e => e.preventDefault()} onDrop={() => onDrop(i)}
@@ -418,66 +425,66 @@ function ProgramEditor({ program, athleteId, athleteName, trainerId, onClose, on
                 </div>
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <div className="flex" style={{ gap: 6, alignItems: 'baseline' }}>
-                    <span style={{ fontWeight: 700, color: ACCENT, cursor: 'grab', flex: '0 0 auto' }} title="Trascina per riordinare">#{i + 1}</span>
-                    <span style={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ex.name || 'Esercizio senza nome'}</span>
+                    <span style={{ fontWeight: 700, color: ACCENT, cursor: 'grab', flex: '0 0 auto' }} title={t('Trascina per riordinare')}>#{i + 1}</span>
+                    <span style={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ex.name || t('Esercizio senza nome')}</span>
                   </div>
                   <div className="faint" style={{ fontSize: 12, marginTop: 2 }}>
-                    {[ex.muscle_group, ex.library_id ? 'dalla libreria' : 'esercizio libero'].filter(Boolean).join(' · ')}
+                    {[ex.muscle_group, ex.library_id ? t('dalla libreria') : t('esercizio libero')].filter(Boolean).join(' · ')}
                   </div>
                   <div className="flex" style={{ flexWrap: 'wrap', gap: 5, marginTop: 6 }}>
-                    {parts.length ? parts.map((p, j) => <Chip key={j}>{p}</Chip>) : <span className="faint" style={{ fontSize: 12 }}>Nessuna prescrizione</span>}
+                    {parts.length ? parts.map((p, j) => <Chip key={j}>{p}</Chip>) : <span className="faint" style={{ fontSize: 12 }}>{t('Nessuna prescrizione')}</span>}
                   </div>
                   {ex.technical_notes && <div style={{ fontSize: 12.5, marginTop: 6, color: 'var(--text-dim)' }}>{ex.technical_notes}</div>}
                 </div>
               </div>
               <div className="flex" style={{ gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
-                <button className="btn btn-sm" onClick={() => setPresc({ index: i, draft: { ...ex } })}><Icon name="sliders" size={12} /> Prescrizione</button>
-                <button className="btn btn-sm" onClick={() => toggleExpanded(ex._k)}><Icon name="edit" size={12} /> {open ? 'Chiudi dettagli' : 'Dettagli'}</button>
-                <button className="btn btn-sm" onClick={() => move(i, -1)} disabled={i === 0} aria-label="Sposta su">↑</button>
-                <button className="btn btn-sm" onClick={() => move(i, 1)} disabled={i === exercises.length - 1} aria-label="Sposta giù">↓</button>
-                {!ex.library_id && ex.name?.trim() && <button className="btn btn-sm" title="Salva come esercizio personalizzato per riusarlo" onClick={() => saveToLibrary(i)}><Icon name="archive" size={12} /> In libreria</button>}
-                <button className="btn btn-sm btn-danger" onClick={() => setExercises(exercises.filter((_, idx) => idx !== i))}><Icon name="trash" size={12} /> Rimuovi</button>
+                <button className="btn btn-sm" onClick={() => setPresc({ index: i, draft: { ...ex } })}><Icon name="sliders" size={12} /> {t('Prescrizione')}</button>
+                <button className="btn btn-sm" onClick={() => toggleExpanded(ex._k)}><Icon name="edit" size={12} /> {open ? t('Chiudi dettagli') : t('Dettagli')}</button>
+                <button className="btn btn-sm" onClick={() => move(i, -1)} disabled={i === 0} aria-label={t('Sposta su')}>↑</button>
+                <button className="btn btn-sm" onClick={() => move(i, 1)} disabled={i === exercises.length - 1} aria-label={t('Sposta giù')}>↓</button>
+                {!ex.library_id && ex.name?.trim() && <button className="btn btn-sm" title={t('Salva come esercizio personalizzato per riusarlo')} onClick={() => saveToLibrary(i)}><Icon name="archive" size={12} /> {t('In libreria')}</button>}
+                <button className="btn btn-sm btn-danger" onClick={() => setExercises(exercises.filter((_, idx) => idx !== i))}><Icon name="trash" size={12} /> {t('Rimuovi')}</button>
               </div>
               {open && (
                 <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
-                  <Field label="Nome esercizio"><Input value={ex.name} onChange={e => setEx(i, 'name', e.target.value)} /></Field>
+                  <Field label={t('Nome esercizio')}><Input value={ex.name} onChange={e => setEx(i, 'name', e.target.value)} /></Field>
                   <div style={grid(120)}>
-                    <Field label="Gruppo muscolare"><Input value={ex.muscle_group || ''} onChange={e => setEx(i, 'muscle_group', e.target.value)} /></Field>
-                    <Field label="Serie"><Input type="number" value={ex.sets ?? ''} onChange={e => setEx(i, 'sets', e.target.value ? Number(e.target.value) : null)} /></Field>
-                    <Field label="Ripetizioni"><Input value={ex.reps || ''} onChange={e => setEx(i, 'reps', e.target.value)} placeholder="8-12" /></Field>
-                    <Field label="Isometria"><Input value={ex.isometry_time || ''} onChange={e => setEx(i, 'isometry_time', e.target.value)} placeholder="30s" /></Field>
-                    <Field label="Priorità">
+                    <Field label={t('Gruppo muscolare')}><Input value={ex.muscle_group || ''} onChange={e => setEx(i, 'muscle_group', e.target.value)} /></Field>
+                    <Field label={t('Serie')}><Input type="number" value={ex.sets ?? ''} onChange={e => setEx(i, 'sets', e.target.value ? Number(e.target.value) : null)} /></Field>
+                    <Field label={t('Ripetizioni')}><Input value={ex.reps || ''} onChange={e => setEx(i, 'reps', e.target.value)} placeholder="8-12" /></Field>
+                    <Field label={t('Isometria')}><Input value={ex.isometry_time || ''} onChange={e => setEx(i, 'isometry_time', e.target.value)} placeholder="30s" /></Field>
+                    <Field label={t('Priorità')}>
                       <Select value={ex.priority || 'Media'} onChange={e => setEx(i, 'priority', e.target.value)}>
-                        <option>Alta</option><option>Media</option><option>Bassa</option>
+                        <option value="Alta">{t('Alta')}</option><option value="Media">{t('Media')}</option><option value="Bassa">{t('Bassa')}</option>
                       </Select>
                     </Field>
                   </div>
                   <div style={grid(200)}>
-                    <Field label="Immagine">
+                    <Field label={t('Immagine')}>
                       <div className="flex gap" style={{ alignItems: 'center' }}>
-                        <Input value={ex.image_url || ''} onChange={e => setEx(i, 'image_url', e.target.value)} placeholder="Carica o incolla URL…" />
+                        <Input value={ex.image_url || ''} onChange={e => setEx(i, 'image_url', e.target.value)} placeholder={t('Carica o incolla URL…')} />
                         <label className="btn btn-sm" style={{ cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                          {uploadingImg === i ? 'Carico…' : <><Icon name="upload" size={12} /> Foto</>}
+                          {uploadingImg === i ? t('Carico…') : <><Icon name="upload" size={12} /> {t('Foto')}</>}
                           <input type="file" accept="image/*" hidden disabled={uploadingImg !== null} onChange={e => { const f = e.target.files?.[0]; if (f) uploadImage(i, f); e.target.value = '' }} />
                         </label>
                       </div>
                     </Field>
-                    <Field label="Video (URL)"><Input value={ex.video_url || ''} onChange={e => setEx(i, 'video_url', e.target.value)} placeholder="https://…" /></Field>
-                    <Field label="Variante alternativa"><Input value={ex.alternative || ''} onChange={e => setEx(i, 'alternative', e.target.value)} /></Field>
+                    <Field label={t('Video (URL)')}><Input value={ex.video_url || ''} onChange={e => setEx(i, 'video_url', e.target.value)} placeholder="https://…" /></Field>
+                    <Field label={t('Variante alternativa')}><Input value={ex.alternative || ''} onChange={e => setEx(i, 'alternative', e.target.value)} /></Field>
                   </div>
-                  <Field label="Errori da evitare"><Textarea rows={2} value={ex.mistakes || ''} onChange={e => setEx(i, 'mistakes', e.target.value)} /></Field>
-                  <div className="faint" style={{ fontSize: 12 }}>Carico, RPE, RIR, tempo, durata, distanza, lato e note si impostano da “Prescrizione”.</div>
+                  <Field label={t('Errori da evitare')}><Textarea rows={2} value={ex.mistakes || ''} onChange={e => setEx(i, 'mistakes', e.target.value)} /></Field>
+                  <div className="faint" style={{ fontSize: 12 }}>{t('Carico, RPE, RIR, tempo, durata, distanza, lato e note si impostano da “Prescrizione”.')}</div>
                 </div>
               )}
             </div>
             )
           })}
           <div className="flex" style={{ gap: 8, flexWrap: 'wrap' }}>
-            <button className="btn btn-primary" onClick={() => setPicking(true)}><Icon name="plus" size={14} /> Aggiungi esercizio</button>
-            <button className="btn" onClick={addFree}><Icon name="edit" size={14} /> Esercizio libero</button>
+            <button className="btn btn-primary" onClick={() => setPicking(true)}><Icon name="plus" size={14} /> {t('Aggiungi esercizio')}</button>
+            <button className="btn" onClick={addFree}><Icon name="edit" size={14} /> {t('Esercizio libero')}</button>
           </div>
           {picking && (
-            <Modal wide title="Aggiungi esercizio" onClose={() => setPicking(false)}>
+            <Modal wide title={t('Aggiungi esercizio')} onClose={() => setPicking(false)}>
               <ExerciseLibrary mode="pick" onPick={onPicked} />
             </Modal>
           )}
@@ -487,17 +494,17 @@ function ProgramEditor({ program, athleteId, athleteName, trainerId, onClose, on
           )}
 
           {review && (
-            <Modal wide title="Anteprima scheda — pronta da inviare" onClose={() => setReview(false)}
+            <Modal wide title={t('Anteprima scheda — pronta da inviare')} onClose={() => setReview(false)}
               footer={
                 <>
-                  <button className="btn" onClick={() => setReview(false)} disabled={!!busy}>← Modifica</button>
+                  <button className="btn" onClick={() => setReview(false)} disabled={!!busy}>← {t('Modifica')}</button>
                   <button className="btn btn-primary" disabled={!!busy} onClick={() => save('published')}>
-                    {busy === 'published' ? 'Invio…' : 'Conferma e invia all\'atleta'}
+                    {busy === 'published' ? t('Invio…') : t('Conferma e invia all\'atleta')}
                   </button>
                 </>
               }>
               <div className="faint" style={{ fontSize: 12.5, marginBottom: 12 }}>
-                Ecco come l'atleta vedrà la scheda. Se è tutto ok premi “Conferma e invia”, altrimenti torna a modificarla.
+                {t('Ecco come l\'atleta vedrà la scheda. Se è tutto ok premi “Conferma e invia”, altrimenti torna a modificarla.')}
               </div>
               <div style={{ maxWidth: 460, margin: '0 auto' }}>
                 <SchedaPreview form={form} exercises={exercises} athleteName={athleteName} />
@@ -506,12 +513,12 @@ function ProgramEditor({ program, athleteId, athleteName, trainerId, onClose, on
           )}
 
           {/* Scheda PDF */}
-          <div style={label}>Scheda PDF</div>
+          <div style={label}>{t('Scheda PDF')}</div>
           <div className="flex gap" style={{ alignItems: 'center' }}>
             {form.pdf_path
-              ? <><span className="faint" style={{ fontSize: 13 }}>PDF caricato ✓</span><button className="btn btn-sm" onClick={() => set('pdf_path', null)}>Rimuovi</button></>
+              ? <><span className="faint" style={{ fontSize: 13 }}>{t('PDF caricato ✓')}</span><button className="btn btn-sm" onClick={() => set('pdf_path', null)}>{t('Rimuovi')}</button></>
               : <label className="btn btn-sm" style={{ cursor: 'pointer' }}>
-                  {uploading ? 'Carico…' : 'Carica PDF'}
+                  {uploading ? t('Carico…') : t('Carica PDF')}
                   <input type="file" accept="application/pdf" hidden onChange={async ev => {
                     const file = ev.target.files?.[0]; if (!file) return
                     setUploading(true)
@@ -522,14 +529,14 @@ function ProgramEditor({ program, athleteId, athleteName, trainerId, onClose, on
                   }} />
                 </label>}
           </div>
-          <div className="faint" style={{ fontSize: 12, marginTop: 6 }}>Se carichi un PDF, l'atleta lo apre direttamente come sua scheda.</div>
+          <div className="faint" style={{ fontSize: 12, marginTop: 6 }}>{t('Se carichi un PDF, l\'atleta lo apre direttamente come sua scheda.')}</div>
 
           {/* Note */}
-          <div style={label}>Note</div>
-          <Field label="Nota visibile all'atleta"><Textarea rows={2} value={form.note_athlete || ''} onChange={e => set('note_athlete', e.target.value)} /></Field>
-          <Field label="Nota privata (solo staff)"><Textarea rows={2} value={form.note_staff || ''} onChange={e => set('note_staff', e.target.value)} /></Field>
+          <div style={label}>{t('Note')}</div>
+          <Field label={t('Nota visibile all\'atleta')}><Textarea rows={2} value={form.note_athlete || ''} onChange={e => set('note_athlete', e.target.value)} /></Field>
+          <Field label={t('Nota privata (solo staff)')}><Textarea rows={2} value={form.note_staff || ''} onChange={e => set('note_staff', e.target.value)} /></Field>
           <label className="flex gap" style={{ alignItems: 'center', marginTop: 10, fontSize: 13 }}>
-            <input type="checkbox" checked={!!form.recurring} onChange={e => set('recurring', e.target.checked)} /> Programma ricorrente settimanale
+            <input type="checkbox" checked={!!form.recurring} onChange={e => set('recurring', e.target.checked)} /> {t('Programma ricorrente settimanale')}
           </label>
           </div>
           <div><SchedaPreview form={form} exercises={exercises} athleteName={athleteName} /></div>
@@ -545,6 +552,7 @@ type ProgramFull = FitnessProgram & { fitness_exercises: FitnessExercise[]; fitn
 
 function CoachCard({ goto, athleteId }: { goto?: (r: string) => void; athleteId: number | null }) {
   const [coach, setCoach] = useState<any | null>(null)
+  const { t } = useLang()
   useEffect(() => {
     if (!athleteId) return
     ;(async () => {
@@ -562,12 +570,12 @@ function CoachCard({ goto, athleteId }: { goto?: (r: string) => void; athleteId:
         ? <img src={coach.photo_url} alt="" style={{ width: 52, height: 52, borderRadius: 13, objectFit: 'cover' }} />
         : <div style={{ width: 52, height: 52, borderRadius: 13, background: 'var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>{(coach.name || 'C').slice(0, 1)}</div>}
       <div style={{ flex: 1, minWidth: 140 }}>
-        <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1 }}>Il tuo preparatore</div>
-        <div style={{ fontSize: 16, fontWeight: 800 }}>{coach.name || 'Preparatore'}</div>
+        <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1 }}>{t('Il tuo preparatore')}</div>
+        <div style={{ fontSize: 16, fontWeight: 800 }}>{coach.name || t('Preparatore')}</div>
         <div className="faint" style={{ fontSize: 12.5 }}>{coach.headline || ''}{coach.experience ? ` · ${coach.experience}` : ''}</div>
         {(coach.specializations || []).length > 0 && <div className="faint" style={{ fontSize: 12, marginTop: 3 }}>{(coach.specializations || []).slice(0, 3).join(' · ')}</div>}
       </div>
-      {goto && <button className="btn btn-sm" onClick={() => goto('coach-profile')}>Visualizza profilo</button>}
+      {goto && <button className="btn btn-sm" onClick={() => goto('coach-profile')}>{t('Visualizza profilo')}</button>}
     </div>
   )
 }
@@ -577,6 +585,7 @@ function AthleteFitness({ goto }: { goto?: (r: string) => void }) {
   const [programs, setPrograms] = useState<ProgramFull[]>([])
   const [loading, setLoading] = useState(true)
   const [open, setOpen] = useState<ProgramFull | null>(null)
+  const { t } = useLang()
 
   async function load() {
     if (!athleteId) { setPrograms([]); setLoading(false); return }
@@ -591,7 +600,7 @@ function AthleteFitness({ goto }: { goto?: (r: string) => void }) {
   useEffect(() => { load() }, [athleteId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) return <Spinner />
-  if (programs.length === 0) return <div style={{ maxWidth: 900 }}><CoachCard goto={goto} athleteId={athleteId} /><Empty icon={<Icon name="dumbbell" size={22} />} title="Nessun programma ancora" hint="Quando il preparatore pubblica una scheda, la trovi qui." /></div>
+  if (programs.length === 0) return <div style={{ maxWidth: 900 }}><CoachCard goto={goto} athleteId={athleteId} /><Empty icon={<Icon name="dumbbell" size={22} />} title={t('Nessun programma ancora')} hint={t('Quando il preparatore pubblica una scheda, la trovi qui.')} /></div>
 
   const today = todayKey()
   const oggi = programs.filter(p => p.program_date === today)
@@ -602,15 +611,15 @@ function AthleteFitness({ goto }: { goto?: (r: string) => void }) {
     <div style={{ maxWidth: 900 }}>
       <CoachCard goto={goto} athleteId={athleteId} />
       {oggi.length > 0 && <>
-        <div style={label}>Programma di oggi</div>
+        <div style={label}>{t('Programma di oggi')}</div>
         {oggi.map(p => <BigProgramCard key={p.id} p={p} onOpen={() => setOpen(p)} highlight />)}
       </>}
       {prossimi.length > 0 && <>
-        <div style={label}>Prossimi allenamenti</div>
+        <div style={label}>{t('Prossimi allenamenti')}</div>
         {prossimi.map(p => <BigProgramCard key={p.id} p={p} onOpen={() => setOpen(p)} />)}
       </>}
       {storico.length > 0 && <>
-        <div style={label}>Storico</div>
+        <div style={label}>{t('Storico')}</div>
         {storico.slice().reverse().map(p => <BigProgramCard key={p.id} p={p} onOpen={() => setOpen(p)} muted />)}
       </>}
       {open && <ProgramDetail program={open} athleteId={athleteId!} onClose={() => setOpen(null)} onSaved={() => { setOpen(null); load() }} />}
@@ -619,6 +628,7 @@ function AthleteFitness({ goto }: { goto?: (r: string) => void }) {
 }
 
 function BigProgramCard({ p, onOpen, highlight, muted }: { p: ProgramFull; onOpen: () => void; highlight?: boolean; muted?: boolean }) {
+  const { t } = useLang()
   const fb = p.fitness_feedback?.[0]
   const stato = fb?.status || 'programmato'
   const toneMap: any = { completato: 'green', saltato: 'red', programmato: 'gold' }
@@ -633,9 +643,9 @@ function BigProgramCard({ p, onOpen, highlight, muted }: { p: ProgramFull; onOpe
           </div>
           {p.focus && <div style={{ fontSize: 13, marginTop: 4, color: ACCENT }}>{p.focus}</div>}
         </div>
-        <Badge tone={toneMap[stato]}>{stato}</Badge>
+        <Badge tone={toneMap[stato]}>{t(stato)}</Badge>
       </div>
-      <div className="faint" style={{ fontSize: 12.5, marginTop: 8 }}>{p.fitness_exercises?.length || 0} esercizi · tocca per aprire</div>
+      <div className="faint" style={{ fontSize: 12.5, marginTop: 8 }}>{t('{n} esercizi · tocca per aprire').replace('{n}', String(p.fitness_exercises?.length || 0))}</div>
     </button>
   )
 }
@@ -652,6 +662,7 @@ function ProgramDetail({ program, athleteId, onClose, onSaved }: {
   // la query torna vuota e il pulsante "Come si fa" semplicemente non compare.
   const [lib, setLib] = useState<Record<string, FitnessLibraryItem>>({})
   const [howTo, setHowTo] = useState<FitnessLibraryItem | null>(null)
+  const { t } = useLang()
   useEffect(() => {
     const ids = [...new Set(exercises.map(e => e.library_id).filter(Boolean) as string[])]
     if (!ids.length) return
@@ -673,29 +684,29 @@ function ProgramDetail({ program, athleteId, onClose, onSaved }: {
     <Modal wide title={program.name} onClose={onClose}
       footer={<>
         {program.pdf_path
-          ? <button className="btn" onClick={async () => { const { data } = await supabase.storage.from('crm-media').createSignedUrl(program.pdf_path!, 300); if (data?.signedUrl) window.open(data.signedUrl, '_blank') }}><Icon name="download" size={14} /> Apri scheda PDF</button>
+          ? <button className="btn" onClick={async () => { const { data } = await supabase.storage.from('crm-media').createSignedUrl(program.pdf_path!, 300); if (data?.signedUrl) window.open(data.signedUrl, '_blank') }}><Icon name="download" size={14} /> {t('Apri scheda PDF')}</button>
           : <button className="btn" onClick={async () => {
-              toast('Preparo il PDF…')
-              try { await downloadPdf(program, exercises); toast('PDF pronto — salvalo dove vuoi') }
-              catch { toast('Non riesco a generare il PDF', 'err') }
-            }}><Icon name="download" size={14} /> Scarica PDF</button>}
+              toast(t('Preparo il PDF…'))
+              try { await downloadPdf(program, exercises, t); toast(t('PDF pronto — salvalo dove vuoi')) }
+              catch { toast(t('Non riesco a generare il PDF'), 'err') }
+            }}><Icon name="download" size={14} /> {t('Scarica PDF')}</button>}
       </>}>
       <div className="faint" style={{ fontSize: 13 }}>
-        {program.program_date ? fmtDate(program.program_date) : ''}{program.start_time ? ` · ${program.start_time.slice(0, 5)}` : ''}{program.duration_min ? ` · ${program.duration_min} min` : ''}{program.intensity ? ` · intensità ${program.intensity}` : ''}
+        {program.program_date ? fmtDate(program.program_date) : ''}{program.start_time ? ` · ${program.start_time.slice(0, 5)}` : ''}{program.duration_min ? ` · ${program.duration_min} min` : ''}{program.intensity ? ` · ${t('intensità {v}').replace('{v}', t(program.intensity))}` : ''}
       </div>
       {program.focus && <div style={{ marginTop: 6, color: ACCENT, fontWeight: 700 }}>{program.focus}</div>}
       {program.objective && <div style={{ marginTop: 4 }}>{program.objective}</div>}
 
       {(program.warmup || program.recovery_between_sets || program.recovery_between_exercises || program.cooldown) && (
         <div className="card" style={{ padding: 12, marginTop: 14, ...grid(150) }}>
-          {program.warmup && <Info k="Riscaldamento" v={program.warmup} />}
-          {program.recovery_between_sets && <Info k="Rec. tra serie" v={program.recovery_between_sets} />}
-          {program.recovery_between_exercises && <Info k="Rec. tra esercizi" v={program.recovery_between_exercises} />}
-          {program.cooldown && <Info k="Defaticamento" v={program.cooldown} />}
+          {program.warmup && <Info k={t('Riscaldamento')} v={program.warmup} />}
+          {program.recovery_between_sets && <Info k={t('Rec. tra serie')} v={program.recovery_between_sets} />}
+          {program.recovery_between_exercises && <Info k={t('Rec. tra esercizi')} v={program.recovery_between_exercises} />}
+          {program.cooldown && <Info k={t('Defaticamento')} v={program.cooldown} />}
         </div>
       )}
 
-      <div style={label}>Esercizi</div>
+      <div style={label}>{t('Esercizi')}</div>
       {exercises.map((ex, i) => (
         <div key={i} className="card" style={{ padding: 14, marginBottom: 10, borderLeft: `3px solid ${ACCENT}` }}>
           <div className="flex" style={{ justifyContent: 'space-between' }}>
@@ -703,53 +714,53 @@ function ProgramDetail({ program, athleteId, onClose, onSaved }: {
             {ex.muscle_group && <Badge tone="accent">{ex.muscle_group}</Badge>}
           </div>
           <div className="flex gap" style={{ flexWrap: 'wrap', marginTop: 8, fontSize: 13 }}>
-            {prescParts(ex).map((p, j) => <Chip key={j}>{p}</Chip>)}
+            {prescParts(ex, t).map((p, j) => <Chip key={j}>{p}</Chip>)}
           </div>
           {((ex.library_id && lib[ex.library_id]) || ex.image_url || ex.video_url) && (
             <div className="flex gap" style={{ marginTop: 8, flexWrap: 'wrap' }}>
-              {ex.library_id && lib[ex.library_id] && <button className="btn btn-sm btn-primary" onClick={() => setHowTo(lib[ex.library_id!])}><Icon name="activity" size={12} /> Come si fa</button>}
-              {ex.image_url && !ex.image_url.includes('raw.githubusercontent.com') && <a className="btn btn-sm" href={ex.image_url} target="_blank" rel="noreferrer"><Icon name="image" size={12} /> Immagine</a>}
+              {ex.library_id && lib[ex.library_id] && <button className="btn btn-sm btn-primary" onClick={() => setHowTo(lib[ex.library_id!])}><Icon name="activity" size={12} /> {t('Come si fa')}</button>}
+              {ex.image_url && !ex.image_url.includes('raw.githubusercontent.com') && <a className="btn btn-sm" href={ex.image_url} target="_blank" rel="noreferrer"><Icon name="image" size={12} /> {t('Immagine')}</a>}
               {ex.video_url && <a className="btn btn-sm" href={ex.video_url} target="_blank" rel="noreferrer">Video</a>}
             </div>
           )}
-          {ex.technical_notes && <div style={{ fontSize: 13, marginTop: 8 }}><b>Note:</b> {ex.technical_notes}</div>}
-          {ex.mistakes && <div style={{ fontSize: 13, marginTop: 4, color: 'var(--text-dim)' }}><b>Da evitare:</b> {ex.mistakes}</div>}
-          {ex.alternative && <div style={{ fontSize: 12.5, marginTop: 4, color: 'var(--text-dim)' }}>Alternativa: {ex.alternative}</div>}
+          {ex.technical_notes && <div style={{ fontSize: 13, marginTop: 8 }}><b>{t('Note:')}</b> {ex.technical_notes}</div>}
+          {ex.mistakes && <div style={{ fontSize: 13, marginTop: 4, color: 'var(--text-dim)' }}><b>{t('Da evitare:')}</b> {ex.mistakes}</div>}
+          {ex.alternative && <div style={{ fontSize: 12.5, marginTop: 4, color: 'var(--text-dim)' }}>{t('Alternativa:')} {ex.alternative}</div>}
         </div>
       ))}
       {howTo && <ExerciseDetail item={howTo} onClose={() => setHowTo(null)} />}
 
       {program.note_athlete && (
         <div className="card" style={{ padding: 14, marginTop: 6, borderLeft: `3px solid ${ACCENT}` }}>
-          <div style={{ ...label, margin: '0 0 6px' }}>Nota del preparatore</div>
+          <div style={{ ...label, margin: '0 0 6px' }}>{t('Nota del preparatore')}</div>
           <div style={{ fontSize: 14 }}>{program.note_athlete}</div>
         </div>
       )}
 
       {/* Feedback rapido (<20s) */}
-      <div style={label}>Come è andata?</div>
+      <div style={label}>{t('Come è andata?')}</div>
       <div className="card" style={{ padding: 16 }}>
-        <FbQ title="Allenamento completato?">
-          {([['completato', '✅ Completato'], ['parziale', '⭕ Parziale'], ['non_completato', '❌ Non completato']] as const).map(([v, l]) => (
-            <TapBtn key={v} on={fb.status === v} onClick={() => setFb({ ...fb, status: v })}>{l}</TapBtn>
+        <FbQ title={t('Allenamento completato?')}>
+          {([['completato', '✅', 'Completato'], ['parziale', '⭕', 'Parziale'], ['non_completato', '❌', 'Non completato']] as const).map(([v, em, l]) => (
+            <TapBtn key={v} on={fb.status === v} onClick={() => setFb({ ...fb, status: v })}>{em} {t(l)}</TapBtn>
           ))}
         </FbQ>
-        <FbQ title="Come ti sei sentito?">
+        <FbQ title={t('Come ti sei sentito?')}>
           {([['ottimo', '😀'], ['bene', '🙂'], ['normale', '😐'], ['affaticato', '😕'], ['pesante', '😣']] as const).map(([v, em]) => (
             <TapBtn key={v} on={fb.feeling === v} onClick={() => setFb({ ...fb, feeling: v })}><span style={{ fontSize: 20 }}>{em}</span></TapBtn>
           ))}
         </FbQ>
-        <FbQ title="Hai avuto fastidi?">
+        <FbQ title={t('Hai avuto fastidi?')}>
           {['nessuno', 'ginocchio', 'caviglia', 'schiena', 'adduttori', 'flessori', 'altro'].map(v => (
-            <TapBtn key={v} small on={fb.discomfort === v} onClick={() => setFb({ ...fb, discomfort: v })}>{cap(v)}</TapBtn>
+            <TapBtn key={v} small on={fb.discomfort === v} onClick={() => setFb({ ...fb, discomfort: v })}>{t(cap(v))}</TapBtn>
           ))}
         </FbQ>
-        <Field label={fb.discomfort === 'altro' ? 'Specifica il fastidio (facoltativo)' : 'Nota (facoltativa, max 150)'}>
-          <Input maxLength={150} value={fb.athlete_notes || ''} onChange={e => setFb({ ...fb, athlete_notes: e.target.value })} placeholder="Opzionale" />
+        <Field label={fb.discomfort === 'altro' ? t('Specifica il fastidio (facoltativo)') : t('Nota (facoltativa, max 150)')}>
+          <Input maxLength={150} value={fb.athlete_notes || ''} onChange={e => setFb({ ...fb, athlete_notes: e.target.value })} placeholder={t('Opzionale')} />
         </Field>
         <div className="flex gap" style={{ marginTop: 12, alignItems: 'center' }}>
-          <button className="btn btn-primary" onClick={send} disabled={busy || !fb.status || fb.status === 'programmato'}>{busy ? 'Invio…' : 'Invia'}</button>
-          {saved && <span style={{ color: 'var(--green)', fontSize: 13 }}>Inviato ✓</span>}
+          <button className="btn btn-primary" onClick={send} disabled={busy || !fb.status || fb.status === 'programmato'}>{busy ? t('Invio…') : t('Invia')}</button>
+          {saved && <span style={{ color: 'var(--green)', fontSize: 13 }}>{t('Inviato ✓')}</span>}
         </div>
       </div>
     </Modal>
@@ -788,6 +799,7 @@ const STATUS_LABEL: Record<string, string> = { completato: 'Completato', parzial
 function TrainerSummary({ athletes, athleteId }: { athletes: { api_player_id: number; name: string | null }[]; athleteId: number | null }) {
   const [rows, setRows] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const { t } = useLang()
   useEffect(() => {
     supabase.from('fitness_feedback').select('*, fitness_programs(name, program_date, player_id)').then(({ data }) => {
       const byPlayer: Record<number, any> = {}
@@ -806,7 +818,7 @@ function TrainerSummary({ athletes, athleteId }: { athletes: { api_player_id: nu
   if (loading || rows.length === 0) return null
   return (
     <div style={{ marginBottom: 22 }}>
-      <div style={label}>Ultimo feedback</div>
+      <div style={label}>{t('Ultimo feedback')}</div>
       <div className="card" style={{ padding: 6 }}>
         <div className="list">
           {rows.map(f => {
@@ -818,7 +830,7 @@ function TrainerSummary({ athletes, athleteId }: { athletes: { api_player_id: nu
                 <div className="row-main">
                   <div className="row-title">{name}</div>
                   <div className="row-sub">
-                    {STATUS_LABEL[f.status] || f.status}{disc ? ` · fastidio: ${cap(disc)}` : ''}{f.fitness_programs?.program_date ? ` · ${fmtDate(f.fitness_programs.program_date)}` : ''}
+                    {t(STATUS_LABEL[f.status] || f.status)}{disc ? ` · ${t('fastidio: {v}').replace('{v}', t(cap(disc)))}` : ''}{f.fitness_programs?.program_date ? ` · ${fmtDate(f.fitness_programs.program_date)}` : ''}
                   </div>
                 </div>
                 {f.feeling && <span style={{ fontSize: 20 }}>{FEELING[f.feeling] || ''}</span>}
@@ -839,11 +851,12 @@ export function PrescriptionModal({ draft, item, isNew, onCancel, onConfirm }: {
   const [d, setD] = useState<FitnessExercise>(draft)
   const set = <K extends keyof FitnessExercise>(k: K, v: FitnessExercise[K]) => setD(prev => ({ ...prev, [k]: v }))
   const legacySide = d.side && !SIDES.includes(d.side) ? d.side : null
+  const { t } = useLang()
   return (
-    <Modal wide title={isNew ? 'Prescrizione' : `Prescrizione · ${d.name || 'esercizio'}`} onClose={onCancel}
+    <Modal wide title={isNew ? t('Prescrizione') : `${t('Prescrizione')} · ${d.name || t('esercizio')}`} onClose={onCancel}
       footer={<>
-        <button className="btn" onClick={onCancel}>{isNew ? 'Annulla' : 'Chiudi'}</button>
-        <button className="btn btn-primary" onClick={() => onConfirm(d)}><Icon name="check" size={14} /> {isNew ? 'Aggiungi alla sessione' : 'Salva prescrizione'}</button>
+        <button className="btn" onClick={onCancel}>{isNew ? t('Annulla') : t('Chiudi')}</button>
+        <button className="btn btn-primary" onClick={() => onConfirm(d)}><Icon name="check" size={14} /> {isNew ? t('Aggiungi alla sessione') : t('Salva prescrizione')}</button>
       </>}>
       <ExlStyle />
       <div className="flex" style={{ gap: 12, alignItems: 'center', marginBottom: 16 }}>
@@ -853,18 +866,18 @@ export function PrescriptionModal({ draft, item, isNew, onCancel, onConfirm }: {
         <div style={{ minWidth: 0 }}>
           <div style={{ fontWeight: 800, fontSize: 15 }}>{d.name}</div>
           <div className="faint" style={{ fontSize: 12.5 }}>{[item?.category, d.muscle_group].filter(Boolean).join(' · ')}</div>
-          <div className="faint" style={{ fontSize: 12, marginTop: 2 }}>Nessun campo è obbligatorio: compila solo quello che serve.</div>
+          <div className="faint" style={{ fontSize: 12, marginTop: 2 }}>{t('Nessun campo è obbligatorio: compila solo quello che serve.')}</div>
         </div>
       </div>
       <div style={grid(130)}>
-        <Field label="Serie"><Input type="number" inputMode="numeric" min={0} value={d.sets ?? ''} onChange={e => set('sets', e.target.value ? Number(e.target.value) : null)} placeholder="3" /></Field>
-        <Field label="Ripetizioni"><Input value={d.reps || ''} onChange={e => set('reps', e.target.value)} placeholder="8-10" /></Field>
-        <Field label="Durata"><Input value={d.duration || ''} onChange={e => set('duration', e.target.value)} placeholder="30s · 4 min" /></Field>
-        <Field label="Distanza"><Input value={d.distance || ''} onChange={e => set('distance', e.target.value)} placeholder="20 m" /></Field>
-        <Field label="Carico"><Input value={d.load || ''} onChange={e => set('load', e.target.value)} placeholder="20" /></Field>
-        <Field label="Unità carico">
+        <Field label={t('Serie')}><Input type="number" inputMode="numeric" min={0} value={d.sets ?? ''} onChange={e => set('sets', e.target.value ? Number(e.target.value) : null)} placeholder="3" /></Field>
+        <Field label={t('Ripetizioni')}><Input value={d.reps || ''} onChange={e => set('reps', e.target.value)} placeholder="8-10" /></Field>
+        <Field label={t('Durata')}><Input value={d.duration || ''} onChange={e => set('duration', e.target.value)} placeholder="30s · 4 min" /></Field>
+        <Field label={t('Distanza')}><Input value={d.distance || ''} onChange={e => set('distance', e.target.value)} placeholder="20 m" /></Field>
+        <Field label={t('Carico')}><Input value={d.load || ''} onChange={e => set('load', e.target.value)} placeholder="20" /></Field>
+        <Field label={t('Unità carico')}>
           <Select value={d.load_unit || ''} onChange={e => set('load_unit', e.target.value)}>
-            <option value="">—</option>{LOAD_UNITS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+            <option value="">—</option>{LOAD_UNITS.map(([k, l]) => <option key={k} value={k}>{t(l)}</option>)}
           </Select>
         </Field>
         <Field label="RPE (1-10)">
@@ -877,31 +890,32 @@ export function PrescriptionModal({ draft, item, isNew, onCancel, onConfirm }: {
             <option value="">—</option>{[0, 1, 2, 3, 4, 5].map(v => <option key={v} value={v}>{v}</option>)}
           </Select>
         </Field>
-        <Field label="Recupero"><Input value={d.recovery || ''} onChange={e => set('recovery', e.target.value)} placeholder="90s" /></Field>
-        <Field label="Tempo"><Input value={d.tempo || ''} onChange={e => set('tempo', e.target.value)} placeholder="3-1-1-0" /></Field>
-        <Field label="Lato">
+        <Field label={t('Recupero')}><Input value={d.recovery || ''} onChange={e => set('recovery', e.target.value)} placeholder="90s" /></Field>
+        <Field label={t('Tempo')}><Input value={d.tempo || ''} onChange={e => set('tempo', e.target.value)} placeholder="3-1-1-0" /></Field>
+        <Field label={t('Lato')}>
           <Select value={d.side || ''} onChange={e => set('side', e.target.value)}>
-            <option value="">—</option>{SIDES.map(v => <option key={v}>{v}</option>)}
+            <option value="">—</option>{SIDES.map(v => <option key={v} value={v}>{t(v)}</option>)}
             {legacySide && <option>{legacySide}</option>}
           </Select>
         </Field>
       </div>
-      <Field label="Note"><Textarea rows={2} value={d.technical_notes || ''} onChange={e => set('technical_notes', e.target.value)} placeholder="Indicazioni per l'atleta" /></Field>
+      <Field label={t('Note')}><Textarea rows={2} value={d.technical_notes || ''} onChange={e => set('technical_notes', e.target.value)} placeholder={t('Indicazioni per l\'atleta')} /></Field>
     </Modal>
   )
 }
 
 export function SchedaPreview({ form, exercises, athleteName }: { form: Partial<FitnessProgram>; exercises: FitnessExercise[]; athleteName: string }) {
+  const { t } = useLang()
   const list = exercises.filter(e => e.name?.trim())
   return (
     <div className="card" style={{ padding: 18, position: 'sticky', top: 8 }}>
       <ExlStyle />
-      <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1 }}>Anteprima scheda atleta</div>
+      <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1 }}>{t('Anteprima scheda atleta')}</div>
       <div style={{ fontSize: 12.5, marginTop: 8 }}>{athleteName}</div>
-      <div style={{ fontSize: 18, fontWeight: 800, marginTop: 2 }}>{form.name || 'Nuovo programma'}</div>
+      <div style={{ fontSize: 18, fontWeight: 800, marginTop: 2 }}>{form.name || t('Nuovo programma')}</div>
       {form.focus && <div style={{ color: ACCENT, fontWeight: 700, fontSize: 13, marginTop: 2 }}>{form.focus}</div>}
       <div className="faint" style={{ fontSize: 12, marginTop: 4 }}>
-        {[form.program_date ? fmtDate(form.program_date) : '', form.start_time ? form.start_time.slice(0, 5) : '', form.duration_min ? `${form.duration_min} min` : '', form.intensity].filter(Boolean).join(' · ')}
+        {[form.program_date ? fmtDate(form.program_date) : '', form.start_time ? form.start_time.slice(0, 5) : '', form.duration_min ? `${form.duration_min} min` : '', form.intensity ? t(form.intensity) : ''].filter(Boolean).join(' · ')}
       </div>
       <div style={{ marginTop: 12 }}>
         {list.map((e, i) => (
@@ -911,13 +925,13 @@ export function SchedaPreview({ form, exercises, athleteName }: { form: Partial<
               : <span style={{ width: 44, height: 44, borderRadius: 8, background: 'var(--border)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: '0 0 auto', fontWeight: 700 }}>{i + 1}</span>}
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: 13, fontWeight: 700 }}>{e.name}</div>
-              <div className="faint" style={{ fontSize: 11.5 }}>{prescParts(e).join(' · ')}</div>
+              <div className="faint" style={{ fontSize: 11.5 }}>{prescParts(e, t).join(' · ')}</div>
             </div>
           </div>
         ))}
-        {list.length === 0 && <div className="faint" style={{ fontSize: 12.5, marginTop: 4 }}>Aggiungi esercizi per vedere l'anteprima.</div>}
+        {list.length === 0 && <div className="faint" style={{ fontSize: 12.5, marginTop: 4 }}>{t('Aggiungi esercizi per vedere l\'anteprima.')}</div>}
       </div>
-      {form.note_athlete && <div style={{ marginTop: 12, fontSize: 12.5 }}><b>Nota:</b> {form.note_athlete}</div>}
+      {form.note_athlete && <div style={{ marginTop: 12, fontSize: 12.5 }}><b>{t('Nota:')}</b> {form.note_athlete}</div>}
     </div>
   )
 }
@@ -936,7 +950,7 @@ async function imgToData(url: string): Promise<{ data: string; w: number; h: num
   } catch { return null }
 }
 
-export async function downloadPdf(p: Partial<FitnessProgram>, exercises: FitnessExercise[]) {
+export async function downloadPdf(p: Partial<FitnessProgram>, exercises: FitnessExercise[], t: T = noT) {
   const { jsPDF } = await import('jspdf')
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
   const W = 210, M = 16
@@ -953,16 +967,16 @@ export async function downloadPdf(p: Partial<FitnessProgram>, exercises: Fitness
   }
 
   // Testata
-  text(p.name || 'Programma', 18, 'bold')
-  const sub = [p.program_date ? fmtDate(p.program_date) : '', p.start_time ? p.start_time.slice(0, 5) : '', p.duration_min ? p.duration_min + ' min' : '', p.intensity ? 'intensità ' + p.intensity : ''].filter(Boolean).join('  ·  ')
+  text(p.name || t('Programma'), 18, 'bold')
+  const sub = [p.program_date ? fmtDate(p.program_date) : '', p.start_time ? p.start_time.slice(0, 5) : '', p.duration_min ? p.duration_min + ' min' : '', p.intensity ? t('intensità {v}').replace('{v}', t(p.intensity)) : ''].filter(Boolean).join('  ·  ')
   text(sub, 10, 'normal', [110, 110, 110]); y += 1
   if (p.focus) text(p.focus, 11, 'bold', [70, 70, 70])
   if (p.objective) text(p.objective, 10.5)
-  if (p.warmup) { y += 1; text('Riscaldamento', 10, 'bold', [90, 90, 90]); text(p.warmup, 10.5) }
+  if (p.warmup) { y += 1; text(t('Riscaldamento'), 10, 'bold', [90, 90, 90]); text(p.warmup, 10.5) }
   y += 3
 
   // Esercizi
-  ensure(8); doc.setFont('helvetica', 'bold'); doc.setFontSize(13); ink(17, 17, 17); doc.text('Esercizi', M, y); y += 6
+  ensure(8); doc.setFont('helvetica', 'bold'); doc.setFontSize(13); ink(17, 17, 17); doc.text(t('Esercizi'), M, y); y += 6
 
   const images = await Promise.all(exercises.map(async e => {
     if (!e.image_url || e.image_url.includes('raw.githubusercontent.com')) return null
@@ -979,10 +993,10 @@ export async function downloadPdf(p: Partial<FitnessProgram>, exercises: Fitness
     doc.setFont('helvetica', 'bold'); doc.setFontSize(11.5); ink(17, 17, 17)
     for (const ln of doc.splitTextToSize(`${i + 1}. ${e.name}${e.muscle_group ? '  (' + e.muscle_group + ')' : ''}`, tw)) { ensure(6); doc.text(ln, textX, y); y += 5 }
     // chip riga
-    const chips = prescParts(e).join('  ·  ')
+    const chips = prescParts(e, t).join('  ·  ')
     if (chips) { doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); ink(90, 90, 90); for (const ln of doc.splitTextToSize(chips, tw)) { ensure(5); doc.text(ln, textX, y); y += 4.5 } }
-    if (e.technical_notes) { doc.setFontSize(9.5); ink(60, 60, 60); for (const ln of doc.splitTextToSize('Note: ' + e.technical_notes, tw)) { ensure(5); doc.text(ln, textX, y); y += 4.3 } }
-    if (e.mistakes) { doc.setFontSize(9.5); ink(150, 60, 60); for (const ln of doc.splitTextToSize('Da evitare: ' + e.mistakes, tw)) { ensure(5); doc.text(ln, textX, y); y += 4.3 } }
+    if (e.technical_notes) { doc.setFontSize(9.5); ink(60, 60, 60); for (const ln of doc.splitTextToSize(t('Note:') + ' ' + e.technical_notes, tw)) { ensure(5); doc.text(ln, textX, y); y += 4.3 } }
+    if (e.mistakes) { doc.setFontSize(9.5); ink(150, 60, 60); for (const ln of doc.splitTextToSize(t('Da evitare:') + ' ' + e.mistakes, tw)) { ensure(5); doc.text(ln, textX, y); y += 4.3 } }
     // immagine a sinistra
     if (img) {
       const side = 22, ratio = img.h / (img.w || 1)
@@ -993,9 +1007,9 @@ export async function downloadPdf(p: Partial<FitnessProgram>, exercises: Fitness
     y += 4
   })
 
-  if (p.recovery_between_sets) text('Recupero tra serie: ' + p.recovery_between_sets, 10.5)
-  if (p.cooldown) text('Defaticamento: ' + p.cooldown, 10.5)
-  if (p.note_athlete) { y += 1; text('Nota preparatore: ' + p.note_athlete, 10.5, 'bold', [80, 80, 80]) }
+  if (p.recovery_between_sets) text(t('Recupero tra serie:') + ' ' + p.recovery_between_sets, 10.5)
+  if (p.cooldown) text(t('Defaticamento:') + ' ' + p.cooldown, 10.5)
+  if (p.note_athlete) { y += 1; text(t('Nota preparatore:') + ' ' + p.note_athlete, 10.5, 'bold', [80, 80, 80]) }
 
   const fname = `${(p.name || 'programma').replace(/[^\w\- ]/g, '')} ${p.program_date || ''}`.trim() + '.pdf'
   doc.save(fname)

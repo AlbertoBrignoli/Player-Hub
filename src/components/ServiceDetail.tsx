@@ -131,13 +131,13 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
           </div>
           <div style={{ fontSize: 21, fontWeight: 900, marginTop: 16 }}>{t("Richiesta inviata")}</div>
           <div style={{ fontSize: 13, color: T.dim, marginTop: 4 }}>
-            {service.partner_name ? `Ci occupiamo noi di attivare ${service.partner_name}.` : t('Ci pensiamo noi da qui.')}
+            {service.partner_name ? t('Ci occupiamo noi di attivare {name}.').replace('{name}', service.partner_name) : t('Ci pensiamo noi da qui.')}
           </div>
         </div>
 
         <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 16, padding: 18 }}>
           {[
-            { t: 'Richiesta inviata', s: t('Le risposte sono arrivate al tuo advisor'), done: true },
+            { t: t('Richiesta inviata'), s: t('Le risposte sono arrivate al tuo advisor'), done: true },
             { t: t('Il tuo advisor ti scrive'), s: t('Entro 24 ore'), done: false },
             { t: t('Attivazione partner'), s: service.partner_name || t('Professionista selezionato da AUVI'), done: false },
           ].map((r, i, arr) => (
@@ -164,7 +164,7 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
             <div className="grid" style={{ gap: 10 }}>
               {given.map(f => (
                 <div key={f.key}>
-                  <div style={{ fontSize: 11.5, color: T.muted }}>{f.label}</div>
+                  <div style={{ fontSize: 11.5, color: T.muted }}>{t(f.label)}</div>
                   <div style={{ fontSize: 13.5, marginTop: 1 }}>{fmt(answers[f.key])}</div>
                 </div>
               ))}
@@ -175,7 +175,7 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
         <button onClick={onSent}
           style={{ padding: '13px 18px', borderRadius: 999, border: 'none', cursor: 'pointer',
             background: T.text, color: '#fff', fontWeight: 800, fontSize: 14 }}>
-          Torna allo store
+          {t('Torna allo store')}
         </button>
       </div>
     )
@@ -197,7 +197,7 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
         <button onClick={() => (step === 0 ? setMode('detail') : setStep(s => s - 1))}
           className="flex gap" style={{ alignItems: 'center', gap: 8, alignSelf: 'start', background: 'none',
             border: 'none', color: T.dim, cursor: 'pointer', fontSize: 13, fontWeight: 600, padding: 0 }}>
-          ← Indietro
+          ← {t('Indietro')}
         </button>
 
         <div>
@@ -206,7 +206,7 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
         </div>
 
         <div>
-          <div style={{ fontSize: 11.5, color: T.dim, marginBottom: 6 }}>Passo {step + 1} di {steps.length}</div>
+          <div style={{ fontSize: 11.5, color: T.dim, marginBottom: 6 }}>{t('Passo {n} di {tot}').replace('{n}', String(step + 1)).replace('{tot}', String(steps.length))}</div>
           <div className="flex gap" style={{ gap: 5 }}>
             {steps.map((_, i) => (
               <span key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: i <= step ? T.text : T.border }} />
@@ -272,7 +272,7 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
           {busy ? t('Invio…') : last ? t('Invia richiesta') : t('Continua')}
         </button>
         <div style={{ fontSize: 11.5, color: T.muted, textAlign: 'center' }}>
-          Le risposte vanno solo al tuo advisor e al partner.
+          {t('Le risposte vanno solo al tuo advisor e al partner.')}
         </div>
       </div>
     )
@@ -288,7 +288,7 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
       <button onClick={onBack}
         className="flex gap" style={{ alignItems: 'center', gap: 8, alignSelf: 'start', background: 'none',
           border: 'none', color: T.dim, cursor: 'pointer', fontSize: 13, fontWeight: 600, padding: 0 }}>
-        ← Tutti i servizi
+        ← {t('Tutti i servizi')}
       </button>
 
       {/* hero */}
@@ -328,7 +328,7 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
           </div>
           {service.partner_name && service.partner_name !== heroName && (
             <div style={{ fontSize: 12.5, color: 'rgba(255,255,255,.72)', fontWeight: 600, marginTop: 4 }}>
-              con {service.partner_name}
+              {t('con {name}').replace('{name}', service.partner_name)}
             </div>
           )}
           {service.hero_claim && (
@@ -408,7 +408,7 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
           <div className="flex gap" style={{ flexWrap: 'wrap', gap: 10 }}>
             {service.partner_website && (
               <a className="btn btn-ghost btn-sm" href={service.partner_website} target="_blank" rel="noreferrer">
-                <Icon name="star" size={13} /> Sito
+                <Icon name="star" size={13} /> {t('Sito')}
               </a>
             )}
             {service.contact_email && (
@@ -423,7 +423,7 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
             )}
           </div>
           <div style={{ fontSize: 11.5, color: T.muted, marginTop: 10 }}>
-            La richiesta passa comunque da AUVI: ti seguiamo noi fino all'avvio del percorso.
+            {t("La richiesta passa comunque da AUVI: ti seguiamo noi fino all'avvio del percorso.")}
           </div>
         </div>
       )}

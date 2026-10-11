@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react'
+import { useLang } from '../lib/i18n'
 
 // Pila delle finestre aperte: ESC chiude solo quella in cima (prima un ESC le chiudeva tutte).
 const modalStack: number[] = []
@@ -9,6 +10,7 @@ export function Modal({ title, onClose, children, footer, wide, dismissable = fa
   /** true = anche un clic sullo sfondo chiude (solo per finestre senza form) */
   dismissable?: boolean
 }) {
+  const { t } = useLang()
   const closeRef = React.useRef(onClose)
   closeRef.current = onClose
   useEffect(() => {
@@ -35,7 +37,7 @@ export function Modal({ title, onClose, children, footer, wide, dismissable = fa
         style={wide ? { maxWidth: 680 } : undefined} onMouseDown={e => e.stopPropagation()}>
         <div className="modal-head">
           <div className="modal-title">{title}</div>
-          <button className="close-x" onClick={onClose} aria-label="Chiudi">×</button>
+          <button className="close-x" onClick={onClose} aria-label={t('Chiudi')}>×</button>
         </div>
         <div className="modal-body">{children}</div>
         {footer && <div className="modal-foot">{footer}</div>}
@@ -94,11 +96,12 @@ export function Stat({ label, value, sub, icon, tone }: { label: string; value: 
 export function ConfirmButton({ onConfirm, children, className = 'btn btn-danger btn-sm' }: {
   onConfirm: () => void; children: React.ReactNode; className?: string
 }) {
+  const { t: tr } = useLang()
   const [armed, setArmed] = React.useState(false)
   useEffect(() => { if (armed) { const t = setTimeout(() => setArmed(false), 2600); return () => clearTimeout(t) } }, [armed])
   return (
     <button className={className} onClick={() => (armed ? onConfirm() : setArmed(true))}>
-      {armed ? 'Confermi?' : children}
+      {armed ? tr('Confermi?') : children}
     </button>
   )
 }

@@ -8,6 +8,7 @@ import { SeasonBlock } from '../components/statbits'
 import { seasonOf, fmtDate, fmtDateTime } from '../lib/format'
 import { followerBand, AVAIL_OPTS, CATEGORY_NAMES, computeBrandAthleteMatch } from '../lib/commercialScore'
 import type { Player, Match, StatsMatch, SeasonStat } from '../lib/types'
+import { useLang } from '../lib/i18n'
 
 type Tab = 'overview' | 'pitch' | 'social' | 'partnership'
 
@@ -21,6 +22,7 @@ interface Agg { app: number; min: number; goals: number; assists: number; rW: nu
 export default function MediaKit({ goto }: { goto?: (r: string) => void }) {
   const { athleteId } = useAthlete()
   const { isBrand } = useAuth()
+  const { t: tr } = useLang()
   const [loading, setLoading] = useState(true)
   const [player, setPlayer] = useState<Player | null>(null)
   const [matches, setMatches] = useState<Match[]>([])
@@ -80,7 +82,7 @@ export default function MediaKit({ goto }: { goto?: (r: string) => void }) {
   const activeYear = pitchYear ?? displayYear
 
   if (loading) return <Spinner />
-  if (!player) return <Empty icon={<Icon name="award" size={28} strokeWidth={1.4} />} title="Profilo non disponibile" hint="Nessun atleta collegato a questo accesso. Contatta AUVI Agency." />
+  if (!player) return <Empty icon={<Icon name="award" size={28} strokeWidth={1.4} />} title={tr("Profilo non disponibile")} hint={tr("Nessun atleta collegato a questo accesso. Contatta AUVI Agency.")} />
 
   const fmtK = (n?: number | null) => n == null ? '—' : n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1) + 'K' : String(n)
   const aggOf = (y: number) => seasonMap.get(y) ?? { app: 0, min: 0, goals: 0, assists: 0, rW: 0, rMin: 0 }
@@ -93,7 +95,7 @@ export default function MediaKit({ goto }: { goto?: (r: string) => void }) {
       <div className="mk-tabs">
         {([['overview', 'Panoramica', 'grid'], ['pitch', 'In campo', 'activity'], ['social', 'Social', 'instagram'], ['partnership', 'Partnership', 'award']] as const).map(([k, label, ico]) => (
           <button key={k} className={`mk-tab ${tab === k ? 'active' : ''}`} onClick={() => setTab(k)}>
-            <Icon name={ico} size={15} /> {label}
+            <Icon name={ico} size={15} /> {tr(label)}
           </button>
         ))}
       </div>
@@ -117,7 +119,7 @@ export default function MediaKit({ goto }: { goto?: (r: string) => void }) {
       {tab === 'partnership' && <Partnership player={player} goto={goto} />}
 
       <div className="faint" style={{ fontSize: 11.5, textAlign: 'center', padding: '4px 0 8px' }}>
-        Dati riservati · condivisi da AUVI Agency per la valutazione della partnership.
+        {tr('Dati riservati · condivisi da AUVI Agency per la valutazione della partnership.')}
       </div>
     </div>
   )
@@ -125,11 +127,12 @@ export default function MediaKit({ goto }: { goto?: (r: string) => void }) {
 
 /* ---------- HERO cliccabile ---------- */
 function Hero({ player, season, onOpen }: { player: Player; season: string; onOpen: () => void }) {
+  const { t: tr } = useLang()
   return (
-    <button className="mk-hero" onClick={onOpen} title="Apri le performance in campo">
+    <button className="mk-hero" onClick={onOpen} title={tr("Apri le performance in campo")}>
       {player.photo_url && <img className="mk-hero-photo" src={player.photo_url} alt="" />}
       <div className="mk-hero-body">
-        <div className="ed-kicker">Media kit · stagione {season}</div>
+        <div className="ed-kicker">{tr('Media kit · stagione {s}').replace('{s}', season)}</div>
         <div className="mk-hero-name">{player.name}</div>
         <div className="mk-hero-meta">
           {player.position || '—'} · {player.team_name}{player.team_country ? ` (${player.team_country})` : ''}{player.shirt_number ? ` · #${player.shirt_number}` : ''}
@@ -141,7 +144,7 @@ function Hero({ player, season, onOpen }: { player: Player; season: string; onOp
           <Fact k="Nazione" v={player.nationality} />
         </div>
       </div>
-      <span className="mk-hero-cta"><span>Profilo completo</span><Icon name="chevron-right" size={16} /></span>
+      <span className="mk-hero-cta"><span>{tr('Profilo completo')}</span><Icon name="chevron-right" size={16} /></span>
     </button>
   )
 }
@@ -152,17 +155,19 @@ function Overview({ player, agg, rating, seasonTxt, fmtK, onPitch, onSocial, isB
   fmtK: (n?: number | null) => string; onPitch: () => void; onSocial: () => void
   isBrand?: boolean; teaser?: any; goto?: (r: string) => void
 }) {
+  const { t: tr, lang } = useLang()
+  const loc = lang === 'en' ? 'en-GB' : 'it-IT'
   return (
     <>
-      <SectionHead t={`In campo · ${seasonTxt}`} onMore={onPitch} moreLabel="Dettaglio" />
+      <SectionHead t={tr('In campo · {s}').replace('{s}', seasonTxt)} onMore={onPitch} moreLabel={tr("Dettaglio")} />
       <div className="grid g4">
-        <StatCard label="Presenze" value={agg.app || '—'} sub={agg.min ? `${agg.min.toLocaleString('it-IT')}′ giocati` : undefined} />
+        <StatCard label="Presenze" value={agg.app || '—'} sub={agg.min ? tr('{n}′ giocati').replace('{n}', agg.min.toLocaleString(loc)) : undefined} />
         <StatCard label="Rating medio" value={rating ? rating.toFixed(2) : '—'} tone={rating && rating >= 7 ? 'var(--green)' : undefined} />
         <StatCard label="Gol" value={agg.goals} />
         <StatCard label="Assist" value={agg.assists} />
       </div>
 
-      <SectionHead t="Audience · Instagram" onMore={onSocial} moreLabel="Dettaglio" />
+      <SectionHead t={tr("Audience · Instagram")} onMore={onSocial} moreLabel={tr("Dettaglio")} />
       {isBrand ? (
         <TeaserBlock player={player} teaser={teaser} compact goto={goto} />
       ) : (
@@ -171,17 +176,17 @@ function Overview({ player, agg, rating, seasonTxt, fmtK, onPitch, onSocial, isB
           <StatCard label="Engagement" value={player.instagram_engagement != null ? player.instagram_engagement + '%' : '—'} tone="var(--green)" />
           <StatCard label="Reach medio" value={fmtK(player.instagram_reach)} />
           <div className="card stat mk-ig" onClick={() => player.instagram_url && window.open(player.instagram_url, '_blank')} style={{ cursor: player.instagram_url ? 'pointer' : 'default' }}>
-            <div className="stat-label">Profilo</div>
+            <div className="stat-label">{tr('Profilo')}</div>
             <div className="stat-value" style={{ fontSize: 15, display: 'flex', alignItems: 'center', gap: 6 }}>
               <Icon name="instagram" size={16} /> {igHandle(player.instagram_url) || '—'}
             </div>
-            {player.instagram_url && <div className="stat-sub">apri su Instagram ↗</div>}
+            {player.instagram_url && <div className="stat-sub">{tr('apri su Instagram ↗')}</div>}
           </div>
         </div>
       )}
       {!isBrand && player.audience_note && (
         <div className="card" style={{ background: 'var(--bg-2)' }}>
-          <div className="ed-kicker" style={{ marginBottom: 6 }}>Pubblico</div>
+          <div className="ed-kicker" style={{ marginBottom: 6 }}>{tr('Pubblico')}</div>
           <div style={{ fontSize: 13.5, color: 'var(--text-dim)' }}>{player.audience_note}</div>
         </div>
       )}
@@ -196,6 +201,7 @@ function TeaserBlock({ player, teaser, compact, goto }: { player: Player; teaser
   const band = teaser?.follower_band || followerBand(player.instagram_followers)
   const cats: string[] = Array.isArray(teaser?.top_categories) ? teaser.top_categories : []
   const highlights: string[] = Array.isArray(teaser?.highlights) ? teaser.highlights : []
+  const { t: tr } = useLang()
   return (
     <div className="card card-lg">
       {teaser?.headline && <div style={{ fontWeight: 750, fontSize: compact ? 15 : 17, marginBottom: 10 }}>{teaser.headline}</div>}
@@ -203,12 +209,12 @@ function TeaserBlock({ player, teaser, compact, goto }: { player: Player; teaser
         <div className="mk-ig-badge"><Icon name="instagram" size={20} /></div>
         <div>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: compact ? 24 : 30, fontWeight: 700 }}>{band || '—'}</div>
-          <div className="faint" style={{ fontSize: 11.5 }}>follower · {igHandle(player.instagram_url) || 'Instagram'}</div>
+          <div className="faint" style={{ fontSize: 11.5 }}>{tr('follower')} · {igHandle(player.instagram_url) || 'Instagram'}</div>
         </div>
       </div>
       {cats.length > 0 && (
         <div style={{ marginBottom: highlights.length ? 12 : 0 }}>
-          <div className="ed-kicker" style={{ marginBottom: 6 }}>Territori commerciali più affini</div>
+          <div className="ed-kicker" style={{ marginBottom: 6 }}>{tr('Territori commerciali più affini')}</div>
           <div className="flex gap" style={{ flexWrap: 'wrap' }}>{cats.map(c => <Badge key={c} tone="accent">{c}</Badge>)}</div>
         </div>
       )}
@@ -218,16 +224,17 @@ function TeaserBlock({ player, teaser, compact, goto }: { player: Player; teaser
         </div>
       )}
       <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-        <span className="muted" style={{ fontSize: 12.5, flex: 1, minWidth: 200 }}>Engagement, audience e storico campagne sono disponibili nel profilo commerciale completo.</span>
+        <span className="muted" style={{ fontSize: 12.5, flex: 1, minWidth: 200 }}>{tr('Engagement, audience e storico campagne sono disponibili nel profilo commerciale completo.')}</span>
         {goto
-          ? <button className="btn btn-primary btn-sm" onClick={() => goto('messages')}><Icon name="message" size={13} /> Richiedilo in chat</button>
-          : <Badge tone="gold">Richiedilo in chat ad AUVI</Badge>}
+          ? <button className="btn btn-primary btn-sm" onClick={() => goto('messages')}><Icon name="message" size={13} /> {tr('Richiedilo in chat')}</button>
+          : <Badge tone="gold">{tr('Richiedilo in chat ad AUVI')}</Badge>}
       </div>
     </div>
   )
 }
 
 function SocialTeaser({ player, teaser, goto }: { player: Player; teaser?: any; goto?: (r: string) => void }) {
+  const { t: tr } = useLang()
   return (
     <>
       <SectionHead t="Instagram" />
@@ -235,14 +242,14 @@ function SocialTeaser({ player, teaser, goto }: { player: Player; teaser?: any; 
         <div className="mk-ig-badge"><Icon name="instagram" size={22} /></div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontWeight: 750, fontSize: 17 }}>{igHandle(player.instagram_url) || player.name}</div>
-          <div className="muted" style={{ fontSize: 12.5 }}>Account ufficiale</div>
+          <div className="muted" style={{ fontSize: 12.5 }}>{tr('Account ufficiale')}</div>
         </div>
         {player.instagram_url && (
-          <a href={player.instagram_url} target="_blank" rel="noreferrer" className="btn btn-primary"><Icon name="instagram" size={15} /> Apri</a>
+          <a href={player.instagram_url} target="_blank" rel="noreferrer" className="btn btn-primary"><Icon name="instagram" size={15} /> {tr('Apri')}</a>
         )}
       </div>
       <TeaserBlock player={player} teaser={teaser} goto={goto} />
-      <div className="faint" style={{ fontSize: 11.5 }}>Panoramica indicativa curata da AUVI Agency · profilo commerciale completo disponibile su richiesta.</div>
+      <div className="faint" style={{ fontSize: 11.5 }}>{tr('Panoramica indicativa curata da AUVI Agency · profilo commerciale completo disponibile su richiesta.')}</div>
     </>
   )
 }
@@ -256,11 +263,13 @@ function Pitch({ matches, api, agg, rating, year, years, onYear, tech }: {
   const last5 = matches.filter(m => m.minutes != null && Number(m.rating) > 0).slice(0, 5).reverse()
   const maxR = Math.max(10, ...last5.map(m => Number(m.rating) || 0))
   const seasonComps = api.filter(s => s.season === year && (s.appearances || 0) > 0)
+  const { t: tr, lang } = useLang()
+  const loc = lang === 'en' ? 'en-GB' : 'it-IT'
 
   return (
     <>
       <div className="ed-masthead" style={{ alignItems: 'center' }}>
-        <div className="ed-masthead-t">In campo · {seasonLabel(year)}</div>
+        <div className="ed-masthead-t">{tr('In campo · {s}').replace('{s}', seasonLabel(year))}</div>
         <div className="ed-rule" />
         {years.length > 1 && (
           <Select value={String(year)} onChange={e => onYear(Number(e.target.value))} style={{ width: 120, flexShrink: 0 }}>
@@ -270,7 +279,7 @@ function Pitch({ matches, api, agg, rating, year, years, onYear, tech }: {
       </div>
 
       <div className="grid g4">
-        <StatCard label="Presenze" value={agg.app || '—'} sub={agg.min ? `${agg.min.toLocaleString('it-IT')}′ giocati` : undefined} />
+        <StatCard label="Presenze" value={agg.app || '—'} sub={agg.min ? tr('{n}′ giocati').replace('{n}', agg.min.toLocaleString(loc)) : undefined} />
         <StatCard label="Rating medio" value={rating ? rating.toFixed(2) : '—'} tone={rating && rating >= 7 ? 'var(--green)' : undefined} />
         <StatCard label="Gol" value={agg.goals} />
         <StatCard label="Assist" value={agg.assists} />
@@ -278,16 +287,16 @@ function Pitch({ matches, api, agg, rating, year, years, onYear, tech }: {
 
       {seasonComps.length > 0 && (
         <div className="card">
-          <div className="card-head"><div className="card-title">Per competizione · {seasonLabel(year)}</div></div>
+          <div className="card-head"><div className="card-title">{tr('Per competizione · {s}').replace('{s}', seasonLabel(year))}</div></div>
           <div style={{ overflowX: 'auto' }}>
             <table className="table">
-              <thead><tr><th>Competizione</th><th>Pres.</th><th>Min.</th><th>Gol</th><th>Assist</th><th>Rating</th></tr></thead>
+              <thead><tr><th>{tr('Competizione')}</th><th>{tr('Pres.')}</th><th>{tr('Min.')}</th><th>{tr('Gol')}</th><th>{tr('Assist')}</th><th>{tr('Rating')}</th></tr></thead>
               <tbody>
                 {seasonComps.map(s => (
                   <tr key={s.id}>
                     <td><b>{s.competition}</b></td>
                     <td className="mono">{s.appearances ?? '—'}</td>
-                    <td className="mono">{s.minutes != null ? s.minutes.toLocaleString('it-IT') : '—'}</td>
+                    <td className="mono">{s.minutes != null ? s.minutes.toLocaleString(loc) : '—'}</td>
                     <td className="mono">{s.goals ?? 0}</td>
                     <td className="mono">{s.assists ?? 0}</td>
                     <td className="mono" style={{ color: s.rating && s.rating >= 7 ? 'var(--green)' : undefined }}>{s.rating ? Number(s.rating).toFixed(2) : '—'}</td>
@@ -301,7 +310,7 @@ function Pitch({ matches, api, agg, rating, year, years, onYear, tech }: {
 
       {nextMatch && (
         <div className="card">
-          <div className="card-head"><div className="card-title">Prossima partita</div></div>
+          <div className="card-head"><div className="card-title">{tr('Prossima partita')}</div></div>
           <div style={{ fontSize: 16, fontWeight: 750 }}>{nextMatch.home_team} vs {nextMatch.away_team}</div>
           <div className="muted" style={{ marginTop: 4 }}>{nextMatch.league}{nextMatch.round ? ` · ${nextMatch.round}` : ''} · {fmtDateTime(nextMatch.match_date)}</div>
         </div>
@@ -309,7 +318,7 @@ function Pitch({ matches, api, agg, rating, year, years, onYear, tech }: {
 
       {last5.length > 0 && (
         <div className="card">
-          <div className="card-head"><div className="card-title">Ultime {last5.length} · andamento rating</div><div className="card-hint">scala 0–10</div></div>
+          <div className="card-head"><div className="card-title">{tr('Ultime {n} · andamento rating').replace('{n}', String(last5.length))}</div><div className="card-hint">{tr('scala 0–10')}</div></div>
           <div className="chart">
             {last5.map(m => {
               const r = Number(m.rating) || 0
@@ -327,7 +336,7 @@ function Pitch({ matches, api, agg, rating, year, years, onYear, tech }: {
 
       {tech.length > 0 && (
         <div className="card">
-          <div className="card-head"><div className="card-title">Rendimento tecnico · {seasonLabel(year)}</div></div>
+          <div className="card-head"><div className="card-title">{tr('Rendimento tecnico · {s}').replace('{s}', seasonLabel(year))}</div></div>
           <SeasonBlock stats={tech} />
         </div>
       )}
@@ -338,6 +347,7 @@ function Pitch({ matches, api, agg, rating, year, years, onYear, tech }: {
 /* ---------- SOCIAL ---------- */
 function Social({ player, fmtK }: { player: Player; fmtK: (n?: number | null) => string }) {
   const hasNumbers = player.instagram_followers != null
+  const { t: tr } = useLang()
   return (
     <>
       <SectionHead t="Instagram" />
@@ -345,10 +355,10 @@ function Social({ player, fmtK }: { player: Player; fmtK: (n?: number | null) =>
         <div className="mk-ig-badge"><Icon name="instagram" size={22} /></div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontWeight: 750, fontSize: 17 }}>{igHandle(player.instagram_url) || player.name}</div>
-          <div className="muted" style={{ fontSize: 12.5 }}>Account ufficiale</div>
+          <div className="muted" style={{ fontSize: 12.5 }}>{tr('Account ufficiale')}</div>
         </div>
         {player.instagram_url && (
-          <a href={player.instagram_url} target="_blank" rel="noreferrer" className="btn btn-primary"><Icon name="instagram" size={15} /> Apri</a>
+          <a href={player.instagram_url} target="_blank" rel="noreferrer" className="btn btn-primary"><Icon name="instagram" size={15} /> {tr('Apri')}</a>
         )}
       </div>
 
@@ -360,13 +370,13 @@ function Social({ player, fmtK }: { player: Player; fmtK: (n?: number | null) =>
 
       {player.audience_note && (
         <div className="card" style={{ background: 'var(--bg-2)' }}>
-          <div className="ed-kicker" style={{ marginBottom: 6 }}>Chi è il pubblico</div>
+          <div className="ed-kicker" style={{ marginBottom: 6 }}>{tr('Chi è il pubblico')}</div>
           <div style={{ fontSize: 13.5, color: 'var(--text-dim)' }}>{player.audience_note}</div>
         </div>
       )}
 
-      {!hasNumbers && <div className="faint" style={{ fontSize: 12 }}>I numeri social saranno aggiornati da AUVI.</div>}
-      <div className="faint" style={{ fontSize: 11.5 }}>Dati Instagram indicativi · aggiornati periodicamente da AUVI Agency.</div>
+      {!hasNumbers && <div className="faint" style={{ fontSize: 12 }}>{tr('I numeri social saranno aggiornati da AUVI.')}</div>}
+      <div className="faint" style={{ fontSize: 11.5 }}>{tr('Dati Instagram indicativi · aggiornati periodicamente da AUVI Agency.')}</div>
     </>
   )
 }
@@ -383,9 +393,10 @@ function SectionHead({ t, onMore, moreLabel }: { t: string; onMore?: () => void;
 }
 
 function StatCard({ label, value, sub, tone, big }: { label: string; value: React.ReactNode; sub?: string; tone?: string; big?: boolean }) {
+  const { t: tr } = useLang()
   return (
     <div className="card stat">
-      <div className="stat-label">{label}</div>
+      <div className="stat-label">{tr(label)}</div>
       <div className="stat-value" style={{ ...(tone ? { color: tone } : {}), ...(big ? { fontSize: 30 } : {}) }}>{value}</div>
       {sub && <div className="stat-sub">{sub}</div>}
     </div>
@@ -393,8 +404,9 @@ function StatCard({ label, value, sub, tone, big }: { label: string; value: Reac
 }
 
 function Fact({ k, v }: { k: string; v: any }) {
+  const { t: tr } = useLang()
   if (v == null || v === '') return null
-  return <div><div className="faint" style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '.4px' }}>{k}</div><div style={{ fontWeight: 700, fontSize: 14 }}>{v}</div></div>
+  return <div><div className="faint" style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '.4px' }}>{tr(k)}</div><div style={{ fontWeight: 700, fontSize: 14 }}>{v}</div></div>
 }
 
 function igHandle(url?: string | null): string | null {
@@ -410,6 +422,7 @@ function igHandle(url?: string | null): string | null {
    sponsor attivi, esclusività o dati audience). */
 function Partnership({ player, goto }: { player: Player; goto?: (r: string) => void }) {
   const { isBrand } = useAuth()
+  const { t: tr } = useLang()
   const [prefs, setPrefs] = useState<any>(null)
   const [brandSearch, setBrandSearch] = useState<any>(null)
   const [showWhy, setShowWhy] = useState(false)
@@ -434,12 +447,12 @@ function Partnership({ player, goto }: { player: Player; goto?: (r: string) => v
   const liked: string[] = prefs?.categories_liked || []
   const excluded: string[] = prefs?.categories_excluded || []
   const avail = AVAIL_OPTS.filter(a => prefs?.availability?.[a.key]).map(a => a.label)
-  const catName = (k: string) => CATEGORY_NAMES[k] || k
+  const catName = (k: string) => tr(CATEGORY_NAMES[k] || k)
   const hasAnything = (ident.values || []).length || liked.length || avail.length || (terr.markets || []).length
 
   if (!prefs || !hasAnything) {
-    return <Empty icon={<Icon name="award" size={28} strokeWidth={1.4} />} title="Preferenze in aggiornamento"
-      hint="L'atleta sta completando il suo profilo commerciale. Per una proposta su misura, scrivi ad AUVI in chat." />
+    return <Empty icon={<Icon name="award" size={28} strokeWidth={1.4} />} title={tr("Preferenze in aggiornamento")}
+      hint={tr("L'atleta sta completando il suo profilo commerciale. Per una proposta su misura, scrivi ad AUVI in chat.")} />
   }
 
   return (
@@ -453,10 +466,10 @@ function Partnership({ player, goto }: { player: Player; goto?: (r: string) => v
             <text x="50%" y="54%" textAnchor="middle" dominantBaseline="middle" style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, fill: 'var(--text)' }}>{match.pct}</text>
           </svg>
           <div style={{ flex: 1, minWidth: 180 }}>
-            <div style={{ fontWeight: 750 }}>Match con la tua ricerca: {match.pct}/100</div>
-            <div className="muted" style={{ fontSize: 12.5 }}>Calcolato sulle preferenze dell'atleta e i criteri che hai indicato in Ricerca talent.</div>
+            <div style={{ fontWeight: 750 }}>{tr('Match con la tua ricerca: {n}/100').replace('{n}', String(match.pct))}</div>
+            <div className="muted" style={{ fontSize: 12.5 }}>{tr("Calcolato sulle preferenze dell'atleta e i criteri che hai indicato in Ricerca talent.")}</div>
           </div>
-          <button className="btn btn-sm" onClick={() => setShowWhy(!showWhy)}>{showWhy ? 'Nascondi' : 'Perché'}</button>
+          <button className="btn btn-sm" onClick={() => setShowWhy(!showWhy)}>{showWhy ? tr('Nascondi') : tr('Perché')}</button>
           {showWhy && (
             <div style={{ width: '100%', background: 'var(--surface)', borderRadius: 'var(--radius-sm)', padding: '12px 14px', fontSize: 12.5, color: 'var(--text-dim)', lineHeight: 1.8 }}>
               {match.reasons.map((r: string, i: number) => <div key={i}>· {r}</div>)}
@@ -464,7 +477,7 @@ function Partnership({ player, goto }: { player: Player; goto?: (r: string) => v
           )}
         </div>
       )}
-      <SectionHead t="Identità e posizionamento" />
+      <SectionHead t={tr("Identità e posizionamento")} />
       <div className="card card-lg">
         {ident.desired_image && (
           <div style={{ fontSize: 16, fontWeight: 650, lineHeight: 1.5, marginBottom: 14, fontStyle: 'italic' }}>
@@ -473,77 +486,77 @@ function Partnership({ player, goto }: { player: Player; goto?: (r: string) => v
         )}
         {(ident.values || []).length > 0 && (
           <div style={{ marginBottom: 12 }}>
-            <div className="ed-kicker" style={{ marginBottom: 6 }}>Valori</div>
-            <div className="flex gap" style={{ flexWrap: 'wrap' }}>{ident.values.map((v: string) => <Badge key={v} tone="accent">{v}</Badge>)}</div>
+            <div className="ed-kicker" style={{ marginBottom: 6 }}>{tr('Valori')}</div>
+            <div className="flex gap" style={{ flexWrap: 'wrap' }}>{ident.values.map((v: string) => <Badge key={v} tone="accent">{tr(v)}</Badge>)}</div>
           </div>
         )}
         {(ident.style || []).length > 0 && (
           <div style={{ marginBottom: 12 }}>
-            <div className="ed-kicker" style={{ marginBottom: 6 }}>Stile</div>
-            <div className="flex gap" style={{ flexWrap: 'wrap' }}>{ident.style.map((v: string) => <Badge key={v}>{v}</Badge>)}</div>
+            <div className="ed-kicker" style={{ marginBottom: 6 }}>{tr('Stile')}</div>
+            <div className="flex gap" style={{ flexWrap: 'wrap' }}>{ident.style.map((v: string) => <Badge key={v}>{tr(v)}</Badge>)}</div>
           </div>
         )}
         {(ident.interests || []).length > 0 && (
           <div>
-            <div className="ed-kicker" style={{ marginBottom: 6 }}>Interessi fuori dal campo</div>
-            <div className="flex gap" style={{ flexWrap: 'wrap' }}>{ident.interests.map((v: string) => <Badge key={v}>{v}</Badge>)}</div>
+            <div className="ed-kicker" style={{ marginBottom: 6 }}>{tr('Interessi fuori dal campo')}</div>
+            <div className="flex gap" style={{ flexWrap: 'wrap' }}>{ident.interests.map((v: string) => <Badge key={v}>{tr(v)}</Badge>)}</div>
           </div>
         )}
       </div>
 
-      <SectionHead t="Collaborazioni" />
+      <SectionHead t={tr("Collaborazioni")} />
       <div className="grid g2">
         <div className="card">
-          <div className="ed-kicker" style={{ marginBottom: 8 }}>Categorie gradite</div>
+          <div className="ed-kicker" style={{ marginBottom: 8 }}>{tr('Categorie gradite')}</div>
           {liked.length
             ? <div className="flex gap" style={{ flexWrap: 'wrap' }}>{liked.map(k => <Badge key={k} tone="green">{catName(k)}</Badge>)}</div>
-            : <div className="faint" style={{ fontSize: 12.5 }}>In definizione con AUVI.</div>}
+            : <div className="faint" style={{ fontSize: 12.5 }}>{tr('In definizione con AUVI.')}</div>}
           {excluded.length > 0 && (
             <div style={{ marginTop: 14 }}>
-              <div className="ed-kicker" style={{ marginBottom: 8 }}>Non in linea con il profilo</div>
+              <div className="ed-kicker" style={{ marginBottom: 8 }}>{tr('Non in linea con il profilo')}</div>
               <div className="flex gap" style={{ flexWrap: 'wrap' }}>{excluded.map(k => <Badge key={k} tone="red">{catName(k)}</Badge>)}</div>
             </div>
           )}
         </div>
         <div className="card">
-          <div className="ed-kicker" style={{ marginBottom: 8 }}>Disponibile per</div>
+          <div className="ed-kicker" style={{ marginBottom: 8 }}>{tr('Disponibile per')}</div>
           {avail.length
-            ? <div style={{ fontSize: 13.5, lineHeight: 2 }}>{avail.map(a => <div key={a}>· {a}</div>)}</div>
-            : <div className="faint" style={{ fontSize: 12.5 }}>Disponibilità in definizione con AUVI.</div>}
+            ? <div style={{ fontSize: 13.5, lineHeight: 2 }}>{avail.map(a => <div key={a}>· {tr(a)}</div>)}</div>
+            : <div className="faint" style={{ fontSize: 12.5 }}>{tr('Disponibilità in definizione con AUVI.')}</div>}
         </div>
       </div>
 
       {((terr.markets || []).length > 0 || (terr.languages || []).length > 0) && (
         <>
-          <SectionHead t="Territori e lingue" />
+          <SectionHead t={tr("Territori e lingue")} />
           <div className="card">
             {(terr.markets || []).length > 0 && (
               <div style={{ marginBottom: (terr.languages || []).length ? 12 : 0 }}>
-                <div className="ed-kicker" style={{ marginBottom: 6 }}>Mercati di interesse</div>
-                <div className="flex gap" style={{ flexWrap: 'wrap' }}>{terr.markets.map((m: string) => <Badge key={m}>{m}</Badge>)}</div>
+                <div className="ed-kicker" style={{ marginBottom: 6 }}>{tr('Mercati di interesse')}</div>
+                <div className="flex gap" style={{ flexWrap: 'wrap' }}>{terr.markets.map((m: string) => <Badge key={m}>{tr(m)}</Badge>)}</div>
               </div>
             )}
             {(terr.languages || []).length > 0 && (
               <div>
-                <div className="ed-kicker" style={{ marginBottom: 6 }}>Lingue</div>
-                <div className="flex gap" style={{ flexWrap: 'wrap' }}>{terr.languages.map((l: string) => <Badge key={l}>{l}</Badge>)}</div>
+                <div className="ed-kicker" style={{ marginBottom: 6 }}>{tr('Lingue')}</div>
+                <div className="flex gap" style={{ flexWrap: 'wrap' }}>{terr.languages.map((l: string) => <Badge key={l}>{tr(l)}</Badge>)}</div>
               </div>
             )}
-            {terr.travel && <div style={{ marginTop: 12, fontSize: 13, color: 'var(--green)', fontWeight: 600 }}>Disponibile a viaggiare per le campagne</div>}
+            {terr.travel && <div style={{ marginTop: 12, fontSize: 13, color: 'var(--green)', fontWeight: 600 }}>{tr('Disponibile a viaggiare per le campagne')}</div>}
           </div>
         </>
       )}
 
       <div className="card" style={{ background: 'var(--bg-2)', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
         <div style={{ flex: 1, minWidth: 220 }}>
-          <div style={{ fontWeight: 700, marginBottom: 3 }}>Hai in mente una collaborazione?</div>
-          <div className="muted" style={{ fontSize: 12.5 }}>AUVI costruisce la proposta con l'atleta sulla base di queste disponibilità.</div>
+          <div style={{ fontWeight: 700, marginBottom: 3 }}>{tr('Hai in mente una collaborazione?')}</div>
+          <div className="muted" style={{ fontSize: 12.5 }}>{tr("AUVI costruisce la proposta con l'atleta sulla base di queste disponibilità.")}</div>
         </div>
         {goto
-          ? <button className="btn btn-primary" onClick={() => goto('messages')}><Icon name="message" size={15} /> Scrivici in chat</button>
-          : <Badge tone="gold">Scrivici in chat</Badge>}
+          ? <button className="btn btn-primary" onClick={() => goto('messages')}><Icon name="message" size={15} /> {tr('Scrivici in chat')}</button>
+          : <Badge tone="gold">{tr('Scrivici in chat')}</Badge>}
       </div>
-      <div className="faint" style={{ fontSize: 11.5 }}>Preferenze indicate dall'atleta con AUVI Agency{prefs.updated_at ? ` · aggiornate ${fmtDate(prefs.updated_at)}` : ''}.</div>
+      <div className="faint" style={{ fontSize: 11.5 }}>{tr("Preferenze indicate dall'atleta con AUVI Agency")}{prefs.updated_at ? ` · ${tr('aggiornate {date}').replace('{date}', fmtDate(prefs.updated_at))}` : ''}.</div>
     </>
   )
 }

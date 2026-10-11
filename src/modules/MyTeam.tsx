@@ -59,18 +59,18 @@ export default function MyTeam({ goto }: { goto?: (r: string) => void }) {
       <div className="grid" style={{ gap: 18 }}>
         <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 18, padding: 18 }}>
           <div style={{ fontSize: 11, letterSpacing: 1.4, textTransform: 'uppercase', fontWeight: 800, color: 'var(--text-dim)' }}>
-            Il mio team
+            {t('Il mio team')}
           </div>
           <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: -0.3 }}>{t('I miei giocatori')}</div>
           <div style={{ fontSize: 12.5, color: 'var(--text-dim)', marginTop: 2 }}>
-            Gli atleti che segui. Tocca un giocatore per aprire la sua area.
+            {t('Gli atleti che segui. Tocca un giocatore per aprire la sua area.')}
           </div>
         </div>
         {athletes.length === 0 ? (
           <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: 20 }}>
             <Empty icon={<Icon name="users" size={30} strokeWidth={1.4} />}
               title={t("Nessun giocatore ancora collegato")}
-              hint="Quando vieni collegato a un atleta, comparirà qui." />
+              hint={t('Quando vieni collegato a un atleta, comparirà qui.')} />
           </div>
         ) : (
           <div className="grid" style={{ gap: 10 }}>
@@ -107,11 +107,11 @@ export default function MyTeam({ goto }: { goto?: (r: string) => void }) {
         )}
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: 11, letterSpacing: 1.4, textTransform: 'uppercase', fontWeight: 800, color: 'var(--text-dim)' }}>
-            Il club di
+            {t('Il club di')}
           </div>
-          <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: -0.3 }}>{athlete?.name || 'Atleta'}</div>
+          <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: -0.3 }}>{athlete?.name || t('Atleta')}</div>
           <div style={{ fontSize: 12.5, color: 'var(--text-dim)', marginTop: 2 }}>
-            Le persone che lavorano al tuo fianco: apri la scheda per entrare nella loro area.
+            {t('Le persone che lavorano al tuo fianco: apri la scheda per entrare nella loro area.')}
           </div>
         </div>
       </div>
@@ -129,11 +129,11 @@ export default function MyTeam({ goto }: { goto?: (r: string) => void }) {
           <Empty icon={<Icon name="users" size={30} strokeWidth={1.4} />}
             title={t("Ancora nessun professionista collegato")}
             hint={isAdmin
-              ? 'Quando colleghi un preparatore, un procuratore, un assicuratore o un commercialista a questo atleta, compaiono qui.'
-              : 'Il tuo team apparirà qui man mano che i professionisti vengono collegati.'} />
+              ? t('Quando colleghi un preparatore, un procuratore, un assicuratore o un commercialista a questo atleta, compaiono qui.')
+              : t('Il tuo team apparirà qui man mano che i professionisti vengono collegati.')} />
           {isAdmin && goto && (
             <button className="btn btn-primary" style={{ marginTop: 14 }} onClick={() => goto('access-requests')}>
-              <Icon name="key" size={15} /> Gestisci i collegamenti
+              <Icon name="key" size={15} /> {t('Gestisci i collegamenti')}
             </button>
           )}
         </div>
@@ -158,7 +158,7 @@ export default function MyTeam({ goto }: { goto?: (r: string) => void }) {
 
       {isAdmin && goto && rows.length > 0 && (
         <button className="btn btn-ghost btn-sm" style={{ alignSelf: 'start' }} onClick={() => goto('access-requests')}>
-          <Icon name="key" size={14} /> Gestisci i collegamenti
+          <Icon name="key" size={14} /> {t('Gestisci i collegamenti')}
         </button>
       )}
     </div>

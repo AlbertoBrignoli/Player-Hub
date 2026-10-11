@@ -2,10 +2,12 @@ import { useState } from 'react'
 import Contracts from './Contracts'
 import Documents from './Documents'
 import Icon from '../components/Icon'
+import { useLang } from '../lib/i18n'
 
 // Archivio unico: Contratti e Documenti erano due voci separate ma vivono
 // nello stesso posto. Un solo ingresso, due schede.
 export default function Archivio() {
+  const { t: tr } = useLang()
   const [tab, setTab] = useState<'contracts' | 'documents'>('contracts')
   const tabs: { k: 'contracts' | 'documents'; label: string; icon: string }[] = [
     { k: 'contracts', label: 'Contratti', icon: 'briefcase' },
@@ -22,7 +24,7 @@ export default function Archivio() {
               padding: '8px 16px', fontSize: 13.5, fontWeight: 700,
               background: tab === t.k ? 'var(--text)' : 'transparent',
               color: tab === t.k ? 'var(--bg)' : 'var(--text-dim)' }}>
-            <Icon name={t.icon} size={15} /> {t.label}
+            <Icon name={t.icon} size={15} /> {tr(t.label)}
           </button>
         ))}
       </div>

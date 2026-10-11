@@ -1,5 +1,6 @@
 import { useAuth } from './auth/AuthContext'
 import Login from './auth/Login'
+import { useLang } from './lib/i18n'
 import Shell from './components/Shell'
 import { Spinner } from './components/ui'
 import { useHashRoute } from './lib/route'
@@ -152,13 +153,14 @@ export default function App() {
 
 function NoAccess() {
   const { signOut } = useAuth()
+  const { t } = useLang()
   return (
     <div className="login-wrap">
       <div className="login-card" style={{ textAlign: 'center' }}>
         <div className="login-logo" style={{ margin: '0 auto 20px' }}>A</div>
-        <div className="login-title">Accesso non autorizzato</div>
-        <div className="login-sub">Questo indirizzo email non è abilitato all'ingresso in questo spazio riservato.</div>
-        <button className="btn" style={{ width: '100%', justifyContent: 'center' }} onClick={signOut}>Esci</button>
+        <div className="login-title">{t('Accesso non autorizzato')}</div>
+        <div className="login-sub">{t("Questo indirizzo email non è abilitato all'ingresso in questo spazio riservato.")}</div>
+        <button className="btn" style={{ width: '100%', justifyContent: 'center' }} onClick={signOut}>{t('Esci')}</button>
       </div>
     </div>
   )

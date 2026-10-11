@@ -7,6 +7,7 @@ import { Field, Input, Textarea, Select, Empty, Spinner } from '../components/ui
 import Icon from '../components/Icon'
 import { fmtDateTime } from '../lib/format'
 import MyAthletes from './MyAthletes'
+import { useLang } from '../lib/i18n'
 
 // Collegamenti fra professionisti e atleti.
 // Il professionista NON vede l'elenco degli atleti: inserisce il codice che gli
@@ -46,6 +47,7 @@ export default function AccessRequests() {
 function AccessRequestsBoard() {
   const { role, isAdmin } = useAuth()
   const { athletes, athleteId } = useAthlete()
+  const { t } = useLang()
   const [rows, setRows] = useState<Req[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -65,7 +67,7 @@ function AccessRequestsBoard() {
   async function decide(id: string, approve: boolean) {
     const { error } = await supabase.rpc('crm_decide_access', { p_request: id, p_approve: approve })
     if (error) { toast(error.message, 'err'); return }
-    toast(approve ? 'Accesso approvato' : 'Richiesta rifiutata')
+    toast(approve ? t('Accesso approvato') : t('Richiesta rifiutata'))
     load()
   }
 
@@ -73,7 +75,7 @@ function AccessRequestsBoard() {
 
   const pending = rows.filter(r => r.status === 'pending')
   const storico = rows.filter(r => r.status !== 'pending')
-  const athleteName = (id: number) => athletes.find(a => a.api_player_id === id)?.name || `Atleta ${id}`
+  const athleteName = (id: number) => athletes.find(a => a.api_player_id === id)?.name || t('Atleta {id}').replace('{id}', String(id))
 
   return (
     <div className="grid" style={{ gap: 18 }}>
@@ -86,15 +88,15 @@ function AccessRequestsBoard() {
             <div className="flex between" style={{ alignItems: 'center', marginBottom: 12 }}>
               <div className="flex gap" style={{ alignItems: 'center', gap: 9 }}>
                 <span style={{ width: 3, height: 15, background: ACCENT, borderRadius: 2 }} />
-                <span style={{ ...kicker, color: 'var(--text)' }}>Richieste in attesa</span>
+                <span style={{ ...kicker, color: 'var(--text)' }}>{t('Richieste in attesa')}</span>
               </div>
               <span className="faint" style={{ fontSize: 12 }}>{pending.length}</span>
             </div>
 
             {pending.length === 0 ? (
               <div className="card">
-                <Empty icon={<Icon name="inbox" size={28} strokeWidth={1.4} />} title="Nessuna richiesta"
-                  hint="Quando un professionista inserisce il codice di un atleta, la richiesta compare qui." />
+                <Empty icon={<Icon name="inbox" size={28} strokeWidth={1.4} />} title={t('Nessuna richiesta')}
+                  hint={t('Quando un professionista inserisce il codice di un atleta, la richiesta compare qui.')} />
               </div>
             ) : (
               <div className="grid" style={{ gap: 10 }}>
@@ -103,16 +105,16 @@ function AccessRequestsBoard() {
                     <div style={{ height: 3, background: ACCENT }} />
                     <div style={{ padding: 16 }}>
                       <div style={{ ...kicker, fontSize: 9.5, color: ACCENT }}>
-                        {ROLE_LABEL[r.requester_role] || r.requester_role}
+                        {t(ROLE_LABEL[r.requester_role] || r.requester_role)}
                       </div>
                       <div style={{ fontSize: 16, fontWeight: 800, marginTop: 3 }}>
-                        {r.requester_name || 'Professionista'}
+                        {r.requester_name || t('Professionista')}
                       </div>
                       {r.requester_email && (
                         <div className="faint" style={{ fontSize: 11.5 }}>{r.requester_email}</div>
                       )}
                       <div className="faint" style={{ fontSize: 13, marginTop: 3 }}>
-                        chiede di accedere all'area di <b style={{ color: 'var(--text)' }}>{athleteName(r.player_id)}</b>
+                        {t("chiede di accedere all'area di")} <b style={{ color: 'var(--text)' }}>{athleteName(r.player_id)}</b>
                       </div>
                       {r.message && (
                         <div className="faint" style={{ fontSize: 12.5, marginTop: 8, borderLeft: `2px solid ${ACCENT}`, paddingLeft: 10 }}>
@@ -124,9 +126,9 @@ function AccessRequestsBoard() {
                       <div className="flex gap" style={{ marginTop: 13, flexWrap: 'wrap' }}>
                         <button className="btn btn-sm" style={{ background: 'var(--green)', color: '#fff', fontWeight: 800, border: 'none' }}
                           onClick={() => decide(r.id, true)}>
-                          <Icon name="check" size={13} /> Autorizza
+                          <Icon name="check" size={13} /> {t('Autorizza')}
                         </button>
-                        <button className="btn btn-ghost btn-sm" onClick={() => decide(r.id, false)}>Rifiuta</button>
+                        <button className="btn btn-ghost btn-sm" onClick={() => decide(r.id, false)}>{t('Rifiuta')}</button>
                       </div>
                     </div>
                   </div>
@@ -136,22 +138,22 @@ function AccessRequestsBoard() {
           </div>
 
           {/* codici di collegamento: uno per professionista */}
-          <CodesManager athleteId={athleteId} athleteName={athletes.find(a => a.api_player_id === athleteId)?.name || 'questo atleta'} />
+          <CodesManager athleteId={athleteId} athleteName={athletes.find(a => a.api_player_id === athleteId)?.name || t('questo atleta')} />
         </>
       )}
 
       {storico.length > 0 && (
         <div className="card">
-          <div style={{ ...kicker, color: 'var(--text-dim)', marginBottom: 10 }}>Storico</div>
+          <div style={{ ...kicker, color: 'var(--text-dim)', marginBottom: 10 }}>{t('Storico')}</div>
           <div className="grid" style={{ gap: 7 }}>
             {storico.map(r => (
               <div key={r.id} className="flex between" style={{ alignItems: 'center', gap: 10, fontSize: 13 }}>
                 <span>
-                  {r.requester_name || ROLE_LABEL[r.requester_role]} · {athleteName(r.player_id)}
+                  {r.requester_name || t(ROLE_LABEL[r.requester_role] || '')} · {athleteName(r.player_id)}
                 </span>
                 <span style={{ fontSize: 11.5, fontWeight: 800,
                                color: r.status === 'approvata' ? 'var(--green)' : 'var(--red)' }}>
-                  {r.status === 'approvata' ? 'APPROVATA' : 'RIFIUTATA'}
+                  {r.status === 'approvata' ? t('APPROVATA') : t('RIFIUTATA')}
                 </span>
               </div>
             ))}
@@ -165,6 +167,7 @@ function AccessRequestsBoard() {
 // Atleta: inserisce il codice che gli ha dato un professionista (crm_accept_pro_invite).
 // È la conferma dell'atleta: il collegamento è immediato.
 function AcceptProInvite() {
+  const { t } = useLang()
   const [code, setCode] = useState('')
   const [busy, setBusy] = useState(false)
 
@@ -176,26 +179,26 @@ function AcceptProInvite() {
     setBusy(false)
     if (error) { toast(error.message, 'err'); return }
     const res = data as any
-    if (!res?.ok) { toast(res?.error || 'Codice non valido', 'err'); return }
-    toast(`${res.pro || 'Il professionista'} ora fa parte del tuo team`)
+    if (!res?.ok) { toast(res?.error || t('Codice non valido'), 'err'); return }
+    toast(t('{name} ora fa parte del tuo team').replace('{name}', res.pro || t('Il professionista')))
     setCode('')
     setTimeout(() => window.location.reload(), 900)
   }
 
   return (
     <div className="card" style={{ borderColor: 'var(--yellow)', background: 'var(--yellow-soft)' }}>
-      <div style={{ ...kicker, color: 'var(--ink)' }}>Un professionista ti ha dato un codice?</div>
+      <div style={{ ...kicker, color: 'var(--ink)' }}>{t('Un professionista ti ha dato un codice?')}</div>
       <div style={{ fontSize: 12.5, color: 'var(--text-dim)', marginTop: 5, marginBottom: 12 }}>
-        Inseriscilo qui per collegarlo al tuo Player Hub. Inserendolo confermi che può lavorare con te.
+        {t('Inseriscilo qui per collegarlo al tuo Player Hub. Inserendolo confermi che può lavorare con te.')}
       </div>
       <div className="flex gap" style={{ gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
         <div style={{ flex: 1, minWidth: 200 }}>
           <Input value={code} onChange={e => setCode(e.target.value.toUpperCase())}
             onKeyDown={e => { if (e.key === 'Enter') accept() }}
-            placeholder="ES. AUVI-1A2B3C" style={{ letterSpacing: 2, fontWeight: 700, background: 'var(--surface)' }} />
+            placeholder={t('ES. AUVI-1A2B3C')} style={{ letterSpacing: 2, fontWeight: 700, background: 'var(--surface)' }} />
         </div>
         <button className="btn btn-primary" disabled={busy || !code.trim()} onClick={accept}>
-          {busy ? 'Collego…' : 'Collega'}
+          {busy ? t('Collego…') : t('Collega')}
         </button>
       </div>
     </div>
@@ -209,6 +212,7 @@ export function RequestForm({ onDone, mine = [], bare }: {
   mine?: Pick<Req, 'status'>[]
   bare?: boolean
 }) {
+  const { t } = useLang()
   const [code, setCode] = useState('')
   const [msg, setMsg] = useState('')
   const [busy, setBusy] = useState(false)
@@ -224,8 +228,8 @@ export function RequestForm({ onDone, mine = [], bare }: {
     setBusy(false)
     if (error) { toast(error.message, 'err'); return }
     const res = data as any
-    if (!res?.ok) { toast(res?.error || 'Codice non valido', 'err'); return }
-    toast(`Richiesta inviata per ${res.player}`)
+    if (!res?.ok) { toast(res?.error || t('Codice non valido'), 'err'); return }
+    toast(t('Richiesta inviata per {name}').replace('{name}', res.player))
     setCode(''); setMsg(''); onDone()
   }
 
@@ -233,29 +237,28 @@ export function RequestForm({ onDone, mine = [], bare }: {
     <div style={bare ? undefined : { position: 'relative', overflow: 'hidden', borderRadius: 18,
                   background: 'var(--bg-2)', border: '1px solid var(--border)', padding: '22px' }}>
       {!bare && <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 5, background: ACCENT }} />}
-      {!bare && <div style={{ ...kicker, color: ACCENT }}>Collegati a un atleta</div>}
+      {!bare && <div style={{ ...kicker, color: ACCENT }}>{t('Collegati a un atleta')}</div>}
       <div className="faint" style={{ fontSize: 12.5, marginTop: 5, marginBottom: 14 }}>
-        Inserisci il codice che ti ha dato l'atleta o AUVI. La richiesta viene approvata
-        prima di darti accesso.
+        {t("Inserisci il codice che ti ha dato l'atleta o AUVI. La richiesta viene approvata prima di darti accesso.")}
       </div>
 
       <div className="grid g2" style={{ gap: 10 }}>
-        <Field label="Codice atleta">
+        <Field label={t('Codice atleta')}>
           <Input value={code} onChange={e => setCode(e.target.value.toUpperCase())}
-            placeholder="ES. ABC-123XYZ" style={{ letterSpacing: 2, fontWeight: 700 }} />
+            placeholder={t('ES. ABC-123XYZ')} style={{ letterSpacing: 2, fontWeight: 700 }} />
         </Field>
-        <Field label="Messaggio (facoltativo)">
+        <Field label={t('Messaggio (facoltativo)')}>
           <Textarea rows={1} value={msg} onChange={e => setMsg(e.target.value)}
-            placeholder="Chi sei e perché richiedi l'accesso" />
+            placeholder={t("Chi sei e perché richiedi l'accesso")} />
         </Field>
       </div>
       <button className="btn btn-primary" disabled={busy || !code.trim()} onClick={send} style={{ marginTop: 4 }}>
-        {busy ? 'Invio…' : 'Invia richiesta'}
+        {busy ? t('Invio…') : t('Invia richiesta')}
       </button>
 
       {inAttesa.length > 0 && (
         <div className="faint" style={{ fontSize: 12.5, marginTop: 14 }}>
-          <Icon name="clock" size={12} /> Hai {inAttesa.length} richiest{inAttesa.length === 1 ? 'a' : 'e'} in attesa di approvazione.
+          <Icon name="clock" size={12} /> {(inAttesa.length === 1 ? t('Hai {n} richiesta in attesa di approvazione.') : t('Hai {n} richieste in attesa di approvazione.')).replace('{n}', String(inAttesa.length))}
         </div>
       )}
     </div>
@@ -266,6 +269,7 @@ export function RequestForm({ onDone, mine = [], bare }: {
 // personale per ogni professionista. Ogni codice è monouso e, una volta usato,
 // resta legato al professionista che l'ha inserito.
 function CodesManager({ athleteId, athleteName }: { athleteId: number | null; athleteName: string }) {
+  const { t } = useLang()
   const [codes, setCodes] = useState<any[]>([])
   const [label, setLabel] = useState('')
   const [role, setRole] = useState('')
@@ -289,60 +293,57 @@ function CodesManager({ athleteId, athleteName }: { athleteId: number | null; at
     })
     setBusy(false)
     if (error) { toast(error.message, 'err'); return }
-    setLabel(''); setRole(''); toast('Codice generato'); load()
+    setLabel(''); setRole(''); toast(t('Codice generato')); load()
   }
   async function revoca(id: string) {
-    if (!window.confirm('Revocare questo codice? Non sarà più utilizzabile.')) return
+    if (!window.confirm(t('Revocare questo codice? Non sarà più utilizzabile.'))) return
     const { error } = await supabase.rpc('crm_revoke_code', { p_code_id: id })
     if (error) { toast(error.message, 'err'); return }
-    toast('Codice revocato'); load()
+    toast(t('Codice revocato')); load()
   }
 
   const attivi = codes.filter(c => c.status === 'active').length
 
   return (
     <div className="card">
-      <div style={{ ...kicker, color: 'var(--text-dim)', marginBottom: 8 }}>Codici di collegamento</div>
+      <div style={{ ...kicker, color: 'var(--text-dim)', marginBottom: 8 }}>{t('Codici di collegamento')}</div>
       <div className="faint" style={{ fontSize: 12.5, marginBottom: 12 }}>
-        Genera un codice per ogni professionista da collegare a <b style={{ color: 'var(--text)' }}>{athleteName}</b>.
-        Ogni codice è personale e monouso: quando il professionista lo inserisce resta legato a lui.
-        Nessuno può entrare senza la tua approvazione.
+        {t('Genera un codice per ogni professionista da collegare a')} <b style={{ color: 'var(--text)' }}>{athleteName}</b>.{' '}
+        {t('Ogni codice è personale e monouso: quando il professionista lo inserisce resta legato a lui. Nessuno può entrare senza la tua approvazione.')}
       </div>
 
       <div className="flex gap" style={{ gap: 8, flexWrap: 'wrap', marginBottom: codes.length ? 14 : 0 }}>
         <div style={{ minWidth: 170 }}>
           <Select value={role} onChange={e => setRole(e.target.value)}>
-            <option value="">Figura professionale…</option>
-            <option value="assicuratore">Assicuratore</option>
-            <option value="agente">Agente</option>
-            <option value="preparatore">Preparatore atletico</option>
-            <option value="commercialista">Commercialista</option>
-            <option value="fisioterapista">Fisioterapista</option>
-            <option value="nutrizionista">Nutrizionista</option>
+            <option value="">{t('Figura professionale…')}</option>
+            <option value="assicuratore">{t('Assicuratore')}</option>
+            <option value="agente">{t('Agente')}</option>
+            <option value="preparatore">{t('Preparatore atletico')}</option>
+            <option value="commercialista">{t('Commercialista')}</option>
+            <option value="fisioterapista">{t('Fisioterapista')}</option>
+            <option value="nutrizionista">{t('Nutrizionista')}</option>
           </Select>
         </div>
         <div style={{ flex: 1, minWidth: 220 }}>
-          <Input value={label} onChange={e => setLabel(e.target.value)} placeholder="Per chi? es. Anthea Assicurazioni (facoltativo)" />
+          <Input value={label} onChange={e => setLabel(e.target.value)} placeholder={t('Per chi? es. Anthea Assicurazioni (facoltativo)')} />
         </div>
         <button className="btn btn-primary" disabled={busy || !athleteId} onClick={genera}>
-          <Icon name="plus" size={15} /> Genera codice
+          <Icon name="plus" size={15} /> {t('Genera codice')}
         </button>
       </div>
       <div className="faint" style={{ fontSize: 11.5, marginTop: -6, marginBottom: codes.length ? 12 : 0 }}>
-        Con la figura selezionata il codice vale anche come <b>invito alla registrazione</b>: il professionista
-        entra dal login con "codice invito" e trova subito la sua vista dedicata. Senza figura, il codice serve
-        solo a collegare un professionista già registrato.
+        {t('Con la figura selezionata il codice vale anche come invito alla registrazione: il professionista entra dal login con "codice invito" e trova subito la sua vista dedicata. Senza figura, il codice serve solo a collegare un professionista già registrato.')}
       </div>
 
       {loading ? null : codes.length === 0 ? (
-        <div className="faint" style={{ fontSize: 12.5 }}>Nessun codice ancora generato.</div>
+        <div className="faint" style={{ fontSize: 12.5 }}>{t('Nessun codice ancora generato.')}</div>
       ) : (
         <div className="grid" style={{ gap: 8 }}>
           {codes.map(c => {
             const used = c.status === 'used', revoked = c.status === 'revoked'
-            const badge = used ? { t: c.used_by_name ? `Usato da ${c.used_by_name}` : 'Usato', col: 'var(--text-dim)' }
-                        : revoked ? { t: 'Revocato', col: 'var(--red)' }
-                        : { t: 'Attivo', col: 'var(--green)' }
+            const badge = used ? { t: c.used_by_name ? t('Usato da {name}').replace('{name}', c.used_by_name) : t('Usato'), col: 'var(--text-dim)' }
+                        : revoked ? { t: t('Revocato'), col: 'var(--red)' }
+                        : { t: t('Attivo'), col: 'var(--green)' }
             return (
               <div key={c.id} className="flex between" style={{ alignItems: 'center', gap: 10,
                 border: '1px solid var(--border)', borderRadius: 10, padding: '10px 12px', opacity: revoked ? .55 : 1 }}>
@@ -350,17 +351,17 @@ function CodesManager({ athleteId, athleteName }: { athleteId: number | null; at
                   <code style={{ fontSize: 14, fontWeight: 800, letterSpacing: 1.5, color: ACCENT,
                     textDecoration: revoked ? 'line-through' : 'none' }}>{c.code}</code>
                   <div className="faint" style={{ fontSize: 11.5, marginTop: 2 }}>
-                    {c.role ? (ROLE_LABEL[c.role] || c.role) + ' · ' : ''}{c.label ? c.label + ' · ' : ''}<span style={{ color: badge.col, fontWeight: 700 }}>{badge.t}</span>
+                    {c.role ? t(ROLE_LABEL[c.role] || c.role) + ' · ' : ''}{c.label ? c.label + ' · ' : ''}<span style={{ color: badge.col, fontWeight: 700 }}>{badge.t}</span>
                   </div>
                 </div>
                 <span className="flex gap" style={{ alignItems: 'center', gap: 6, flexShrink: 0 }}>
                   {!used && !revoked && (
                     <>
-                      <button className="btn btn-ghost btn-sm" title="Copia"
-                        onClick={() => { navigator.clipboard.writeText(c.code); toast('Codice copiato') }}>
+                      <button className="btn btn-ghost btn-sm" title={t('Copia')}
+                        onClick={() => { navigator.clipboard.writeText(c.code); toast(t('Codice copiato')) }}>
                         <Icon name="copy" size={13} />
                       </button>
-                      <button className="btn btn-ghost btn-sm" title="Revoca" onClick={() => revoca(c.id)}>
+                      <button className="btn btn-ghost btn-sm" title={t('Revoca')} onClick={() => revoca(c.id)}>
                         <Icon name="rotate-ccw" size={13} />
                       </button>
                     </>
@@ -370,7 +371,7 @@ function CodesManager({ athleteId, athleteName }: { athleteId: number | null; at
             )
           })}
           <div className="faint" style={{ fontSize: 11, marginTop: 2 }}>
-            {attivi} {attivi === 1 ? 'codice attivo' : 'codici attivi'} · {codes.length} totali
+            {attivi} {attivi === 1 ? t('codice attivo') : t('codici attivi')} · {codes.length} {t('totali')}
           </div>
         </div>
       )}

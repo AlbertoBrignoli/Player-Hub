@@ -367,7 +367,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
   if (nextMatch?.match_date) {
     const d = new Date(nextMatch.match_date)
     const days = Math.ceil((d.getTime() - Date.now()) / 86400000)
-    const when = days <= 0 ? t('Oggi') : days === 1 ? t('Domani') : `${t('Fra')} ${days} ${t('giorni')}`
+    const when = days <= 0 ? t('Oggi') : days === 1 ? t('Domani') : t('Fra {n} giorni').replace('{n}', String(days))
     const dayLabel = d.toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'short', timeZone: athleteTz || undefined }).replace(/\./g, '')
     const home = (nextMatch.venue || '').toLowerCase() === 'home'
     const lg = leagueLogo(nextMatch.league)

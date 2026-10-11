@@ -5,6 +5,7 @@ import { Modal, Field, Input, Textarea, Select, Empty, Spinner, ConfirmButton, B
 import Icon from '../components/Icon'
 import { fmtMoney, fmtDate } from '../lib/format'
 import type { CoachClient, CoachSession, CoachLedger } from '../lib/types'
+import { useLang } from '../lib/i18n'
 
 // Ufficio del preparatore: agenda personale, clienti e cassa.
 // Sezione SEPARATA dal lavoro AUVI: qui non si toccano schede né atleti gestiti.
@@ -21,6 +22,7 @@ type Tab = 'agenda' | 'clienti' | 'cassa'
 
 export default function CoachOffice() {
   const { session } = useAuth()
+  const { t, lang } = useLang()
   const uid = session?.user.id
   const [tab, setTab] = useState<Tab>('agenda')
 
@@ -75,16 +77,16 @@ export default function CoachOffice() {
       {/* --- Cassa del mese in evidenza --- */}
       <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 18, background: 'var(--bg-2)', border: '1px solid var(--border)', padding: '22px' }}>
         <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 5, background: ACCENT }} />
-        <div style={{ ...kicker, color: ACCENT }}>Il mio ufficio · {new Date().toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })}</div>
+        <div style={{ ...kicker, color: ACCENT }}>{t('Il mio ufficio')} · {new Date().toLocaleDateString(lang === 'en' ? 'en-GB' : 'it-IT', { month: 'long', year: 'numeric' })}</div>
         <div className="flex gap" style={{ gap: 26, marginTop: 14, flexWrap: 'wrap' }}>
-          <Metric label="Entrate" value={fmtMoney(totals.inc)} tone={IN} />
-          <Metric label="Uscite" value={fmtMoney(totals.out)} tone={OUT} />
-          <Metric label="Saldo" value={fmtMoney(totals.saldo)} tone={totals.saldo >= 0 ? IN : OUT} />
-          <Metric label="Da incassare" value={fmtMoney(daIncassareTot)} tone={daIncassareTot ? 'var(--gold)' : undefined} />
-          <Metric label="Clienti" value={String(clients.filter(c => !c.archived).length)} />
+          <Metric label={t('Entrate')} value={fmtMoney(totals.inc)} tone={IN} />
+          <Metric label={t('Uscite')} value={fmtMoney(totals.out)} tone={OUT} />
+          <Metric label={t('Saldo')} value={fmtMoney(totals.saldo)} tone={totals.saldo >= 0 ? IN : OUT} />
+          <Metric label={t('Da incassare')} value={fmtMoney(daIncassareTot)} tone={daIncassareTot ? 'var(--gold)' : undefined} />
+          <Metric label={t('Clienti')} value={String(clients.filter(c => !c.archived).length)} />
         </div>
         <div className="faint" style={{ fontSize: 11.5, marginTop: 14 }}>
-          Sezione privata: questi dati non sono visibili ad AUVI né agli atleti.
+          {t('Sezione privata: questi dati non sono visibili ad AUVI né agli atleti.')}
         </div>
       </div>
 
@@ -92,7 +94,7 @@ export default function CoachOffice() {
         {([['agenda', 'Agenda', 'clock'], ['clienti', 'Clienti', 'users'], ['cassa', 'Entrate / Uscite', 'briefcase']] as const).map(([k, l, i]) => (
           <button key={k} className={`pill-tab ${tab === k ? 'active' : ''}`} onClick={() => setTab(k as Tab)}
             style={tab === k ? { background: ACCENT, color: '#fff', borderColor: ACCENT } : undefined}>
-            <Icon name={i} size={13} /> {l}
+            <Icon name={i} size={13} /> {t(l)}
           </button>
         ))}
       </div>
@@ -102,20 +104,20 @@ export default function CoachOffice() {
         <div className="grid" style={{ gap: 14 }}>
           <CoachCalendar sessions={sessions} clientName={clientName} onPick={setEditS} />
           <div className="flex between" style={{ alignItems: 'center' }}>
-            <div style={{ ...kicker, color: 'var(--text-dim)' }}>Prossime sedute</div>
+            <div style={{ ...kicker, color: 'var(--text-dim)' }}>{t('Prossime sedute')}</div>
             <button className="btn btn-sm" style={{ background: 'var(--yellow)', color: 'var(--ink)', fontWeight: 800, border: 'none' }}
               onClick={() => setEditS({ session_date: today(), status: 'programmata' })}>
-              <Icon name="plus" size={13} /> Nuova seduta
+              <Icon name="plus" size={13} /> {t('Nuova seduta')}
             </button>
           </div>
 
           {upcoming.length === 0 ? (
-            <div className="card"><Empty icon={<Icon name="clock" size={28} strokeWidth={1.4} />} title="Nessuna seduta in programma" hint="Aggiungi la prossima seduta con un cliente." /></div>
+            <div className="card"><Empty icon={<Icon name="clock" size={28} strokeWidth={1.4} />} title={t('Nessuna seduta in programma')} hint={t('Aggiungi la prossima seduta con un cliente.')} /></div>
           ) : upcoming.map(s => (
             <div key={s.id} className="card" style={{ padding: 14 }}>
               <div className="flex between" style={{ alignItems: 'flex-start', gap: 10, flexWrap: 'wrap' }}>
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 15, fontWeight: 800 }}>{s.title || 'Seduta'}</div>
+                  <div style={{ fontSize: 15, fontWeight: 800 }}>{s.title || t('Seduta')}</div>
                   <div className="faint" style={{ fontSize: 12.5, marginTop: 3 }}>
                     {clientName(s.client_id)} · {fmtDate(s.session_date)}{s.start_time ? ` · ${s.start_time}` : ''}
                     {s.duration_min ? ` · ${s.duration_min}'` : ''}{s.location ? ` · ${s.location}` : ''}
@@ -123,9 +125,9 @@ export default function CoachOffice() {
                   {s.price ? <div style={{ ...kicker, fontSize: 11, color: ACCENT, marginTop: 5 }}>{fmtMoney(s.price)}</div> : null}
                 </div>
                 <div className="flex gap" style={{ flexWrap: 'wrap' }}>
-                  <button className="btn btn-sm" onClick={() => markDone(s, true)}>Fatta e incassata</button>
-                  <button className="btn btn-ghost btn-sm" onClick={() => markDone(s, false)}>Fatta</button>
-                  <button className="btn btn-ghost btn-sm" onClick={() => setEditS(s)}>Modifica</button>
+                  <button className="btn btn-sm" onClick={() => markDone(s, true)}>{t('Fatta e incassata')}</button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => markDone(s, false)}>{t('Fatta')}</button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => setEditS(s)}>{t('Modifica')}</button>
                 </div>
               </div>
             </div>
@@ -133,14 +135,14 @@ export default function CoachOffice() {
 
           {daIncassare.length > 0 && (
             <div className="card" style={{ borderColor: 'rgba(154,134,0,.35)' }}>
-              <div style={{ ...kicker, color: 'var(--gold)', marginBottom: 10 }}>Da incassare · {fmtMoney(daIncassareTot)}</div>
+              <div style={{ ...kicker, color: 'var(--gold)', marginBottom: 10 }}>{t('Da incassare')} · {fmtMoney(daIncassareTot)}</div>
               <div className="grid" style={{ gap: 8 }}>
                 {daIncassare.map(s => (
                   <div key={s.id} className="flex between" style={{ alignItems: 'center', gap: 10 }}>
                     <div className="faint" style={{ fontSize: 13 }}>
                       {clientName(s.client_id)} · {fmtDate(s.session_date)} · <b style={{ color: 'var(--text)' }}>{fmtMoney(s.price)}</b>
                     </div>
-                    <button className="btn btn-sm" onClick={() => markDone(s, true)}>Incassa</button>
+                    <button className="btn btn-sm" onClick={() => markDone(s, true)}>{t('Incassa')}</button>
                   </div>
                 ))}
               </div>
@@ -149,18 +151,18 @@ export default function CoachOffice() {
 
           {past.length > 0 && (
             <>
-              <div style={{ ...kicker, color: 'var(--text-dim)', marginTop: 6 }}>Storico</div>
+              <div style={{ ...kicker, color: 'var(--text-dim)', marginTop: 6 }}>{t('Storico')}</div>
               {past.slice(0, 12).map(s => (
                 <div key={s.id} className="card" style={{ padding: 12 }}>
                   <div className="flex between" style={{ alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 14, fontWeight: 700 }}>{s.title || 'Seduta'} · <span className="faint">{clientName(s.client_id)}</span></div>
+                      <div style={{ fontSize: 14, fontWeight: 700 }}>{s.title || t('Seduta')} · <span className="faint">{clientName(s.client_id)}</span></div>
                       <div className="faint" style={{ fontSize: 12 }}>{fmtDate(s.session_date)}{s.price ? ` · ${fmtMoney(s.price)}` : ''}</div>
                     </div>
                     <div className="flex gap" style={{ alignItems: 'center' }}>
-                      {s.status === 'fatta' && <Badge tone={s.paid ? 'green' : 'gold'}>{s.paid ? 'Incassata' : 'Da incassare'}</Badge>}
-                      {s.status === 'annullata' && <Badge tone="red">Annullata</Badge>}
-                      <button className="btn btn-ghost btn-sm" onClick={() => setEditS(s)}>Modifica</button>
+                      {s.status === 'fatta' && <Badge tone={s.paid ? 'green' : 'gold'}>{s.paid ? t('Incassata') : t('Da incassare')}</Badge>}
+                      {s.status === 'annullata' && <Badge tone="red">{t('Annullata')}</Badge>}
+                      <button className="btn btn-ghost btn-sm" onClick={() => setEditS(s)}>{t('Modifica')}</button>
                     </div>
                   </div>
                 </div>
@@ -174,13 +176,13 @@ export default function CoachOffice() {
       {tab === 'clienti' && (
         <div className="grid" style={{ gap: 12 }}>
           <div className="flex between" style={{ alignItems: 'center' }}>
-            <div style={{ ...kicker, color: 'var(--text-dim)' }}>I miei clienti</div>
+            <div style={{ ...kicker, color: 'var(--text-dim)' }}>{t('I miei clienti')}</div>
             <button className="btn btn-sm" style={{ background: 'var(--yellow)', color: 'var(--ink)', fontWeight: 800, border: 'none' }} onClick={() => setEditC({})}>
-              <Icon name="plus" size={13} /> Nuovo cliente
+              <Icon name="plus" size={13} /> {t('Nuovo cliente')}
             </button>
           </div>
           {clients.length === 0 ? (
-            <div className="card"><Empty icon={<Icon name="users" size={28} strokeWidth={1.4} />} title="Nessun cliente" hint="Aggiungi i tuoi clienti privati." /></div>
+            <div className="card"><Empty icon={<Icon name="users" size={28} strokeWidth={1.4} />} title={t('Nessun cliente')} hint={t('Aggiungi i tuoi clienti privati.')} /></div>
           ) : (
             <div className="grid g3" style={{ gap: 12 }}>
               {clients.map(c => {
@@ -191,14 +193,14 @@ export default function CoachOffice() {
                     <div style={{ padding: 15 }}>
                       <div style={{ fontSize: 15.5, fontWeight: 800 }}>{c.name}</div>
                       <div className="faint" style={{ fontSize: 12, marginTop: 3 }}>
-                        {c.contact || 'Nessun contatto'} · {n} sedut{n === 1 ? 'a' : 'e'}
+                        {c.contact || t('Nessun contatto')} · {(n === 1 ? t('{n} seduta') : t('{n} sedute')).replace('{n}', String(n))}
                       </div>
-                      {c.rate ? <div style={{ ...kicker, fontSize: 10.5, color: ACCENT, marginTop: 5 }}>{fmtMoney(c.rate)} / seduta</div> : null}
+                      {c.rate ? <div style={{ ...kicker, fontSize: 10.5, color: ACCENT, marginTop: 5 }}>{fmtMoney(c.rate)} / {t('seduta')}</div> : null}
                       <div className="flex gap" style={{ marginTop: 12, flexWrap: 'wrap' }}>
                         <button className="btn btn-sm" onClick={() => setEditS({ session_date: today(), status: 'programmata', client_id: c.id, price: c.rate })}>
-                          <Icon name="plus" size={12} /> Seduta
+                          <Icon name="plus" size={12} /> {t('Seduta')}
                         </button>
-                        <button className="btn btn-ghost btn-sm" onClick={() => setEditC(c)}>Modifica</button>
+                        <button className="btn btn-ghost btn-sm" onClick={() => setEditC(c)}>{t('Modifica')}</button>
                       </div>
                     </div>
                   </div>
@@ -213,16 +215,16 @@ export default function CoachOffice() {
       {tab === 'cassa' && (
         <div className="grid" style={{ gap: 12 }}>
           <div className="flex between" style={{ alignItems: 'center' }}>
-            <div style={{ ...kicker, color: 'var(--text-dim)' }}>Movimenti</div>
+            <div style={{ ...kicker, color: 'var(--text-dim)' }}>{t('Movimenti')}</div>
             <div className="flex gap">
               <button className="btn btn-sm" style={{ background: IN, color: '#fff', fontWeight: 800, border: 'none' }}
-                onClick={() => setEditL({ kind: 'entrata', entry_date: today() })}>+ Entrata</button>
+                onClick={() => setEditL({ kind: 'entrata', entry_date: today() })}>+ {t('Entrata')}</button>
               <button className="btn btn-sm" style={{ background: OUT, color: '#fff', fontWeight: 800, border: 'none' }}
-                onClick={() => setEditL({ kind: 'uscita', entry_date: today() })}>+ Uscita</button>
+                onClick={() => setEditL({ kind: 'uscita', entry_date: today() })}>+ {t('Uscita')}</button>
             </div>
           </div>
           {ledger.length === 0 ? (
-            <div className="card"><Empty icon={<Icon name="briefcase" size={28} strokeWidth={1.4} />} title="Nessun movimento" hint="Registra entrate e uscite del tuo lavoro." /></div>
+            <div className="card"><Empty icon={<Icon name="briefcase" size={28} strokeWidth={1.4} />} title={t('Nessun movimento')} hint={t('Registra entrate e uscite del tuo lavoro.')} /></div>
           ) : ledger.map(l => {
             const isIn = l.kind === 'entrata'
             return (
@@ -232,16 +234,16 @@ export default function CoachOffice() {
                     <span style={{ width: 3, height: 30, borderRadius: 2, background: isIn ? IN : OUT }} />
                     <div style={{ minWidth: 0 }}>
                       <div style={{ fontSize: 14, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {l.description || l.category || (isIn ? 'Entrata' : 'Uscita')}
+                        {l.description || (l.category ? t(l.category) : (isIn ? t('Entrata') : t('Uscita')))}
                       </div>
-                      <div className="faint" style={{ fontSize: 11.5 }}>{fmtDate(l.entry_date)}{l.category ? ` · ${l.category}` : ''}</div>
+                      <div className="faint" style={{ fontSize: 11.5 }}>{fmtDate(l.entry_date)}{l.category ? ` · ${t(l.category)}` : ''}</div>
                     </div>
                   </div>
                   <div className="flex gap" style={{ alignItems: 'center', gap: 10 }}>
                     <div style={{ fontSize: 15, fontWeight: 800, color: isIn ? IN : OUT, whiteSpace: 'nowrap' }}>
                       {isIn ? '+' : '−'} {fmtMoney(l.amount)}
                     </div>
-                    <ConfirmButton onConfirm={async () => { await deleteRow('coach_ledger', l.id); reloadL() }}>Elimina</ConfirmButton>
+                    <ConfirmButton onConfirm={async () => { await deleteRow('coach_ledger', l.id); reloadL() }}>{t('Elimina')}</ConfirmButton>
                   </div>
                 </div>
               </div>
@@ -267,6 +269,7 @@ function Metric({ label, value, tone }: { label: string; value: string; tone?: s
 }
 
 function SessionForm({ value, clients, uid, onClose, onSaved }: { value: Partial<CoachSession>; clients: CoachClient[]; uid?: string; onClose: () => void; onSaved: () => void }) {
+  const { t } = useLang()
   const [f, setF] = useState<Partial<CoachSession>>(value)
   const [busy, setBusy] = useState(false)
   const set = (k: keyof CoachSession, v: any) => setF(p => ({ ...p, [k]: v }))
@@ -286,39 +289,40 @@ function SessionForm({ value, clients, uid, onClose, onSaved }: { value: Partial
   }
 
   return (
-    <Modal title={f.id ? 'Modifica seduta' : 'Nuova seduta'} onClose={onClose}
+    <Modal title={f.id ? t('Modifica seduta') : t('Nuova seduta')} onClose={onClose}
       footer={<>
-        {f.id && <ConfirmButton onConfirm={async () => { await deleteRow('coach_sessions', f.id!); onSaved() }}>Elimina</ConfirmButton>}
-        <button className="btn btn-ghost" onClick={onClose}>Annulla</button>
-        <button className="btn btn-primary" disabled={busy || !f.session_date} onClick={save}>{busy ? 'Salvo…' : 'Salva'}</button>
+        {f.id && <ConfirmButton onConfirm={async () => { await deleteRow('coach_sessions', f.id!); onSaved() }}>{t('Elimina')}</ConfirmButton>}
+        <button className="btn btn-ghost" onClick={onClose}>{t('Annulla')}</button>
+        <button className="btn btn-primary" disabled={busy || !f.session_date} onClick={save}>{busy ? t('Salvo…') : t('Salva')}</button>
       </>}>
-      <Field label="Titolo"><Input value={f.title || ''} onChange={e => set('title', e.target.value)} placeholder="Es. Forza · sala pesi" /></Field>
-      <Field label="Cliente">
+      <Field label={t('Titolo')}><Input value={f.title || ''} onChange={e => set('title', e.target.value)} placeholder={t('Es. Forza · sala pesi')} /></Field>
+      <Field label={t('Cliente')}>
         <Select value={f.client_id || ''} onChange={e => set('client_id', e.target.value)}>
-          <option value="">— nessuno —</option>
+          <option value="">{t('— nessuno —')}</option>
           {clients.filter(c => !c.archived).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
         </Select>
       </Field>
       <div className="grid g2" style={{ gap: 10 }}>
-        <Field label="Data"><Input type="date" value={f.session_date || ''} onChange={e => set('session_date', e.target.value)} /></Field>
-        <Field label="Ora"><Input type="time" value={f.start_time || ''} onChange={e => set('start_time', e.target.value)} /></Field>
-        <Field label="Durata (min)"><Input type="number" value={f.duration_min ?? ''} onChange={e => set('duration_min', e.target.value)} /></Field>
-        <Field label="Compenso (€)"><Input type="number" value={f.price ?? ''} onChange={e => set('price', e.target.value)} /></Field>
+        <Field label={t('Data')}><Input type="date" value={f.session_date || ''} onChange={e => set('session_date', e.target.value)} /></Field>
+        <Field label={t('Ora')}><Input type="time" value={f.start_time || ''} onChange={e => set('start_time', e.target.value)} /></Field>
+        <Field label={t('Durata (min)')}><Input type="number" value={f.duration_min ?? ''} onChange={e => set('duration_min', e.target.value)} /></Field>
+        <Field label={t('Compenso (€)')}><Input type="number" value={f.price ?? ''} onChange={e => set('price', e.target.value)} /></Field>
       </div>
-      <Field label="Luogo"><Input value={f.location || ''} onChange={e => set('location', e.target.value)} placeholder="Palestra, online…" /></Field>
-      <Field label="Stato">
+      <Field label={t('Luogo')}><Input value={f.location || ''} onChange={e => set('location', e.target.value)} placeholder={t('Palestra, online…')} /></Field>
+      <Field label={t('Stato')}>
         <Select value={f.status || 'programmata'} onChange={e => set('status', e.target.value)}>
-          <option value="programmata">Programmata</option>
-          <option value="fatta">Fatta</option>
-          <option value="annullata">Annullata</option>
+          <option value="programmata">{t('Programmata')}</option>
+          <option value="fatta">{t('Fatta')}</option>
+          <option value="annullata">{t('Annullata')}</option>
         </Select>
       </Field>
-      <Field label="Note"><Textarea rows={2} value={f.notes || ''} onChange={e => set('notes', e.target.value)} /></Field>
+      <Field label={t('Note')}><Textarea rows={2} value={f.notes || ''} onChange={e => set('notes', e.target.value)} /></Field>
     </Modal>
   )
 }
 
 function ClientForm({ value, uid, onClose, onSaved }: { value: Partial<CoachClient>; uid?: string; onClose: () => void; onSaved: () => void }) {
+  const { t } = useLang()
   const [f, setF] = useState<Partial<CoachClient>>(value)
   const [busy, setBusy] = useState(false)
   const set = (k: keyof CoachClient, v: any) => setF(p => ({ ...p, [k]: v }))
@@ -336,24 +340,25 @@ function ClientForm({ value, uid, onClose, onSaved }: { value: Partial<CoachClie
   }
 
   return (
-    <Modal title={f.id ? 'Modifica cliente' : 'Nuovo cliente'} onClose={onClose}
+    <Modal title={f.id ? t('Modifica cliente') : t('Nuovo cliente')} onClose={onClose}
       footer={<>
-        {f.id && <ConfirmButton onConfirm={async () => { await deleteRow('coach_clients', f.id!); onSaved() }}>Elimina</ConfirmButton>}
-        <button className="btn btn-ghost" onClick={onClose}>Annulla</button>
-        <button className="btn btn-primary" disabled={busy || !f.name} onClick={save}>{busy ? 'Salvo…' : 'Salva'}</button>
+        {f.id && <ConfirmButton onConfirm={async () => { await deleteRow('coach_clients', f.id!); onSaved() }}>{t('Elimina')}</ConfirmButton>}
+        <button className="btn btn-ghost" onClick={onClose}>{t('Annulla')}</button>
+        <button className="btn btn-primary" disabled={busy || !f.name} onClick={save}>{busy ? t('Salvo…') : t('Salva')}</button>
       </>}>
-      <Field label="Nome"><Input value={f.name || ''} onChange={e => set('name', e.target.value)} /></Field>
-      <Field label="Contatto"><Input value={f.contact || ''} onChange={e => set('contact', e.target.value)} placeholder="Telefono o email" /></Field>
-      <Field label="Tariffa a seduta (€)"><Input type="number" value={f.rate ?? ''} onChange={e => set('rate', e.target.value)} /></Field>
-      <Field label="Note"><Textarea rows={2} value={f.notes || ''} onChange={e => set('notes', e.target.value)} /></Field>
+      <Field label={t('Nome')}><Input value={f.name || ''} onChange={e => set('name', e.target.value)} /></Field>
+      <Field label={t('Contatto')}><Input value={f.contact || ''} onChange={e => set('contact', e.target.value)} placeholder={t('Telefono o email')} /></Field>
+      <Field label={t('Tariffa a seduta (€)')}><Input type="number" value={f.rate ?? ''} onChange={e => set('rate', e.target.value)} /></Field>
+      <Field label={t('Note')}><Textarea rows={2} value={f.notes || ''} onChange={e => set('notes', e.target.value)} /></Field>
       <label className="flex gap" style={{ gap: 8, fontSize: 13, cursor: 'pointer', marginTop: 4 }}>
-        <input type="checkbox" checked={!!f.archived} onChange={e => set('archived', e.target.checked)} /> Cliente archiviato
+        <input type="checkbox" checked={!!f.archived} onChange={e => set('archived', e.target.checked)} /> {t('Cliente archiviato')}
       </label>
     </Modal>
   )
 }
 
 function LedgerForm({ value, uid, onClose, onSaved }: { value: Partial<CoachLedger>; uid?: string; onClose: () => void; onSaved: () => void }) {
+  const { t } = useLang()
   const [f, setF] = useState<Partial<CoachLedger>>(value)
   const [busy, setBusy] = useState(false)
   const set = (k: keyof CoachLedger, v: any) => setF(p => ({ ...p, [k]: v }))
@@ -372,23 +377,23 @@ function LedgerForm({ value, uid, onClose, onSaved }: { value: Partial<CoachLedg
   }
 
   return (
-    <Modal title={isIn ? 'Nuova entrata' : 'Nuova uscita'} onClose={onClose}
+    <Modal title={isIn ? t('Nuova entrata') : t('Nuova uscita')} onClose={onClose}
       footer={<>
-        <button className="btn btn-ghost" onClick={onClose}>Annulla</button>
-        <button className="btn btn-primary" disabled={busy || !f.amount} onClick={save}>{busy ? 'Salvo…' : 'Salva'}</button>
+        <button className="btn btn-ghost" onClick={onClose}>{t('Annulla')}</button>
+        <button className="btn btn-primary" disabled={busy || !f.amount} onClick={save}>{busy ? t('Salvo…') : t('Salva')}</button>
       </>}>
       <div className="grid g2" style={{ gap: 10 }}>
-        <Field label="Importo (€)"><Input type="number" value={f.amount ?? ''} onChange={e => set('amount', e.target.value)} /></Field>
-        <Field label="Data"><Input type="date" value={f.entry_date || ''} onChange={e => set('entry_date', e.target.value)} /></Field>
+        <Field label={t('Importo (€)')}><Input type="number" value={f.amount ?? ''} onChange={e => set('amount', e.target.value)} /></Field>
+        <Field label={t('Data')}><Input type="date" value={f.entry_date || ''} onChange={e => set('entry_date', e.target.value)} /></Field>
       </div>
-      <Field label="Categoria">
+      <Field label={t('Categoria')}>
         <Select value={f.category || ''} onChange={e => set('category', e.target.value)}>
-          <option value="">— nessuna —</option>
+          <option value="">{t('— nessuna —')}</option>
           {(isIn ? ['Seduta', 'Programma', 'Consulenza', 'Altro'] : ['Attrezzatura', 'Palestra', 'Trasferte', 'Formazione', 'Tasse', 'Altro'])
-            .map(c => <option key={c} value={c}>{c}</option>)}
+            .map(c => <option key={c} value={c}>{t(c)}</option>)}
         </Select>
       </Field>
-      <Field label="Descrizione"><Input value={f.description || ''} onChange={e => set('description', e.target.value)} /></Field>
+      <Field label={t('Descrizione')}><Input value={f.description || ''} onChange={e => set('description', e.target.value)} /></Field>
     </Modal>
   )
 }
@@ -397,6 +402,7 @@ function LedgerForm({ value, uid, onClose, onSaved }: { value: Partial<CoachLedg
 function CoachCalendar({ sessions, clientName, onPick }: {
   sessions: CoachSession[]; clientName: (id?: string | null) => string; onPick: (s: CoachSession) => void
 }) {
+  const { t, lang } = useLang()
   const [cur, setCur] = useState(() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() } })
   const [sel, setSel] = useState<string | null>(null)
   const kk = (y: number, m: number, d: number) => `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
@@ -408,10 +414,10 @@ function CoachCalendar({ sessions, clientName, onPick }: {
   const cells: (number | null)[] = []
   for (let i = 0; i < startDow; i++) cells.push(null)
   for (let d = 1; d <= ndays; d++) cells.push(d)
-  const monthLabel = first.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
+  const monthLabel = first.toLocaleDateString(lang === 'en' ? 'en-GB' : 'it-IT', { month: 'long', year: 'numeric' })
   const todayK = kk(new Date().getFullYear(), new Date().getMonth(), new Date().getDate())
   const move = (delta: number) => { const d = new Date(cur.y, cur.m + delta, 1); setCur({ y: d.getFullYear(), m: d.getMonth() }); setSel(null) }
-  const dow = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom']
+  const dow = lang === 'en' ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] : ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom']
 
   return (
     <div className="card" style={{ padding: 14 }}>
@@ -443,14 +449,14 @@ function CoachCalendar({ sessions, clientName, onPick }: {
         <div style={{ marginTop: 12 }}>
           <div style={{ ...kicker, color: 'var(--text-dim)', marginBottom: 8 }}>{fmtDate(sel)}</div>
           {(byDay[sel] || []).length === 0
-            ? <div className="faint" style={{ fontSize: 13 }}>Nessun impegno in questo giorno.</div>
+            ? <div className="faint" style={{ fontSize: 13 }}>{t('Nessun impegno in questo giorno.')}</div>
             : (byDay[sel] || []).map(s => (
               <div key={s.id} className="flex between" style={{ alignItems: 'center', gap: 10, padding: '7px 0', borderTop: '1px solid var(--border)' }}>
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 13.5, fontWeight: 700 }}>{s.title || 'Seduta'}{s.start_time ? ` · ${s.start_time}` : ''}</div>
+                  <div style={{ fontSize: 13.5, fontWeight: 700 }}>{s.title || t('Seduta')}{s.start_time ? ` · ${s.start_time}` : ''}</div>
                   <div className="faint" style={{ fontSize: 12 }}>{clientName(s.client_id)}{s.location ? ` · ${s.location}` : ''}</div>
                 </div>
-                <button className="btn btn-ghost btn-sm" onClick={() => onPick(s)}>Apri</button>
+                <button className="btn btn-ghost btn-sm" onClick={() => onPick(s)}>{t('Apri')}</button>
               </div>
             ))}
         </div>

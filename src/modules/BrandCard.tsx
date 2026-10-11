@@ -5,11 +5,13 @@ import { toast } from '../lib/toast'
 import { Spinner, Field, Input, Textarea, Empty } from '../components/ui'
 import Icon from '../components/Icon'
 import type { Brand } from '../lib/types'
+import { useLang } from '../lib/i18n'
 
 // Scheda brand: il brand compila i propri dati di riferimento.
 // admin/player vedono l'elenco dei brand collegati.
 export default function BrandCard({ goto }: { goto?: (r: string) => void }) {
   const { session, profile, isBrand } = useAuth()
+  const { t } = useLang()
   const [loading, setLoading] = useState(true)
   const [brands, setBrands] = useState<Brand[]>([])
 
@@ -38,12 +40,11 @@ export default function BrandCard({ goto }: { goto?: (r: string) => void }) {
     <div className="grid" style={{ gap: 16 }}>
       <div className="card">
         <div className="faint" style={{ fontSize: 12.5 }}>
-          I brand con accesso compilano qui la propria scheda. Per dare accesso a un nuovo brand,
-          aggiungi la sua email in Impostazioni con ruolo “Brand”.
+          {t('I brand con accesso compilano qui la propria scheda. Per dare accesso a un nuovo brand, aggiungi la sua email in Impostazioni con ruolo “Brand”.')}
         </div>
       </div>
       {brands.length === 0 ? (
-        <div className="card"><Empty icon={<Icon name="award" size={30} strokeWidth={1.4} />} title="Nessun brand collegato" hint="Autorizza un'email con ruolo Brand dalle Impostazioni." /></div>
+        <div className="card"><Empty icon={<Icon name="award" size={30} strokeWidth={1.4} />} title={t("Nessun brand collegato")} hint={t("Autorizza un'email con ruolo Brand dalle Impostazioni.")} /></div>
       ) : brands.map(b => (
         <div className="card" key={b.id}>
           <div className="card-head">
@@ -69,6 +70,7 @@ export default function BrandCard({ goto }: { goto?: (r: string) => void }) {
 
 function BrandForm({ brand, ownerId, onSaved, goto }: { brand: Brand | null; ownerId: string | null; onSaved: () => void; goto?: (r: string) => void }) {
   const { profile } = useAuth()
+  const { t } = useLang()
   const [name, setName] = useState(brand?.name || '')
   const [contactName, setContactName] = useState(brand?.contact_name || profile?.full_name || '')
   const [contactRole, setContactRole] = useState(brand?.contact_role || '')
@@ -84,7 +86,7 @@ function BrandForm({ brand, ownerId, onSaved, goto }: { brand: Brand | null; own
   async function onLogo(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    if (!brand) { toast('Salva prima la scheda, poi carica il logo.', 'err'); return }
+    if (!brand) { toast(t('Salva prima la scheda, poi carica il logo.'), 'err'); return }
     setLogoBusy(true)
     const ext = (file.name.split('.').pop() || 'png').toLowerCase()
     const path = `${brand.id}/logo-${Date.now()}.${ext}`
@@ -94,12 +96,12 @@ function BrandForm({ brand, ownerId, onSaved, goto }: { brand: Brand | null; own
     const res = await supabase.from('crm_brands').update({ logo_url: url }).eq('id', brand.id)
     setLogoBusy(false)
     if (res.error) { toast(res.error.message, 'err'); return }
-    setLogoUrl(url); toast('Logo aggiornato')
+    setLogoUrl(url); toast(t('Logo aggiornato'))
     if (logoRef.current) logoRef.current.value = ''
   }
 
   async function save() {
-    if (!name.trim()) { toast('Inserisci il nome del brand.', 'err'); return }
+    if (!name.trim()) { toast(t('Inserisci il nome del brand.'), 'err'); return }
     setBusy(true)
     const payload = { name: name.trim(), contact_name: contactName || null, contact_role: contactRole || null, email: email || null, phone: phone || null, website: website || null, notes: notes || null }
     const res = brand
@@ -107,7 +109,7 @@ function BrandForm({ brand, ownerId, onSaved, goto }: { brand: Brand | null; own
       : await supabase.from('crm_brands').insert({ ...payload, owner_id: ownerId })
     setBusy(false)
     if (res.error) { toast(res.error.message, 'err'); return }
-    toast('Scheda salvata')
+    toast(t('Scheda salvata'))
     onSaved()
   }
 
@@ -116,35 +118,35 @@ function BrandForm({ brand, ownerId, onSaved, goto }: { brand: Brand | null; own
       <div className="card flex gap" style={{ alignItems: 'center', gap: 16 }}>
         <BrandLogo url={logoUrl} name={name} size={72} />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div className="ed-kicker">La tua scheda</div>
-          <div className="ed-display" style={{ fontSize: 24, marginTop: 4 }}>{name || 'Referente brand'}</div>
+          <div className="ed-kicker">{t('La tua scheda')}</div>
+          <div className="ed-display" style={{ fontSize: 24, marginTop: 4 }}>{name || t('Referente brand')}</div>
           <div className="faint" style={{ fontSize: 12.5, marginTop: 4 }}>
-            Carica il tuo logo ufficiale: comparirà nella scheda e sui contenuti che proponi.
+            {t('Carica il tuo logo ufficiale: comparirà nella scheda e sui contenuti che proponi.')}
           </div>
         </div>
         <div>
           <button className="btn btn-sm" disabled={logoBusy || !brand} onClick={() => logoRef.current?.click()}>
-            <Icon name="upload" size={13} /> {logoBusy ? 'Carico…' : logoUrl ? 'Cambia logo' : 'Carica logo'}
+            <Icon name="upload" size={13} /> {logoBusy ? t('Carico…') : logoUrl ? t('Cambia logo') : t('Carica logo')}
           </button>
           <input ref={logoRef} type="file" accept="image/png,image/jpeg,image/svg+xml,image/webp" hidden onChange={onLogo} />
         </div>
       </div>
 
       <div className="card grid" style={{ gap: 12 }}>
-        <Field label="Brand"><Input value={name} onChange={e => setName(e.target.value)} placeholder="Es. Under Armour" /></Field>
+        <Field label={t("Brand")}><Input value={name} onChange={e => setName(e.target.value)} placeholder={t("Es. Under Armour")} /></Field>
         <div className="grid g2" style={{ gap: 12 }}>
-          <Field label="Persona di riferimento"><Input value={contactName} onChange={e => setContactName(e.target.value)} placeholder="Nome e cognome" /></Field>
-          <Field label="Ruolo"><Input value={contactRole} onChange={e => setContactRole(e.target.value)} placeholder="Es. Sport Marketing Manager" /></Field>
+          <Field label={t("Persona di riferimento")}><Input value={contactName} onChange={e => setContactName(e.target.value)} placeholder={t("Nome e cognome")} /></Field>
+          <Field label={t("Ruolo")}><Input value={contactRole} onChange={e => setContactRole(e.target.value)} placeholder={t("Es. Sport Marketing Manager")} /></Field>
         </div>
         <div className="grid g2" style={{ gap: 12 }}>
-          <Field label="Email"><Input type="email" value={email} onChange={e => setEmail(e.target.value)} /></Field>
-          <Field label="Telefono"><Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+39…" /></Field>
+          <Field label={t("Email")}><Input type="email" value={email} onChange={e => setEmail(e.target.value)} /></Field>
+          <Field label={t("Telefono")}><Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+39…" /></Field>
         </div>
-        <Field label="Sito web"><Input value={website} onChange={e => setWebsite(e.target.value)} placeholder="https://…" /></Field>
-        <Field label="Note (interessi, campagne, tempistiche…)"><Textarea rows={4} value={notes} onChange={e => setNotes(e.target.value)} /></Field>
+        <Field label={t("Sito web")}><Input value={website} onChange={e => setWebsite(e.target.value)} placeholder="https://…" /></Field>
+        <Field label={t("Note (interessi, campagne, tempistiche…)")}><Textarea rows={4} value={notes} onChange={e => setNotes(e.target.value)} /></Field>
         <div className="flex gap" style={{ justifyContent: 'flex-end' }}>
-          {goto && <button className="btn" onClick={() => goto('messages')}><Icon name="message" size={14} /> Scrivi all'atleta</button>}
-          <button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? 'Salvo…' : 'Salva scheda'}</button>
+          {goto && <button className="btn" onClick={() => goto('messages')}><Icon name="message" size={14} /> {t("Scrivi all'atleta")}</button>}
+          <button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? t('Salvo…') : t('Salva scheda')}</button>
         </div>
       </div>
     </div>
@@ -152,7 +154,8 @@ function BrandForm({ brand, ownerId, onSaved, goto }: { brand: Brand | null; own
 }
 
 function Info({ k, v }: { k: string; v: any }) {
-  return <div><div className="faint" style={{ fontSize: 11 }}>{k}</div><div style={{ fontWeight: 650, fontSize: 13.5 }}>{v || '—'}</div></div>
+  const { t } = useLang()
+  return <div><div className="faint" style={{ fontSize: 11 }}>{t(k)}</div><div style={{ fontWeight: 650, fontSize: 13.5 }}>{v || '—'}</div></div>
 }
 
 // Logo del brand: mostra l'immagine se caricata, altrimenti un monogramma pulito.

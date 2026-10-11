@@ -6,6 +6,7 @@ import { Modal, Field, Input, Textarea, Select, Badge, Spinner } from '../compon
 import { undoable } from '../lib/toast'
 import { fmtDate, daysUntil } from '../lib/format'
 import type { Task } from '../lib/types'
+import { useLang } from '../lib/i18n'
 
 const COLS: { key: Task['status']; label: string }[] = [
   { key: 'todo', label: 'Da fare' }, { key: 'doing', label: 'In corso' }, { key: 'done', label: 'Completate' },
@@ -15,6 +16,7 @@ const empty = (): Partial<Task> => ({ title: '', status: 'todo', priority: 'medi
 export default function Tasks() {
   const { athleteId } = useAthlete()
   const { isAdmin, session } = useAuth()
+  const { t: tr } = useLang()
   const { rows, loading, reload, setRows } = useCollection<Task>('crm_tasks', { orderBy: 'created_at', match: { player_id: athleteId } })
   const [edit, setEdit] = useState<Partial<Task> | null>(null)
 
@@ -29,8 +31,8 @@ export default function Tasks() {
   return (
     <div className="grid" style={{ gap: 16 }}>
       <div className="flex between">
-        <div className="muted">{rows.filter(t => t.status !== 'done').length} attività aperte</div>
-        {isAdmin && <button className="btn btn-primary" onClick={() => setEdit(empty())}>+ Nuova task</button>}
+        <div className="muted">{tr('{n} attività aperte').replace('{n}', String(rows.filter(t => t.status !== 'done').length))}</div>
+        {isAdmin && <button className="btn btn-primary" onClick={() => setEdit(empty())}>{tr('+ Nuova task')}</button>}
       </div>
 
       <div className="grid g3" style={{ alignItems: 'start' }}>
@@ -39,7 +41,7 @@ export default function Tasks() {
           return (
             <div className="card" key={col.key} style={{ background: 'var(--bg-2)' }}>
               <div className="card-head">
-                <div className="card-title">{col.label}</div>
+                <div className="card-title">{tr(col.label)}</div>
                 <span className="badge">{items.length}</span>
               </div>
               <div className="grid" style={{ gap: 10 }}>
@@ -53,16 +55,16 @@ export default function Tasks() {
                       </div>
                       {t.description && <div className="row-sub" style={{ marginTop: 4 }}>{t.description}</div>}
                       <div className="flex gap wrap" style={{ marginTop: 9 }}>
-                        <Badge tone={t.assignee === 'player' ? 'accent' : 'blue'}>{t.assignee === 'player' ? 'Giocatore' : 'AUVI'}</Badge>
+                        <Badge tone={t.assignee === 'player' ? 'accent' : 'blue'}>{t.assignee === 'player' ? tr('Giocatore') : 'AUVI'}</Badge>
                         {t.due_date && <Badge tone={d != null && d < 0 ? 'red' : d != null && d < 3 ? 'gold' : undefined}>{fmtDate(t.due_date)}</Badge>}
                       </div>
                       {canMove(t) && (
                         <div className="flex gap" style={{ marginTop: 10 }}>
                           {col.key !== 'todo' && <button className="btn btn-ghost btn-sm" onClick={() => move(t, col.key === 'done' ? 'doing' : 'todo')}>←</button>}
-                          {col.key !== 'done' && <button className="btn btn-sm" onClick={() => move(t, col.key === 'todo' ? 'doing' : 'done')} style={{ flex: 1 }}>{col.key === 'todo' ? 'Avvia' : 'Completa'} →</button>}
-                          {isAdmin && <><button className="btn btn-ghost btn-sm" onClick={() => setEdit(t)}>✎</button><button className="btn btn-danger btn-sm" aria-label="Elimina task" onClick={() => {
+                          {col.key !== 'done' && <button className="btn btn-sm" onClick={() => move(t, col.key === 'todo' ? 'doing' : 'done')} style={{ flex: 1 }}>{col.key === 'todo' ? tr('Avvia') : tr('Completa')} →</button>}
+                          {isAdmin && <><button className="btn btn-ghost btn-sm" onClick={() => setEdit(t)}>✎</button><button className="btn btn-danger btn-sm" aria-label={tr('Elimina task')} onClick={() => {
                             setRows(rs => rs.filter(x => x.id !== t.id))
-                            undoable('Task eliminata', () => deleteRow('crm_tasks', t.id), reload)
+                            undoable(tr('Task eliminata'), () => deleteRow('crm_tasks', t.id), reload)
                           }}>×</button></>}
                         </div>
                       )}
@@ -83,6 +85,7 @@ export default function Tasks() {
 
 function TaskForm({ value, uid, onClose, onSaved }: { value: Partial<Task>; uid?: string; onClose: () => void; onSaved: () => void }) {
   const { athleteId } = useAthlete()
+  const { t } = useLang()
   const [f, setF] = useState<Partial<Task>>(value)
   const [busy, setBusy] = useState(false)
   const set = (k: keyof Task, v: any) => setF(p => ({ ...p, [k]: v }))
@@ -99,20 +102,20 @@ function TaskForm({ value, uid, onClose, onSaved }: { value: Partial<Task>; uid?
   }
 
   return (
-    <Modal title={f.id ? 'Modifica task' : 'Nuova task'} onClose={onClose}
+    <Modal title={f.id ? t('Modifica task') : t('Nuova task')} onClose={onClose}
       footer={<>
-        <button className="btn btn-ghost" onClick={onClose}>Annulla</button>
-        <button className="btn btn-primary" disabled={busy || !f.title} onClick={save}>{busy ? 'Salvo…' : 'Salva'}</button>
+        <button className="btn btn-ghost" onClick={onClose}>{t('Annulla')}</button>
+        <button className="btn btn-primary" disabled={busy || !f.title} onClick={save}>{busy ? t('Salvo…') : t('Salva')}</button>
       </>}>
-      <Field label="Titolo"><Input value={f.title || ''} onChange={e => set('title', e.target.value)} /></Field>
-      <Field label="Descrizione"><Textarea value={f.description || ''} onChange={e => set('description', e.target.value)} /></Field>
+      <Field label={t('Titolo')}><Input value={f.title || ''} onChange={e => set('title', e.target.value)} /></Field>
+      <Field label={t('Descrizione')}><Textarea value={f.description || ''} onChange={e => set('description', e.target.value)} /></Field>
       <div className="row2">
-        <Field label="Assegnata a"><Select value={f.assignee} onChange={e => set('assignee', e.target.value)}><option value="auvi">AUVI</option><option value="player">Giocatore</option></Select></Field>
-        <Field label="Priorità"><Select value={f.priority} onChange={e => set('priority', e.target.value)}><option value="low">Bassa</option><option value="medium">Media</option><option value="high">Alta</option></Select></Field>
+        <Field label={t('Assegnata a')}><Select value={f.assignee} onChange={e => set('assignee', e.target.value)}><option value="auvi">AUVI</option><option value="player">{t('Giocatore')}</option></Select></Field>
+        <Field label={t('Priorità')}><Select value={f.priority} onChange={e => set('priority', e.target.value)}><option value="low">{t('Bassa')}</option><option value="medium">{t('Media')}</option><option value="high">{t('Alta')}</option></Select></Field>
       </div>
       <div className="row2">
-        <Field label="Stato"><Select value={f.status} onChange={e => set('status', e.target.value)}><option value="todo">Da fare</option><option value="doing">In corso</option><option value="done">Completata</option></Select></Field>
-        <Field label="Scadenza"><Input type="date" value={f.due_date || ''} onChange={e => set('due_date', e.target.value)} /></Field>
+        <Field label={t('Stato')}><Select value={f.status} onChange={e => set('status', e.target.value)}><option value="todo">{t('Da fare')}</option><option value="doing">{t('In corso')}</option><option value="done">{t('Completata')}</option></Select></Field>
+        <Field label={t('Scadenza')}><Input type="date" value={f.due_date || ''} onChange={e => set('due_date', e.target.value)} /></Field>
       </div>
     </Modal>
   )

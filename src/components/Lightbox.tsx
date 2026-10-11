@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
+import { useLang } from '../lib/i18n'
 
 export interface LightboxItem {
   id: string
@@ -17,6 +18,7 @@ export default function Lightbox({ items, index, onIndex, onClose, actions }: {
   onClose: () => void
   actions?: (item: LightboxItem) => React.ReactNode
 }) {
+  const { t } = useLang()
   const item = items[index]
   const [dx, setDx] = useState(0)
   const touch = useRef<{ x: number; y: number } | null>(null)
@@ -57,7 +59,7 @@ export default function Lightbox({ items, index, onIndex, onClose, actions }: {
       <div className="lightbox-top" onClick={e => e.stopPropagation()}>
         <span className="lightbox-count">{index + 1} / {items.length}</span>
         <span className="lightbox-name">{item.name}</span>
-        <button className="lightbox-x" onClick={onClose}>×</button>
+        <button className="lightbox-x" onClick={onClose} aria-label={t('Chiudi')}>×</button>
       </div>
 
       {items.length > 1 && <button className="lightbox-arrow lightbox-l" onClick={e => { e.stopPropagation(); prev() }}>‹</button>}
@@ -68,7 +70,7 @@ export default function Lightbox({ items, index, onIndex, onClose, actions }: {
           : item.url
           ? <img src={item.url} alt={item.name || ''} onClick={e => e.stopPropagation()}
               style={{ transform: dx ? `translateX(${dx}px)` : undefined, transition: dx ? 'none' : 'transform .2s' }} />
-          : <div className="lightbox-ph">Anteprima non disponibile</div>}
+          : <div className="lightbox-ph">{t('Anteprima non disponibile')}</div>}
       </div>
       {items.length > 1 && <button className="lightbox-arrow lightbox-r" onClick={e => { e.stopPropagation(); next() }}>›</button>}
 

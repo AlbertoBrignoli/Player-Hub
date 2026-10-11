@@ -77,10 +77,10 @@ export default function InsuranceDocuments() {
       <div className="grid" style={{ gap: 16 }}>
         <div className="card">
           <div style={{ fontSize: 11, letterSpacing: 1.4, textTransform: 'uppercase', fontWeight: 800, color: ACCENT }}>{t('Documenti')}</div>
-          <div className="faint" style={{ fontSize: 12.5, marginTop: 2 }}>Una cartella per ogni tuo atleta. Solo i tuoi documenti assicurativi.</div>
+          <div className="faint" style={{ fontSize: 12.5, marginTop: 2 }}>{t('Una cartella per ogni tuo atleta. Solo i tuoi documenti assicurativi.')}</div>
         </div>
         {athletes.length === 0 ? (
-          <div className="card"><Empty icon={<Icon name="folder" size={30} strokeWidth={1.4} />} title={t("Nessun atleta")} hint="Quando vieni collegato a un atleta, comparirà qui." /></div>
+          <div className="card"><Empty icon={<Icon name="folder" size={30} strokeWidth={1.4} />} title={t("Nessun atleta")} hint={t('Quando vieni collegato a un atleta, comparirà qui.')} /></div>
         ) : (
           <div className="grid" style={{ gap: 10 }}>
             {athletes.map(a => (
@@ -109,7 +109,7 @@ export default function InsuranceDocuments() {
       {/* breadcrumb */}
       <div className="card flex between wrap gap" style={{ alignItems: 'center' }}>
         <div className="flex gap" style={{ alignItems: 'center', gap: 6, flexWrap: 'wrap', fontSize: 13.5 }}>
-          <button className="btn btn-ghost btn-sm" onClick={() => { setAtleta(null); setStack([]) }}><Icon name="folder" size={13} /> Atleti</button>
+          <button className="btn btn-ghost btn-sm" onClick={() => { setAtleta(null); setStack([]) }}><Icon name="folder" size={13} /> {t('Atleti')}</button>
           <span className="faint">/</span>
           <button className="btn btn-ghost btn-sm" onClick={() => setStack([])} style={{ fontWeight: stack.length ? 400 : 800 }}>{atleta.name}</button>
           {stack.map((s, i) => (
@@ -121,13 +121,13 @@ export default function InsuranceDocuments() {
           ))}
         </div>
         <div className="flex gap" style={{ gap: 8 }}>
-          <button className="btn btn-sm" onClick={() => setNewFolderOpen(true)}><Icon name="folder" size={13} /> Nuova cartella</button>
-          <button className="btn btn-primary btn-sm" onClick={() => setUploadOpen(true)}><Icon name="upload" size={13} /> Carica file</button>
+          <button className="btn btn-sm" onClick={() => setNewFolderOpen(true)}><Icon name="folder" size={13} /> {t('Nuova cartella')}</button>
+          <button className="btn btn-primary btn-sm" onClick={() => setUploadOpen(true)}><Icon name="upload" size={13} /> {t('Carica file')}</button>
         </div>
       </div>
 
       {loading ? <Spinner /> : (folders.length === 0 && files.length === 0) ? (
-        <div className="card"><Empty icon={<Icon name="folder" size={30} strokeWidth={1.4} />} title={t("Cartella vuota")} hint="Crea una sottocartella o carica un documento." /></div>
+        <div className="card"><Empty icon={<Icon name="folder" size={30} strokeWidth={1.4} />} title={t("Cartella vuota")} hint={t('Crea una sottocartella o carica un documento.')} /></div>
       ) : (
         <div className="card">
           <div className="list">
@@ -151,7 +151,7 @@ export default function InsuranceDocuments() {
                   <div className="row-sub">{humanSize(d.size)} · {fmtDate(d.created_at)}</div>
                 </div>
                 <button className="btn btn-sm" onClick={() => openFile(d)}>{t('Apri')}</button>
-                <ConfirmButton onConfirm={() => delFile(d)}>Elimina</ConfirmButton>
+                <ConfirmButton onConfirm={() => delFile(d)}>{t('Elimina')}</ConfirmButton>
               </div>
             ))}
           </div>
@@ -221,14 +221,14 @@ function UploadDialog({ onClose, onDone, playerId, folderId, uid }: {
       ok++
     }
     setBusy(false)
-    if (ok) { toast(`${ok} file caricat${ok > 1 ? 'i' : 'o'}${scadenza ? ' · scadenza aggiunta' : ''}`); onDone() }
+    if (ok) { toast((ok > 1 ? t('{n} file caricati') : t('{n} file caricato')).replace('{n}', String(ok)) + (scadenza ? ' · ' + t('scadenza aggiunta') : '')); onDone() }
   }
 
   return (
     <Modal title={t("Carica documento")} onClose={onClose}
       footer={<div className="flex gap" style={{ marginLeft: 'auto' }}>
-        <button className="btn" onClick={onClose}>Annulla</button>
-        <button className="btn btn-primary" disabled={busy || !files.length} onClick={carica}>{busy ? 'Carico…' : 'Carica'}</button>
+        <button className="btn" onClick={onClose}>{t('Annulla')}</button>
+        <button className="btn btn-primary" disabled={busy || !files.length} onClick={carica}>{busy ? t('Carico…') : t('Carica')}</button>
       </div>}>
       <div className="grid" style={{ gap: 14 }}>
         <Field label={t("File (puoi selezionarne più di uno)")}>
@@ -236,7 +236,7 @@ function UploadDialog({ onClose, onDone, playerId, folderId, uid }: {
             onChange={e => setFiles(Array.from(e.target.files || []))}
             style={{ fontSize: 13 }} />
         </Field>
-        {files.length > 0 && <div className="faint" style={{ fontSize: 12 }}>{files.length} file selezionat{files.length > 1 ? 'i' : 'o'}</div>}
+        {files.length > 0 && <div className="faint" style={{ fontSize: 12 }}>{(files.length > 1 ? t('{n} file selezionati') : t('{n} file selezionato')).replace('{n}', String(files.length))}</div>}
         <Field label={t("Data scadenza (facoltativa) — finisce nell'area Scadenze")}>
           <Input type="date" value={scadenza} onChange={e => setScadenza(e.target.value)} />
         </Field>

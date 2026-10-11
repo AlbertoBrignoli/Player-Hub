@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { ToastAction } from '../lib/toast'
+import { useLang } from '../lib/i18n'
 
 interface T { id: number; msg: string; kind: 'ok' | 'err'; action?: ToastAction; leaving?: boolean }
 
@@ -7,6 +8,7 @@ interface T { id: number; msg: string; kind: 'ok' | 'err'; action?: ToastAction;
 // conferme non bloccanti sopra la tab bar. I toast con azione (Annulla)
 // restano visibili più a lungo, quanto la finestra di annullamento.
 export default function Toaster() {
+  const { t: tr } = useLang()
   const [items, setItems] = useState<T[]>([])
 
   useEffect(() => {
@@ -26,12 +28,12 @@ export default function Toaster() {
     <div className="toaster" role="status" aria-live="polite">
       {items.map(t => (
         <div key={t.id} className={`toast ${t.kind === 'err' ? 'toast-err' : ''} ${t.leaving ? 'toast-out' : ''}`}>
-          <span>{t.msg}</span>
+          <span>{tr(t.msg)}</span>
           {t.action && (
             <button className="toast-action" onClick={() => {
               t.action!.onClick()
               setItems(prev => prev.filter(x => x.id !== t.id))
-            }}>{t.action.label}</button>
+            }}>{tr(t.action.label)}</button>
           )}
         </div>
       ))}

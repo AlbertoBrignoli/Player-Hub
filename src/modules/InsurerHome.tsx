@@ -53,7 +53,7 @@ export default function InsurerHome({ goto }: { goto?: (r: string) => void }) {
       const nm: Record<number, string> = {}
       ;((matches.data as any[]) || []).forEach(m => {
         if (m.player_id && !nm[m.player_id]) {
-          nm[m.player_id] = `${fmtDate(m.match_date)} · ${m.opponent || ''}${m.venue === 'away' ? ' (T)' : ''}`.trim()
+          nm[m.player_id] = `${fmtDate(m.match_date)} · ${m.opponent || ''}${m.venue === 'away' ? ' ' + t('(T)') : ''}`.trim()
         }
       })
       setMe(prof.data || {})
@@ -71,7 +71,7 @@ export default function InsurerHome({ goto }: { goto?: (r: string) => void }) {
 
   if (loading) return <Spinner />
 
-  const nome = me.name || 'Il mio profilo'
+  const nome = me.name || t('Il mio profilo')
 
   return (
     <div className="grid" style={{ gap: 20 }}>
@@ -86,10 +86,10 @@ export default function InsurerHome({ goto }: { goto?: (r: string) => void }) {
                 {nome.slice(0, 1)}
               </div>}
           <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ ...kicker, color: ACCENT }}>Assicuratore</div>
+            <div style={{ ...kicker, color: ACCENT }}>{t('Assicuratore')}</div>
             <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: -0.4, marginTop: 2 }}>{nome}</div>
             <div className="faint" style={{ fontSize: 12.5, marginTop: 2 }}>
-              {[me.title, me.agency_name].filter(Boolean).join(' · ') || 'Completa il tuo profilo'}
+              {[me.title, me.agency_name].filter(Boolean).join(' · ') || t('Completa il tuo profilo')}
             </div>
           </div>
           {me.agency_logo_url && (
@@ -99,7 +99,7 @@ export default function InsurerHome({ goto }: { goto?: (r: string) => void }) {
           )}
           {goto && (
             <button className="btn btn-sm" onClick={() => goto('insurer-profile')}>
-              <Icon name="edit" size={13} /> Il mio profilo
+              <Icon name="edit" size={13} /> {t('Il mio profilo')}
             </button>
           )}
         </div>
@@ -119,7 +119,7 @@ export default function InsurerHome({ goto }: { goto?: (r: string) => void }) {
             <span style={{ ...kicker, color: 'var(--text)' }}>{t('Atleti seguiti')}</span>
           </div>
           <span className="faint" style={{ fontSize: 12 }}>
-            {rows.length} {rows.length === 1 ? 'atleta' : 'atleti'}
+            {(rows.length === 1 ? t('{n} atleta') : t('{n} atleti')).replace('{n}', String(rows.length))}
           </span>
         </div>
 
@@ -147,7 +147,7 @@ export default function InsurerHome({ goto }: { goto?: (r: string) => void }) {
                     <div style={{ minWidth: 0 }}>
                       <div style={{ fontSize: 16, fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</div>
                       <div className="faint" style={{ fontSize: 12 }}>
-                        {[a.position, a.team_name].filter(Boolean).join(' · ') || 'Atleta'}
+                        {[a.position, a.team_name].filter(Boolean).join(' · ') || t('Atleta')}
                       </div>
                       {nextMatch[a.api_player_id] && (
                         <div className="faint" style={{ fontSize: 11.5, marginTop: 3 }}>
@@ -161,14 +161,14 @@ export default function InsurerHome({ goto }: { goto?: (r: string) => void }) {
                   <div style={{ marginTop: 13, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
                     <button className="btn btn-sm" style={{ width: '100%', justifyContent: 'center', background: 'var(--yellow)', color: 'var(--ink)', fontWeight: 800, border: 'none' }}
                       onClick={e => { e.stopPropagation(); openAthlete(a.api_player_id) }}>
-                      Apri assicurazioni →
+                      {t('Apri assicurazioni →')}
                     </button>
                     <div className="flex gap" style={{ marginTop: 8, flexWrap: 'wrap' }}>
                       <button className="btn btn-ghost btn-sm" onClick={e => { e.stopPropagation(); openAthlete(a.api_player_id, 'agenda') }}>
-                        <Icon name="clock" size={12} /> Scadenze
+                        <Icon name="clock" size={12} /> {t('Scadenze')}
                       </button>
                       <button className="btn btn-ghost btn-sm" onClick={e => { e.stopPropagation(); openAthlete(a.api_player_id, 'messages') }}>
-                        <Icon name="message" size={12} /> Scrivi
+                        <Icon name="message" size={12} /> {t('Scrivi')}
                       </button>
                     </div>
                   </div>

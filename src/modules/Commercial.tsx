@@ -36,6 +36,7 @@ const OPP_STATUS: Record<string, { label: string; tone?: 'green' | 'red' | 'gold
   completata: { label: 'Completata', tone: 'green' },
   non_accettata: { label: 'Non accettata', tone: 'red' },
 }
+const collabStatusLabel = (s: string) => ({ attiva: 'Attiva', completata: 'Completata', annullata: 'Annullata' } as Record<string, string>)[s] || s
 const fmtN = (n: any) => (n == null || n === '' ? '—' : Number(n).toLocaleString('it-IT'))
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -240,10 +241,10 @@ function Overview({ score, snaps }: any) {
           <ScoreRing value={score.total} />
           <div>
             <div className="faint" style={{ fontSize: 11, letterSpacing: '.08em', textTransform: 'uppercase' }}>{tr('Commercial Score')}</div>
-            <div style={{ fontWeight: 700, fontSize: 16, margin: '4px 0 10px' }}>{score.level}</div>
+            <div style={{ fontWeight: 700, fontSize: 16, margin: '4px 0 10px' }}>{tr(score.level)}</div>
             <div className="flex gap" style={{ flexWrap: 'wrap' }}>
-              <TrendPill delta={trendOf(snaps, score.total, 30)} label="30gg" />
-              <TrendPill delta={trendOf(snaps, score.total, 90)} label="90gg" />
+              <TrendPill delta={trendOf(snaps, score.total, 30)} label={tr('30gg')} />
+              <TrendPill delta={trendOf(snaps, score.total, 90)} label={tr('90gg')} />
             </div>
           </div>
         </div>
@@ -252,9 +253,9 @@ function Overview({ score, snaps }: any) {
         <div className="faint" style={{ fontSize: 11, letterSpacing: '.08em', textTransform: 'uppercase' }}>{tr('Valore commerciale indicativo')}</div>
         <div style={{ fontFamily: 'var(--font-display)', fontSize: 30, fontWeight: 700, margin: '8px 0 2px' }}>
           {fmtMoney(score.valueLo)} – {fmtMoney(score.valueHi)}
-          <span className="muted" style={{ fontSize: 14, fontFamily: 'var(--font)', fontWeight: 500 }}> /anno</span>
+          <span className="muted" style={{ fontSize: 14, fontFamily: 'var(--font)', fontWeight: 500 }}> {tr('/anno')}</span>
         </div>
-        <div className="faint" style={{ fontSize: 11.5, lineHeight: 1.55, marginTop: 8 }}>{DISCLAIMER}</div>
+        <div className="faint" style={{ fontSize: 11.5, lineHeight: 1.55, marginTop: 8 }}>{tr(DISCLAIMER)}</div>
       </div>
     </div>
   )
@@ -276,10 +277,10 @@ function Recos({ score, recos, goto }: any) {
         <div key={i} className="flex gap" style={{ alignItems: 'center', padding: '10px 0', borderBottom: i < recos.length - 1 ? '1px solid var(--border)' : 'none' }}>
           <Badge tone="gold">+{r.impact} pt</Badge>
           <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 600, fontSize: 13.5 }}>{r.title}</div>
-            <div className="faint" style={{ fontSize: 12 }}>{r.cta}</div>
+            <div style={{ fontWeight: 600, fontSize: 13.5 }}>{tr(r.title)}</div>
+            <div className="faint" style={{ fontSize: 12 }}>{tr(r.cta)}</div>
           </div>
-          <span className="faint" style={{ fontSize: 11, textTransform: 'uppercase', color: r.priority === 'alta' ? 'var(--red)' : r.priority === 'media' ? 'var(--gold)' : undefined }}>{r.priority}</span>
+          <span className="faint" style={{ fontSize: 11, textTransform: 'uppercase', color: r.priority === 'alta' ? 'var(--red)' : r.priority === 'media' ? 'var(--gold)' : undefined }}>{tr(r.priority)}</span>
           {r.section !== 'valore' && <button className="btn btn-sm" onClick={() => goto(r.section)}>{tr('Vai')}</button>}
         </div>
       ))}
@@ -289,11 +290,12 @@ function Recos({ score, recos, goto }: any) {
 
 // ── VALORE: componenti del punteggio ──────────────────────────────────────────
 function Valore({ score, snaps, relBand }: any) {
+  const { t: tr } = useLang()
   const [open, setOpen] = useState<string | null>(null)
   const relLabel = relBand === null ? null : relBand >= 90 ? 'Ottima' : relBand >= 75 ? 'Molto buona' : relBand >= 60 ? 'Buona' : 'In costruzione'
   return (
     <div className="card">
-      <div className="faint" style={{ fontSize: 12, marginBottom: 4 }}>Tocca un'area per vedere i dati usati. Pesi definiti da {AGENCY_NAME}.</div>
+      <div className="faint" style={{ fontSize: 12, marginBottom: 4 }}>{tr("Tocca un'area per vedere i dati usati. Pesi definiti da {agency}.").replace('{agency}', AGENCY_NAME)}</div>
       {COMP_META.map(m => {
         const c = score.components[m.key]
         const isOpen = open === m.key
@@ -307,8 +309,8 @@ function Valore({ score, snaps, relBand }: any) {
             <div className="flex gap" style={{ alignItems: 'center', padding: '11px 0', cursor: 'pointer' }} onClick={() => setOpen(isOpen ? null : m.key)}>
               <span style={{ color: 'var(--text-dim)', width: 22 }}><Icon name={m.icon} size={17} /></span>
               <div style={{ width: 200 }}>
-                <div style={{ fontWeight: 600, fontSize: 13.5 }}>{m.label}</div>
-                <div className="faint" style={{ fontSize: 11 }}>peso {c.weight}%{delta30 ? ` · ${delta30 > 0 ? '+' : ''}${delta30} (30gg)` : ''}</div>
+                <div style={{ fontWeight: 600, fontSize: 13.5 }}>{tr(m.label)}</div>
+                <div className="faint" style={{ fontSize: 11 }}>{tr('peso {n}%').replace('{n}', String(c.weight))}{delta30 ? ` · ${delta30 > 0 ? '+' : ''}${delta30} (${tr('30gg')})` : ''}</div>
               </div>
               <div className="bar" style={{ flex: 1 }}><span style={{ width: `${c.score}%` }} /></div>
               <div style={{ width: 36, textAlign: 'right', fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700 }}>{c.score}</div>
@@ -316,14 +318,14 @@ function Valore({ score, snaps, relBand }: any) {
             </div>
             {isOpen && (
               <div style={{ margin: '0 0 12px 34px', background: 'var(--surface)', borderRadius: 'var(--radius-sm)', padding: '12px 14px' }}>
-                {m.key === 'reputation' && relLabel && <div style={{ fontSize: 13, marginBottom: 8 }}>Affidabilità: <b style={{ color: 'var(--green)' }}>{relLabel}</b></div>}
+                {m.key === 'reputation' && relLabel && <div style={{ fontSize: 13, marginBottom: 8 }}>{tr('Affidabilità:')} <b style={{ color: 'var(--green)' }}>{tr(relLabel)}</b></div>}
                 {c.factors.map((f: any, i: number) => (
                   <div key={i} className="flex between" style={{ fontSize: 12.5, padding: '3px 0' }}>
-                    <span className="muted">{f.label}{f.note ? <span className="faint"> — {f.note}</span> : null}</span>
+                    <span className="muted">{tr(f.label)}{f.note ? <span className="faint"> — {f.note}</span> : null}</span>
                     <b>{f.val}</b>
                   </div>
                 ))}
-                {c.missing.length > 0 && <div style={{ marginTop: 8, fontSize: 12, color: 'var(--gold)' }}>Dati mancanti: {c.missing.join(', ')}</div>}
+                {c.missing.length > 0 && <div style={{ marginTop: 8, fontSize: 12, color: 'var(--gold)' }}>{tr('Dati mancanti:')} {c.missing.map((x: string) => tr(x)).join(', ')}</div>}
               </div>
             )}
           </div>
@@ -387,8 +389,8 @@ function MediaKitTab({ player, prof, topFits, collabs, cats, saveProf }: any) {
       <div className="faint" style={{ fontSize: 12, marginBottom: 14 }}>{tr('Si aggiorna da solo con i dati del profilo.')}</div>
       <div className="row2">
         <Field label={tr("Versione")}><Select value={version} onChange={e => setVersion(e.target.value as any)}>
-          <option value="completo">Completa — numeri e dettagli (uso interno / su richiesta)</option>
-          <option value="teaser">Teaser — per incuriosire il brand (senza numeri sensibili)</option>
+          <option value="completo">{tr('Completa — numeri e dettagli (uso interno / su richiesta)')}</option>
+          <option value="teaser">{tr('Teaser — per incuriosire il brand (senza numeri sensibili)')}</option>
         </Select></Field>
         <Field label={tr("Lingua")}><Select value={lang} onChange={e => setLang(e.target.value)}><option value="it">Italiano</option><option value="en">English</option></Select></Field>
       </div>
@@ -399,13 +401,13 @@ function MediaKitTab({ player, prof, topFits, collabs, cats, saveProf }: any) {
         </Select></Field>
         <div />
       </div>
-      {version === 'teaser' && <div className="faint" style={{ fontSize: 11.5, marginBottom: 10 }}>Il teaser mostra fascia follower, categorie affini e highlights — niente engagement, reach, demografia o storico campagne.</div>}
+      {version === 'teaser' && <div className="faint" style={{ fontSize: 11.5, marginBottom: 10 }}>{tr('Il teaser mostra fascia follower, categorie affini e highlights — niente engagement, reach, demografia o storico campagne.')}</div>}
       <div className="flex gap">
         <button className="btn btn-primary" disabled={busy} onClick={gen}>
-          <Icon name="download" size={15} /> {busy ? tr('Generazione…') : done ? 'PDF scaricato' : `Genera PDF ${version === 'teaser' ? 'teaser' : 'completo'}`}
+          <Icon name="download" size={15} /> {busy ? tr('Generazione…') : done ? tr('PDF scaricato') : version === 'teaser' ? tr('Genera PDF teaser') : tr('Genera PDF completo')}
         </button>
       </div>
-      {prof?.media_kit?.generated_at && <div className="faint" style={{ fontSize: 11.5, marginTop: 10 }}>Ultimo aggiornamento: {fmtDateTime(prof.media_kit.generated_at)}</div>}
+      {prof?.media_kit?.generated_at && <div className="faint" style={{ fontSize: 11.5, marginTop: 10 }}>{tr('Ultimo aggiornamento: {date}').replace('{date}', fmtDateTime(prof.media_kit.generated_at))}</div>}
     </div>
     {isAdmin && <TeaserAdminCard player={player} prof={prof} topFits={topFits} />}
 
@@ -416,7 +418,7 @@ function MediaKitTab({ player, prof, topFits, collabs, cats, saveProf }: any) {
         {player?.photo_url && <img src={player.photo_url} alt="" style={{ width: 56, height: 56, borderRadius: 14, objectFit: 'cover', border: '1px solid var(--border)' }} />}
         <div>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700 }}>{player?.name}</div>
-          <div className="muted" style={{ fontSize: 12.5 }}>{player?.team_name} · {player?.position}{player?.age ? ` · ${player.age} anni` : ''}</div>
+          <div className="muted" style={{ fontSize: 12.5 }}>{player?.team_name} · {player?.position}{player?.age ? ` · ${tr('{n} anni').replace('{n}', String(player.age))}` : ''}</div>
         </div>
       </div>
       <div className="grid g3" style={{ marginBottom: 14 }}>
@@ -426,18 +428,18 @@ function MediaKitTab({ player, prof, topFits, collabs, cats, saveProf }: any) {
       </div>
       {(prof?.identity?.values || []).length > 0 && (
         <div style={{ marginBottom: 12 }}>
-          <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 6 }}>Valori</div>
-          <div className="flex gap" style={{ flexWrap: 'wrap' }}>{prof.identity.values.map((v: string) => <Badge key={v}>{v}</Badge>)}</div>
+          <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 6 }}>{tr('Valori')}</div>
+          <div className="flex gap" style={{ flexWrap: 'wrap' }}>{prof.identity.values.map((v: string) => <Badge key={v}>{tr(v)}</Badge>)}</div>
         </div>
       )}
       {avail.length > 0 && (
         <div style={{ marginBottom: 12 }}>
-          <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 6 }}>Formati disponibili</div>
-          <div className="muted" style={{ fontSize: 12.5 }}>{avail.join(' · ')}</div>
+          <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 6 }}>{tr('Formati disponibili')}</div>
+          <div className="muted" style={{ fontSize: 12.5 }}>{avail.map((a: string) => tr(a)).join(' · ')}</div>
         </div>
       )}
       <div>
-        <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 6 }}>Top categorie</div>
+        <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 6 }}>{tr('Top categorie')}</div>
         <div className="flex gap" style={{ flexWrap: 'wrap' }}>{topFits.slice(0, 4).map((f: any) => <Badge key={f.key} tone="accent">{f.name} {f.pct}%</Badge>)}</div>
       </div>
     </div>
@@ -573,7 +575,7 @@ function Opportunita({ opps, cats, role, userName, reload }: any) {
   const { t: tr } = useLang()
   const [sel, setSel] = useState<any>(null)
   return (<>
-    {opps.length === 0 && <div className="card"><Empty icon={<Icon name="briefcase" size={30} strokeWidth={1.4} />} title="Nessuna opportunità al momento" hint="Quando AUVI riceverà proposte commerciali compatibili con il tuo profilo, le troverai qui." /></div>}
+    {opps.length === 0 && <div className="card"><Empty icon={<Icon name="briefcase" size={30} strokeWidth={1.4} />} title={tr("Nessuna opportunità al momento")} hint={tr("Quando AUVI riceverà proposte commerciali compatibili con il tuo profilo, le troverai qui.")} /></div>}
     <div className="grid g2">
       {opps.map((o: any) => (
         <div key={o.id} className="card" style={{ cursor: 'pointer' }} onClick={() => setSel(o)}>
@@ -582,7 +584,7 @@ function Opportunita({ opps, cats, role, userName, reload }: any) {
               <div style={{ fontWeight: 700, fontSize: 15 }}>{o.brand_name}</div>
               <div className="muted" style={{ fontSize: 12.5 }}>
                 {cats.find((c: any) => c.key === o.category_key)?.name || ''}
-                {o.deadline ? ` · scade ${fmtDate(o.deadline)}` : ''}
+                {o.deadline ? ` · ${tr('scade {date}').replace('{date}', fmtDate(o.deadline))}` : ''}
               </div>
             </div>
             <Badge tone={OPP_STATUS[o.status]?.tone}>{tr(OPP_STATUS[o.status]?.label || o.status)}</Badge>
@@ -638,7 +640,7 @@ function OppModal({ opp, cats, role, userName, onClose, reload }: any) {
       {opp.materials_requested?.length > 0 && row(tr('Materiali richiesti'), opp.materials_requested.join(' · '))}
       {opp.athlete_response && (
         <div className="card" style={{ padding: 12, marginBottom: 12 }}>
-          <span className="muted" style={{ fontSize: 12.5 }}>Risposta dell'atleta: </span>
+          <span className="muted" style={{ fontSize: 12.5 }}>{tr("Risposta dell'atleta:")} </span>
           <b style={{ color: opp.athlete_response === 'interesse' ? 'var(--green)' : opp.athlete_response === 'rifiuto' ? 'var(--red)' : 'var(--blue)' }}>
             {opp.athlete_response === 'interesse' ? tr('Interesse confermato') : opp.athlete_response === 'rifiuto' ? tr('Non interessato') : tr('Richiesta informazioni')}
           </b>
@@ -647,7 +649,7 @@ function OppModal({ opp, cats, role, userName, onClose, reload }: any) {
       )}
       {events.length > 0 && (
         <div style={{ marginBottom: 14 }}>
-          <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 6 }}>Timeline</div>
+          <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 6 }}>{tr('Timeline')}</div>
           {events.map((e, i) => (
             <div key={i} className="flex gap" style={{ fontSize: 12.5, padding: '4px 0' }}>
               <span className="faint" style={{ width: 78, flexShrink: 0 }}>{fmtDate(e.created_at)}</span>
@@ -658,16 +660,16 @@ function OppModal({ opp, cats, role, userName, onClose, reload }: any) {
       )}
       {canRespond && (
         <div style={{ borderTop: '1px solid var(--border)', paddingTop: 14 }}>
-          <Field label="Nota o disponibilità (facoltativa)"><Textarea rows={2} value={note} onChange={e => setNote(e.target.value)} /></Field>
+          <Field label={tr("Nota o disponibilità (facoltativa)")}><Textarea rows={2} value={note} onChange={e => setNote(e.target.value)} /></Field>
           <div className="flex gap" style={{ flexWrap: 'wrap' }}>
-            <button className="btn btn-primary" disabled={busy} onClick={() => act('interesse', 'interesse_confermato', "Ha espresso interesse per l'opportunità")}>Mi interessa</button>
-            <button className="btn" disabled={busy} onClick={() => setAskInfo(!askInfo)}>Chiedi informazioni</button>
-            <button className="btn btn-danger" disabled={busy} onClick={() => act('rifiuto', 'non_accettata', "Ha declinato l'opportunità")}>Non mi interessa</button>
+            <button className="btn btn-primary" disabled={busy} onClick={() => act('interesse', 'interesse_confermato', "Ha espresso interesse per l'opportunità")}>{tr('Mi interessa')}</button>
+            <button className="btn" disabled={busy} onClick={() => setAskInfo(!askInfo)}>{tr('Chiedi informazioni')}</button>
+            <button className="btn btn-danger" disabled={busy} onClick={() => act('rifiuto', 'non_accettata', "Ha declinato l'opportunità")}>{tr('Non mi interessa')}</button>
           </div>
-          {askInfo && <button className="btn" style={{ marginTop: 10 }} disabled={busy || !note.trim()} onClick={() => act('info', null, 'Ha chiesto informazioni')}>{note.trim() ? 'Invia richiesta di informazioni' : 'Scrivi prima una nota'}</button>}
+          {askInfo && <button className="btn" style={{ marginTop: 10 }} disabled={busy || !note.trim()} onClick={() => act('info', null, 'Ha chiesto informazioni')}>{note.trim() ? tr('Invia richiesta di informazioni') : tr('Scrivi prima una nota')}</button>}
         </div>
       )}
-      <div className="faint" style={{ fontSize: 11.5, marginTop: 14, lineHeight: 1.6 }}>Le condizioni economiche vengono gestite da {AGENCY_NAME}: il tuo referente ti accompagna in ogni passaggio della trattativa.</div>
+      <div className="faint" style={{ fontSize: 11.5, marginTop: 14, lineHeight: 1.6 }}>{tr('Le condizioni economiche vengono gestite da {agency}: il tuo referente ti accompagna in ogni passaggio della trattativa.').replace('{agency}', AGENCY_NAME)}</div>
     </Modal>
   )
 }
@@ -691,7 +693,7 @@ function Collaborazioni({ collabs, perf, cats, role, reload }: any) {
             </div>
             <div className="right">
               {c.contract_value != null && <div style={{ fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 700, color: 'var(--green)' }}>{fmtMoney(Number(c.contract_value))}</div>}
-              <Badge tone={c.status === 'completata' ? 'green' : c.status === 'annullata' ? 'red' : 'blue'}>{c.status}</Badge>
+              <Badge tone={c.status === 'completata' ? 'green' : c.status === 'annullata' ? 'red' : 'blue'}>{tr(collabStatusLabel(c.status))}</Badge>
             </div>
           </div>
         </div>
@@ -707,14 +709,14 @@ function CollabModal({ collab, p, cats, role, onClose, reload }: any) {
   const [busy, setBusy] = useState(false)
   return (
     <Modal title={collab.brand_name} onClose={onClose} wide>
-      <div className="muted" style={{ fontSize: 12.5, marginBottom: 14 }}>{cats.find((c: any) => c.key === collab.category_key)?.name || ''} · {collab.status}</div>
+      <div className="muted" style={{ fontSize: 12.5, marginBottom: 14 }}>{cats.find((c: any) => c.key === collab.category_key)?.name || ''} · {tr(collabStatusLabel(collab.status))}</div>
       {collab.contract_value != null && (
         <div style={{ marginBottom: 14 }}>
           <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em' }}>{tr('Valore contratto')}</div>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 700, color: 'var(--green)' }}>{fmtMoney(Number(collab.contract_value))}</div>
         </div>
       )}
-      {collab.activities?.length > 0 && <div style={{ marginBottom: 12, fontSize: 13.5 }}><span className="faint" style={{ fontSize: 11, textTransform: 'uppercase' }}>Attività · </span>{collab.activities.join(' · ')}</div>}
+      {collab.activities?.length > 0 && <div style={{ marginBottom: 12, fontSize: 13.5 }}><span className="faint" style={{ fontSize: 11, textTransform: 'uppercase' }}>{tr('Attività')} · </span>{collab.activities.join(' · ')}</div>}
       {collab.notes && <div className="muted" style={{ fontSize: 12.5, marginBottom: 12 }}>{collab.notes}</div>}
       {p && (
         <div style={{ marginBottom: 14 }}>
@@ -761,12 +763,12 @@ function PerformanceTab({ collabs, perf }: any) {
         const c = collabs.find((x: any) => x.id === p.collaboration_id)
         return (
           <div key={p.id} className="flex between" style={{ padding: '9px 0', borderBottom: '1px solid var(--border)', flexWrap: 'wrap', gap: 8 }}>
-            <div style={{ fontWeight: 600, fontSize: 13.5 }}>{c?.brand_name || 'Campagna'}</div>
+            <div style={{ fontWeight: 600, fontSize: 13.5 }}>{c?.brand_name || tr('Campagna')}</div>
             <div className="flex gap" style={{ fontSize: 12.5, color: 'var(--text-dim)', flexWrap: 'wrap' }}>
-              {p.reach != null && <span>Reach <b style={{ color: 'var(--text)' }}>{fmtN(p.reach)}</b></span>}
+              {p.reach != null && <span>{tr('Reach')} <b style={{ color: 'var(--text)' }}>{fmtN(p.reach)}</b></span>}
               {p.engagement != null && <span>ER <b style={{ color: 'var(--text)' }}>{p.engagement}%</b></span>}
-              {p.posts_count != null && <span>Contenuti <b style={{ color: 'var(--text)' }}>{p.posts_count}</b></span>}
-              {p.on_time != null && <Badge tone={p.on_time ? 'green' : 'gold'}>{p.on_time ? 'Puntuale' : 'Ritardi'}</Badge>}
+              {p.posts_count != null && <span>{tr('Contenuti')} <b style={{ color: 'var(--text)' }}>{p.posts_count}</b></span>}
+              {p.on_time != null && <Badge tone={p.on_time ? 'green' : 'gold'}>{p.on_time ? tr('Puntuale') : tr('Ritardi')}</Badge>}
             </div>
           </div>
         )
@@ -785,13 +787,13 @@ function DatiPreferenze({ prof, saveProf, openWizard }: any) {
   const [saved, setSaved] = useState(false)
   const plat = (p: string, label: string) => (
     <div className="row2" key={p} style={{ marginBottom: 4 }}>
-      <Field label={`${label} — follower`}><Input type="number" value={aud?.[p]?.followers || ''} onChange={e => setAud({ ...aud, [p]: { ...(aud[p] || {}), followers: e.target.value ? Number(e.target.value) : null } })} /></Field>
-      <Field label={`${label} — engagement %`}><Input type="number" step="0.1" value={aud?.[p]?.er || ''} onChange={e => setAud({ ...aud, [p]: { ...(aud[p] || {}), er: e.target.value ? Number(e.target.value) : null } })} /></Field>
+      <Field label={tr('{platform} — follower').replace('{platform}', label)}><Input type="number" value={aud?.[p]?.followers || ''} onChange={e => setAud({ ...aud, [p]: { ...(aud[p] || {}), followers: e.target.value ? Number(e.target.value) : null } })} /></Field>
+      <Field label={tr('{platform} — engagement %').replace('{platform}', label)}><Input type="number" step="0.1" value={aud?.[p]?.er || ''} onChange={e => setAud({ ...aud, [p]: { ...(aud[p] || {}), er: e.target.value ? Number(e.target.value) : null } })} /></Field>
     </div>
   )
   const toggle = (obj: any, setObj: any, key: string, label: string) => (
     <button className={`btn btn-sm ${obj[key] ? 'btn-primary' : ''}`} onClick={() => setObj({ ...obj, [key]: !obj[key] })}>
-      {obj[key] ? <Icon name="check" size={13} /> : null} {label}
+      {obj[key] ? <Icon name="check" size={13} /> : null} {tr(label)}
     </button>
   )
   return (<>
@@ -809,7 +811,7 @@ function DatiPreferenze({ prof, saveProf, openWizard }: any) {
         <Field label={tr("Genere prevalente")}><Select value={aud.gender_split || ''} onChange={e => setAud({ ...aud, gender_split: e.target.value })}>
           <option value="">—</option><option>{tr('Prevalenza uomini')}</option><option>{tr('Prevalenza donne')}</option><option>{tr('Bilanciato')}</option>
         </Select></Field>
-        <Field label={tr("Follower reali stimati %")}><Input type="number" placeholder="Es. 92" value={aud.authenticity || ''} onChange={e => setAud({ ...aud, authenticity: e.target.value ? Number(e.target.value) : null })} /></Field>
+        <Field label={tr("Follower reali stimati %")}><Input type="number" placeholder={tr("Es. 92")} value={aud.authenticity || ''} onChange={e => setAud({ ...aud, authenticity: e.target.value ? Number(e.target.value) : null })} /></Field>
       </div>
     </div>
     <div className="card">
@@ -826,11 +828,11 @@ function DatiPreferenze({ prof, saveProf, openWizard }: any) {
     <div className="card">
       <div style={{ fontWeight: 700, marginBottom: 6 }}>{tr('Preferenze commerciali')}</div>
       <div className="faint" style={{ fontSize: 12, marginBottom: 10 }}>{tr('Valori, categorie, disponibilità, territori e storico.')}</div>
-      <button className="btn" onClick={openWizard}><Icon name="edit" size={14} /> Modifica le preferenze</button>
+      <button className="btn" onClick={openWizard}><Icon name="edit" size={14} /> {tr('Modifica le preferenze')}</button>
     </div>
     <div className="flex" style={{ justifyContent: 'flex-end' }}>
       <button className="btn btn-primary" disabled={busy} onClick={async () => { setBusy(true); await saveProf({ audience: aud, content, sport }); setBusy(false); setSaved(true); setTimeout(() => setSaved(false), 2500) }}>
-        {busy ? 'Salvo…' : saved  ? tr('Salvato') : 'Salva dati'}
+        {busy ? tr('Salvo…') : saved  ? tr('Salvato') : tr('Salva dati')}
       </button>
     </div>
   </>)
@@ -859,7 +861,7 @@ function Onboarding({ profile, save, onDone, onLater }: any) {
     <div className="flex gap" style={{ flexWrap: 'wrap' }}>
       {options.map(o => {
         const on = selected.includes(o)
-        return <button key={o} className={`btn btn-sm ${on ? 'btn-primary' : ''}`} onClick={() => on ? onChange(selected.filter(x => x !== o)) : (!max || selected.length < max) && onChange([...selected, o])}>{o}</button>
+        return <button key={o} className={`btn btn-sm ${on ? 'btn-primary' : ''}`} onClick={() => on ? onChange(selected.filter(x => x !== o)) : (!max || selected.length < max) && onChange([...selected, o])}>{tr(o)}</button>
       })}
     </div>
   )
@@ -867,14 +869,14 @@ function Onboarding({ profile, save, onDone, onLater }: any) {
   return (
     <div className="grid" style={{ gap: 16, maxWidth: 760 }}>
       <div className="card">
-        <div className="faint" style={{ fontSize: 11, letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 6 }}>AUVI Commercial Profile — Onboarding</div>
-        <div style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 700 }}>Costruiamo il tuo profilo commerciale</div>
-        <div className="muted" style={{ fontSize: 13, marginTop: 4 }}>5 passaggi, pochi minuti. Puoi salvare e completare quando vuoi.</div>
+        <div className="faint" style={{ fontSize: 11, letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 6 }}>{tr('AUVI Commercial Profile — Onboarding')}</div>
+        <div style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 700 }}>{tr('Costruiamo il tuo profilo commerciale')}</div>
+        <div className="muted" style={{ fontSize: 13, marginTop: 4 }}>{tr('5 passaggi, pochi minuti. Puoi salvare e completare quando vuoi.')}</div>
         <div className="flex gap" style={{ marginTop: 16 }}>
           {STEPS.map((s, i) => (
             <div key={s} style={{ flex: 1 }}>
               <div style={{ height: 4, borderRadius: 4, background: i <= step ? 'var(--accent)' : 'var(--border)' }} />
-              <div className="faint" style={{ fontSize: 10, marginTop: 5, textTransform: 'uppercase', letterSpacing: '.05em', color: i === step ? 'var(--text)' : undefined }}>{s}</div>
+              <div className="faint" style={{ fontSize: 10, marginTop: 5, textTransform: 'uppercase', letterSpacing: '.05em', color: i === step ? 'var(--text)' : undefined }}>{tr(s)}</div>
             </div>
           ))}
         </div>
@@ -882,60 +884,60 @@ function Onboarding({ profile, save, onDone, onLater }: any) {
 
       <div className="card">
         {step === 0 && (<>
-          <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Come vuoi essere percepito?</div>
-          <div className="muted" style={{ fontSize: 12.5, marginBottom: 16 }}>Scegli i valori, lo stile e gli interessi che ti rappresentano davvero.</div>
-          <Field label="I tuoi valori (max 5)">{chips(VALUE_OPTS, ident.values || [], v => setIdent({ ...ident, values: v }), 5)}</Field>
-          <Field label="Il tuo stile (max 4)">{chips(STYLE_OPTS, ident.style || [], v => setIdent({ ...ident, style: v }), 4)}</Field>
-          <Field label="Interessi fuori dal campo">{chips(INTEREST_OPTS, ident.interests || [], v => setIdent({ ...ident, interests: v }))}</Field>
-          <Field label="Come vorresti essere descritto in una frase"><Input value={ident.desired_image || ''} onChange={e => setIdent({ ...ident, desired_image: e.target.value })} placeholder="Es. Un professionista autentico, vicino ai giovani e alla famiglia" /></Field>
+          <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>{tr('Come vuoi essere percepito?')}</div>
+          <div className="muted" style={{ fontSize: 12.5, marginBottom: 16 }}>{tr('Scegli i valori, lo stile e gli interessi che ti rappresentano davvero.')}</div>
+          <Field label={tr("I tuoi valori (max 5)")}>{chips(VALUE_OPTS, ident.values || [], v => setIdent({ ...ident, values: v }), 5)}</Field>
+          <Field label={tr("Il tuo stile (max 4)")}>{chips(STYLE_OPTS, ident.style || [], v => setIdent({ ...ident, style: v }), 4)}</Field>
+          <Field label={tr("Interessi fuori dal campo")}>{chips(INTEREST_OPTS, ident.interests || [], v => setIdent({ ...ident, interests: v }))}</Field>
+          <Field label={tr("Come vorresti essere descritto in una frase")}><Input value={ident.desired_image || ''} onChange={e => setIdent({ ...ident, desired_image: e.target.value })} placeholder={tr("Es. Un professionista autentico, vicino ai giovani e alla famiglia")} /></Field>
         </>)}
         {step === 1 && (<>
-          <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Categorie commerciali</div>
-          <div className="muted" style={{ fontSize: 12.5, marginBottom: 16 }}>Con quali tipologie di brand vorresti collaborare? E quali escludi a priori?</div>
-          <Field label="Categorie gradite">{chips(CATS.map(c => c[1]), liked.map(k => CATS.find(c => c[0] === k)?.[1] || k), v => setLiked(v.map(n => CATS.find(c => c[1] === n)?.[0] || n)))}</Field>
-          <Field label="Categorie escluse">
+          <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>{tr('Categorie commerciali')}</div>
+          <div className="muted" style={{ fontSize: 12.5, marginBottom: 16 }}>{tr('Con quali tipologie di brand vorresti collaborare? E quali escludi a priori?')}</div>
+          <Field label={tr("Categorie gradite")}>{chips(CATS.map(c => c[1]), liked.map(k => CATS.find(c => c[0] === k)?.[1] || k), v => setLiked(v.map(n => CATS.find(c => c[1] === n)?.[0] || n)))}</Field>
+          <Field label={tr("Categorie escluse")}>
             <div className="flex gap" style={{ flexWrap: 'wrap' }}>
               {[...EXCL_PRESET, ...CATS].map(([k, n]) => {
                 const on = excluded.includes(k)
-                return <button key={k} className="btn btn-sm" style={on ? { borderColor: 'var(--red)', color: 'var(--red)' } : undefined} onClick={() => setExcluded(on ? excluded.filter(x => x !== k) : [...excluded, k])}>{on ? '✕ ' : ''}{n}</button>
+                return <button key={k} className="btn btn-sm" style={on ? { borderColor: 'var(--red)', color: 'var(--red)' } : undefined} onClick={() => setExcluded(on ? excluded.filter(x => x !== k) : [...excluded, k])}>{on ? '✕ ' : ''}{tr(n)}</button>
               })}
             </div>
           </Field>
         </>)}
         {step === 2 && (<>
-          <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Disponibilità</div>
-          <div className="muted" style={{ fontSize: 12.5, marginBottom: 16 }}>Quali attività sei disponibile a svolgere per una campagna?</div>
+          <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>{tr('Disponibilità')}</div>
+          <div className="muted" style={{ fontSize: 12.5, marginBottom: 16 }}>{tr('Quali attività sei disponibile a svolgere per una campagna?')}</div>
           <div className="grid g2">
             {AVAIL_OPTS.map(a => (
               <button key={a.key} className={`btn ${avail[a.key] ? 'btn-primary' : ''}`} style={{ justifyContent: 'flex-start' }} onClick={() => setAvail({ ...avail, [a.key]: !avail[a.key] })}>
-                {avail[a.key] ? <Icon name="check" size={14} /> : <span style={{ width: 14 }} />} {a.label}
+                {avail[a.key] ? <Icon name="check" size={14} /> : <span style={{ width: 14 }} />} {tr(a.label)}
               </button>
             ))}
           </div>
         </>)}
         {step === 3 && (<>
-          <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Territori e lingue</div>
-          <div className="muted" style={{ fontSize: 12.5, marginBottom: 16 }}>Dove sei riconosciuto e in quali mercati vuoi crescere?</div>
-          <Field label="Mercati di interesse">{chips(MARKET_OPTS, terr.markets || [], v => setTerr({ ...terr, markets: v }))}</Field>
-          <Field label="Lingue parlate">{chips(LANG_OPTS, terr.languages || [], v => setTerr({ ...terr, languages: v }))}</Field>
-          <button className={`btn btn-sm ${terr.travel ? 'btn-primary' : ''}`} onClick={() => setTerr({ ...terr, travel: !terr.travel })}>{terr.travel ? <Icon name="check" size={13} /> : null} Disponibile a viaggiare per campagne</button>
+          <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>{tr('Territori e lingue')}</div>
+          <div className="muted" style={{ fontSize: 12.5, marginBottom: 16 }}>{tr('Dove sei riconosciuto e in quali mercati vuoi crescere?')}</div>
+          <Field label={tr("Mercati di interesse")}>{chips(MARKET_OPTS, terr.markets || [], v => setTerr({ ...terr, markets: v }))}</Field>
+          <Field label={tr("Lingue parlate")}>{chips(LANG_OPTS, terr.languages || [], v => setTerr({ ...terr, languages: v }))}</Field>
+          <button className={`btn btn-sm ${terr.travel ? 'btn-primary' : ''}`} onClick={() => setTerr({ ...terr, travel: !terr.travel })}>{terr.travel ? <Icon name="check" size={13} /> : null} {tr('Disponibile a viaggiare per campagne')}</button>
         </>)}
         {step === 4 && (<>
-          <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Storico commerciale</div>
-          <div className="muted" style={{ fontSize: 12.5, marginBottom: 16 }}>Sponsor attivi, collaborazioni passate ed eventuali esclusività.</div>
-          <Field label="Sponsor personali attivi"><Input value={hist.sponsors || ''} onChange={e => setHist({ ...hist, sponsors: e.target.value })} placeholder="Es. Nike (scarpe), nessun altro" /></Field>
-          <Field label="Collaborazioni precedenti"><Textarea rows={3} value={hist.collaborations || ''} onChange={e => setHist({ ...hist, collaborations: e.target.value })} placeholder="Brand, anno, tipo di attività" /></Field>
-          <Field label="Esclusività o categorie già occupate"><Input value={hist.exclusivities || ''} onChange={e => setHist({ ...hist, exclusivities: e.target.value })} placeholder="Es. esclusiva sportswear fino al 2027" /></Field>
-          <Field label="Fascia economica minima (facoltativa)"><Input value={hist.min_fee || ''} onChange={e => setHist({ ...hist, min_fee: e.target.value })} placeholder="Es. €2.000 per campagna" /></Field>
+          <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>{tr('Storico commerciale')}</div>
+          <div className="muted" style={{ fontSize: 12.5, marginBottom: 16 }}>{tr('Sponsor attivi, collaborazioni passate ed eventuali esclusività.')}</div>
+          <Field label={tr("Sponsor personali attivi")}><Input value={hist.sponsors || ''} onChange={e => setHist({ ...hist, sponsors: e.target.value })} placeholder={tr("Es. Nike (scarpe), nessun altro")} /></Field>
+          <Field label={tr("Collaborazioni precedenti")}><Textarea rows={3} value={hist.collaborations || ''} onChange={e => setHist({ ...hist, collaborations: e.target.value })} placeholder={tr("Brand, anno, tipo di attività")} /></Field>
+          <Field label={tr("Esclusività o categorie già occupate")}><Input value={hist.exclusivities || ''} onChange={e => setHist({ ...hist, exclusivities: e.target.value })} placeholder={tr("Es. esclusiva sportswear fino al 2027")} /></Field>
+          <Field label={tr("Fascia economica minima (facoltativa)")}><Input value={hist.min_fee || ''} onChange={e => setHist({ ...hist, min_fee: e.target.value })} placeholder={tr("Es. €2.000 per campagna")} /></Field>
         </>)}
 
         <div className="flex between" style={{ marginTop: 20, paddingTop: 14, borderTop: '1px solid var(--border)' }}>
           <button className="btn btn-ghost" disabled={busy} onClick={async () => { await persist(false, step); onLater() }}>{tr("Continua più tardi")}</button>
           <div className="flex gap">
-            {step > 0 && <button className="btn" disabled={busy} onClick={() => setStep(step - 1)}>Indietro</button>}
+            {step > 0 && <button className="btn" disabled={busy} onClick={() => setStep(step - 1)}>{tr('Indietro')}</button>}
             {step < 4
-              ? <button className="btn btn-primary" disabled={busy} onClick={async () => { await persist(false, step + 1); setStep(step + 1) }}>{busy ? '…' : 'Avanti'}</button>
-              : <button className="btn btn-primary" disabled={busy} onClick={async () => { await persist(true, 5); onDone() }}>{busy ? '…' : 'Completa il profilo'}</button>}
+              ? <button className="btn btn-primary" disabled={busy} onClick={async () => { await persist(false, step + 1); setStep(step + 1) }}>{busy ? '…' : tr('Avanti')}</button>
+              : <button className="btn btn-primary" disabled={busy} onClick={async () => { await persist(true, 5); onDone() }}>{busy ? '…' : tr('Completa il profilo')}</button>}
           </div>
         </div>
       </div>
@@ -984,8 +986,8 @@ function AdminOpps({ athleteId, cats, opps, userName, reload }: any) {
     reload()
   }
   return (<>
-    <div><button className="btn btn-primary" onClick={() => setEdit({})}>+ Nuova opportunità</button></div>
-    {opps.length === 0 && <div className="card"><Empty icon={<Icon name="briefcase" size={28} strokeWidth={1.4} />} title="Nessuna opportunità" hint="Crea la prima opportunità commerciale per l'atleta." /></div>}
+    <div><button className="btn btn-primary" onClick={() => setEdit({})}>{tr('+ Nuova opportunità')}</button></div>
+    {opps.length === 0 && <div className="card"><Empty icon={<Icon name="briefcase" size={28} strokeWidth={1.4} />} title={tr("Nessuna opportunità")} hint={tr("Crea la prima opportunità commerciale per l'atleta.")} /></div>}
     {opps.map((o: any) => (
       <div key={o.id} className="card">
         <div className="flex between" style={{ flexWrap: 'wrap', gap: 10 }}>
@@ -994,16 +996,16 @@ function AdminOpps({ athleteId, cats, opps, userName, reload }: any) {
             <div className="muted" style={{ fontSize: 12.5 }}>
               {cats.find((c: any) => c.key === o.category_key)?.name || ''}
               {(o.fee_lo || o.fee_hi) ? ` · ${o.fee_lo ? fmtMoney(Number(o.fee_lo)) : ''}${o.fee_hi ? '–' + fmtMoney(Number(o.fee_hi)) : ''}` : ''}
-              {o.athlete_response ? ` · risposta: ${o.athlete_response}` : ''}
+              {o.athlete_response ? ` · ${tr('risposta: {r}').replace('{r}', tr(o.athlete_response))}` : ''}
             </div>
           </div>
           <div className="flex gap">
             <Select value={o.status} onChange={e => setStatus(o, e.target.value)} style={{ width: 'auto' }}>
-              {Object.keys(OPP_STATUS).map(s => <option key={s} value={s}>{OPP_STATUS[s].label}</option>)}
+              {Object.keys(OPP_STATUS).map(s => <option key={s} value={s}>{tr(OPP_STATUS[s].label)}</option>)}
             </Select>
-            <button className="btn btn-sm" onClick={() => setEdit(o)}>Modifica</button>
-            <button className="btn btn-sm" onClick={() => setPrivFor(o)}><Icon name="lock" size={13} /> Note riservate</button>
-            <ConfirmButton onConfirm={async () => { await supabase.from('cp_opportunities').delete().eq('id', o.id); reload() }}>Elimina</ConfirmButton>
+            <button className="btn btn-sm" onClick={() => setEdit(o)}>{tr('Modifica')}</button>
+            <button className="btn btn-sm" onClick={() => setPrivFor(o)}><Icon name="lock" size={13} /> {tr('Note riservate')}</button>
+            <ConfirmButton onConfirm={async () => { await supabase.from('cp_opportunities').delete().eq('id', o.id); reload() }}>{tr('Elimina')}</ConfirmButton>
           </div>
         </div>
       </div>
@@ -1037,10 +1039,10 @@ function OppForm({ athleteId, cats, value, userName, onClose, onSaved }: any) {
   }
   return (
     <Modal title={f.id ? tr('Modifica opportunità') : tr('Nuova opportunità')} onClose={onClose} wide
-      footer={<><button className="btn btn-ghost" onClick={onClose}>Annulla</button><button className="btn btn-primary" disabled={busy || !f.brand_name} onClick={save}>{busy ? 'Salvo…' : 'Salva'}</button></>}>
+      footer={<><button className="btn btn-ghost" onClick={onClose}>{tr('Annulla')}</button><button className="btn btn-primary" disabled={busy || !f.brand_name} onClick={save}>{busy ? tr('Salvo…') : tr('Salva')}</button></>}>
       <div className="row2">
         <Field label={tr("Brand *")}><Input value={f.brand_name || ''} onChange={e => set('brand_name', e.target.value)} /></Field>
-        <Field label="Categoria"><Select value={f.category_key || ''} onChange={e => set('category_key', e.target.value)}><option value="">—</option>{cats.map((c: any) => <option key={c.key} value={c.key}>{c.name}</option>)}</Select></Field>
+        <Field label={tr("Categoria")}><Select value={f.category_key || ''} onChange={e => set('category_key', e.target.value)}><option value="">—</option>{cats.map((c: any) => <option key={c.key} value={c.key}>{c.name}</option>)}</Select></Field>
       </div>
       <Field label={tr("Descrizione")}><Textarea rows={2} value={f.description || ''} onChange={e => set('description', e.target.value)} /></Field>
       <div className="row2">
@@ -1078,9 +1080,9 @@ function PrivateNotesModal({ opp, onClose }: any) {
     setBusy(false); onClose()
   }
   return (
-    <Modal title={`Riservato — ${opp.brand_name}`} onClose={onClose}
-      footer={<><button className="btn btn-ghost" onClick={onClose}>Chiudi</button><button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? 'Salvo…' : 'Salva'}</button></>}>
-      <div className="muted" style={{ fontSize: 12, marginBottom: 12, color: 'var(--red)' }}>Questi dati sono su una tabella riservata (RLS admin-only): l'atleta non può leggerli in nessun caso.</div>
+    <Modal title={tr('Riservato — {brand}').replace('{brand}', opp.brand_name)} onClose={onClose}
+      footer={<><button className="btn btn-ghost" onClick={onClose}>{tr('Chiudi')}</button><button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? tr('Salvo…') : tr('Salva')}</button></>}>
+      <div className="muted" style={{ fontSize: 12, marginBottom: 12, color: 'var(--red)' }}>{tr("Questi dati sono su una tabella riservata (RLS admin-only): l'atleta non può leggerli in nessun caso.")}</div>
       <Field label={tr("Margine AUVI (€)")}><Input type="number" value={f.margin ?? ''} onChange={e => setF({ ...f, margin: e.target.value })} /></Field>
       <Field label={tr("Note interne")}><Textarea rows={3} value={f.internal_notes || ''} onChange={e => setF({ ...f, internal_notes: e.target.value })} /></Field>
       <Field label={tr("Note di trattativa")}><Textarea rows={3} value={f.negotiation_notes || ''} onChange={e => setF({ ...f, negotiation_notes: e.target.value })} /></Field>
@@ -1093,19 +1095,19 @@ function AdminCollabs({ athleteId, cats, collabs, perf, reload }: any) {
   const [edit, setEdit] = useState<any>(null)
   const [perfFor, setPerfFor] = useState<any>(null)
   return (<>
-    <div><button className="btn btn-primary" onClick={() => setEdit({})}>+ Nuova collaborazione</button></div>
-    {collabs.length === 0 && <div className="card"><Empty icon={<Icon name="award" size={28} strokeWidth={1.4} />} title="Nessuna collaborazione" hint="Registra le campagne per costruire lo storico commerciale." /></div>}
+    <div><button className="btn btn-primary" onClick={() => setEdit({})}>{tr('+ Nuova collaborazione')}</button></div>
+    {collabs.length === 0 && <div className="card"><Empty icon={<Icon name="award" size={28} strokeWidth={1.4} />} title={tr("Nessuna collaborazione")} hint={tr("Registra le campagne per costruire lo storico commerciale.")} /></div>}
     {collabs.map((c: any) => (
       <div key={c.id} className="card">
         <div className="flex between" style={{ flexWrap: 'wrap', gap: 10 }}>
           <div>
             <div style={{ fontWeight: 700 }}>{c.brand_name}</div>
-            <div className="muted" style={{ fontSize: 12.5 }}>{c.status}{c.contract_value != null ? ` · ${fmtMoney(Number(c.contract_value))}` : ''}</div>
+            <div className="muted" style={{ fontSize: 12.5 }}>{tr(collabStatusLabel(c.status))}{c.contract_value != null ? ` · ${fmtMoney(Number(c.contract_value))}` : ''}</div>
           </div>
           <div className="flex gap">
-            <button className="btn btn-sm" onClick={() => setEdit(c)}>Modifica</button>
-            <button className="btn btn-sm" onClick={() => setPerfFor(c)}><Icon name="activity" size={13} /> Performance</button>
-            <ConfirmButton onConfirm={async () => { await supabase.from('cp_collaborations').delete().eq('id', c.id); reload() }}>Elimina</ConfirmButton>
+            <button className="btn btn-sm" onClick={() => setEdit(c)}>{tr('Modifica')}</button>
+            <button className="btn btn-sm" onClick={() => setPerfFor(c)}><Icon name="activity" size={13} /> {tr('Performance')}</button>
+            <ConfirmButton onConfirm={async () => { await supabase.from('cp_collaborations').delete().eq('id', c.id); reload() }}>{tr('Elimina')}</ConfirmButton>
           </div>
         </div>
       </div>
@@ -1134,18 +1136,18 @@ function CollabForm({ athleteId, cats, value, onClose, onSaved }: any) {
   }
   return (
     <Modal title={f.id ? tr('Modifica collaborazione') : tr('Nuova collaborazione')} onClose={onClose} wide
-      footer={<><button className="btn btn-ghost" onClick={onClose}>Annulla</button><button className="btn btn-primary" disabled={busy || !f.brand_name} onClick={save}>{busy ? 'Salvo…' : 'Salva'}</button></>}>
+      footer={<><button className="btn btn-ghost" onClick={onClose}>{tr('Annulla')}</button><button className="btn btn-primary" disabled={busy || !f.brand_name} onClick={save}>{busy ? tr('Salvo…') : tr('Salva')}</button></>}>
       <div className="row2">
         <Field label={tr("Brand *")}><Input value={f.brand_name || ''} onChange={e => set('brand_name', e.target.value)} /></Field>
-        <Field label="Categoria"><Select value={f.category_key || ''} onChange={e => set('category_key', e.target.value)}><option value="">—</option>{cats.map((c: any) => <option key={c.key} value={c.key}>{c.name}</option>)}</Select></Field>
+        <Field label={tr("Categoria")}><Select value={f.category_key || ''} onChange={e => set('category_key', e.target.value)}><option value="">—</option>{cats.map((c: any) => <option key={c.key} value={c.key}>{c.name}</option>)}</Select></Field>
       </div>
       <div className="row2">
         <Field label={tr("Valore contratto (€)")}><Input type="number" value={f.contract_value ?? ''} onChange={e => set('contract_value', e.target.value)} /></Field>
-        <Field label={tr("Stato")}><Select value={f.status} onChange={e => set('status', e.target.value)}><option value="attiva">{tr("Attiva")}</option><option value="completata">Completata</option><option value="annullata">{tr("Annullata")}</option></Select></Field>
+        <Field label={tr("Stato")}><Select value={f.status} onChange={e => set('status', e.target.value)}><option value="attiva">{tr("Attiva")}</option><option value="completata">{tr('Completata')}</option><option value="annullata">{tr("Annullata")}</option></Select></Field>
       </div>
       <div className="row2">
-        <Field label="Inizio"><Input type="date" value={f.period_start || ''} onChange={e => set('period_start', e.target.value)} /></Field>
-        <Field label="Fine"><Input type="date" value={f.period_end || ''} onChange={e => set('period_end', e.target.value)} /></Field>
+        <Field label={tr("Inizio")}><Input type="date" value={f.period_start || ''} onChange={e => set('period_start', e.target.value)} /></Field>
+        <Field label={tr("Fine")}><Input type="date" value={f.period_end || ''} onChange={e => set('period_end', e.target.value)} /></Field>
       </div>
       <Field label={tr("Attività (separate da virgola)")}><Input value={f.activities_txt || ''} onChange={e => set('activities_txt', e.target.value)} /></Field>
       <Field label={tr("Feedback del brand")}><Input value={f.brand_feedback || ''} onChange={e => set('brand_feedback', e.target.value)} /></Field>
@@ -1159,7 +1161,7 @@ function PerfForm({ collab, existing, onClose, onSaved }: any) {
   const [f, setF] = useState<any>(existing || {})
   const [busy, setBusy] = useState(false)
   const num = (k: string, label: string) => (
-    <Field label={label}><Input type="number" value={f[k] ?? ''} onChange={e => setF({ ...f, [k]: e.target.value })} /></Field>
+    <Field label={tr(label)}><Input type="number" value={f[k] ?? ''} onChange={e => setF({ ...f, [k]: e.target.value })} /></Field>
   )
   async function save() {
     setBusy(true)
@@ -1172,13 +1174,13 @@ function PerfForm({ collab, existing, onClose, onSaved }: any) {
     setBusy(false); onSaved()
   }
   return (
-    <Modal title={`Performance — ${collab.brand_name}`} onClose={onClose} wide
-      footer={<><button className="btn btn-ghost" onClick={onClose}>Annulla</button><button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? 'Salvo…' : 'Salva'}</button></>}>
+    <Modal title={tr('Performance — {brand}').replace('{brand}', collab.brand_name)} onClose={onClose} wide
+      footer={<><button className="btn btn-ghost" onClick={onClose}>{tr('Annulla')}</button><button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? tr('Salvo…') : tr('Salva')}</button></>}>
       <div className="row2">{num('reach', 'Reach')}{num('impressions', 'Impression')}</div>
       <div className="row2">{num('engagement', 'Engagement %')}{num('views', 'Views')}</div>
       <div className="row2">{num('clicks', 'Click')}{num('conversions', 'Conversioni')}</div>
       <div className="row2">{num('posts_count', 'N. contenuti')}{num('quality', 'Qualità (1-10)')}</div>
-      <Field label={tr("Consegne puntuali")}><Select value={f.on_time == null ? '' : String(f.on_time)} onChange={e => setF({ ...f, on_time: e.target.value })}><option value="">—</option><option value="true">{tr("Sì")}</option><option value="false">No</option></Select></Field>
+      <Field label={tr("Consegne puntuali")}><Select value={f.on_time == null ? '' : String(f.on_time)} onChange={e => setF({ ...f, on_time: e.target.value })}><option value="">—</option><option value="true">{tr("Sì")}</option><option value="false">{tr('No')}</option></Select></Field>
       <Field label={tr("Feedback del brand")}><Input value={f.brand_feedback || ''} onChange={e => setF({ ...f, brand_feedback: e.target.value })} /></Field>
     </Modal>
   )
@@ -1209,17 +1211,17 @@ function AdminEval({ athleteId, reload }: any) {
   return (
     <div className="card">
       <div style={{ fontWeight: 700, marginBottom: 4 }}>{tr("Valutazione riservata")}</div>
-      <div style={{ fontSize: 12, color: 'var(--red)', marginBottom: 14 }}>Tabella admin-only: l'atleta vede soltanto un'etichetta sintetica di affidabilità (Ottima / Molto buona / Buona / In costruzione).</div>
+      <div style={{ fontSize: 12, color: 'var(--red)', marginBottom: 14 }}>{tr("Tabella admin-only: l'atleta vede soltanto un'etichetta sintetica di affidabilità (Ottima / Molto buona / Buona / In costruzione).")}</div>
       <div className="row2">
-        <Field label="Affidabilità (0-100)"><Input type="number" value={f.reliability ?? ''} onChange={e => setF({ ...f, reliability: e.target.value })} /></Field>
-        <Field label="Professionalità (0-100)"><Input type="number" value={f.professionalism ?? ''} onChange={e => setF({ ...f, professionalism: e.target.value })} /></Field>
+        <Field label={tr("Affidabilità (0-100)")}><Input type="number" value={f.reliability ?? ''} onChange={e => setF({ ...f, reliability: e.target.value })} /></Field>
+        <Field label={tr("Professionalità (0-100)")}><Input type="number" value={f.professionalism ?? ''} onChange={e => setF({ ...f, professionalism: e.target.value })} /></Field>
       </div>
       <div className="row2">
-        <Field label="Puntualità (0-100)"><Input type="number" value={f.punctuality ?? ''} onChange={e => setF({ ...f, punctuality: e.target.value })} /></Field>
-        <Field label="Rating rischio"><Select value={f.risk_rating || ''} onChange={e => setF({ ...f, risk_rating: e.target.value })}><option value="">—</option><option value="basso">Basso</option><option value="medio">Medio</option><option value="alto">Alto</option></Select></Field>
+        <Field label={tr("Puntualità (0-100)")}><Input type="number" value={f.punctuality ?? ''} onChange={e => setF({ ...f, punctuality: e.target.value })} /></Field>
+        <Field label={tr("Rating rischio")}><Select value={f.risk_rating || ''} onChange={e => setF({ ...f, risk_rating: e.target.value })}><option value="">—</option><option value="basso">{tr('Basso')}</option><option value="medio">{tr('Medio')}</option><option value="alto">{tr('Alto')}</option></Select></Field>
       </div>
       <Field label={tr("Note interne")}><Textarea rows={3} value={f.internal_notes || ''} onChange={e => setF({ ...f, internal_notes: e.target.value })} /></Field>
-      <button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? 'Salvo…' : saved  ? tr('Salvato') : 'Salva valutazione'}</button>
+      <button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? tr('Salvo…') : saved  ? tr('Salvato') : tr('Salva valutazione')}</button>
     </div>
   )
 }
@@ -1240,14 +1242,14 @@ function AdminConfig({ cfg, reload }: any) {
   return (
     <div className="card">
       <div style={{ fontWeight: 700, marginBottom: 4 }}>{tr("Pesi del Commercial Score")}</div>
-      <div className="muted" style={{ fontSize: 12.5, marginBottom: 14 }}>La somma deve fare 100. I nuovi pesi si applicano subito al calcolo del punteggio.</div>
+      <div className="muted" style={{ fontSize: 12.5, marginBottom: 14 }}>{tr('La somma deve fare 100. I nuovi pesi si applicano subito al calcolo del punteggio.')}</div>
       <div className="grid g3">
         {COMP_META.map(m => (
-          <Field key={m.key} label={m.label}><Input type="number" value={w[m.key] ?? ''} onChange={e => setW({ ...w, [m.key]: Number(e.target.value) })} /></Field>
+          <Field key={m.key} label={tr(m.label)}><Input type="number" value={w[m.key] ?? ''} onChange={e => setW({ ...w, [m.key]: Number(e.target.value) })} /></Field>
         ))}
       </div>
-      <div style={{ margin: '6px 0 18px', fontWeight: 700, color: total === 100 ? 'var(--green)' : 'var(--red)' }}>Totale: {total}/100</div>
-      <div style={{ fontWeight: 700, marginBottom: 10 }}>Bande di valore commerciale (€/anno)</div>
+      <div style={{ margin: '6px 0 18px', fontWeight: 700, color: total === 100 ? 'var(--green)' : 'var(--red)' }}>{tr('Totale: {n}/100').replace('{n}', String(total))}</div>
+      <div style={{ fontWeight: 700, marginBottom: 10 }}>{tr('Bande di valore commerciale (€/anno)')}</div>
       {bands.map((b: any, i: number) => (
         <div key={i} className="flex gap" style={{ alignItems: 'center', marginBottom: 8 }}>
           <span style={{ width: 90, fontSize: 13, fontWeight: 600 }}>Score ≥ {b.min}</span>
@@ -1255,7 +1257,7 @@ function AdminConfig({ cfg, reload }: any) {
           <Input type="number" value={b.hi} onChange={e => setBands(bands.map((x, j) => j === i ? { ...x, hi: Number(e.target.value) } : x))} />
         </div>
       ))}
-      <button className="btn btn-primary" style={{ marginTop: 10 }} disabled={busy || total !== 100} onClick={save}>{busy ? 'Salvo…' : saved  ? tr('Salvato') : 'Salva configurazione'}</button>
+      <button className="btn btn-primary" style={{ marginTop: 10 }} disabled={busy || total !== 100} onClick={save}>{busy ? tr('Salvo…') : saved  ? tr('Salvato') : tr('Salva configurazione')}</button>
     </div>
   )
 }
@@ -1265,7 +1267,7 @@ function AdminConfig({ cfg, reload }: any) {
 // la Edge Function `sync-instagram` scopre l'account IG, rinnova il token
 // long-lived e aggiorna follower/ER/reach/demografia nel Commercial Profile.
 function AdminInstagram({ athleteId, reload }: any) {
-  const { t: tr } = useLang()
+  const { t: tr, lang } = useLang()
   const [acc, setAcc] = useState<any>(null)
   const [busy, setBusy] = useState(false)
   const [syncing, setSyncing] = useState(false)
@@ -1305,16 +1307,15 @@ function AdminInstagram({ athleteId, reload }: any) {
     <div className="card">
       <div style={{ fontWeight: 700, marginBottom: 4 }}>{tr("Collegamento Instagram")}</div>
       <div className="muted" style={{ fontSize: 12.5, marginBottom: 12 }}>
-        Sync diretto con la Graph API di Meta: follower, engagement, reach e demografia dell'audience
-        entrano da soli nel Commercial Score. Aggiornamento automatico ogni notte alle 04:30.
+        {tr("Sync diretto con la Graph API di Meta: follower, engagement, reach e demografia dell'audience entrano da soli nel Commercial Score. Aggiornamento automatico ogni notte alle 04:30.")}
       </div>
 
       {acc.ig_username && (
         <div className="flex gap" style={{ alignItems: 'center', marginBottom: 12, flexWrap: 'wrap' }}>
           <Badge tone="green">@{acc.ig_username}</Badge>
-          {acc.last_sync_at && <span className="faint" style={{ fontSize: 12 }}>ultimo sync {fmtDateTime(acc.last_sync_at)}</span>}
-          {acc.last_sync_status === 'error' && <Badge tone="red">errore</Badge>}
-          {acc.token_expires_at && <span className="faint" style={{ fontSize: 12 }}>token valido fino al {fmtDate(acc.token_expires_at)}</span>}
+          {acc.last_sync_at && <span className="faint" style={{ fontSize: 12 }}>{tr('ultimo sync {date}').replace('{date}', fmtDateTime(acc.last_sync_at))}</span>}
+          {acc.last_sync_status === 'error' && <Badge tone="red">{tr('errore')}</Badge>}
+          {acc.token_expires_at && <span className="faint" style={{ fontSize: 12 }}>{tr('token valido fino al {date}').replace('{date}', fmtDate(acc.token_expires_at))}</span>}
         </div>
       )}
       {acc.last_sync_error && <div style={{ fontSize: 12.5, color: 'var(--red)', marginBottom: 12 }}>{acc.last_sync_error}</div>}
@@ -1324,18 +1325,18 @@ function AdminInstagram({ athleteId, reload }: any) {
       </button>
       {showGuide && (
         <div className="muted" style={{ fontSize: 12.5, lineHeight: 1.8, marginBottom: 14, background: 'var(--surface)', borderRadius: 'var(--radius-sm)', padding: '12px 16px' }}>
-          <b style={{ color: 'var(--text)' }}>{tr("Prerequisito:")}</b> il profilo Instagram deve essere <b>{tr("Business o Creator")}</b> e collegato a una <b>{tr("Pagina Facebook")}</b>.<br />
-          1. Vai su <b>developers.facebook.com</b> → My Apps → <b>Create App</b> (tipo "Business"). L'app può restare in Development Mode.<br />
-          2. In <b>Settings → Basic</b> copia <b>App ID</b> e <b>App Secret</b>.<br />
-          3. Apri <b>Tools → Graph API Explorer</b>, seleziona la tua app e aggiungi i permessi:
+          <b style={{ color: 'var(--text)' }}>{tr("Prerequisito:")}</b> {tr('il profilo Instagram deve essere')} <b>{tr("Business o Creator")}</b> {tr('e collegato a una')} <b>{tr("Pagina Facebook")}</b>.<br />
+          1. {tr('Vai su')} <b>developers.facebook.com</b> → My Apps → <b>Create App</b> {tr("(tipo \"Business\"). L'app può restare in Development Mode.")}<br />
+          2. {tr('In')} <b>Settings → Basic</b> {tr('copia')} <b>App ID</b> {tr('e')} <b>App Secret</b>.<br />
+          3. {tr('Apri')} <b>Tools → Graph API Explorer</b>{tr(', seleziona la tua app e aggiungi i permessi:')}
           <b> pages_show_list, pages_read_engagement, instagram_basic, instagram_manage_insights</b>.<br />
-          4. Clicca <b>Generate Access Token</b>, fai login e seleziona la Pagina + l'account Instagram.<br />
-          5. Incolla i tre valori qui sotto e premi <b>{tr("Sincronizza ora")}</b>: al resto (account IG, token long-lived 60gg, rinnovo automatico) pensa il sistema.
+          4. {tr('Clicca')} <b>Generate Access Token</b>{tr(", fai login e seleziona la Pagina + l'account Instagram.")}<br />
+          5. {tr('Incolla i tre valori qui sotto e premi')} <b>{tr("Sincronizza ora")}</b>{tr(': al resto (account IG, token long-lived 60gg, rinnovo automatico) pensa il sistema.')}
         </div>
       )}
 
       <div className="row2">
-        <Field label="App ID"><Input value={acc.app_id || ''} onChange={e => setAcc({ ...acc, app_id: e.target.value.trim() })} placeholder="Es. 1234567890" /></Field>
+        <Field label="App ID"><Input value={acc.app_id || ''} onChange={e => setAcc({ ...acc, app_id: e.target.value.trim() })} placeholder={tr("Es. 1234567890")} /></Field>
         <Field label="App Secret"><Input type="password" value={acc.app_secret || ''} onChange={e => setAcc({ ...acc, app_secret: e.target.value.trim() })} /></Field>
       </div>
       <Field label={tr("Access Token (dal Graph API Explorer)")}><Textarea rows={3} value={acc.access_token || ''} onChange={e => setAcc({ ...acc, access_token: e.target.value.trim() })} placeholder="EAAB..." /></Field>
@@ -1351,23 +1352,21 @@ function AdminInstagram({ athleteId, reload }: any) {
         <div style={{ marginTop: 14 }}>
           {result.ok ? (
             <div className="grid g3">
-              <Stat label={tr("Follower")} value={Number(result.followers).toLocaleString('it-IT')} sub={result.username ? `@${result.username}` : undefined} />
+              <Stat label={tr("Follower")} value={Number(result.followers).toLocaleString(lang === 'en' ? 'en-GB' : 'it-IT')} sub={result.username ? `@${result.username}` : undefined} />
               <Stat label={tr("Engagement")} value={result.er != null ? `${result.er}%` : '—'} />
-              <Stat label={tr("Reach media/post")} value={result.reach != null ? Number(result.reach).toLocaleString('it-IT') : '—'} />
+              <Stat label={tr("Reach media/post")} value={result.reach != null ? Number(result.reach).toLocaleString(lang === 'en' ? 'en-GB' : 'it-IT') : '—'} />
               <Stat label={tr("Paesi audience")} value={(result.geo || []).join(', ') || '—'} />
               <Stat label={tr("Fascia età")} value={result.age_band || '—'} />
               <Stat label={tr("Genere")} value={result.gender_split || '—'} />
             </div>
           ) : (
-            <div style={{ fontSize: 12.5, color: 'var(--red)' }}>Sync fallito: {result.error}</div>
+            <div style={{ fontSize: 12.5, color: 'var(--red)' }}>{tr('Sync fallito:')} {result.error}</div>
           )}
         </div>
       )}
 
       <div className="faint" style={{ fontSize: 11.5, marginTop: 14, lineHeight: 1.6 }}>
-        Le credenziali sono salvate su una tabella riservata (RLS admin-only). Il token viene scambiato
-        automaticamente in long-lived (60 giorni) e rinnovato a ogni sync: non dovrai reincollarlo,
-        salvo revoca del permesso da parte di Meta.
+        {tr('Le credenziali sono salvate su una tabella riservata (RLS admin-only). Il token viene scambiato automaticamente in long-lived (60 giorni) e rinnovato a ogni sync: non dovrai reincollarlo, salvo revoca del permesso da parte di Meta.')}
       </div>
     </div>
   )
@@ -1427,8 +1426,7 @@ function TeaserAdminCard({ player, prof, topFits }: any) {
         <Badge tone={f.published ? 'green' : 'gold'}>{f.published ? tr('Pubblicato — visibile ai brand') : tr('Bozza — non visibile')}</Badge>
       </div>
       <div className="muted" style={{ fontSize: 12.5, marginBottom: 14 }}>
-        È l'unica vista commerciale che il brand vede in app: fascia follower, categorie affini e highlights.
-        Engagement, reach, demografia e storico restano riservati — li condividi tu col PDF completo quando il brand si muove.
+        {tr("È l'unica vista commerciale che il brand vede in app: fascia follower, categorie affini e highlights. Engagement, reach, demografia e storico restano riservati — li condividi tu col PDF completo quando il brand si muove.")}
       </div>
       <button className="btn btn-sm" style={{ marginBottom: 12 }} onClick={autofill}>{tr("Compila dai dati del profilo")}</button>
       <div className="row2">
@@ -1442,7 +1440,7 @@ function TeaserAdminCard({ player, prof, topFits }: any) {
         <Textarea rows={4} value={(f.highlights || []).join('\n')} onChange={e => setF({ ...f, highlights: e.target.value.split('\n') })} />
       </Field>
       <div className="flex gap" style={{ flexWrap: 'wrap' }}>
-        <button className="btn" disabled={busy} onClick={() => save()}>{busy ? 'Salvo…' : saved  ? tr('Salvato') : 'Salva bozza'}</button>
+        <button className="btn" disabled={busy} onClick={() => save()}>{busy ? tr('Salvo…') : saved  ? tr('Salvato') : tr('Salva bozza')}</button>
         {f.published
           ? <button className="btn btn-danger" disabled={busy} onClick={() => save(false)}>{tr("Nascondi ai brand")}</button>
           : <button className="btn btn-primary" disabled={busy} onClick={() => save(true)}>{tr("Pubblica per i brand")}</button>}
@@ -1468,20 +1466,20 @@ function AdminBrandSearches() {
     })()
   }, [])
   if (!rows) return <Spinner />
-  if (!rows.length) return <div className="card"><Empty icon={<Icon name="users" size={28} strokeWidth={1.4} />} title="Nessuna ricerca attiva" hint="Quando un brand compila la Ricerca talent, il brief compare qui." /></div>
+  if (!rows.length) return <div className="card"><Empty icon={<Icon name="users" size={28} strokeWidth={1.4} />} title={tr("Nessuna ricerca attiva")} hint={tr("Quando un brand compila la Ricerca talent, il brief compare qui.")} /></div>
   return (<>
     {rows.map(r => (
       <div key={r.id} className="card">
         <div className="flex between" style={{ flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
           <div style={{ fontWeight: 750, fontSize: 15 }}>{r.brand_name}</div>
-          <span className="faint" style={{ fontSize: 11.5 }}>aggiornata {fmtDateTime(r.updated_at)}</span>
+          <span className="faint" style={{ fontSize: 11.5 }}>{tr('aggiornata {date}').replace('{date}', fmtDateTime(r.updated_at))}</span>
         </div>
         <div className="flex gap" style={{ flexWrap: 'wrap', marginBottom: r.notes ? 10 : 0 }}>
           {(r.categories || []).map((k: string) => <Badge key={k} tone="accent">{k}</Badge>)}
-          {(r.values_wanted || []).map((v: string) => <Badge key={v}>{v}</Badge>)}
-          {(r.activities || []).map((a: string) => <Badge key={a} tone="blue">{AVAIL_OPTS.find(x => x.key === a)?.label || a}</Badge>)}
-          {(r.markets || []).map((m: string) => <Badge key={m}>{m}</Badge>)}
-          {(r.age_min || r.age_max) && <Badge tone="gold">{r.age_min || '…'}–{r.age_max || '…'} anni</Badge>}
+          {(r.values_wanted || []).map((v: string) => <Badge key={v}>{tr(v)}</Badge>)}
+          {(r.activities || []).map((a: string) => <Badge key={a} tone="blue">{tr(AVAIL_OPTS.find(x => x.key === a)?.label || a)}</Badge>)}
+          {(r.markets || []).map((m: string) => <Badge key={m}>{tr(m)}</Badge>)}
+          {(r.age_min || r.age_max) && <Badge tone="gold">{tr('{range} anni').replace('{range}', `${r.age_min || '…'}–${r.age_max || '…'}`)}</Badge>}
         </div>
         {r.notes && <div className="muted" style={{ fontSize: 12.5, lineHeight: 1.6 }}>{r.notes}</div>}
       </div>

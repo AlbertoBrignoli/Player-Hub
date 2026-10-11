@@ -8,6 +8,7 @@ import { Modal, Field, Input, Select, Textarea, Badge, Empty, Spinner, ConfirmBu
 import Icon from '../components/Icon'
 import { fmtDate, isImageFile } from '../lib/format'
 import type { EditorialEntry, MediaItem } from '../lib/types'
+import { useLang } from '../lib/i18n'
 
 const BUCKET = 'crm-media'
 
@@ -29,6 +30,7 @@ function brandStatus(s: string): { label: string; tone?: 'green' | 'blue' | 'gol
 // Vista brand: propone contenuti e carica il materiale dello shooting.
 export default function BrandCampaigns() {
   const { session } = useAuth()
+  const { t } = useLang()
   const { athleteId, athletes } = useAthlete()
   const uid = session?.user.id
   const [loading, setLoading] = useState(true)
@@ -36,7 +38,7 @@ export default function BrandCampaigns() {
   const [rows, setRows] = useState<EditorialEntry[]>([])
   const [editing, setEditing] = useState<EditorialEntry | 'new' | null>(null)
 
-  const athleteName = athletes.find(a => a.api_player_id === athleteId)?.name || 'l’atleta'
+  const athleteName = athletes.find(a => a.api_player_id === athleteId)?.name || t('l’atleta')
 
   async function load() {
     if (!uid) return
@@ -54,7 +56,7 @@ export default function BrandCampaigns() {
   useEffect(() => { load() }, [uid]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) return <Spinner />
-  if (!brand) return <Empty icon={<Icon name="award" size={28} strokeWidth={1.4} />} title="Nessun brand collegato" hint="Contatta AUVI Agency." />
+  if (!brand) return <Empty icon={<Icon name="award" size={28} strokeWidth={1.4} />} title={t("Nessun brand collegato")} hint={t("Contatta AUVI Agency.")} />
 
   const upcoming = rows.filter(r => r.status !== 'pubblicato')
   const done = rows.filter(r => r.status === 'pubblicato')
@@ -64,17 +66,17 @@ export default function BrandCampaigns() {
       <div className="card mk-social-head" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
         <div className="mk-ig-badge" style={{ background: 'var(--grad)' }}><Icon name="image" size={20} /></div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div className="ed-kicker">Campagne & contenuti</div>
-          <div style={{ fontWeight: 750, fontSize: 17 }}>Proponi contenuti a {athleteName}</div>
+          <div className="ed-kicker">{t('Campagne & contenuti')}</div>
+          <div style={{ fontWeight: 750, fontSize: 17 }}>{t('Proponi contenuti a {name}').replace('{name}', athleteName)}</div>
           <div className="faint" style={{ fontSize: 12.5, marginTop: 2 }}>
-            Carica lo shooting, prepara caption e hashtag: l’atleta li trova pronti nel suo calendario, con un tap per scaricare e copiare.
+            {t('Carica lo shooting, prepara caption e hashtag: l’atleta li trova pronti nel suo calendario, con un tap per scaricare e copiare.')}
           </div>
         </div>
-        <button className="btn btn-primary" onClick={() => setEditing('new')}><Icon name="plus" size={14} /> Nuovo contenuto</button>
+        <button className="btn btn-primary" onClick={() => setEditing('new')}><Icon name="plus" size={14} /> {t('Nuovo contenuto')}</button>
       </div>
 
       {rows.length === 0 ? (
-        <div className="card"><Empty icon={<Icon name="image" size={30} strokeWidth={1.3} />} title="Ancora nessun contenuto" hint="Crea il primo: scegli il formato, carica le foto/video e scrivi caption e hashtag." /></div>
+        <div className="card"><Empty icon={<Icon name="image" size={30} strokeWidth={1.3} />} title={t("Ancora nessun contenuto")} hint={t("Crea il primo: scegli il formato, carica le foto/video e scrivi caption e hashtag.")} /></div>
       ) : (
         <>
           <Section title="Da pubblicare" items={upcoming} onOpen={setEditing} />
@@ -94,10 +96,11 @@ export default function BrandCampaigns() {
 }
 
 function Section({ title, items, onOpen }: { title: string; items: EditorialEntry[]; onOpen: (e: EditorialEntry) => void }) {
+  const { t } = useLang()
   if (!items.length) return null
   return (
     <div>
-      <div className="ed-masthead"><div className="ed-masthead-t">{title} · {items.length}</div><div className="ed-rule" /></div>
+      <div className="ed-masthead"><div className="ed-masthead-t">{t(title)} · {items.length}</div><div className="ed-rule" /></div>
       <div className="grid g2" style={{ gap: 12 }}>
         {items.map(e => {
           const st = brandStatus(e.status)
@@ -105,10 +108,10 @@ function Section({ title, items, onOpen }: { title: string; items: EditorialEntr
             <button key={e.id} className="card" style={{ textAlign: 'left', cursor: 'pointer', border: '1px solid var(--border)' }} onClick={() => onOpen(e)}>
               <div className="flex between" style={{ alignItems: 'flex-start', gap: 8 }}>
                 <div style={{ fontWeight: 700 }}>{e.title}</div>
-                <Badge tone={st.tone}>{st.label}</Badge>
+                <Badge tone={st.tone}>{t(st.label)}</Badge>
               </div>
               <div className="flex gap wrap" style={{ marginTop: 8, alignItems: 'center' }}>
-                <Badge>{fmtLabel(e.type)}</Badge>
+                <Badge>{t(fmtLabel(e.type))}</Badge>
                 <span className="faint" style={{ fontSize: 12.5 }}>{fmtDate(e.entry_date)}</span>
               </div>
               {e.copy_text && <div className="faint" style={{ fontSize: 12.5, marginTop: 8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.copy_text}</div>}
@@ -124,6 +127,7 @@ function ContentEditor({ entry, brandId, brandName, athleteId, athleteName, uid,
   entry: EditorialEntry | 'new'; brandId: string; brandName: string; athleteId: number; athleteName: string
   uid: string | null; onClose: () => void; onSaved: () => void
 }) {
+  const { t } = useLang()
   const isNew = entry === 'new'
   const e = isNew ? null : entry as EditorialEntry
   const [title, setTitle] = useState(e?.title || '')
@@ -162,7 +166,7 @@ function ContentEditor({ entry, brandId, brandName, athleteId, athleteName, uid,
       }).eq('id', entryId)
       return entryId
     }
-    if (!title.trim()) { toast('Dai un titolo al contenuto', 'err'); return null }
+    if (!title.trim()) { toast(t('Dai un titolo al contenuto'), 'err'); return null }
     const { data, error } = await supabase.from('crm_editorial').insert({
       player_id: athleteId, brand_id: brandId, type, title: title.trim(), entry_date: date,
       copy_text: copy || null, hashtags: hashtags || null, brief: brief || null, status: 'pronto',
@@ -191,7 +195,7 @@ function ContentEditor({ entry, brandId, brandName, athleteId, athleteName, uid,
       })
       if (!ins.error) ok++
     }
-    if (ok) toast(`${ok} file caricat${ok > 1 ? 'i' : 'o'}`)
+    if (ok) toast((ok > 1 ? t('{n} file caricati') : t('{n} file caricato')).replace('{n}', String(ok)))
     setUploading(false)
     if (fileRef.current) fileRef.current.value = ''
     loadMedia(id)
@@ -211,8 +215,8 @@ function ContentEditor({ entry, brandId, brandName, athleteId, athleteName, uid,
     if (sendNotify) {
       notify('player', `Nuovo contenuto da ${brandName}`,
         `“${title.trim()}” è pronto nel tuo calendario editoriale: scarica e pubblica.`, 'editorial', athleteId)
-      toast(`Inviato a ${athleteName}`)
-    } else toast('Salvato')
+      toast(t('Inviato a {name}').replace('{name}', athleteName))
+    } else toast(t('Salvato'))
     onSaved()
   }
 
@@ -225,47 +229,47 @@ function ContentEditor({ entry, brandId, brandName, athleteId, athleteName, uid,
   }
 
   return (
-    <Modal title={isNew ? 'Nuovo contenuto' : title || 'Contenuto'} onClose={onClose} wide
+    <Modal title={isNew ? t('Nuovo contenuto') : title || t('Contenuto')} onClose={onClose} wide
       footer={
         <div className="flex between wrap gap" style={{ width: '100%' }}>
-          {!isNew ? <ConfirmButton onConfirm={removeEntry}>Elimina</ConfirmButton> : <span />}
+          {!isNew ? <ConfirmButton onConfirm={removeEntry}>{t('Elimina')}</ConfirmButton> : <span />}
           <div className="flex gap">
-            <button className="btn" onClick={onClose}>Chiudi</button>
-            <button className="btn btn-primary" disabled={busy} onClick={() => save(true)}>{busy ? 'Salvo…' : (isNew ? 'Invia all’atleta' : 'Salva e avvisa')}</button>
+            <button className="btn" onClick={onClose}>{t('Chiudi')}</button>
+            <button className="btn btn-primary" disabled={busy} onClick={() => save(true)}>{busy ? t('Salvo…') : (isNew ? t('Invia all’atleta') : t('Salva e avvisa'))}</button>
           </div>
         </div>
       }>
       <div className="grid" style={{ gap: 14 }}>
-        <Field label="Titolo del contenuto"><Input value={title} onChange={ev => setTitle(ev.target.value)} placeholder="Es. Shooting UA — lancio scarpe" /></Field>
+        <Field label={t("Titolo del contenuto")}><Input value={title} onChange={ev => setTitle(ev.target.value)} placeholder={t("Es. Shooting UA — lancio scarpe")} /></Field>
         <div className="grid g2" style={{ gap: 12 }}>
-          <Field label="Formato">
+          <Field label={t("Formato")}>
             <Select value={type} onChange={ev => setType(ev.target.value as EditorialEntry['type'])}>
-              {FORMATS.map(f => <option key={f.k} value={f.k}>{f.label}</option>)}
+              {FORMATS.map(f => <option key={f.k} value={f.k}>{t(f.label)}</option>)}
             </Select>
           </Field>
-          <Field label="Quando pubblicare"><Input type="date" value={date} onChange={ev => setDate(ev.target.value)} /></Field>
+          <Field label={t("Quando pubblicare")}><Input type="date" value={date} onChange={ev => setDate(ev.target.value)} /></Field>
         </div>
 
-        <Field label="Caption / copy del post">
-          <Textarea rows={4} value={copy} onChange={ev => setCopy(ev.target.value)} placeholder="Il testo pronto da incollare nel post…" />
+        <Field label={t("Caption / copy del post")}>
+          <Textarea rows={4} value={copy} onChange={ev => setCopy(ev.target.value)} placeholder={t("Il testo pronto da incollare nel post…")} />
         </Field>
-        <Field label="Hashtag">
+        <Field label={t("Hashtag")}>
           <Textarea rows={2} value={hashtags} onChange={ev => setHashtags(ev.target.value)} placeholder="#underarmour #ua #performance …" />
         </Field>
-        <Field label="Istruzioni (come e quando pubblicare, tag da menzionare…)">
-          <Textarea rows={2} value={brief} onChange={ev => setBrief(ev.target.value)} placeholder="Es. Pubblicare venerdì ore 18, taggare @underarmour, story con link…" />
+        <Field label={t("Istruzioni (come e quando pubblicare, tag da menzionare…)")}>
+          <Textarea rows={2} value={brief} onChange={ev => setBrief(ev.target.value)} placeholder={t("Es. Pubblicare venerdì ore 18, taggare @underarmour, story con link…")} />
         </Field>
 
         <div>
           <div className="flex between" style={{ marginBottom: 6 }}>
-            <div style={{ fontWeight: 650 }}>Materiale dello shooting <span className="faint" style={{ fontWeight: 400, fontSize: 12 }}>{media.length ? `· ${media.length} file` : ''}</span></div>
+            <div style={{ fontWeight: 650 }}>{t('Materiale dello shooting')} <span className="faint" style={{ fontWeight: 400, fontSize: 12 }}>{media.length ? `· ${media.length} file` : ''}</span></div>
             <button className="btn btn-primary btn-sm" disabled={uploading} onClick={() => fileRef.current?.click()}>
-              <Icon name="upload" size={13} /> {uploading ? 'Carico…' : 'Carica foto/video'}
+              <Icon name="upload" size={13} /> {uploading ? t('Carico…') : t('Carica foto/video')}
             </button>
             <input ref={fileRef} type="file" multiple accept="image/*,video/*" hidden onChange={onUpload} />
           </div>
           {media.length === 0
-            ? <div className="faint" style={{ fontSize: 12.5, padding: '6px 0' }}>Carica qui le foto e i video del contenuto: l’atleta potrà scaricarli con un tap.</div>
+            ? <div className="faint" style={{ fontSize: 12.5, padding: '6px 0' }}>{t('Carica qui le foto e i video del contenuto: l’atleta potrà scaricarli con un tap.')}</div>
             : (
               <div className="asset-grid">
                 {media.map(m => (
@@ -273,7 +277,7 @@ function ContentEditor({ entry, brandId, brandName, athleteId, athleteName, uid,
                     {isImageFile(m.file_name) && urls[m.storage_path]
                       ? <img src={urls[m.storage_path]} alt="" loading="lazy" />
                       : <div className="asset-ph"><Icon name="camera" size={20} strokeWidth={1.4} /></div>}
-                    <button className="asset-del" title="Rimuovi" onClick={() => removeAsset(m)}><Icon name="x" size={12} /></button>
+                    <button className="asset-del" title={t("Rimuovi")} onClick={() => removeAsset(m)}><Icon name="x" size={12} /></button>
                   </div>
                 ))}
               </div>

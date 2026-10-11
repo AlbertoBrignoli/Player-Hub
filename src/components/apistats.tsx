@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { Badge } from './ui'
 import Icon from './Icon'
 import { fmtDate } from '../lib/format'
+import { useLang } from '../lib/i18n'
 
 type Raw = any
 export interface ApiSeasonRow {
@@ -38,9 +39,10 @@ const n = (v: any) => (v === null || v === undefined || v === '' || isNaN(Number
 const pct = (a: number | null, b: number | null) => (a != null && b ? Math.round((a * 100) / b) : null)
 
 function KV({ k, v, sub, tone }: { k: string; v: React.ReactNode; sub?: React.ReactNode; tone?: string }) {
+  const { t: tr } = useLang()
   return (
     <div className="kv">
-      <div className="kv-k">{k}</div>
+      <div className="kv-k">{tr(k)}</div>
       <div className="kv-v" style={tone ? { color: tone } : undefined}>{v}</div>
       {sub != null && <div className="kv-sub">{sub}</div>}
     </div>
@@ -52,6 +54,7 @@ const pctTone = (p: number | null) => (p == null ? undefined : p >= 70 ? 'var(--
 // `matches` (partite giocate della stagione) serve ai portieri per le porte inviolate,
 // che API-Football non da' nel riepilogo di stagione.
 export function ApiSeason({ rows, matches = [], role: roleHint }: { rows: ApiSeasonRow[]; matches?: any[]; role?: string | null }) {
+  const { t: tr } = useLang()
   const raws = rows.map(r => r.raw).filter(Boolean) as Raw[]
   // somma una voce su tutte le competizioni; null se API non la fornisce in nessuna
   const s = (f: (x: Raw) => any) => {
@@ -88,11 +91,12 @@ export function ApiSeason({ rows, matches = [], role: roleHint }: { rows: ApiSea
   const pMis = s(x => x.penalty?.missed), pSav = s(x => x.penalty?.saved)
   const saves = s(x => x.goals?.saves), conc = s(x => x.goals?.conceded)
   const per90 = (v: number | null) => (v != null && mins ? (v * 90 / mins).toFixed(2) : null)
+  const every90 = (v: number | null) => tr('{n} ogni 90′').replace('{n}', String(per90(v)))
 
   type Item = [string, React.ReactNode, React.ReactNode?, string?] | null
   const sec = (title: string, items: Item[]) => ({ title, items: items.filter(Boolean) as Exclude<Item, null>[] })
   const attacco = sec('Attacco', [
-    shots != null ? ['Tiri', shots, shotsOn != null ? `${shotsOn} in porta` : undefined] : null,
+    shots != null ? ['Tiri', shots, shotsOn != null ? tr('{n} in porta').replace('{n}', String(shotsOn)) : undefined] : null,
     shots ? ['Precisione tiro', `${pct(shotsOn, shots)}%`, undefined, pctTone(pct(shotsOn, shots))] : null,
     goals + assists > 0 && mins ? ['Gol + assist / 90′', per90(goals + assists)] : null,
     drA ? ['Dribbling riusciti', `${drS ?? 0}/${drA}`, `${pct(drS, drA)}%`] : null,
@@ -100,7 +104,7 @@ export function ApiSeason({ rows, matches = [], role: roleHint }: { rows: ApiSea
     pWon ? ['Rigori procurati', pWon] : null,
   ])
   const gioco = sec('Gioco', [
-    passes != null ? ['Passaggi', passes, mins ? `${per90(passes)} ogni 90′` : undefined] : null,
+    passes != null ? ['Passaggi', passes, mins ? every90(passes) : undefined] : null,
     passAcc != null ? ['Precisione passaggi', `${passAcc}%`, undefined, pctTone(passAcc)] : null,
     keyP != null ? ['Passaggi chiave', keyP] : null,
     fD != null ? ['Falli subiti', fD] : null,
@@ -119,22 +123,22 @@ export function ApiSeason({ rows, matches = [], role: roleHint }: { rows: ApiSea
   const gkPlayed = matches.filter(m => (m.minutes || 0) > 0 && m.goals_conceded != null)
   const cleanSheets = gkPlayed.filter(isCleanSheet).length
   const portiere = sec('In porta', [
-    saves != null ? ['Parate', saves, mins ? `${per90(saves)} ogni 90′` : undefined] : null,
+    saves != null ? ['Parate', saves, mins ? every90(saves) : undefined] : null,
     savePct != null ? ['Parate su tiri in porta', `${savePct}%`, `${saves}/${saves! + conc!}`, savePct >= 70 ? 'var(--green)' : savePct < 60 ? 'var(--gold)' : undefined] : null,
-    gkPlayed.length ? ['Porta inviolata', cleanSheets, `su ${gkPlayed.length} partite giocate`, cleanSheets ? 'var(--green)' : undefined] : null,
+    gkPlayed.length ? ['Porta inviolata', cleanSheets, tr('su {n} partite giocate').replace('{n}', String(gkPlayed.length)), cleanSheets ? 'var(--green)' : undefined] : null,
     pSav != null ? ['Rigori parati', pSav] : null,
   ])
   const piedi = sec('Gioco con i piedi', [
-    passes != null ? ['Passaggi', passes, mins ? `${per90(passes)} ogni 90′` : undefined] : null,
+    passes != null ? ['Passaggi', passes, mins ? every90(passes) : undefined] : null,
     passAcc != null ? ['Precisione passaggi', `${passAcc}%`, undefined, pctTone(passAcc)] : null,
     duT ? ['Duelli vinti', `${duW ?? 0}/${duT}`, `${pct(duW, duT)}%`] : null,
   ])
   // per un portiere conta anche la disponibilita': convocazioni, titolarita', panchina
   const convocazioni = apps != null || bench != null ? (apps || 0) + (bench || 0) : null
   const disponibilita = sec('Disponibilità', [
-    convocazioni ? ['Convocazioni', convocazioni, 'in campo o in panchina'] : null,
-    lineups != null && convocazioni ? ['Titolare', `${lineups}/${convocazioni}`, `${pct(lineups, convocazioni)}% delle convocazioni`] : null,
-    bench != null ? ['In panchina', bench, 'senza entrare'] : null,
+    convocazioni ? ['Convocazioni', convocazioni, tr('in campo o in panchina')] : null,
+    lineups != null && convocazioni ? ['Titolare', `${lineups}/${convocazioni}`, tr('{n}% delle convocazioni').replace('{n}', String(pct(lineups, convocazioni)))] : null,
+    bench != null ? ['In panchina', bench, tr('senza entrare')] : null,
     subIn ? ['Entrato a gara in corso', subIn] : null,
   ])
   const disciplina = sec('Disciplina', [
@@ -157,17 +161,17 @@ export function ApiSeason({ rows, matches = [], role: roleHint }: { rows: ApiSea
     <div className="grid" style={{ gap: 16 }}>
       <div className="kv-grid kv-grid-hero">
         <KV k="Presenze" v={apps}
-          sub={lineups != null ? `${lineups} da titolare${subIn ? ` · ${subIn} da subentrato` : ''}` : undefined} />
-        {mins != null && <KV k="Minuti" v={`${mins}′`} sub={apps ? `${Math.round(mins / apps)}′ a presenza` : undefined} />}
+          sub={lineups != null ? tr('{n} da titolare').replace('{n}', String(lineups)) + (subIn ? ' · ' + tr('{n} da subentrato').replace('{n}', String(subIn)) : '') : undefined} />
+        {mins != null && <KV k="Minuti" v={`${mins}′`} sub={apps ? tr('{n}′ a presenza').replace('{n}', String(Math.round(mins / apps))) : undefined} />}
         {isGK
-          ? conc != null && <KV k="Gol subiti" v={conc} sub={mins ? `${per90(conc)} ogni 90′` : undefined} />
+          ? conc != null && <KV k="Gol subiti" v={conc} sub={mins ? every90(conc) : undefined} />
           : <KV k="Gol · Assist" v={`${goals} · ${assists}`} />}
         {rating != null && <KV k="Voto medio" v={rating.toFixed(2)} tone={rating >= 7 ? 'var(--green)' : undefined} />}
-        {!isGK && bench ? <KV k="In panchina" v={bench} sub="senza entrare" /> : null}
+        {!isGK && bench ? <KV k="In panchina" v={bench} sub={tr('senza entrare')} /> : null}
       </div>
       {sections.map(sc => (
         <div key={sc.title}>
-          <div className="kv-title">{sc.title}</div>
+          <div className="kv-title">{tr(sc.title)}</div>
           <div className="kv-grid">
             {sc.items.map(([k, v, sub, tone]) => <KV key={k} k={k} v={v} sub={sub} tone={tone} />)}
           </div>
@@ -175,7 +179,7 @@ export function ApiSeason({ rows, matches = [], role: roleHint }: { rows: ApiSea
       ))}
       {rows.length > 1 && (
         <div>
-          <div className="kv-title">Per competizione</div>
+          <div className="kv-title">{tr('Per competizione')}</div>
           <div className="list">
             {rows.map(r => {
               const m = n(r.raw?.games?.minutes)
@@ -185,9 +189,9 @@ export function ApiSeason({ rows, matches = [], role: roleHint }: { rows: ApiSea
                   <div className="row-main">
                     <div className="row-title">{r.competition}</div>
                     <div className="row-sub">
-                      {r.appearances ?? 0} pres.{m ? ` · ${m}′` : ''} · {isGK
-                        ? `${n(r.raw?.goals?.conceded) ?? '—'} subiti${n(r.raw?.goals?.saves) != null ? ` · ${r.raw.goals.saves} parate` : ''}`
-                        : `${r.goals ?? 0} gol · ${r.assists ?? 0} assist`}
+                      {tr('{n} pres.').replace('{n}', String(r.appearances ?? 0))}{m ? ` · ${m}′` : ''} · {isGK
+                        ? tr('{n} subiti').replace('{n}', String(n(r.raw?.goals?.conceded) ?? '—')) + (n(r.raw?.goals?.saves) != null ? ' · ' + tr('{n} parate').replace('{n}', String(r.raw.goals.saves)) : '')
+                        : tr('{n} gol').replace('{n}', String(r.goals ?? 0)) + ' · ' + tr('{n} assist').replace('{n}', String(r.assists ?? 0))}
                     </div>
                   </div>
                   {r.rating ? <Badge tone={r.rating >= 7 ? 'green' : undefined}>{Number(r.rating).toFixed(2)}</Badge> : null}
@@ -203,29 +207,30 @@ export function ApiSeason({ rows, matches = [], role: roleHint }: { rows: ApiSea
 
 // ── Partita per partita (lista verticale, niente tabelle larghe) ─────────────
 export function ApiMatchList({ matches }: { matches: any[] }) {
+  const { t: tr } = useLang()
   const played = matches.filter(m => m.minutes != null && m.minutes > 0)
   const noData = matches.length - played.length
-  if (!played.length) return <div className="faint" style={{ padding: '6px 0' }}>Nessuna partita con statistiche del giocatore in questa stagione.</div>
+  if (!played.length) return <div className="faint" style={{ padding: '6px 0' }}>{tr('Nessuna partita con statistiche del giocatore in questa stagione.')}</div>
   return (
     <div>
       <div className="list">
         {played.map(m => {
           const role = roleOf(m.position)
           const bits: string[] = []
-          const add = (label: string, v: any) => { if (v != null) bits.push(`${label} ${v}`) }
+          const add = (label: string, v: any) => { if (v != null) bits.push(`${tr(label)} ${v}`) }
           if (role === 'G') {
             add('Parate', m.saves); add('Gol subiti', m.goals_conceded)
             const sv = n(m.saves), gc = n(m.goals_conceded)
-            if (sv != null && gc != null && sv + gc > 0) bits.push(`${Math.round(sv * 100 / (sv + gc))}% parate`)
-            if (m.penalty_saved) bits.push(`${m.penalty_saved} rigore parato`)
+            if (sv != null && gc != null && sv + gc > 0) bits.push(tr('{n}% parate').replace('{n}', String(Math.round(sv * 100 / (sv + gc)))))
+            if (m.penalty_saved) bits.push(tr('{n} rigore parato').replace('{n}', String(m.penalty_saved)))
           } else {
-            if (m.shots_total != null) bits.push(`Tiri ${m.shots_total}${m.shots_on != null ? ` (${m.shots_on})` : ''}`)
+            if (m.shots_total != null) bits.push(`${tr('Tiri')} ${m.shots_total}${m.shots_on != null ? ` (${m.shots_on})` : ''}`)
             add('Pass. chiave', m.passes_key)
-            if (m.dribbles_attempts) bits.push(`Dribbling ${m.dribbles_success ?? 0}/${m.dribbles_attempts}`)
+            if (m.dribbles_attempts) bits.push(`${tr('Dribbling')} ${m.dribbles_success ?? 0}/${m.dribbles_attempts}`)
             if (role === 'D' || role === 'M') { add('Contrasti', m.tackles); add('Intercetti', m.interceptions) }
           }
-          if (m.duels_total) bits.push(`Duelli ${m.duels_won ?? 0}/${m.duels_total}`)
-          if (m.passes_total) bits.push(`Passaggi ${m.passes_total}${m.passes_accuracy ? ` (${pct(n(m.passes_accuracy), m.passes_total)}%)` : ''}`)
+          if (m.duels_total) bits.push(`${tr('Duelli')} ${m.duels_won ?? 0}/${m.duels_total}`)
+          if (m.passes_total) bits.push(`${tr('Passaggi')} ${m.passes_total}${m.passes_accuracy ? ` (${pct(n(m.passes_accuracy), m.passes_total)}%)` : ''}`)
           const r = n(m.rating)
           const score = m.team_score != null ? `${m.team_score}-${m.opponent_score}` : ''
           const res = m.team_score == null ? '' : m.team_score > m.opponent_score ? 'V' : m.team_score < m.opponent_score ? 'S' : 'P'
@@ -235,16 +240,16 @@ export function ApiMatchList({ matches }: { matches: any[] }) {
                 <div className="row-title">
                   {(m.venue || '').toLowerCase() === 'home' ? 'vs' : '@'} {m.opponent}
                   {score && <span className={`api-res api-res-${res}`}>{score}</span>}
-                  {role === 'G' && isCleanSheet(m) && <span className="api-res api-res-V">porta inviolata</span>}
+                  {role === 'G' && isCleanSheet(m) && <span className="api-res api-res-V">{tr('porta inviolata')}</span>}
                 </div>
                 <div className="row-sub">
-                  {fmtDate(m.match_date)} · {m.league}{m.is_substitute ? ' · subentrato' : m.is_substitute === false ? ' · titolare' : ''}
+                  {fmtDate(m.match_date)} · {m.league}{m.is_substitute ? ' · ' + tr('subentrato') : m.is_substitute === false ? ' · ' + tr('titolare') : ''}
                 </div>
                 <div className="row-sub" style={{ marginTop: 4 }}>
-                  {m.goals ? <b>{m.goals} gol · </b> : null}
-                  {m.assists ? <b>{m.assists} assist · </b> : null}
-                  {m.yellow_cards ? <span className="api-card api-card-y" title="Ammonito" /> : null}
-                  {m.red_cards ? <span className="api-card api-card-r" title="Espulso" /> : null}
+                  {m.goals ? <b>{tr('{n} gol').replace('{n}', String(m.goals))} · </b> : null}
+                  {m.assists ? <b>{tr('{n} assist').replace('{n}', String(m.assists))} · </b> : null}
+                  {m.yellow_cards ? <span className="api-card api-card-y" title={tr('Ammonito')} /> : null}
+                  {m.red_cards ? <span className="api-card api-card-r" title={tr('Espulso')} /> : null}
                   {bits.join(' · ')}
                 </div>
               </div>
@@ -258,7 +263,7 @@ export function ApiMatchList({ matches }: { matches: any[] }) {
       </div>
       {noData > 0 && (
         <div className="faint" style={{ fontSize: 12, marginTop: 8 }}>
-          {noData} {noData === 1 ? 'partita' : 'partite'} senza statistiche del giocatore (non entrato, oppure coppe e amichevoli che API-Football non copre).
+          {(noData === 1 ? tr('{n} partita senza statistiche del giocatore (non entrato, oppure coppe e amichevoli che API-Football non copre).') : tr('{n} partite senza statistiche del giocatore (non entrato, oppure coppe e amichevoli che API-Football non copre).')).replace('{n}', String(noData))}
         </div>
       )}
     </div>
@@ -268,6 +273,7 @@ export function ApiMatchList({ matches }: { matches: any[] }) {
 // ── Carriera: stagione per stagione, squadre e competizioni ──────────────────
 export function ApiCareer({ rows, role: roleHint }: { rows: ApiSeasonRow[]; role?: string | null }) {
   const isGK = (roleOf(rows.find(r => r.raw?.games?.position)?.raw?.games?.position) || roleOf(roleHint)) === 'G'
+  const { t: tr } = useLang()
   const [all, setAll] = useState(false)
   // fuori: amichevoli, competizioni senza presenze, e i doppioni di API-Football
   // (a volte ripete la stessa riga identica su due squadre della stessa stagione)
@@ -292,10 +298,10 @@ export function ApiCareer({ rows, role: roleHint }: { rows: ApiSeasonRow[]; role
   return (
     <div className="grid" style={{ gap: 14 }}>
       <div className="kv-grid kv-grid-hero">
-        <KV k="Stagioni" v={seasons.length} sub={`dal ${first}/${String((first + 1) % 100).padStart(2, '0')}`} />
-        <KV k="Presenze" v={totApps} sub="campionati e coppe" />
+        <KV k="Stagioni" v={seasons.length} sub={tr('dal {s}').replace('{s}', `${first}/${String((first + 1) % 100).padStart(2, '0')}`)} />
+        <KV k="Presenze" v={totApps} sub={tr('campionati e coppe')} />
         {isGK
-          ? <KV k="Gol subiti" v={clean.reduce((a, r) => a + (n(r.raw?.goals?.conceded) || 0), 0)} sub="dove API li riporta" />
+          ? <KV k="Gol subiti" v={clean.reduce((a, r) => a + (n(r.raw?.goals?.conceded) || 0), 0)} sub={tr('dove API li riporta')} />
           : <KV k="Gol · Assist" v={`${totGoals} · ${totAssists}`} />}
         <KV k="Squadre" v={teams.size} />
       </div>
@@ -321,13 +327,13 @@ export function ApiCareer({ rows, role: roleHint }: { rows: ApiSeasonRow[]; role
                     {list.sort((a, b) => (b.appearances || 0) - (a.appearances || 0)).map(r => (
                       <div className="row-sub" key={r.id}>
                         {r.competition}: {[
-                          `${r.appearances ?? 0} pres.`,
+                          tr('{n} pres.').replace('{n}', String(r.appearances ?? 0)),
                           ...(isGK
-                            ? [n(r.raw?.goals?.conceded) != null ? `${r.raw.goals.conceded} subiti` : '',
-                               n(r.raw?.goals?.saves) != null ? `${r.raw.goals.saves} parate` : '']
-                            : [`${r.goals ?? 0} gol`, r.assists ? `${r.assists} assist` : '']),
+                            ? [n(r.raw?.goals?.conceded) != null ? tr('{n} subiti').replace('{n}', String(r.raw.goals.conceded)) : '',
+                               n(r.raw?.goals?.saves) != null ? tr('{n} parate').replace('{n}', String(r.raw.goals.saves)) : '']
+                            : [tr('{n} gol').replace('{n}', String(r.goals ?? 0)), r.assists ? tr('{n} assist').replace('{n}', String(r.assists)) : '']),
                         ].filter(Boolean).join(' · ')}
-                        {r.rating ? ` · voto ${Number(r.rating).toFixed(2)}` : ''}
+                        {r.rating ? ' · ' + tr('voto {n}').replace('{n}', Number(r.rating).toFixed(2)) : ''}
                       </div>
                     ))}
                   </div>
@@ -339,7 +345,7 @@ export function ApiCareer({ rows, role: roleHint }: { rows: ApiSeasonRow[]; role
       </div>
       {seasons.length > 5 && (
         <button className="btn btn-ghost btn-sm" onClick={() => setAll(a => !a)} style={{ justifySelf: 'start' }}>
-          {all ? 'Mostra solo le ultime stagioni' : `Mostra tutta la carriera (${seasons.length} stagioni)`}
+          {all ? tr('Mostra solo le ultime stagioni') : tr('Mostra tutta la carriera ({n} stagioni)').replace('{n}', String(seasons.length))}
         </button>
       )}
     </div>
@@ -358,6 +364,7 @@ export const countryIt = (c?: string | null) => (c ? COUNTRY[c] || c : '')
 // ── Trofei ───────────────────────────────────────────────────────────────────
 const PLACE: Record<string, string> = { Winner: 'Vincitore', '2nd Place': '2° posto', '3rd Place': '3° posto' }
 export function ApiTrophies({ list }: { list: Raw[] }) {
+  const { t: tr, lang } = useLang()
   // API ripete ogni trofeo anche senza stagione: tengo la versione con la stagione
   const withSeason = list.filter(t => t.season)
   const seen = new Set(withSeason.map(t => `${t.league}|${t.place}|${t.country}`))
@@ -366,16 +373,16 @@ export function ApiTrophies({ list }: { list: Raw[] }) {
   const wins = items.filter(t => t.place === 'Winner').length
   return (
     <div>
-      <div className="faint" style={{ fontSize: 12.5, marginBottom: 6 }}>{wins} vinti · {items.length - wins} finali/piazzamenti</div>
+      <div className="faint" style={{ fontSize: 12.5, marginBottom: 6 }}>{tr('{n} vinti').replace('{n}', String(wins))} · {tr('{n} finali/piazzamenti').replace('{n}', String(items.length - wins))}</div>
       <div className="list">
         {items.map((t, i) => (
           <div className="row" key={i} style={{ padding: '10px 2px' }}>
             <span style={{ color: t.place === 'Winner' ? 'var(--gold)' : 'var(--text-faint)' }}><Icon name="award" size={18} /></span>
             <div className="row-main">
               <div className="row-title">{t.league}</div>
-              <div className="row-sub">{countryIt(t.country)}{t.season ? ` · ${t.season}` : ''}</div>
+              <div className="row-sub">{lang === 'en' ? (t.country || '') : countryIt(t.country)}{t.season ? ` · ${t.season}` : ''}</div>
             </div>
-            <Badge tone={t.place === 'Winner' ? 'gold' : undefined}>{PLACE[t.place] || t.place}</Badge>
+            <Badge tone={t.place === 'Winner' ? 'gold' : undefined}>{lang === 'en' ? t.place : (PLACE[t.place] || t.place)}</Badge>
           </div>
         ))}
       </div>
@@ -386,11 +393,12 @@ export function ApiTrophies({ list }: { list: Raw[] }) {
 // ── Trasferimenti ────────────────────────────────────────────────────────────
 const TTYPE: Record<string, string> = { Loan: 'Prestito', Free: 'Parametro zero', 'Back from Loan': 'Rientro dal prestito', Transfer: 'Trasferimento' }
 export function ApiTransfers({ list }: { list: Raw[] }) {
+  const { t: tr } = useLang()
   const items = [...list].sort((a, b) => String(b.date).localeCompare(String(a.date)))
   return (
     <div className="list">
       {items.map((t, i) => {
-        const type = t.type && t.type !== 'N/A' ? (TTYPE[t.type] || t.type) : null
+        const type = t.type && t.type !== 'N/A' ? (TTYPE[t.type] ? tr(TTYPE[t.type]) : t.type) : null
         return (
           <div className="row" key={i} style={{ padding: '10px 2px' }}>
             <div className="row-main">
@@ -421,6 +429,7 @@ const INJ: Record<string, string> = {
   Suspended: 'Squalifica', 'Red Card': 'Squalifica (rosso)', 'Yellow Cards': 'Squalifica (gialli)',
 }
 export function ApiInjuries({ list }: { list: Raw[] }) {
+  const { t: tr, lang } = useLang()
   const items = [...list].sort((a, b) => String(b.start).localeCompare(String(a.start)))
   return (
     <div className="list">
@@ -429,10 +438,10 @@ export function ApiInjuries({ list }: { list: Raw[] }) {
         return (
           <div className="row" key={i} style={{ padding: '10px 2px' }}>
             <div className="row-main">
-              <div className="row-title">{INJ[t.type] || t.type}</div>
-              <div className="row-sub">{fmtDate(t.start)} → {t.end ? fmtDate(t.end) : 'in corso'}</div>
+              <div className="row-title">{lang === 'en' ? t.type : (INJ[t.type] || t.type)}</div>
+              <div className="row-sub">{fmtDate(t.start)} → {t.end ? fmtDate(t.end) : tr('in corso')}</div>
             </div>
-            {days != null && <Badge>{days} giorni</Badge>}
+            {days != null && <Badge>{tr('{n} giorni').replace('{n}', String(days))}</Badge>}
           </div>
         )
       })}

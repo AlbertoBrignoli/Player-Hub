@@ -5,11 +5,13 @@ import { useAthlete } from '../lib/athlete'
 import { timeAgo } from '../lib/format'
 import { enablePush, getPushState, isIosBrowser } from '../lib/push'
 import Icon from './Icon'
+import { useLang } from '../lib/i18n'
 import type { NotificationItem } from '../lib/types'
 
 export default function NotificationBell({ goto }: { goto: (route: string) => void }) {
   const { role, session } = useAuth()
   const { athleteId, athletes } = useAthlete()
+  const { t } = useLang()
   const [items, setItems] = useState<NotificationItem[]>([])
   const [open, setOpen] = useState(false)
   const [pushState, setPushState] = useState<'on' | 'off' | 'unsupported'>('unsupported')
@@ -27,13 +29,13 @@ export default function NotificationBell({ goto }: { goto: (route: string) => vo
   async function activatePush() {
     if (!session || !role) return
     if (isIosBrowser()) {
-      setPushMsg('Su iPhone: prima aggiungi l\'app alla schermata Home (Condividi → Aggiungi a Home), poi attiva da lì.')
+      setPushMsg(t('Su iPhone: prima aggiungi l\'app alla schermata Home (Condividi → Aggiungi a Home), poi attiva da lì.'))
       return
     }
     setPushMsg('')
     const err = await enablePush(session.user.id, role)
-    if (err) setPushMsg(err)
-    else { setPushState('on'); setPushMsg('Notifiche attive su questo dispositivo ✓') }
+    if (err) setPushMsg(t(err))
+    else { setPushState('on'); setPushMsg(t('Notifiche attive su questo dispositivo') + ' ✓') }
   }
 
   // L'admin è super admin: vede le notifiche di TUTTI gli atleti, sempre,
@@ -90,26 +92,26 @@ export default function NotificationBell({ goto }: { goto: (route: string) => vo
 
   return (
     <div className="bell-wrap" ref={wrapRef}>
-      <button className="btn-ghost bell" title="Notifiche" onClick={() => { setOpen(o => !o); if (!open) markAllRead() }}>
+      <button className="btn-ghost bell" title={t('Notifiche')} onClick={() => { setOpen(o => !o); if (!open) markAllRead() }}>
         <Icon name="bell" size={18} />{unread > 0 && <span className="bell-dot">{unread > 9 ? '9+' : unread}</span>}
       </button>
       {open && (
         <div className="notif-pop">
           <div className="notif-head flex between" style={{ alignItems: 'center' }}>
-            <span>Notifiche</span>
+            <span>{t('Notifiche')}</span>
             {pushState !== 'on' && (
-              <button className="btn btn-sm" onClick={activatePush}><Icon name="smartphone" size={13} /> Attiva sul dispositivo</button>
+              <button className="btn btn-sm" onClick={activatePush}><Icon name="smartphone" size={13} /> {t('Attiva sul dispositivo')}</button>
             )}
           </div>
           {pushMsg && <div className="faint" style={{ padding: '8px 16px', fontSize: 12, borderBottom: '1px solid var(--border)' }}>{pushMsg}</div>}
           {items.length === 0 ? (
-            <div className="faint" style={{ padding: '14px 16px', fontSize: 13 }}>Nessuna notifica.</div>
+            <div className="faint" style={{ padding: '14px 16px', fontSize: 13 }}>{t('Nessuna notifica.')}</div>
           ) : items.map(n => (
             <button className={`notif-item ${!n.read_at ? 'notif-new' : ''}`} key={n.id} onClick={() => onItem(n)}>
               <div className="notif-title">{n.title}</div>
               {isSuper && n.player_id && (
                 <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: .6, textTransform: 'uppercase', color: 'var(--text-dim)', marginTop: 2 }}>
-                  {athletes.find(a => a.api_player_id === n.player_id)?.name || 'Atleta'}
+                  {athletes.find(a => a.api_player_id === n.player_id)?.name || t('Atleta')}
                 </div>
               )}
               {n.body && <div className="notif-body">{n.body}</div>}

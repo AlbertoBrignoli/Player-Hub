@@ -13,7 +13,7 @@ import { Modal, Field, Input, Tabs, Empty } from './ui'
 // Schermate home dei vari ruoli: qui compare l'invito ad attivare le notifiche.
 const HOME_ROUTES = ['dashboard', 'brandhome', 'agent-home', 'insurer-home', 'tax-home', 'physio-home', 'partner-home']
 
-export const APP_VERSION = 'v7.9'
+export const APP_VERSION = 'v8.0'
 
 export interface NavDef {
   key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[]
@@ -237,7 +237,7 @@ export default function Shell({ route, setRoute, right, children }: {
   const baseTitle = TITLES[route] || { t: '', s: '' }
   const athleteName = athletes.find(a => a.api_player_id === athleteId)?.name
   const title0 = route === 'mediakit' && athleteName
-    ? { t: baseTitle.t, s: `I numeri di ${athleteName}` }
+    ? { t: baseTitle.t, s: tr('I numeri di {name}').replace('{name}', athleteName) }
     : baseTitle
   const isCoach = role === 'preparatore'
   const isAgent = role === 'agente'
@@ -358,18 +358,18 @@ export default function Shell({ route, setRoute, right, children }: {
         </nav>
         <div className="sidebar-foot" style={{ flexShrink: 0 }}>
           <button className={`user-chip ${route === 'settings' ? 'active' : ''}`} onClick={() => { setRoute('settings'); setOpen(false) }}
-            title="Impostazioni: password, calendario sul telefono, notifiche" style={{ width: '100%', textAlign: 'left' }}>
+            title={tr('Impostazioni: password, calendario sul telefono, notifiche')} style={{ width: '100%', textAlign: 'left' }}>
             <div className="avatar">{initials(agentName || profile?.full_name || profile?.email)}</div>
             <div className="user-meta">
               <div className="user-name">{agentName || profile?.full_name || profile?.email}</div>
-              <div className="user-role">{role === 'admin' ? 'AUVI · Advisor' : role === 'creator' ? 'Team · Creator' : role === 'preparatore' ? 'Preparatore Atletico' : role === 'brand' ? 'Brand · Partner' : role === 'agente' ? 'Procuratore' : role === 'assicuratore' ? 'Assicuratore' : role === 'commercialista' ? 'Commercialista' : role === 'fisioterapista' ? 'Fisioterapista' : role === 'nutrizionista' ? 'Nutrizionista' : role === 'partner' ? 'Partner servizi' : 'Giocatore'}</div>
+              <div className="user-role">{tr(role === 'admin' ? 'AUVI · Advisor' : role === 'creator' ? 'Team · Creator' : role === 'preparatore' ? 'Preparatore Atletico' : role === 'brand' ? 'Brand · Partner' : role === 'agente' ? 'Procuratore' : role === 'assicuratore' ? 'Assicuratore' : role === 'commercialista' ? 'Commercialista' : role === 'fisioterapista' ? 'Fisioterapista' : role === 'nutrizionista' ? 'Nutrizionista' : role === 'partner' ? 'Partner servizi' : 'Giocatore')}</div>
             </div>
             <span style={{ marginLeft: 'auto', color: 'var(--text-faint)', display: 'grid' }}><Icon name="sliders" size={16} /></span>
           </button>
           {myRoles.length > 1 && (
             <div style={{ marginTop: 10 }}>
               <div style={{ fontSize: 10, letterSpacing: 1.2, textTransform: 'uppercase', fontWeight: 800, color: 'var(--text-dim)', marginBottom: 5 }}>
-                Cambia profilo
+                {tr('Cambia profilo')}
               </div>
               <select className="input" style={{ width: '100%', fontSize: 13 }}
                 value={role || ''} onChange={e => switchRole(e.target.value)}>
@@ -381,7 +381,7 @@ export default function Shell({ route, setRoute, right, children }: {
           )}
           <div className="drawer-lang" style={{ marginTop: 10 }}><LangToggle /></div>
           <button className="btn" style={{ width: '100%', marginTop: 8, justifyContent: 'center' }} onClick={signOut}>
-            <Icon name="logout" size={15} /> Esci
+            <Icon name="logout" size={15} /> {tr('Esci')}
           </button>
         </div>
       </aside>
@@ -389,7 +389,7 @@ export default function Shell({ route, setRoute, right, children }: {
       <div className="main">
         <div className="topbar">
           <div className="flex gap">
-            <button className="menu-btn" onClick={() => setOpen(true)} aria-label="Menu"><Icon name="menu" size={17} /></button>
+            <button className="menu-btn" onClick={() => setOpen(true)} aria-label={tr('Menu')}><Icon name="menu" size={17} /></button>
             <div>
               {HOME_ROUTES.includes(route) && <img className="topbar-wordmark" src="/brand/auvi-wordmark.svg" alt="AUVI" />}
               <div className={`page-title ${HOME_ROUTES.includes(route) ? 'desktop-only' : ''}`}>{tr(title.t)}</div>
@@ -399,8 +399,8 @@ export default function Shell({ route, setRoute, right, children }: {
           <div className="flex gap" style={{ alignItems: 'center' }}>
             {canSwitch && (
               <select
-                aria-label="Atleta gestito"
-                title="Atleta gestito"
+                aria-label={tr('Atleta gestito')}
+                title={tr('Atleta gestito')}
                 value={athleteId ?? ''}
                 onChange={e => setAthleteId(Number(e.target.value))}
                 className="select athlete-select"
@@ -435,12 +435,12 @@ export default function Shell({ route, setRoute, right, children }: {
           <button key={t.key} className={`tab-item ${!open && (route === t.key || isActiveItem(t.key)) ? 'active' : ''}`}
             onClick={() => { const it = allItems.find(i => i.key === t.key); if (it) openItem(it); else { setRoute(t.key); setOpen(false) } }}>
             <span className="tab-ico"><Icon name={t.icon} size={21} strokeWidth={1.7} /></span>
-            <span className="tab-lbl">{t.label}</span>
+            <span className="tab-lbl">{tr(t.label)}</span>
           </button>
         ))}
-        <button className={`tab-item ${open ? 'active' : ''}`} onClick={() => setOpen(true)} aria-label="Altre sezioni">
+        <button className={`tab-item ${open ? 'active' : ''}`} onClick={() => setOpen(true)} aria-label={tr('Altre sezioni')}>
           <span className="tab-ico"><Icon name="menu" size={21} strokeWidth={1.7} /></span>
-          <span className="tab-lbl">Altro</span>
+          <span className="tab-lbl">{tr('Altro')}</span>
         </button>
       </nav>
 

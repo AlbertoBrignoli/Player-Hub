@@ -131,7 +131,7 @@ export default function Media() {
     if (name) {
       setUploadFolder(name)
       setTab('cartelle'); setOpenFolder(name)
-      toast(`Cartella "${name}" pronta: carica il primo contenuto`)
+      toast(t('Cartella "{name}" pronta: carica il primo contenuto').replace('{name}', name))
     }
   }
 
@@ -143,7 +143,7 @@ export default function Media() {
     if (!name || name === current) return
     const { error } = await supabase.from('crm_media').update({ folder: name }).eq('folder', current).eq('player_id', athleteId)
     if (error) { toast(error.message, 'err'); return }
-    toast(`Cartella rinominata in "${name}"`)
+    toast(t('Cartella rinominata in "{name}"').replace('{name}', name))
     if (openFolder === current) setOpenFolder(name)
     if (uploadFolder === current) setUploadFolder(name)
     reload()
@@ -184,7 +184,7 @@ export default function Media() {
         } else {
           notify('player', 'Nuove grafiche da pubblicare', `${ok} grafic${ok > 1 ? 'he' : 'a'}${dove} nella sezione Media.`, 'media', athleteId)
         }
-        toast(`${ok} file caricat${ok > 1 ? 'i' : 'o'}${dove}`)
+        toast((folder ? (ok > 1 ? t('{n} file caricati nella cartella "{folder}"') : t('{n} file caricato nella cartella "{folder}"')) : (ok > 1 ? t('{n} file caricati') : t('{n} file caricato'))).replace('{n}', String(ok)).replace('{folder}', folder || ''))
         reload()
       } else {
         toast(t("Caricamento non riuscito."), 'err')
@@ -225,7 +225,7 @@ export default function Media() {
         : 'Le trovi in Media, sezione Approvate: pronte da lavorare.',
       entry ? 'editorial' : 'media', athleteId)
     setPicked(new Set()); setTargetEntry('')
-    toast(`${ids.length} foto approvat${ids.length > 1 ? 'e' : 'a'}${entry ? ` per "${entry.title}"` : ''}`)
+    toast((entry ? (ids.length > 1 ? t('{n} foto approvate per "{title}"') : t('{n} foto approvata per "{title}"')) : (ids.length > 1 ? t('{n} foto approvate') : t('{n} foto approvata'))).replace('{n}', String(ids.length)).replace('{title}', entry?.title || ''))
     setLightbox(null)
     reload()
   }
@@ -287,7 +287,7 @@ export default function Media() {
     approvata: { l: t('Approvata'), tone: 'gold' },
     scartata: { l: t('Scartata') },
     da_pubblicare: { l: t('Da pubblicare'), tone: 'blue' },
-    pubblicata: { l: 'Pubblicata', tone: 'green' },
+    pubblicata: { l: t('Pubblicata'), tone: 'green' },
   }
 
   // URL anteprima: versione ridotta via image transformation (stesso token
@@ -355,7 +355,7 @@ export default function Media() {
         <div className="media-meta">
           <div className="media-name" title={m.file_name || ''}>{m.file_name}</div>
           <div className="flex between" style={{ alignItems: 'center' }}>
-            <Badge tone={st?.tone}>{m.kind !== 'foto' ? (m.kind === 'carosello' ? t('Carosello') : t('Grafica')) + (m.status === 'pubblicata' ? ' · pubblicata' : '') : st?.l}</Badge>
+            <Badge tone={st?.tone}>{m.kind !== 'foto' ? (m.kind === 'carosello' ? t('Carosello') : t('Grafica')) + (m.status === 'pubblicata' ? ' · ' + t('pubblicata') : '') : st?.l}</Badge>
             <span className="faint" style={{ fontSize: 11 }}>{fmtDate(m.created_at)}</span>
           </div>
           {(m.folder || entry) && (
@@ -391,9 +391,11 @@ export default function Media() {
           <div className="dropzone-inner">
             <Icon name="upload" size={34} strokeWidth={1.4} />
             <div style={{ fontWeight: 750, marginTop: 10 }}>
-              Rilascia per caricare{openFolder && openFolder !== NO_FOLDER ? ` in "${openFolder}"` : uploadFolder ? ` in "${uploadFolder}"` : ''}
+              {(openFolder && openFolder !== NO_FOLDER) || uploadFolder
+                ? t('Rilascia per caricare in "{folder}"').replace('{folder}', (openFolder && openFolder !== NO_FOLDER) ? openFolder : uploadFolder)
+                : t('Rilascia per caricare')}
             </div>
-            <div className="faint" style={{ fontSize: 12, marginTop: 6 }}>tocca qui per annullare</div>
+            <div className="faint" style={{ fontSize: 12, marginTop: 6 }}>{t('tocca qui per annullare')}</div>
           </div>
         </div>
       )}
@@ -441,7 +443,7 @@ export default function Media() {
               <span style={{ display: 'inline-flex', transform: 'rotate(180deg)' }}><Icon name="chevron-right" size={13} /></span> {t('Cartelle')}
             </button>
             <div style={{ fontWeight: 650 }}>{openFolder === NO_FOLDER ? t('Senza cartella') : openFolder}</div>
-            <span className="faint" style={{ fontSize: 12.5 }}>{folderItems.length} elementi</span>
+            <span className="faint" style={{ fontSize: 12.5 }}>{t('{n} elementi').replace('{n}', String(folderItems.length))}</span>
           </div>
           {openFolder !== NO_FOLDER && (
             <button className="btn btn-sm" onClick={() => renameFolder()}><Icon name="edit" size={13} /> {t('Rinomina')}</button>
@@ -453,8 +455,8 @@ export default function Media() {
       {view === 'cartelle' && !openFolder && (
         folders.length === 0 && senzaCartella.length === 0 ? (
           <div className="card">
-            <Empty icon={<Icon name="folder" size={32} strokeWidth={1.4} />} title="Nessuna cartella ancora"
-              hint={isTeam ? 'Crea la prima con "Nuova cartella" qui sopra, poi carica i contenuti al suo interno.' : 'Il team non ha ancora creato cartelle.'} />
+            <Empty icon={<Icon name="folder" size={32} strokeWidth={1.4} />} title={t('Nessuna cartella ancora')}
+              hint={isTeam ? t('Crea la prima con "Nuova cartella" qui sopra, poi carica i contenuti al suo interno.') : t('Il team non ha ancora creato cartelle.')} />
           </div>
         ) : (
           <div className="folder-grid">
@@ -464,7 +466,7 @@ export default function Media() {
               return (
                 <div className="folder-card" key={f} onClick={() => setOpenFolder(f)} role="button" tabIndex={0}>
                   {(
-                    <button className="folder-rename" title="Rinomina cartella" onClick={e => { e.stopPropagation(); renameFolder(f) }}>
+                    <button className="folder-rename" title={t('Rinomina cartella')} onClick={e => { e.stopPropagation(); renameFolder(f) }}>
                       <Icon name="edit" size={14} />
                     </button>
                   )}
@@ -475,7 +477,7 @@ export default function Media() {
                   <div className="folder-meta">
                     <div className="folder-name"><Icon name="folder" size={13} /> {f}</div>
                     <div className="faint" style={{ fontSize: 11.5 }}>
-                      {items.length} elementi{items.some(m => m.status === 'da_approvare') ? ` · ${items.filter(m => m.status === 'da_approvare').length} da approvare` : ''}
+                      {t('{n} elementi').replace('{n}', String(items.length))}{items.some(m => m.status === 'da_approvare') ? ' · ' + t('{n} da approvare').replace('{n}', String(items.filter(m => m.status === 'da_approvare').length)) : ''}
                     </div>
                   </div>
                 </div>
@@ -490,8 +492,8 @@ export default function Media() {
                       onError={() => onThumbError(noneCover.path)} />
                   : <div className="folder-cover folder-cover-ph"><Icon name="image" size={30} strokeWidth={1.3} /></div>}
                 <div className="folder-meta">
-                  <div className="folder-name"><Icon name="image" size={13} /> Senza cartella</div>
-                  <div className="faint" style={{ fontSize: 11.5 }}>{senzaCartella.length} elementi</div>
+                  <div className="folder-name"><Icon name="image" size={13} /> {t('Senza cartella')}</div>
+                  <div className="faint" style={{ fontSize: 11.5 }}>{t('{n} elementi').replace('{n}', String(senzaCartella.length))}</div>
                 </div>
               </button>
               )
@@ -500,7 +502,7 @@ export default function Media() {
               <button className="folder-card folder-new" onClick={newFolder}>
                 <div className="folder-cover folder-cover-ph"><Icon name="folder-plus" size={30} strokeWidth={1.3} /></div>
                 <div className="folder-meta"><div className="folder-name">{t("Nuova cartella")}</div>
-                  <div className="faint" style={{ fontSize: 11.5 }}>crea e carica</div></div>
+                  <div className="faint" style={{ fontSize: 11.5 }}>{t('crea e carica')}</div></div>
               </button>
             )}
           </div>
@@ -511,11 +513,11 @@ export default function Media() {
       {role === 'player' && visibleApprovabili.length > 0 && (view === 'cartelle' ? !!openFolder : tab === 'approvare') && (
         <div className="card flex between wrap gap" style={{ alignItems: 'center', borderColor: picked.size ? 'var(--text-dim)' : undefined }}>
           <div style={{ fontWeight: 650 }}>
-            {picked.size ? `${picked.size} foto selezionat${picked.size > 1 ? 'e' : 'a'}` : 'Scorri a destra per approvare, a sinistra per scartare — o seleziona più foto insieme'}
+            {picked.size ? (picked.size > 1 ? t('{n} foto selezionate') : t('{n} foto selezionata')).replace('{n}', String(picked.size)) : t('Scorri a destra per approvare, a sinistra per scartare — o seleziona più foto insieme')}
           </div>
           <div className="flex gap wrap" style={{ alignItems: 'center' }}>
             <button className="btn btn-sm" onClick={() => setPicked(new Set(visibleApprovabili.map(m => m.id)))}>
-              Seleziona tutte ({visibleApprovabili.length})
+              {t('Seleziona tutte ({n})').replace('{n}', String(visibleApprovabili.length))}
             </button>
             <Select value={targetEntry} onChange={e => setTargetEntry(e.target.value)} style={{ minWidth: 200 }}>
               <option value="">{t("Collega a un post (opzionale)")}</option>
@@ -525,7 +527,7 @@ export default function Media() {
             </Select>
             {picked.size > 0 && (
               <button className="btn btn-primary" onClick={() => approve([...picked])}>
-                <Icon name="check" size={14} /> Approva {picked.size}
+                <Icon name="check" size={14} /> {t('Approva {n}').replace('{n}', String(picked.size))}
               </button>
             )}
           </div>
@@ -537,13 +539,13 @@ export default function Media() {
         visible.length === 0 ? (
           <div className="card">
             <Empty icon={<Icon name={view === 'cartelle' ? 'folder' : tab === 'pubblicati' ? 'check' : tab === 'pubblicare' ? 'edit' : tab === 'approvate' ? 'star' : 'inbox'} size={32} strokeWidth={1.4} />}
-              title={view === 'cartelle' ? 'Cartella vuota'
-                : tab === 'approvare' ? 'Niente da approvare' : tab === 'approvate' ? 'Nessuna foto approvata' : tab === 'pubblicare' ? 'Niente in lavorazione' : 'Nessun contenuto pubblicato'}
-              hint={view === 'cartelle' ? 'Carica qui il primo contenuto con i bottoni in alto.'
+              title={t(view === 'cartelle' ? 'Cartella vuota'
+                : tab === 'approvare' ? 'Niente da approvare' : tab === 'approvate' ? 'Nessuna foto approvata' : tab === 'pubblicare' ? 'Niente in lavorazione' : 'Nessun contenuto pubblicato')}
+              hint={t(view === 'cartelle' ? 'Carica qui il primo contenuto con i bottoni in alto.'
                 : tab === 'approvare' ? 'Le foto caricate dal team compaiono qui in attesa di approvazione.'
                 : tab === 'approvate' ? 'Le foto approvate dal giocatore arrivano qui in automatico, pronte da lavorare.'
                 : tab === 'pubblicare' ? 'Qui trovi le grafiche in preparazione.'
-                : 'Le grafiche caricate nelle box del calendario finiscono qui.'} />
+                : 'Le grafiche caricate nelle box del calendario finiscono qui.')} />
           </div>
         ) : (
           <>
@@ -552,7 +554,7 @@ export default function Media() {
             </div>
             {visible.length > limit && (
               <div style={{ textAlign: 'center', marginTop: 14 }}>
-                <button className="btn" onClick={() => setLimit(l => l + 30)}>Mostra altre foto ({visible.length - limit})</button>
+                <button className="btn" onClick={() => setLimit(l => l + 30)}>{t('Mostra altre foto ({n})').replace('{n}', String(visible.length - limit))}</button>
               </div>
             )}
           </>
@@ -571,8 +573,8 @@ export default function Media() {
             if (role === 'player' && m.status === 'da_approvare') {
               return (
                 <>
-                  <button className="btn btn-primary" onClick={() => approve([m.id])}><Icon name="check" size={14} /> Approva</button>
-                  <button className="btn" onClick={() => discard(m)}><Icon name="x" size={14} /> Scarta</button>
+                  <button className="btn btn-primary" onClick={() => approve([m.id])}><Icon name="check" size={14} /> {t('Approva')}</button>
+                  <button className="btn" onClick={() => discard(m)}><Icon name="x" size={14} /> {t('Scarta')}</button>
                 </>
               )
             }
@@ -581,10 +583,10 @@ export default function Media() {
               <>
                 {url && canShareFiles() && (
                   <button className="btn btn-primary" onClick={() => shareFile(url, m.file_name || 'foto.jpg', m.file_name || undefined)}>
-                    <Icon name="send" size={14} /> Condividi
+                    <Icon name="send" size={14} /> {t('Condividi')}
                   </button>
                 )}
-                <button className="btn" onClick={() => download(m)}><Icon name="download" size={14} /> Scarica</button>
+                <button className="btn" onClick={() => download(m)}><Icon name="download" size={14} /> {t('Scarica')}</button>
               </>
             )
           }}

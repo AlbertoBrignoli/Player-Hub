@@ -2,22 +2,25 @@
 import { Badge } from './ui'
 import type { StatsMatch } from '../lib/types'
 import { roleOf, isCleanSheet } from './apistats'
+import { useLang } from '../lib/i18n'
 
 export function SFact({ k, v, big }: { k: string; v: any; big?: boolean }) {
+  const { t } = useLang()
   return (
     <div>
-      <div className="faint" style={{ fontSize: 11 }}>{k}</div>
+      <div className="faint" style={{ fontSize: 11 }}>{t(k)}</div>
       <div style={{ fontWeight: 750, fontSize: big ? 20 : 15 }}>{v ?? '—'}</div>
     </div>
   )
 }
 
 export function SPct({ k, pct, n, d }: { k: string; pct: number | null; n?: number | null; d?: number | null }) {
+  const { t } = useLang()
   const val = pct == null ? null : Number(pct)
   const color = val == null ? undefined : val >= 70 ? 'var(--green)' : val >= 50 ? undefined : 'var(--gold)'
   return (
     <div title={n != null && d != null ? `${n}/${d}` : undefined}>
-      <div className="faint" style={{ fontSize: 11 }}>{k}</div>
+      <div className="faint" style={{ fontSize: 11 }}>{t(k)}</div>
       <div style={{ fontWeight: 750, fontSize: 17, color }}>{val == null ? '—' : `${val}%`}</div>
       {n != null && d != null && <div className="faint" style={{ fontSize: 10.5 }}>{n}/{d}</div>}
     </div>
@@ -29,6 +32,7 @@ export function SPct({ k, pct, n, d }: { k: string; pct: number | null; n?: numb
 // RUOLO del giocatore: Portiere, Difensore, Centrocampista, Attaccante.
 // Una voce che API non fornisce per quella partita non compare (niente "—").
 export function LastMatchGrid({ m }: { m: any }) {
+  const { t } = useLang()
   const role = roleOf(m.position) // G / D / M / F
   const isGK = role === 'G' || (role === '' && Number(m.saves) > 0)
   const wpct = (n: any, d: any) => (d ? Math.round(Number(n) * 100 / Number(d)) : null)
@@ -45,7 +49,7 @@ export function LastMatchGrid({ m }: { m: any }) {
 
   // Sempre in testa
   F('Voto', m.rating != null ? Number(m.rating).toFixed(1) : null)
-  F('Minuti', `${m.minutes}′${m.is_substitute ? ' (sub.)' : ''}`, has(m.minutes))
+  F('Minuti', `${m.minutes}′${m.is_substitute ? ' ' + t('(sub.)') : ''}`, has(m.minutes))
 
   if (isGK) {
     // PORTIERE
@@ -54,7 +58,7 @@ export function LastMatchGrid({ m }: { m: any }) {
     // parate sui tiri in porta subiti (parate + gol)
     if (has(m.saves) && has(m.goals_conceded) && Number(m.saves) + Number(m.goals_conceded) > 0)
       P('Parate su tiri in porta', wpct(m.saves, Number(m.saves) + Number(m.goals_conceded)), m.saves, Number(m.saves) + Number(m.goals_conceded))
-    if (isCleanSheet(m)) F('Porta inviolata', 'Sì')
+    if (isCleanSheet(m)) F('Porta inviolata', t('Sì'))
     if (m.penalty_saved) F('Rigori parati', m.penalty_saved)
     duels()
   } else {
@@ -85,6 +89,7 @@ export function LastMatchGrid({ m }: { m: any }) {
 
 // Aggregato di una stagione: totali, percentuali sui totali, spacco per competizione.
 export function SeasonBlock({ stats }: { stats: StatsMatch[] }) {
+  const { t } = useLang()
   const comps = [...new Set(stats.map(s => s.competition))]
   const agg = (rows: StatsMatch[]) => {
     const s = (f: (x: StatsMatch) => number | null) => rows.reduce((a, x) => a + Number(f(x) || 0), 0)
@@ -133,7 +138,7 @@ export function SeasonBlock({ stats }: { stats: StatsMatch[] }) {
             return (
               <div className="card" key={c} style={{ background: 'var(--bg-2)' }}>
                 <div style={{ fontWeight: 700, marginBottom: 8, fontSize: 13.5 }}>
-                  {c} <Badge>{a.partite} partite</Badge>
+                  {c} <Badge>{t('{n} partite').replace('{n}', String(a.partite))}</Badge>
                 </div>
                 <div className="grid g3" style={{ gap: 8 }}>
                   <SFact k="Minuti" v={`${a.minuti}′`} />

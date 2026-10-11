@@ -14,6 +14,7 @@ import {
   AVAIL_OPTS, VALUE_OPTS, INTEREST_OPTS, LANG_OPTS, MARKET_OPTS,
   computeBrandAthleteMatch, type BrandMatch,
 } from '../lib/commercialScore'
+import { useLang } from '../lib/i18n'
 
 function MatchRing({ pct, size = 64 }: { pct: number; size?: number }) {
   const stroke = 6, r = (size - stroke) / 2, circ = 2 * Math.PI * r
@@ -31,6 +32,7 @@ function MatchRing({ pct, size = 64 }: { pct: number; size?: number }) {
 
 export default function TalentSearch({ goto }: { goto?: (r: string) => void }) {
   const { session } = useAuth()
+  const { t } = useLang()
   const { setAthleteId } = useAthlete()
   const [brand, setBrand] = useState<any>(null)
   const [search, setSearch] = useState<any>(null)
@@ -107,7 +109,7 @@ export default function TalentSearch({ goto }: { goto?: (r: string) => void }) {
     <div className="flex gap" style={{ flexWrap: 'wrap' }}>
       {options.map(o => {
         const on = (f?.[key] || []).includes(o)
-        return <button key={o} className={`btn btn-sm ${on ? 'btn-primary' : ''}`} onClick={() => toggle(key, [o])}>{o}</button>
+        return <button key={o} className={`btn btn-sm ${on ? 'btn-primary' : ''}`} onClick={() => toggle(key, [o])}>{t(o)}</button>
       })}
     </div>
   )
@@ -118,17 +120,17 @@ export default function TalentSearch({ goto }: { goto?: (r: string) => void }) {
       <div className="card">
         <div className="flex between" style={{ flexWrap: 'wrap', gap: 8 }}>
           <div>
-            <div style={{ fontWeight: 700 }}>La tua ricerca</div>
+            <div style={{ fontWeight: 700 }}>{t('La tua ricerca')}</div>
             <div className="muted" style={{ fontSize: 12.5 }}>
-              Descrivi l'atleta ideale per {brand?.name || 'il tuo brand'}: il match con il roster si aggiorna in automatico.
+              {t("Descrivi l'atleta ideale per {brand}: il match con il roster si aggiorna in automatico.").replace('{brand}', brand?.name || t('il tuo brand'))}
             </div>
           </div>
-          {!editing && search && <button className="btn btn-sm" onClick={() => setEditing(true)}><Icon name="edit" size={13} /> Modifica</button>}
+          {!editing && search && <button className="btn btn-sm" onClick={() => setEditing(true)}><Icon name="edit" size={13} /> {t('Modifica')}</button>}
         </div>
 
         {editing ? (
           <div style={{ marginTop: 14 }}>
-            <Field label="Categorie merceologiche del brand">
+            <Field label={t("Categorie merceologiche del brand")}>
               <div className="flex gap" style={{ flexWrap: 'wrap' }}>
                 {cats.map((c: any) => {
                   const on = (f?.categories || []).includes(c.key)
@@ -137,40 +139,40 @@ export default function TalentSearch({ goto }: { goto?: (r: string) => void }) {
                 })}
               </div>
             </Field>
-            <Field label="Valori che cerchi nell'atleta">{chips('values_wanted', VALUE_OPTS)}</Field>
-            <Field label="Interessi affini al brand">{chips('interests_wanted', INTEREST_OPTS)}</Field>
-            <Field label="Attività che ti servono">
+            <Field label={t("Valori che cerchi nell'atleta")}>{chips('values_wanted', VALUE_OPTS)}</Field>
+            <Field label={t("Interessi affini al brand")}>{chips('interests_wanted', INTEREST_OPTS)}</Field>
+            <Field label={t("Attività che ti servono")}>
               <div className="flex gap" style={{ flexWrap: 'wrap' }}>
                 {AVAIL_OPTS.map(a => {
                   const on = (f?.activities || []).includes(a.key)
                   return <button key={a.key} className={`btn btn-sm ${on ? 'btn-primary' : ''}`}
-                    onClick={() => setF({ ...f, activities: on ? f.activities.filter((x: string) => x !== a.key) : [...(f.activities || []), a.key] })}>{a.label}</button>
+                    onClick={() => setF({ ...f, activities: on ? f.activities.filter((x: string) => x !== a.key) : [...(f.activities || []), a.key] })}>{t(a.label)}</button>
                 })}
               </div>
             </Field>
-            <Field label="Mercati target">{chips('markets', MARKET_OPTS)}</Field>
-            <Field label="Lingue richieste">{chips('languages', LANG_OPTS)}</Field>
+            <Field label={t("Mercati target")}>{chips('markets', MARKET_OPTS)}</Field>
+            <Field label={t("Lingue richieste")}>{chips('languages', LANG_OPTS)}</Field>
             <div className="row2">
-              <Field label="Età minima"><Input type="number" value={f?.age_min ?? ''} onChange={e => setF({ ...f, age_min: e.target.value })} /></Field>
-              <Field label="Età massima"><Input type="number" value={f?.age_max ?? ''} onChange={e => setF({ ...f, age_max: e.target.value })} /></Field>
+              <Field label={t("Età minima")}><Input type="number" value={f?.age_min ?? ''} onChange={e => setF({ ...f, age_min: e.target.value })} /></Field>
+              <Field label={t("Età massima")}><Input type="number" value={f?.age_max ?? ''} onChange={e => setF({ ...f, age_max: e.target.value })} /></Field>
             </div>
-            <Field label="Note per AUVI (obiettivi, budget indicativo, tempi…)">
+            <Field label={t("Note per AUVI (obiettivi, budget indicativo, tempi…)")}>
               <Textarea rows={2} value={f?.notes || ''} onChange={e => setF({ ...f, notes: e.target.value })} />
             </Field>
             <div className="flex gap">
-              <button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? 'Salvo…' : saved ? 'Salvato' : 'Salva ricerca'}</button>
-              {search && <button className="btn btn-ghost" onClick={() => { setF(search); setEditing(false) }}>Annulla</button>}
+              <button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? t('Salvo…') : saved ? t('Salvato') : t('Salva ricerca')}</button>
+              {search && <button className="btn btn-ghost" onClick={() => { setF(search); setEditing(false) }}>{t('Annulla')}</button>}
             </div>
           </div>
         ) : search ? (
           <div style={{ marginTop: 12 }}>
             <div className="flex gap" style={{ flexWrap: 'wrap' }}>
               {(search.categories || []).map((k: string) => <Badge key={k} tone="accent">{cats.find((c: any) => c.key === k)?.name || k}</Badge>)}
-              {(search.values_wanted || []).map((v: string) => <Badge key={v}>{v}</Badge>)}
-              {(search.age_min || search.age_max) && <Badge>{search.age_min || '…'}–{search.age_max || '…'} anni</Badge>}
-              {(search.markets || []).map((m: string) => <Badge key={m}>{m}</Badge>)}
+              {(search.values_wanted || []).map((v: string) => <Badge key={v}>{t(v)}</Badge>)}
+              {(search.age_min || search.age_max) && <Badge>{t('{range} anni').replace('{range}', `${search.age_min || '…'}–${search.age_max || '…'}`)}</Badge>}
+              {(search.markets || []).map((m: string) => <Badge key={m}>{t(m)}</Badge>)}
             </div>
-            {search.updated_at && <div className="faint" style={{ fontSize: 11.5, marginTop: 8 }}>Aggiornata {fmtDateTime(search.updated_at)}</div>}
+            {search.updated_at && <div className="faint" style={{ fontSize: 11.5, marginTop: 8 }}>{t('Aggiornata {date}').replace('{date}', fmtDateTime(search.updated_at))}</div>}
           </div>
         ) : null}
       </div>
@@ -179,10 +181,10 @@ export default function TalentSearch({ goto }: { goto?: (r: string) => void }) {
       {search && !editing && (
         <>
           <div className="ed-masthead" style={{ alignItems: 'center' }}>
-            <div className="ed-masthead-t">Match con il roster AUVI</div>
+            <div className="ed-masthead-t">{t('Match con il roster AUVI')}</div>
             <div className="ed-rule" />
           </div>
-          {results.length === 0 && <Empty icon={<Icon name="users" size={28} strokeWidth={1.4} />} title="Nessun atleta disponibile" />}
+          {results.length === 0 && <Empty icon={<Icon name="users" size={28} strokeWidth={1.4} />} title={t("Nessun atleta disponibile")} />}
           {results.map(({ player: p, match: m }, i) => (
             <div className="card" key={p.api_player_id}>
               <div className="flex gap" style={{ alignItems: 'center', flexWrap: 'wrap' }}>
@@ -191,13 +193,13 @@ export default function TalentSearch({ goto }: { goto?: (r: string) => void }) {
                   : <div className="avatar" style={{ width: 52, height: 52, fontSize: 17 }}>{(p.name || '?').slice(0, 1)}</div>}
                 <div style={{ flex: 1, minWidth: 160 }}>
                   <div style={{ fontWeight: 750, fontSize: 15.5 }}>{p.name}</div>
-                  <div className="muted" style={{ fontSize: 12.5 }}>{p.position || ''}{p.team_name ? ` · ${p.team_name}` : ''}{p.age ? ` · ${p.age} anni` : ''}</div>
-                  {m?.partial && !m.blocked && <Badge tone="gold">Profilo in completamento</Badge>}
+                  <div className="muted" style={{ fontSize: 12.5 }}>{p.position || ''}{p.team_name ? ` · ${p.team_name}` : ''}{p.age ? ` · ${t('{n} anni').replace('{n}', String(p.age))}` : ''}</div>
+                  {m?.partial && !m.blocked && <Badge tone="gold">{t('Profilo in completamento')}</Badge>}
                 </div>
                 {m && <MatchRing pct={m.pct} />}
                 <div className="flex gap" style={{ flexDirection: 'column' }}>
-                  <button className="btn btn-sm" onClick={() => setOpenReasons(openReasons === i ? null : i)}>Perché {m?.pct}/100</button>
-                  <button className="btn btn-primary btn-sm" onClick={() => { setAthleteId(p.api_player_id); goto?.('mediakit') }}>Vedi profilo</button>
+                  <button className="btn btn-sm" onClick={() => setOpenReasons(openReasons === i ? null : i)}>{t('Perché {n}/100').replace('{n}', String(m?.pct))}</button>
+                  <button className="btn btn-primary btn-sm" onClick={() => { setAthleteId(p.api_player_id); goto?.('mediakit') }}>{t('Vedi profilo')}</button>
                 </div>
               </div>
               {openReasons === i && m && (
@@ -213,14 +215,13 @@ export default function TalentSearch({ goto }: { goto?: (r: string) => void }) {
       {/* ── Claim finale: la via diretta ad AUVI ── */}
       <div className="card card-lg" style={{ textAlign: 'center', padding: '30px 24px' }}>
         <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, marginBottom: 6 }}>
-          Non hai trovato ciò che cerchi?
+          {t('Non hai trovato ciò che cerchi?')}
         </div>
         <div className="muted" style={{ fontSize: 13.5, maxWidth: 480, margin: '0 auto 16px', lineHeight: 1.6 }}>
-          Scrivi direttamente al team di AUVI: provvederemo alla ricerca di talent on target con la tua richiesta,
-          dentro e fuori dal nostro roster.
+          {t('Scrivi direttamente al team di AUVI: provvederemo alla ricerca di talent on target con la tua richiesta, dentro e fuori dal nostro roster.')}
         </div>
         <button className="btn btn-primary" onClick={() => goto?.('messages')}>
-          <Icon name="message" size={15} /> Scrivi al team AUVI
+          <Icon name="message" size={15} /> {t('Scrivi al team AUVI')}
         </button>
       </div>
     </div>

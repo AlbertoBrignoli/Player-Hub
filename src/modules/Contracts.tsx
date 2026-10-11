@@ -6,12 +6,14 @@ import { Modal, Field, Input, Textarea, Select, Badge, Empty, Spinner, ConfirmBu
 import Icon from '../components/Icon'
 import { fmtMoney, fmtDate, daysUntil } from '../lib/format'
 import type { Contract } from '../lib/types'
+import { useLang } from '../lib/i18n'
 
 const empty = (): Partial<Contract> => ({ title: '', counterpart: '', type: 'sportivo', currency: 'EUR', status: 'active', clauses: [] })
 
 export default function Contracts() {
   const { athleteId } = useAthlete()
   const { isAdmin } = useAuth()
+  const { t } = useLang()
   const { rows, loading, reload } = useCollection<Contract>('crm_contracts', { orderBy: 'created_at', match: { player_id: athleteId } })
   const [edit, setEdit] = useState<Partial<Contract> | null>(null)
 
@@ -20,11 +22,11 @@ export default function Contracts() {
   return (
     <div className="grid" style={{ gap: 16 }}>
       <div className="flex between">
-        <div className="muted">{rows.length} contratti in archivio</div>
-        {isAdmin && <button className="btn btn-primary" onClick={() => setEdit(empty())}>+ Nuovo contratto</button>}
+        <div className="muted">{t('{n} contratti in archivio').replace('{n}', String(rows.length))}</div>
+        {isAdmin && <button className="btn btn-primary" onClick={() => setEdit(empty())}>{t('+ Nuovo contratto')}</button>}
       </div>
 
-      {rows.length === 0 ? <Empty icon={<Icon name="briefcase" size={30} strokeWidth={1.4} />} title="Nessun contratto" hint={isAdmin ? 'Aggiungi il primo contratto sportivo.' : undefined} /> : (
+      {rows.length === 0 ? <Empty icon={<Icon name="briefcase" size={30} strokeWidth={1.4} />} title={t('Nessun contratto')} hint={isAdmin ? t('Aggiungi il primo contratto sportivo.') : undefined} /> : (
         <div className="grid g2">
           {rows.map(c => {
             const d = daysUntil(c.end_date)
@@ -33,23 +35,23 @@ export default function Contracts() {
                 <div className="flex between" style={{ alignItems: 'flex-start' }}>
                   <div>
                     <div style={{ fontWeight: 700, fontSize: 15 }}>{c.title}</div>
-                    <div className="muted" style={{ fontSize: 12.5 }}>{c.counterpart} · {typeLabel(c.type)}</div>
+                    <div className="muted" style={{ fontSize: 12.5 }}>{c.counterpart} · {t(typeLabel(c.type))}</div>
                   </div>
-                  <Badge tone={c.status === 'active' ? 'green' : c.status === 'draft' ? 'gold' : 'red'}>{statusLabel(c.status)}</Badge>
+                  <Badge tone={c.status === 'active' ? 'green' : c.status === 'draft' ? 'gold' : 'red'}>{t(statusLabel(c.status))}</Badge>
                 </div>
                 <div className="grid g2" style={{ gap: 10, margin: '14px 0' }}>
-                  <Info k="Periodo" v={`${fmtDate(c.start_date)} → ${fmtDate(c.end_date)}`} />
-                  <Info k="Ingaggio lordo" v={fmtMoney(c.salary_gross, c.currency)} />
+                  <Info k={t('Periodo')} v={`${fmtDate(c.start_date)} → ${fmtDate(c.end_date)}`} />
+                  <Info k={t('Ingaggio lordo')} v={fmtMoney(c.salary_gross, c.currency)} />
                 </div>
                 {c.end_date && d != null && d >= 0 && (
                   <div className="flex gap" style={{ fontSize: 12 }}>
-                    <span className="faint">Scadenza tra</span>
-                    <Badge tone={d < 90 ? 'red' : d < 180 ? 'gold' : undefined}>{d} giorni</Badge>
+                    <span className="faint">{t('Scadenza tra')}</span>
+                    <Badge tone={d < 90 ? 'red' : d < 180 ? 'gold' : undefined}>{t('{n} giorni').replace('{n}', String(d))}</Badge>
                   </div>
                 )}
                 {Array.isArray(c.clauses) && c.clauses.length > 0 && (
                   <div style={{ marginTop: 12 }}>
-                    <div className="faint" style={{ fontSize: 11, marginBottom: 6 }}>CLAUSOLE</div>
+                    <div className="faint" style={{ fontSize: 11, marginBottom: 6 }}>{t('CLAUSOLE')}</div>
                     {c.clauses.map((cl, i) => (
                       <div className="flex between" key={i} style={{ fontSize: 12.5, padding: '3px 0' }}>
                         <span className="muted">{cl.label}</span><b>{cl.value}</b>
@@ -60,8 +62,8 @@ export default function Contracts() {
                 {c.notes && <div className="faint" style={{ fontSize: 12.5, marginTop: 10 }}>{c.notes}</div>}
                 {isAdmin && (
                   <div className="flex gap" style={{ marginTop: 14 }}>
-                    <button className="btn btn-sm" onClick={() => setEdit(c)}>Modifica</button>
-                    <ConfirmButton onConfirm={async () => { await deleteRow('crm_contracts', c.id); reload() }}>Elimina</ConfirmButton>
+                    <button className="btn btn-sm" onClick={() => setEdit(c)}>{t('Modifica')}</button>
+                    <ConfirmButton onConfirm={async () => { await deleteRow('crm_contracts', c.id); reload() }}>{t('Elimina')}</ConfirmButton>
                   </div>
                 )}
               </div>
@@ -77,6 +79,7 @@ export default function Contracts() {
 
 function ContractForm({ value, onClose, onSaved }: { value: Partial<Contract>; onClose: () => void; onSaved: () => void }) {
   const { athleteId } = useAthlete()
+  const { t } = useLang()
   const [f, setF] = useState<Partial<Contract>>({ ...value, clauses: value.clauses || [] })
   const [busy, setBusy] = useState(false)
   const set = (k: keyof Contract, v: any) => setF(p => ({ ...p, [k]: v }))
@@ -96,47 +99,47 @@ function ContractForm({ value, onClose, onSaved }: { value: Partial<Contract>; o
   }
 
   return (
-    <Modal title={f.id ? 'Modifica contratto' : 'Nuovo contratto'} onClose={onClose}
+    <Modal title={f.id ? t('Modifica contratto') : t('Nuovo contratto')} onClose={onClose}
       footer={<>
-        <button className="btn btn-ghost" onClick={onClose}>Annulla</button>
-        <button className="btn btn-primary" disabled={busy || !f.title} onClick={save}>{busy ? 'Salvo…' : 'Salva'}</button>
+        <button className="btn btn-ghost" onClick={onClose}>{t('Annulla')}</button>
+        <button className="btn btn-primary" disabled={busy || !f.title} onClick={save}>{busy ? t('Salvo…') : t('Salva')}</button>
       </>}>
-      <Field label="Titolo"><Input value={f.title || ''} onChange={e => set('title', e.target.value)} placeholder="es. Contratto Olympiacos 2024–2027" /></Field>
+      <Field label={t('Titolo')}><Input value={f.title || ''} onChange={e => set('title', e.target.value)} placeholder={t('es. Contratto Olympiacos 2024–2027')} /></Field>
       <div className="row2">
-        <Field label="Controparte / Club"><Input value={f.counterpart || ''} onChange={e => set('counterpart', e.target.value)} /></Field>
-        <Field label="Tipo">
+        <Field label={t('Controparte / Club')}><Input value={f.counterpart || ''} onChange={e => set('counterpart', e.target.value)} /></Field>
+        <Field label={t('Tipo')}>
           <Select value={f.type} onChange={e => set('type', e.target.value)}>
-            <option value="sportivo">Sportivo</option><option value="mandato">Mandato / Procura</option>
-            <option value="immagine">Diritti d'immagine</option><option value="altro">Altro</option>
+            <option value="sportivo">{t('Sportivo')}</option><option value="mandato">{t('Mandato / Procura')}</option>
+            <option value="immagine">{t("Diritti d'immagine")}</option><option value="altro">{t('Altro')}</option>
           </Select>
         </Field>
       </div>
       <div className="row2">
-        <Field label="Inizio"><Input type="date" value={f.start_date || ''} onChange={e => set('start_date', e.target.value)} /></Field>
-        <Field label="Scadenza"><Input type="date" value={f.end_date || ''} onChange={e => set('end_date', e.target.value)} /></Field>
+        <Field label={t('Inizio')}><Input type="date" value={f.start_date || ''} onChange={e => set('start_date', e.target.value)} /></Field>
+        <Field label={t('Scadenza')}><Input type="date" value={f.end_date || ''} onChange={e => set('end_date', e.target.value)} /></Field>
       </div>
       <div className="row2">
-        <Field label="Ingaggio lordo"><Input type="number" value={f.salary_gross ?? ''} onChange={e => set('salary_gross', e.target.value)} /></Field>
-        <Field label="Stato">
+        <Field label={t('Ingaggio lordo')}><Input type="number" value={f.salary_gross ?? ''} onChange={e => set('salary_gross', e.target.value)} /></Field>
+        <Field label={t('Stato')}>
           <Select value={f.status} onChange={e => set('status', e.target.value)}>
-            <option value="active">Attivo</option><option value="draft">Bozza</option><option value="expired">Scaduto</option>
+            <option value="active">{t('Attivo')}</option><option value="draft">{t('Bozza')}</option><option value="expired">{t('Scaduto')}</option>
           </Select>
         </Field>
       </div>
 
       <div className="field">
-        <label>Clausole</label>
+        <label>{t('Clausole')}</label>
         {clauses.map((cl, i) => (
           <div className="flex gap" key={i} style={{ marginBottom: 6 }}>
-            <Input placeholder="Etichetta (es. Clausola rescissoria)" value={cl.label} onChange={e => { const n = [...clauses]; n[i] = { ...n[i], label: e.target.value }; set('clauses', n) }} />
-            <Input placeholder="Valore" value={cl.value} onChange={e => { const n = [...clauses]; n[i] = { ...n[i], value: e.target.value }; set('clauses', n) }} />
+            <Input placeholder={t('Etichetta (es. Clausola rescissoria)')} value={cl.label} onChange={e => { const n = [...clauses]; n[i] = { ...n[i], label: e.target.value }; set('clauses', n) }} />
+            <Input placeholder={t('Valore')} value={cl.value} onChange={e => { const n = [...clauses]; n[i] = { ...n[i], value: e.target.value }; set('clauses', n) }} />
             <button className="btn btn-ghost btn-sm" onClick={() => set('clauses', clauses.filter((_, x) => x !== i))}>×</button>
           </div>
         ))}
-        <button className="btn btn-sm" onClick={() => set('clauses', [...clauses, { label: '', value: '' }])}>+ Aggiungi clausola</button>
+        <button className="btn btn-sm" onClick={() => set('clauses', [...clauses, { label: '', value: '' }])}>{t('+ Aggiungi clausola')}</button>
       </div>
 
-      <Field label="Note"><Textarea value={f.notes || ''} onChange={e => set('notes', e.target.value)} /></Field>
+      <Field label={t('Note')}><Textarea value={f.notes || ''} onChange={e => set('notes', e.target.value)} /></Field>
     </Modal>
   )
 }

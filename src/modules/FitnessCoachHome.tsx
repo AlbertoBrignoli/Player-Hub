@@ -6,6 +6,7 @@ import { Spinner, Empty } from '../components/ui'
 import Icon from '../components/Icon'
 import { fmtDate } from '../lib/format'
 import type { FitnessProgram } from '../lib/types'
+import { useLang } from '../lib/i18n'
 
 // Home del preparatore: la sua scheda in evidenza + i suoi atleti.
 // Ogni box apre l'atleta: schede, performance, agenda, chat.
@@ -21,6 +22,7 @@ type Ath = { api_player_id: number; name: string | null; photo_url?: string | nu
 export default function FitnessCoachHome({ goto }: { goto?: (r: string) => void }) {
   const { profile, session } = useAuth()
   const { athletes, setAthleteId } = useAthlete()
+  const { t } = useLang()
   const [coach, setCoach] = useState<any | null>(null)
   const [programs, setPrograms] = useState<FitnessProgram[]>([])
   const [feedback, setFeedback] = useState<any[]>([])
@@ -54,7 +56,7 @@ export default function FitnessCoachHome({ goto }: { goto?: (r: string) => void 
 
   if (loading) return <Spinner />
 
-  const name = coach?.name || profile?.full_name || 'Preparatore'
+  const name = coach?.name || profile?.full_name || t('Preparatore')
   const today = todayKey()
   const published = programs.filter(p => p.status === 'published')
   const drafts = programs.filter(p => p.status === 'draft')
@@ -70,8 +72,8 @@ export default function FitnessCoachHome({ goto }: { goto?: (r: string) => void 
   const attention = (pid: number) => {
     const f = byPlayer[pid]
     if (!f) return null
-    if (f.discomfort && f.discomfort !== 'nessuno') return 'Fastidio segnalato'
-    if (f.status && f.status !== 'completato') return 'Ultima seduta incompleta'
+    if (f.discomfort && f.discomfort !== 'nessuno') return t('Fastidio segnalato')
+    if (f.status && f.status !== 'completato') return t('Ultima seduta incompleta')
     return null
   }
 
@@ -93,7 +95,7 @@ export default function FitnessCoachHome({ goto }: { goto?: (r: string) => void 
                 {name.slice(0, 1)}
               </div>}
           <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ ...kicker, color: ACCENT }}>Preparatore atletico</div>
+            <div style={{ ...kicker, color: ACCENT }}>{t('Preparatore atletico')}</div>
             <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: -0.4, marginTop: 2 }}>{name}</div>
             {coach?.availability && (
               <div className="faint" style={{ fontSize: 12, marginTop: 4 }}>{coach.availability}</div>
@@ -101,16 +103,16 @@ export default function FitnessCoachHome({ goto }: { goto?: (r: string) => void 
           </div>
           {goto && (
             <button className="btn btn-sm" onClick={() => goto('coach-profile')}>
-              <Icon name="edit" size={13} /> Il mio profilo
+              <Icon name="edit" size={13} /> {t('Il mio profilo')}
             </button>
           )}
         </div>
 
         <div className="flex gap" style={{ gap: 26, marginTop: 20, flexWrap: 'wrap' }}>
-          <Metric label="Atleti seguiti" value={String(list.length)} />
-          <Metric label="Sedute oggi" value={String(todayTrainings.length)} />
-          <Metric label="Bozze" value={String(drafts.length)} />
-          <Metric label="Richieste aperte" value={String(requests.length)} tone={requests.length ? 'var(--gold)' : undefined} />
+          <Metric label={t('Atleti seguiti')} value={String(list.length)} />
+          <Metric label={t('Sedute oggi')} value={String(todayTrainings.length)} />
+          <Metric label={t('Bozze')} value={String(drafts.length)} />
+          <Metric label={t('Richieste aperte')} value={String(requests.length)} tone={requests.length ? 'var(--gold)' : undefined} />
         </div>
       </div>
 
@@ -118,7 +120,7 @@ export default function FitnessCoachHome({ goto }: { goto?: (r: string) => void 
       {requests.length > 0 && (
         <div className="card" style={{ borderColor: 'rgba(154,134,0,.35)' }}>
           <div className="flex between" style={{ alignItems: 'center', marginBottom: 10 }}>
-            <div style={{ ...kicker, color: 'var(--gold)' }}>Richieste da gestire</div>
+            <div style={{ ...kicker, color: 'var(--gold)' }}>{t('Richieste da gestire')}</div>
             <span className="faint" style={{ fontSize: 12 }}>{requests.length}</span>
           </div>
           <div className="grid" style={{ gap: 8 }}>
@@ -126,13 +128,13 @@ export default function FitnessCoachHome({ goto }: { goto?: (r: string) => void 
               <div key={r.id} className="flex between" style={{ alignItems: 'center', gap: 10, border: '1px solid var(--border)', borderRadius: 10, padding: '9px 11px' }}>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: 13.5, fontWeight: 700 }}>
-                    {list.find(a => a.api_player_id === r.player_id)?.name || 'Atleta'}
+                    {list.find(a => a.api_player_id === r.player_id)?.name || t('Atleta')}
                   </div>
                   <div className="faint" style={{ fontSize: 11.5 }}>
-                    {r.type === 'programma' ? 'Richiede un programma' : 'Vuole prenotare un allenamento'} · {fmtDate(r.created_at)}
+                    {r.type === 'programma' ? t('Richiede un programma') : t('Vuole prenotare un allenamento')} · {fmtDate(r.created_at)}
                   </div>
                 </div>
-                <button className="btn btn-sm" onClick={() => open(r.player_id, 'fitness')}>Apri</button>
+                <button className="btn btn-sm" onClick={() => open(r.player_id, 'fitness')}>{t('Apri')}</button>
               </div>
             ))}
           </div>
@@ -142,20 +144,20 @@ export default function FitnessCoachHome({ goto }: { goto?: (r: string) => void 
       {/* --- Sedute di oggi --- */}
       {todayTrainings.length > 0 && (
         <div className="card">
-          <div style={{ ...kicker, color: 'var(--text-dim)', marginBottom: 10 }}>Oggi</div>
+          <div style={{ ...kicker, color: 'var(--text-dim)', marginBottom: 10 }}>{t('Oggi')}</div>
           <div className="grid" style={{ gap: 8 }}>
             {todayTrainings.map(p => (
               <div key={p.id} className="flex between" style={{ alignItems: 'center', gap: 10 }}>
                 <div className="flex gap" style={{ alignItems: 'center', gap: 9 }}>
                   <span style={{ width: 3, height: 26, background: ACCENT, borderRadius: 2 }} />
                   <div>
-                    <div style={{ fontSize: 13.5, fontWeight: 700 }}>{p.name || 'Seduta'}</div>
+                    <div style={{ fontSize: 13.5, fontWeight: 700 }}>{p.name || t('Seduta')}</div>
                     <div className="faint" style={{ fontSize: 11.5 }}>
                       {list.find(a => a.api_player_id === p.player_id)?.name} {p.start_time ? `· ${p.start_time}` : ''}
                     </div>
                   </div>
                 </div>
-                <button className="btn btn-ghost btn-sm" onClick={() => open(p.player_id!, 'fitness')}>Vedi</button>
+                <button className="btn btn-ghost btn-sm" onClick={() => open(p.player_id!, 'fitness')}>{t('Vedi')}</button>
               </div>
             ))}
           </div>
@@ -167,15 +169,15 @@ export default function FitnessCoachHome({ goto }: { goto?: (r: string) => void 
         <div className="flex between" style={{ alignItems: 'center', marginBottom: 12 }}>
           <div className="flex gap" style={{ alignItems: 'center', gap: 9 }}>
             <span style={{ width: 3, height: 15, background: ACCENT, borderRadius: 2 }} />
-            <span style={{ ...kicker, color: 'var(--text)' }}>I miei atleti</span>
+            <span style={{ ...kicker, color: 'var(--text)' }}>{t('I miei atleti')}</span>
           </div>
-          <span className="faint" style={{ fontSize: 12 }}>{list.length} seguit{list.length === 1 ? 'o' : 'i'}</span>
+          <span className="faint" style={{ fontSize: 12 }}>{(list.length === 1 ? t('{n} seguito') : t('{n} seguiti')).replace('{n}', String(list.length))}</span>
         </div>
 
         {list.length === 0 ? (
           <div className="card">
-            <Empty icon={<Icon name="user" size={30} strokeWidth={1.4} />} title="Nessun atleta assegnato"
-              hint="Chiedi ad AUVI di assegnarti gli atleti." />
+            <Empty icon={<Icon name="user" size={30} strokeWidth={1.4} />} title={t('Nessun atleta assegnato')}
+              hint={t('Chiedi ad AUVI di assegnarti gli atleti.')} />
           </div>
         ) : (
           <div className="grid g3" style={{ gap: 12 }}>
@@ -198,7 +200,7 @@ export default function FitnessCoachHome({ goto }: { goto?: (r: string) => void 
                       <div style={{ minWidth: 0 }}>
                         <div style={{ fontSize: 15.5, fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</div>
                         <div className="faint" style={{ fontSize: 11.5 }}>
-                          {last ? `Ultima scheda · ${fmtDate(last.program_date)}` : 'Nessuna scheda'}
+                          {last ? `${t('Ultima scheda')} · ${fmtDate(last.program_date)}` : t('Nessuna scheda')}
                         </div>
                         {nextMatch[a.api_player_id] && (
                           <div className="faint" style={{ fontSize: 11.5, marginTop: 2 }}>
@@ -216,13 +218,13 @@ export default function FitnessCoachHome({ goto }: { goto?: (r: string) => void 
 
                     <div className="flex gap" style={{ marginTop: 13, flexWrap: 'wrap' }}>
                       <button className="btn btn-sm" onClick={e => { e.stopPropagation(); open(a.api_player_id, 'fitness') }}>
-                        <Icon name="dumbbell" size={13} /> Schede
+                        <Icon name="dumbbell" size={13} /> {t('Schede')}
                       </button>
                       <button className="btn btn-ghost btn-sm" onClick={e => { e.stopPropagation(); open(a.api_player_id, 'performance') }}>
                         <Icon name="activity" size={13} /> Performance
                       </button>
                       <button className="btn btn-ghost btn-sm" onClick={e => { e.stopPropagation(); open(a.api_player_id, 'messages') }}>
-                        <Icon name="message" size={13} /> Scrivi
+                        <Icon name="message" size={13} /> {t('Scrivi')}
                       </button>
                     </div>
                   </div>

@@ -52,7 +52,7 @@ export default function Profile() {
   }
 
   if (loading) return <Spinner />
-  if (!player) return <Empty title="Nessun atleta selezionato" hint="Seleziona un atleta dal menù in alto." />
+  if (!player) return <Empty title={t('Nessun atleta selezionato')} hint={t('Seleziona un atleta dal menù in alto.')} />
 
   const s = (k: keyof ShippingInfo) => shipping[k] || ''
   const e = (k: keyof EquipmentInfo) => equipment[k] || ''

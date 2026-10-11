@@ -1,7 +1,14 @@
+// Lingua corrente (la stessa salvata da i18n.tsx): i formatter non sono hook React,
+// quindi la leggono al momento della chiamata. Il cambio lingua ri-renderizza i componenti.
+function curLang(): 'it' | 'en' {
+  try { return localStorage.getItem('ph_lang') === 'en' ? 'en' : 'it' } catch { return 'it' }
+}
+export function locale() { return curLang() === 'en' ? 'en-GB' : 'it-IT' }
+
 export function fmtMoney(n: number | null | undefined, currency = 'EUR') {
   if (n == null) return '—'
   try {
-    return new Intl.NumberFormat('it-IT', { style: 'currency', currency, maximumFractionDigits: 0 }).format(n)
+    return new Intl.NumberFormat(locale(), { style: 'currency', currency, maximumFractionDigits: 0 }).format(n)
   } catch {
     return `${n} ${currency}`
   }
@@ -11,14 +18,14 @@ export function fmtDate(d: string | null | undefined) {
   if (!d) return '—'
   const dt = new Date(d)
   if (isNaN(dt.getTime())) return '—'
-  return dt.toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })
+  return dt.toLocaleDateString(locale(), { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
 export function fmtDateTime(d: string | null | undefined) {
   if (!d) return '—'
   const dt = new Date(d)
   if (isNaN(dt.getTime())) return '—'
-  return dt.toLocaleString('it-IT', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+  return dt.toLocaleString(locale(), { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
 export function daysUntil(d: string | null | undefined): number | null {
@@ -30,9 +37,10 @@ export function daysUntil(d: string | null | undefined): number | null {
 
 export function timeAgo(d: string) {
   const diff = (Date.now() - new Date(d).getTime()) / 1000
-  if (diff < 60) return 'adesso'
-  if (diff < 3600) return `${Math.floor(diff / 60)} min fa`
-  if (diff < 86400) return `${Math.floor(diff / 3600)} h fa`
+  const en = curLang() === 'en'
+  if (diff < 60) return en ? 'just now' : 'adesso'
+  if (diff < 3600) return en ? `${Math.floor(diff / 60)} min ago` : `${Math.floor(diff / 60)} min fa`
+  if (diff < 86400) return en ? `${Math.floor(diff / 3600)} h ago` : `${Math.floor(diff / 3600)} h fa`
   return fmtDate(d)
 }
 
@@ -67,7 +75,7 @@ export function seasonOf(d: string | Date) {
 export function fmtMatchDateTime(d: string | null | undefined, tz?: string | null) {
   if (!d) return '—'
   try {
-    return new Date(d).toLocaleString('it-IT', {
+    return new Date(d).toLocaleString(locale(), {
       day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
       timeZone: tz || 'Europe/Rome',
     })
@@ -76,6 +84,6 @@ export function fmtMatchDateTime(d: string | null | undefined, tz?: string | nul
 export function fmtMatchTime(d: string | null | undefined, tz?: string | null) {
   if (!d) return ''
   try {
-    return new Date(d).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', timeZone: tz || 'Europe/Rome' })
+    return new Date(d).toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit', timeZone: tz || 'Europe/Rome' })
   } catch { return '' }
 }

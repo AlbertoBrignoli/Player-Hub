@@ -37,11 +37,11 @@ export default function Sponsors() {
       </div>
 
       <div className="flex between">
-        <div className="muted">{rows.length} accordi commerciali</div>
-        {isAdmin && <button className="btn btn-primary" onClick={() => setEdit(empty())}>+ Nuovo sponsor</button>}
+        <div className="muted">{t('{n} accordi commerciali').replace('{n}', String(rows.length))}</div>
+        {isAdmin && <button className="btn btn-primary" onClick={() => setEdit(empty())}>{t('+ Nuovo sponsor')}</button>}
       </div>
 
-      {rows.length === 0 ? <Empty icon={<Icon name="award" size={30} strokeWidth={1.4} />} title="Nessuno sponsor" hint={isAdmin ? 'Aggiungi il primo accordo commerciale.' : undefined} /> : (
+      {rows.length === 0 ? <Empty icon={<Icon name="award" size={30} strokeWidth={1.4} />} title={t("Nessuno sponsor")} hint={isAdmin ? t('Aggiungi il primo accordo commerciale.') : undefined} /> : (
         <div className="grid g2">
           {rows.map(s => {
             const dl = s.deliverables || []
@@ -114,10 +114,10 @@ function SponsorForm({ value, onClose, onSaved }: { value: Partial<Sponsor>; onC
   }
 
   return (
-    <Modal title={f.id ? 'Modifica sponsor' : 'Nuovo sponsor'} onClose={onClose}
+    <Modal title={f.id ? t('Modifica sponsor') : t('Nuovo sponsor')} onClose={onClose}
       footer={<>
         <button className="btn btn-ghost" onClick={onClose}>{t('Annulla')}</button>
-        <button className="btn btn-primary" disabled={busy || !f.brand} onClick={save}>{busy ? 'Salvo…' : 'Salva'}</button>
+        <button className="btn btn-primary" disabled={busy || !f.brand} onClick={save}>{busy ? t('Salvo…') : t('Salva')}</button>
       </>}>
       <div className="row2">
         <Field label={t("Brand")}><Input value={f.brand || ''} onChange={e => set('brand', e.target.value)} /></Field>
@@ -146,7 +146,7 @@ function SponsorForm({ value, onClose, onSaved }: { value: Partial<Sponsor>; onC
             <button className="btn btn-ghost btn-sm" onClick={() => set('deliverables', dl.filter((_, x) => x !== i))}>×</button>
           </div>
         ))}
-        <button className="btn btn-sm" onClick={() => set('deliverables', [...dl, { title: '', done: false }])}>+ Aggiungi deliverable</button>
+        <button className="btn btn-sm" onClick={() => set('deliverables', [...dl, { title: '', done: false }])}>{t('+ Aggiungi deliverable')}</button>
       </div>
 
       <Field label={t("Note")}><Textarea value={f.notes || ''} onChange={e => set('notes', e.target.value)} /></Field>

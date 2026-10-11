@@ -5,6 +5,7 @@ import { Modal, Field, Input, Textarea, Select, Tabs, Empty, Spinner, Badge } fr
 import Icon from '../../components/Icon'
 import { toast } from '../../lib/toast'
 import type { FitnessLibraryItem } from '../../lib/types'
+import { useLang } from '../../lib/i18n'
 
 /* =====================================================================
    AUVI Exercise Library
@@ -50,6 +51,7 @@ export const exName = (x: Pick<FitnessLibraryItem, 'name' | 'name_it'>) => x.nam
 
 /** Immagine con fallback: miniatura trasformata → originale → segnaposto. Mai un'immagine rotta. */
 export function ExMedia({ url, width = 480, category, name, className }: { url: string | null | undefined; width?: number; category?: string | null; name?: string; className?: string }) {
+  const { t } = useLang()
   const original = cleanUrl(url)
   const thumb = exThumb(original, width)
   const [stage, setStage] = useState<0 | 1 | 2>(0)
@@ -58,7 +60,7 @@ export function ExMedia({ url, width = 480, category, name, className }: { url: 
   if (!src) return (
     <div className={`exl-ph ${className || ''}`}>
       <Icon name="dumbbell" size={26} />
-      {category && <span className="exl-ph-cat">{category}</span>}
+      {category && <span className="exl-ph-cat">{t(category)}</span>}
       {name && <span className="exl-ph-name">{name}</span>}
     </div>
   )
@@ -68,10 +70,10 @@ export function ExMedia({ url, width = 480, category, name, className }: { url: 
 
 /* ---------- caricamento file con avanzamento ---------- */
 
-async function uploadWithProgress(file: File, uid: string, onProgress: (p: number) => void): Promise<string> {
+async function uploadWithProgress(file: File, uid: string, onProgress: (p: number) => void, t: (s: string) => string): Promise<string> {
   const { data } = await supabase.auth.getSession()
   const token = data.session?.access_token
-  if (!token) throw new Error('Sessione scaduta: rientra e riprova.')
+  if (!token) throw new Error(t('Sessione scaduta: rientra e riprova.'))
   const dot = file.name.lastIndexOf('.')
   const ext = (dot > 0 ? file.name.slice(dot + 1) : (file.type.split('/')[1] || 'bin')).toLowerCase().replace(/[^a-z0-9]/g, '')
   const base = (dot > 0 ? file.name.slice(0, dot) : file.name).normalize('NFD').replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 40) || 'file'
@@ -88,12 +90,12 @@ async function uploadWithProgress(file: File, uid: string, onProgress: (p: numbe
     x.upload.onprogress = e => { if (e.lengthComputable) onProgress(e.loaded / e.total) }
     x.onload = () => {
       if (x.status >= 200 && x.status < 300) return ok()
-      let msg = `Caricamento non riuscito (${x.status})`
+      let msg = t('Caricamento non riuscito ({n})').replace('{n}', String(x.status))
       try { const j = JSON.parse(x.responseText); if (j?.message) msg = j.message } catch { /* testo non JSON */ }
-      if (x.status === 413) msg = 'File troppo grande per lo storage.'
+      if (x.status === 413) msg = t('File troppo grande per lo storage.')
       no(new Error(msg))
     }
-    x.onerror = () => no(new Error('Connessione assente: riprova.'))
+    x.onerror = () => no(new Error(t('Connessione assente: riprova.')))
     x.send(file)
   })
   return supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl
@@ -107,10 +109,11 @@ const lateralityLabel = (v?: string | null) => EX_LATERALITY.find(([k]) => k ===
 const isAuvi = (x: Pick<FitnessLibraryItem, 'source' | 'is_custom'>) => x.is_custom || x.source === 'custom' ? 'CUSTOM' : x.source === 'auvi' ? 'AUVI' : null
 
 function Dots({ level }: { level?: string | null }) {
+  const { t } = useLang()
   const n = level ? EX_DIFFICULTIES.indexOf(level) + 1 : 0
   if (!n) return null
   return (
-    <span className="exl-dots" title={level || ''} aria-label={`Difficoltà: ${level}`}>
+    <span className="exl-dots" title={level ? t(level) : ''} aria-label={t('Difficoltà: {v}').replace('{v}', t(level || ''))}>
       {[1, 2, 3].map(i => <i key={i} className={i <= n ? 'on' : ''} />)}
     </span>
   )
@@ -127,6 +130,7 @@ type Origin = 'all' | 'auvi' | 'open'
 
 export default function ExerciseLibrary({ mode = 'browse', onPick }: { mode?: 'browse' | 'pick'; onPick?: (item: FitnessLibraryItem) => void }) {
   const { session, role } = useAuth()
+  const { t } = useLang()
   const uid = session?.user.id || null
   const isTeam = role === 'admin' || role === 'creator'
 
@@ -150,7 +154,7 @@ export default function ExerciseLibrary({ mode = 'browse', onPick }: { mode?: 'b
   const reqId = useRef(0)
 
   // ricerca con debounce 300 ms
-  useEffect(() => { const t = setTimeout(() => setDq(esc(q)), 300); return () => clearTimeout(t) }, [q])
+  useEffect(() => { const tm = setTimeout(() => setDq(esc(q)), 300); return () => clearTimeout(tm) }, [q])
 
   // conteggio catalogo completo + opzioni dei filtri (solo le colonne array degli esercizi curati)
   useEffect(() => {
@@ -211,7 +215,7 @@ export default function ExerciseLibrary({ mode = 'browse', onPick }: { mode?: 'b
   const extraFilterCount = activeFilters.filter(k => k !== 'category').length
   const anyActive = activeFilters.length > 0 || !!q || origin !== 'all'
   const resetAll = () => { setFilters(NO_FILTERS); setQ(''); setDq(''); setOrigin('all') }
-  const filterValueLabel = (k: keyof Filters, v: string) => (k === 'laterality' ? lateralityLabel(v) : v)
+  const filterValueLabel = (k: keyof Filters, v: string) => t(k === 'laterality' ? lateralityLabel(v) : v)
 
   async function openDetail(x: FitnessLibraryItem) {
     setDetail(x) // mostra subito i dati della card, poi completa con la scheda intera
@@ -222,10 +226,10 @@ export default function ExerciseLibrary({ mode = 'browse', onPick }: { mode?: 'b
   const canEdit = (x: FitnessLibraryItem) => isTeam || (!!x.is_custom && !!uid && x.created_by === uid)
 
   async function remove(x: FitnessLibraryItem) {
-    if (!confirm(`Eliminare "${exName(x)}" dalla libreria? Le schede già create restano invariate.`)) return
+    if (!confirm(t('Eliminare "{name}" dalla libreria? Le schede già create restano invariate.').replace('{name}', exName(x)))) return
     const { error } = await supabase.from('fitness_exercise_library').delete().eq('id', x.id)
     if (error) { toast(error.message, 'err'); return }
-    toast('Esercizio eliminato')
+    toast(t('Esercizio eliminato'))
     setDetail(null); setReloadKey(k => k + 1)
   }
 
@@ -240,48 +244,48 @@ export default function ExerciseLibrary({ mode = 'browse', onPick }: { mode?: 'b
       <div className="exl-head">
         {mode === 'browse' ? (
           <div>
-            <h1 className="exl-title">Libreria esercizi</h1>
+            <h1 className="exl-title">{t('Libreria esercizi')}</h1>
             <div className="faint exl-sub">
-              {count != null ? `${count} ${count === 1 ? 'esercizio' : 'esercizi'}` : '—'}{!full ? ' · selezione AUVI per il calcio' : ' · catalogo completo'}
+              {count != null ? (count === 1 ? t('{n} esercizio') : t('{n} esercizi')).replace('{n}', String(count)) : '—'}{!full ? ` · ${t('selezione AUVI per il calcio')}` : ` · ${t('catalogo completo')}`}
             </div>
           </div>
         ) : (
           <div className="faint exl-sub">
-            {count != null ? `${count} ${count === 1 ? 'esercizio' : 'esercizi'}` : ''}{!full ? ' · selezione AUVI' : ' · catalogo completo'} · tocca un esercizio per vederlo e aggiungerlo
+            {count != null ? (count === 1 ? t('{n} esercizio') : t('{n} esercizi')).replace('{n}', String(count)) : ''}{!full ? ` · ${t('selezione AUVI')}` : ` · ${t('catalogo completo')}`} · {t('tocca un esercizio per vederlo e aggiungerlo')}
           </div>
         )}
         <button className={mode === 'browse' ? 'btn btn-primary' : 'btn btn-sm'} onClick={() => setEditing('new')}>
-          <Icon name="plus" size={14} /> Crea esercizio personalizzato
+          <Icon name="plus" size={14} /> {t('Crea esercizio personalizzato')}
         </button>
       </div>
 
       {/* Ricerca + barra filtri */}
       <div className="exl-bar">
         <div className="exl-search">
-          <Input type="search" value={q} onChange={e => setQ(e.target.value)} placeholder="Cerca esercizio (italiano o inglese)…" aria-label="Cerca esercizio" />
-          {q && <button className="exl-search-x" onClick={() => setQ('')} aria-label="Svuota ricerca"><Icon name="x" size={14} /></button>}
+          <Input type="search" value={q} onChange={e => setQ(e.target.value)} placeholder={t('Cerca esercizio (italiano o inglese)…')} aria-label={t('Cerca esercizio')} />
+          {q && <button className="exl-search-x" onClick={() => setQ('')} aria-label={t('Svuota ricerca')}><Icon name="x" size={14} /></button>}
         </div>
         <button className={`btn ${extraFilterCount ? 'exl-btn-on' : ''}`} onClick={() => setShowFilters(true)}>
-          <Icon name="sliders" size={14} /> Filtri{extraFilterCount ? ` · ${extraFilterCount}` : ''}
+          <Icon name="sliders" size={14} /> {t('Filtri')}{extraFilterCount ? ` · ${extraFilterCount}` : ''}
         </button>
       </div>
 
       <div className="exl-bar2">
         <Tabs<Origin> value={origin} onChange={setOrigin} tabs={[
-          { key: 'all', label: 'Tutti' }, { key: 'auvi', label: 'AUVI / Custom' }, { key: 'open', label: 'Open source' },
+          { key: 'all', label: t('Tutti') }, { key: 'auvi', label: 'AUVI / Custom' }, { key: 'open', label: 'Open source' },
         ]} />
         <label className={`exl-toggle ${full ? 'on' : ''}`}>
           <input type="checkbox" checked={full} onChange={e => setFull(e.target.checked)} />
           <span className="exl-switch" aria-hidden />
-          Catalogo completo{fullCount != null ? ` (${fullCount})` : ''}
+          {t('Catalogo completo')}{fullCount != null ? ` (${fullCount})` : ''}
         </label>
       </div>
 
-      <div className="exl-cats" role="group" aria-label="Categoria">
-        <button className={`exl-chip ${!filters.category ? 'active' : ''}`} onClick={() => setFilters({ ...filters, category: '' })}>Tutte</button>
+      <div className="exl-cats" role="group" aria-label={t('Categoria')}>
+        <button className={`exl-chip ${!filters.category ? 'active' : ''}`} onClick={() => setFilters({ ...filters, category: '' })}>{t('Tutte')}</button>
         {EX_CATEGORIES.map(c => (
           <button key={c} className={`exl-chip ${filters.category === c ? 'active' : ''}`}
-            onClick={() => setFilters({ ...filters, category: filters.category === c ? '' : c })}>{c}</button>
+            onClick={() => setFilters({ ...filters, category: filters.category === c ? '' : c })}>{t(c)}</button>
         ))}
       </div>
 
@@ -289,24 +293,24 @@ export default function ExerciseLibrary({ mode = 'browse', onPick }: { mode?: 'b
         <div className="exl-active">
           {activeFilters.filter(k => k !== 'category').map(k => (
             <button key={k} className="exl-chip exl-chip-rm" onClick={() => setFilters({ ...filters, [k]: '' })}>
-              <span className="faint">{FILTER_LABEL[k]}:</span> {filterValueLabel(k, filters[k])} <Icon name="x" size={12} />
+              <span className="faint">{t(FILTER_LABEL[k])}:</span> {filterValueLabel(k, filters[k])} <Icon name="x" size={12} />
             </button>
           ))}
-          {anyActive && <button className="btn btn-ghost btn-sm" onClick={resetAll}>Azzera</button>}
+          {anyActive && <button className="btn btn-ghost btn-sm" onClick={resetAll}>{t('Azzera')}</button>}
         </div>
       )}
 
       {/* Griglia */}
       {loading ? <Spinner /> : error ? (
-        <Empty icon={<Icon name="dumbbell" size={22} />} title="Non riesco a caricare la libreria" hint={error} action={{ label: 'Riprova', onClick: () => fetchPage(0) }} />
+        <Empty icon={<Icon name="dumbbell" size={22} />} title={t('Non riesco a caricare la libreria')} hint={error} action={{ label: t('Riprova'), onClick: () => fetchPage(0) }} />
       ) : items.length === 0 ? (
         !full && !anyActive
-          ? <Empty icon={<Icon name="dumbbell" size={22} />} title="La selezione AUVI è in preparazione"
-              hint="Nel frattempo puoi cercare nel catalogo completo o creare un esercizio personalizzato."
-              action={{ label: `Mostra catalogo completo${fullCount != null ? ` (${fullCount})` : ''}`, onClick: () => setFull(true) }} />
-          : <Empty icon={<Icon name="dumbbell" size={22} />} title="Nessun esercizio con questi filtri"
-              hint={!full ? 'Prova ad allargare la ricerca al catalogo completo.' : 'Prova a togliere qualche filtro.'}
-              action={!full ? { label: 'Cerca nel catalogo completo', onClick: () => setFull(true) } : { label: 'Azzera filtri', onClick: resetAll }} />
+          ? <Empty icon={<Icon name="dumbbell" size={22} />} title={t('La selezione AUVI è in preparazione')}
+              hint={t('Nel frattempo puoi cercare nel catalogo completo o creare un esercizio personalizzato.')}
+              action={{ label: `${t('Mostra catalogo completo')}${fullCount != null ? ` (${fullCount})` : ''}`, onClick: () => setFull(true) }} />
+          : <Empty icon={<Icon name="dumbbell" size={22} />} title={t('Nessun esercizio con questi filtri')}
+              hint={!full ? t('Prova ad allargare la ricerca al catalogo completo.') : t('Prova a togliere qualche filtro.')}
+              action={!full ? { label: t('Cerca nel catalogo completo'), onClick: () => setFull(true) } : { label: t('Azzera filtri'), onClick: resetAll }} />
       ) : (
         <>
           <div className="exl-grid">
@@ -319,13 +323,13 @@ export default function ExerciseLibrary({ mode = 'browse', onPick }: { mode?: 'b
                   <div className="exl-card-media">
                     <ExMedia url={exImage(x)} category={x.category} />
                     {tag && <span className={`exl-tag ${tag === 'AUVI' ? 'auvi' : ''}`}>{tag}</span>}
-                    {x.video_url && <span className="exl-vid" title="Video disponibile">VIDEO</span>}
+                    {x.video_url && <span className="exl-vid" title={t('Video disponibile')}>VIDEO</span>}
                   </div>
                   <div className="exl-card-body">
                     <div className="exl-card-name">{exName(x)}</div>
                     {x.name_it && x.name_it !== x.name && <div className="exl-card-en">{x.name}</div>}
                     <div className="exl-card-meta">
-                      {x.category && <span className="exl-cat">{x.category}</span>}
+                      {x.category && <span className="exl-cat">{t(x.category)}</span>}
                       <Dots level={x.difficulty} />
                     </div>
                     {(muscles.length > 0 || eq.length > 0) && (
@@ -341,8 +345,8 @@ export default function ExerciseLibrary({ mode = 'browse', onPick }: { mode?: 'b
             })}
           </div>
           <div className="exl-more">
-            <span className="faint">{loaded} di {count ?? loaded}</span>
-            {hasMore && <button className="btn" onClick={() => fetchPage(page + 1)} disabled={loadingMore}>{loadingMore ? 'Carico…' : 'Carica altri'}</button>}
+            <span className="faint">{t('{n} di {tot}').replace('{n}', String(loaded)).replace('{tot}', String(count ?? loaded))}</span>
+            {hasMore && <button className="btn" onClick={() => fetchPage(page + 1)} disabled={loadingMore}>{loadingMore ? t('Carico…') : t('Carica altri')}</button>}
           </div>
         </>
       )}
@@ -378,21 +382,22 @@ export default function ExerciseLibrary({ mode = 'browse', onPick }: { mode?: 'b
 /* ---------- Filtri (foglio) ---------- */
 
 function FiltersSheet({ value, facets, onClose, onApply }: { value: Filters; facets: typeof FALLBACK; onClose: () => void; onApply: (f: Filters) => void }) {
+  const { t } = useLang()
   const [f, setF] = useState<Filters>(value)
   const sel = (k: keyof Filters, label: string, options: (string | [string, string])[]) => (
-    <Field label={label}>
+    <Field label={t(label)}>
       <Select value={f[k]} onChange={e => setF({ ...f, [k]: e.target.value })}>
-        <option value="">Tutti</option>
-        {options.map(o => (Array.isArray(o) ? <option key={o[0]} value={o[0]}>{o[1]}</option> : <option key={o} value={o}>{o}</option>))}
+        <option value="">{t('Tutti')}</option>
+        {options.map(o => (Array.isArray(o) ? <option key={o[0]} value={o[0]}>{t(o[1])}</option> : <option key={o} value={o}>{t(o)}</option>))}
         {f[k] && !options.some(o => (Array.isArray(o) ? o[0] : o) === f[k]) && <option value={f[k]}>{f[k]}</option>}
       </Select>
     </Field>
   )
   return (
-    <Modal title="Filtri" onClose={onClose}
+    <Modal title={t('Filtri')} onClose={onClose}
       footer={<>
-        <button className="btn btn-ghost" onClick={() => setF({ ...NO_FILTERS, category: f.category })}>Azzera</button>
-        <button className="btn btn-primary" onClick={() => onApply(f)}>Mostra risultati</button>
+        <button className="btn btn-ghost" onClick={() => setF({ ...NO_FILTERS, category: f.category })}>{t('Azzera')}</button>
+        <button className="btn btn-primary" onClick={() => onApply(f)}>{t('Mostra risultati')}</button>
       </>}>
       <div className="exl-fgrid">
         {sel('category', 'Categoria', EX_CATEGORIES)}
@@ -413,13 +418,14 @@ export function ExerciseDetail({ item: x, onClose, onPick, onEdit, onDelete, own
   item: FitnessLibraryItem; onClose: () => void
   onPick?: () => void; onEdit?: () => void; onDelete?: () => void; ownerIsMe?: boolean; pickLabel?: string
 }) {
+  const { t } = useLang()
   const img = exImage(x)
   const tag = isAuvi(x)
   const primary = arr(x.primary_muscles), secondary = arr(x.secondary_muscles), eq = arr(x.equipment_tags)
   const steps = arr(x.instructions), cues = arr(x.coaching_cues), mistakes = arr(x.common_mistakes)
   const goals = arr(x.performance_goals), positions = arr(x.position_relevance)
   const sourceLine = x.is_custom || x.source === 'custom'
-    ? (ownerIsMe ? 'Custom · creato da te' : 'Custom')
+    ? (ownerIsMe ? t('Custom · creato da te') : 'Custom')
     : x.source === 'auvi' ? 'AUVI'
     : x.source === 'free-exercise-db' || !x.source ? `Free Exercise DB · ${x.source_license || 'Unlicense'}`
     : [x.source, x.source_license].filter(Boolean).join(' · ')
@@ -427,9 +433,9 @@ export function ExerciseDetail({ item: x, onClose, onPick, onEdit, onDelete, own
   return (
     <Modal wide title={exName(x)} onClose={onClose}
       footer={hasFooter ? <>
-        {onDelete && <button className="btn btn-danger" onClick={onDelete}><Icon name="trash" size={14} /> Elimina</button>}
-        {onEdit && <button className="btn" onClick={onEdit}><Icon name="edit" size={14} /> Modifica</button>}
-        {onPick && <button className="btn btn-primary" onClick={onPick}><Icon name="plus" size={14} /> {pickLabel}</button>}
+        {onDelete && <button className="btn btn-danger" onClick={onDelete}><Icon name="trash" size={14} /> {t('Elimina')}</button>}
+        {onEdit && <button className="btn" onClick={onEdit}><Icon name="edit" size={14} /> {t('Modifica')}</button>}
+        {onPick && <button className="btn btn-primary" onClick={onPick}><Icon name="plus" size={14} /> {t(pickLabel)}</button>}
       </> : undefined}>
       <style>{EXL_CSS}</style>
       <div className="exl-detail">
@@ -450,24 +456,24 @@ export function ExerciseDetail({ item: x, onClose, onPick, onEdit, onDelete, own
         </div>
 
         <div className="exl-d-chips">
-          {x.category && <Badge tone="accent">{x.category}</Badge>}
+          {x.category && <Badge tone="accent">{t(x.category)}</Badge>}
           {x.subcategory && <Badge>{x.subcategory}</Badge>}
-          {x.difficulty && <span className="exl-d-diff"><Dots level={x.difficulty} /> {x.difficulty}</span>}
-          {x.laterality && <Badge>{lateralityLabel(x.laterality)}</Badge>}
+          {x.difficulty && <span className="exl-d-diff"><Dots level={x.difficulty} /> {t(x.difficulty)}</span>}
+          {x.laterality && <Badge>{t(lateralityLabel(x.laterality))}</Badge>}
         </div>
 
         <div className="exl-d-facts">
-          {primary.length > 0 && <Fact k="Muscoli principali" v={primary.join(', ')} />}
-          {secondary.length > 0 && <Fact k="Muscoli secondari" v={secondary.join(', ')} />}
-          {eq.length > 0 && <Fact k="Attrezzatura" v={eq.join(', ')} />}
-          {!primary.length && x.muscle_group && <Fact k="Gruppo muscolare" v={x.muscle_group} />}
-          {!eq.length && x.equipment && <Fact k="Attrezzatura" v={x.equipment} />}
+          {primary.length > 0 && <Fact k={t('Muscoli principali')} v={primary.join(', ')} />}
+          {secondary.length > 0 && <Fact k={t('Muscoli secondari')} v={secondary.join(', ')} />}
+          {eq.length > 0 && <Fact k={t('Attrezzatura')} v={eq.join(', ')} />}
+          {!primary.length && x.muscle_group && <Fact k={t('Gruppo muscolare')} v={x.muscle_group} />}
+          {!eq.length && x.equipment && <Fact k={t('Attrezzatura')} v={x.equipment} />}
           {x.football_relevance != null && x.football_relevance > 0 && (
             <div>
-              <div className="exl-k">Rilevanza per il calcio</div>
-              <div className="exl-bars" aria-label={`Rilevanza ${x.football_relevance} su 3`}>
+              <div className="exl-k">{t('Rilevanza per il calcio')}</div>
+              <div className="exl-bars" aria-label={t('Rilevanza {n} su 3').replace('{n}', String(x.football_relevance))}>
                 {[1, 2, 3].map(i => <i key={i} className={i <= (x.football_relevance || 0) ? 'on' : ''} />)}
-                <span className="faint">{['', 'Bassa', 'Media', 'Alta'][x.football_relevance] || ''}</span>
+                <span className="faint">{t(['', 'Bassa', 'Media', 'Alta'][x.football_relevance] || '')}</span>
               </div>
             </div>
           )}
@@ -475,13 +481,13 @@ export function ExerciseDetail({ item: x, onClose, onPick, onEdit, onDelete, own
 
         {x.description && <p className="exl-d-desc">{x.description}</p>}
 
-        {steps.length > 0 && <Section title="Come si esegue"><ol className="exl-ol">{steps.map((s, i) => <li key={i}>{s}</li>)}</ol></Section>}
-        {cues.length > 0 && <Section title="Indicazioni tecniche"><ul className="exl-ul">{cues.map((s, i) => <li key={i}>{s}</li>)}</ul></Section>}
-        {mistakes.length > 0 && <Section title="Errori comuni"><ul className="exl-ul exl-ul-warn">{mistakes.map((s, i) => <li key={i}>{s}</li>)}</ul></Section>}
-        {goals.length > 0 && <Section title="Obiettivi di performance"><div className="exl-d-chips">{goals.map(g => <span key={g} className="exl-chip static">{g}</span>)}</div></Section>}
-        {positions.length > 0 && <Section title="Ruoli"><div className="exl-d-chips">{positions.map(g => <span key={g} className="exl-chip static">{g}</span>)}</div></Section>}
+        {steps.length > 0 && <Section title={t('Come si esegue')}><ol className="exl-ol">{steps.map((s, i) => <li key={i}>{s}</li>)}</ol></Section>}
+        {cues.length > 0 && <Section title={t('Indicazioni tecniche')}><ul className="exl-ul">{cues.map((s, i) => <li key={i}>{s}</li>)}</ul></Section>}
+        {mistakes.length > 0 && <Section title={t('Errori comuni')}><ul className="exl-ul exl-ul-warn">{mistakes.map((s, i) => <li key={i}>{s}</li>)}</ul></Section>}
+        {goals.length > 0 && <Section title={t('Obiettivi di performance')}><div className="exl-d-chips">{goals.map(g => <span key={g} className="exl-chip static">{t(g)}</span>)}</div></Section>}
+        {positions.length > 0 && <Section title={t('Ruoli')}><div className="exl-d-chips">{positions.map(g => <span key={g} className="exl-chip static">{t(g)}</span>)}</div></Section>}
 
-        <div className="exl-d-source faint">Fonte: {sourceLine}</div>
+        <div className="exl-d-source faint">{t('Fonte:')} {sourceLine}</div>
       </div>
     </Modal>
   )
@@ -497,6 +503,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 /* ---------- Crea / modifica esercizio personalizzato ---------- */
 
 function MultiChips({ value, onChange, options, placeholder }: { value: string[]; onChange: (v: string[]) => void; options: string[]; placeholder: string }) {
+  const { t } = useLang()
   const [draft, setDraft] = useState('')
   const add = (raw: string) => {
     const parts = raw.split(',').map(s => s.trim()).filter(Boolean)
@@ -510,7 +517,7 @@ function MultiChips({ value, onChange, options, placeholder }: { value: string[]
         <div className="exl-d-chips" style={{ marginBottom: 8 }}>
           {value.map(v => (
             <button type="button" key={v} className="exl-chip exl-chip-rm active" onClick={() => onChange(value.filter(x => x !== v))}>
-              {v} <Icon name="x" size={12} />
+              {t(v)} <Icon name="x" size={12} />
             </button>
           ))}
         </div>
@@ -521,7 +528,7 @@ function MultiChips({ value, onChange, options, placeholder }: { value: string[]
         onBlur={() => add(draft)} />
       {suggestions.length > 0 && (
         <div className="exl-sugg">
-          {suggestions.slice(0, 16).map(o => <button type="button" key={o} className="exl-chip" onClick={() => onChange([...value, o])}>{o}</button>)}
+          {suggestions.slice(0, 16).map(o => <button type="button" key={o} className="exl-chip" onClick={() => onChange([...value, o])}>{t(o)}</button>)}
         </div>
       )}
     </div>
@@ -529,20 +536,21 @@ function MultiChips({ value, onChange, options, placeholder }: { value: string[]
 }
 
 function UploadField({ label, accept, kind, url, onUrl, uid }: { label: string; accept: string; kind: 'image' | 'video'; url: string; onUrl: (u: string) => void; uid: string | null }) {
+  const { t } = useLang()
   const [progress, setProgress] = useState<number | null>(null)
   async function onFile(file: File) {
-    if (!uid) { toast('Sessione non valida: rientra e riprova.', 'err'); return }
-    if (file.size > MAX_UPLOAD) { toast(`File troppo grande (${Math.round(file.size / 1048576)} MB): massimo 80 MB.`, 'err'); return }
+    if (!uid) { toast(t('Sessione non valida: rientra e riprova.'), 'err'); return }
+    if (file.size > MAX_UPLOAD) { toast(t('File troppo grande ({n} MB): massimo 80 MB.').replace('{n}', String(Math.round(file.size / 1048576))), 'err'); return }
     const okType = kind === 'image' ? file.type.startsWith('image/') : ['video/mp4', 'video/webm', 'video/quicktime'].includes(file.type)
-    if (!okType) { toast(kind === 'image' ? 'Serve un\'immagine.' : 'Formati video accettati: MP4, WebM, MOV.', 'err'); return }
+    if (!okType) { toast(kind === 'image' ? t('Serve un\'immagine.') : t('Formati video accettati: MP4, WebM, MOV.'), 'err'); return }
     setProgress(0)
-    try { onUrl(await uploadWithProgress(file, uid, setProgress)); toast(kind === 'image' ? 'Immagine caricata' : 'Video caricato') }
+    try { onUrl(await uploadWithProgress(file, uid, setProgress, t)); toast(kind === 'image' ? t('Immagine caricata') : t('Video caricato')) }
     catch (e) { toast((e as Error).message, 'err') }
     finally { setProgress(null) }
   }
   const busy = progress !== null
   return (
-    <Field label={label}>
+    <Field label={t(label)}>
       <div className="exl-up">
         <div className="exl-up-prev">
           {url
@@ -551,12 +559,12 @@ function UploadField({ label, accept, kind, url, onUrl, uid }: { label: string; 
         </div>
         <div className="exl-up-main">
           <label className={`btn btn-sm ${busy ? 'exl-disabled' : ''}`} aria-disabled={busy}>
-            <Icon name="upload" size={12} /> {busy ? `Carico… ${Math.round((progress || 0) * 100)}%` : url ? 'Sostituisci' : 'Carica'}
+            <Icon name="upload" size={12} /> {busy ? `${t('Carico…')} ${Math.round((progress || 0) * 100)}%` : url ? t('Sostituisci') : t('Carica')}
             <input type="file" accept={accept} hidden disabled={busy} onChange={e => { const f = e.target.files?.[0]; if (f) onFile(f); e.target.value = '' }} />
           </label>
-          {url && !busy && <button type="button" className="btn btn-ghost btn-sm" onClick={() => onUrl('')}>Rimuovi</button>}
+          {url && !busy && <button type="button" className="btn btn-ghost btn-sm" onClick={() => onUrl('')}>{t('Rimuovi')}</button>}
           {busy && <div className="exl-prog"><i style={{ width: `${Math.round((progress || 0) * 100)}%` }} /></div>}
-          {!busy && <div className="faint exl-up-hint">{kind === 'image' ? 'JPG, PNG o WebP' : 'MP4, WebM o MOV · max 80 MB'}</div>}
+          {!busy && <div className="faint exl-up-hint">{kind === 'image' ? t('JPG, PNG o WebP') : t('MP4, WebM o MOV · max 80 MB')}</div>}
         </div>
       </div>
     </Field>
@@ -574,14 +582,15 @@ function ExerciseForm({ initial, facets, uid, onClose, onSaved }: {
     image_url: initial?.image_url || '', video_url: initial?.video_url || '',
     difficulty: initial?.difficulty || '', laterality: initial?.laterality || '',
   })
+  const { t } = useLang()
   const [busy, setBusy] = useState(false)
   const set = <K extends keyof typeof f>(k: K, v: (typeof f)[K]) => setF(prev => ({ ...prev, [k]: v }))
   const goalOptions = useMemo(() => facets.goals, [facets])
 
   async function save() {
     const nameIt = f.name_it.trim(), name = f.name.trim() || nameIt
-    if (!name) { toast('Dai un nome all\'esercizio.', 'err'); return }
-    if (!uid) { toast('Sessione non valida: rientra e riprova.', 'err'); return }
+    if (!name) { toast(t('Dai un nome all\'esercizio.'), 'err'); return }
+    if (!uid) { toast(t('Sessione non valida: rientra e riprova.'), 'err'); return }
     setBusy(true)
     const payload = {
       name, name_it: nameIt || null, category: f.category || null, description: f.description.trim() || null,
@@ -599,49 +608,49 @@ function ExerciseForm({ initial, facets, uid, onClose, onSaved }: {
         }).select('*').single()
     setBusy(false)
     if (res.error) { toast(res.error.message, 'err'); return }
-    toast(initial ? 'Esercizio aggiornato' : 'Esercizio creato')
+    toast(initial ? t('Esercizio aggiornato') : t('Esercizio creato'))
     onSaved(res.data as FitnessLibraryItem)
   }
 
   return (
-    <Modal wide title={initial ? 'Modifica esercizio' : 'Nuovo esercizio personalizzato'} onClose={onClose}
+    <Modal wide title={initial ? t('Modifica esercizio') : t('Nuovo esercizio personalizzato')} onClose={onClose}
       footer={<>
-        <button className="btn" onClick={onClose} disabled={busy}>Annulla</button>
-        <button className="btn btn-primary" onClick={save} disabled={busy}>{busy ? 'Salvo…' : initial ? 'Salva modifiche' : 'Crea esercizio'}</button>
+        <button className="btn" onClick={onClose} disabled={busy}>{t('Annulla')}</button>
+        <button className="btn btn-primary" onClick={save} disabled={busy}>{busy ? t('Salvo…') : initial ? t('Salva modifiche') : t('Crea esercizio')}</button>
       </>}>
       <style>{EXL_CSS}</style>
       <div className="exl-fgrid">
-        <Field label="Nome (italiano)"><Input value={f.name_it} onChange={e => set('name_it', e.target.value)} placeholder="Es. Affondo bulgaro" /></Field>
-        <Field label="Nome originale / inglese (facoltativo)"><Input value={f.name} onChange={e => set('name', e.target.value)} placeholder="Es. Bulgarian split squat" /></Field>
-        <Field label="Categoria">
+        <Field label={t('Nome (italiano)')}><Input value={f.name_it} onChange={e => set('name_it', e.target.value)} placeholder={t('Es. Affondo bulgaro')} /></Field>
+        <Field label={t('Nome originale / inglese (facoltativo)')}><Input value={f.name} onChange={e => set('name', e.target.value)} placeholder={t('Es. Bulgarian split squat')} /></Field>
+        <Field label={t('Categoria')}>
           <Select value={f.category} onChange={e => set('category', e.target.value)}>
-            <option value="">Scegli…</option>{EX_CATEGORIES.map(c => <option key={c}>{c}</option>)}
+            <option value="">{t('Scegli…')}</option>{EX_CATEGORIES.map(c => <option key={c} value={c}>{t(c)}</option>)}
           </Select>
         </Field>
-        <Field label="Livello">
+        <Field label={t('Livello')}>
           <Select value={f.difficulty} onChange={e => set('difficulty', e.target.value)}>
-            <option value="">—</option>{EX_DIFFICULTIES.map(c => <option key={c}>{c}</option>)}
+            <option value="">—</option>{EX_DIFFICULTIES.map(c => <option key={c} value={c}>{t(c)}</option>)}
           </Select>
         </Field>
-        <Field label="Lateralità">
+        <Field label={t('Lateralità')}>
           <Select value={f.laterality} onChange={e => set('laterality', e.target.value)}>
-            <option value="">—</option>{EX_LATERALITY.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+            <option value="">—</option>{EX_LATERALITY.map(([k, l]) => <option key={k} value={k}>{t(l)}</option>)}
           </Select>
         </Field>
       </div>
-      <Field label="Descrizione"><Textarea rows={2} value={f.description} onChange={e => set('description', e.target.value)} /></Field>
-      <Field label="Esecuzione (un passaggio per riga)">
-        <Textarea rows={4} value={f.instructions} onChange={e => set('instructions', e.target.value)} placeholder={'Piede posteriore su panca\nScendi controllando il ginocchio\nSpingi col tallone anteriore'} />
+      <Field label={t('Descrizione')}><Textarea rows={2} value={f.description} onChange={e => set('description', e.target.value)} /></Field>
+      <Field label={t('Esecuzione (un passaggio per riga)')}>
+        <Textarea rows={4} value={f.instructions} onChange={e => set('instructions', e.target.value)} placeholder={t('Piede posteriore su panca\nScendi controllando il ginocchio\nSpingi col tallone anteriore')} />
       </Field>
-      <Field label="Muscoli principali"><MultiChips value={f.primary_muscles} onChange={v => set('primary_muscles', v)} options={facets.muscles} placeholder="Scrivi e premi Invio, o separa con la virgola" /></Field>
-      <Field label="Attrezzatura"><MultiChips value={f.equipment_tags} onChange={v => set('equipment_tags', v)} options={facets.equipment} placeholder="Es. Manubri, Panca" /></Field>
-      <Field label="Obiettivi di performance">
+      <Field label={t('Muscoli principali')}><MultiChips value={f.primary_muscles} onChange={v => set('primary_muscles', v)} options={facets.muscles} placeholder={t('Scrivi e premi Invio, o separa con la virgola')} /></Field>
+      <Field label={t('Attrezzatura')}><MultiChips value={f.equipment_tags} onChange={v => set('equipment_tags', v)} options={facets.equipment} placeholder={t('Es. Manubri, Panca')} /></Field>
+      <Field label={t('Obiettivi di performance')}>
         <div className="exl-d-chips">
           {[...new Set([...goalOptions, ...f.performance_goals])].map(g => {
             const on = f.performance_goals.includes(g)
             return <button type="button" key={g} className={`exl-chip ${on ? 'active' : ''}`}
               onClick={() => set('performance_goals', on ? f.performance_goals.filter(x => x !== g) : [...f.performance_goals, g])}>
-              {on && <Icon name="check" size={12} />} {g}
+              {on && <Icon name="check" size={12} />} {t(g)}
             </button>
           })}
         </div>

@@ -10,19 +10,19 @@ const HERO_VIDEO = '/login/auvi-sport-atleta.mp4'
 const HERO_POSTER = '/login/auvi-sport-atleta-poster.png'
 const PARTNERS = ['NEST Football', 'EY', 'Delian & Co.', 'Banchero Costa', 'AUVI Flights']
 
-function friendlyError(error: any): string {
+function friendlyError(error: any, t: (s: string) => string = s => s): string {
   const m = (error?.message || '').toLowerCase()
   const secs = (error?.message || '').match(/(\d+)\s*second/i)?.[1]
   if (error?.status === 429 || m.includes('rate limit') || m.includes('too many') || (m.includes('after') && m.includes('second'))) {
-    return secs ? `Troppi tentativi. Riprova tra ${secs} secondi.` : 'Troppi tentativi ravvicinati. Attendi un minuto e riprova.'
+    return secs ? t('Troppi tentativi. Riprova tra {n} secondi.').replace('{n}', secs) : t('Troppi tentativi ravvicinati. Attendi un minuto e riprova.')
   }
   if (m.includes('invalid login credentials')) {
-    return 'Email o password non corretti. Se è il tuo primo accesso o hai dimenticato la password, usa il link via email.'
+    return t('Email o password non corretti. Se è il tuo primo accesso o hai dimenticato la password, usa il link via email.')
   }
   if (m.includes('email not confirmed')) {
-    return 'Email non ancora confermata: usa il link via email per completare il primo accesso.'
+    return t('Email non ancora confermata: usa il link via email per completare il primo accesso.')
   }
-  return error?.message || 'Si è verificato un errore. Riprova.'
+  return error?.message || t('Si è verificato un errore. Riprova.')
 }
 
 export default function Login() {
@@ -60,22 +60,22 @@ export default function Login() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!email.trim() || !password) { setNotice('Inserisci email e password per continuare.'); return }
+    if (!email.trim() || !password) { setNotice(t('Inserisci email e password per continuare.')); return }
     setSending(true); setNotice('')
     const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
     setSending(false)
-    if (error) setNotice(friendlyError(error))
+    if (error) setNotice(friendlyError(error, t))
   }
 
   async function handleMagicLink() {
-    if (!email.trim()) { setNotice('Inserisci prima la tua email.'); return }
+    if (!email.trim()) { setNotice(t('Inserisci prima la tua email.')); return }
     setSending(true); setNotice('')
     // pre-check: l'email deve essere autorizzata, altrimenti il link non partirebbe
     // (e l'utente non capirebbe perché). Così mostriamo subito un messaggio chiaro.
     const { data: chk } = await supabase.rpc('crm_check_email_allowed', { p_email: email.trim() })
     if (chk && chk.allowed === false) {
       setSending(false)
-      setNotice('Questa email non è autorizzata all\'accesso. Se hai ricevuto un codice invito usa "Registrati con codice invito" qui sotto, altrimenti contatta AUVI.')
+      setNotice(t('Questa email non è autorizzata all\'accesso. Se hai ricevuto un codice invito usa "Registrati con codice invito" qui sotto, altrimenti contatta AUVI.'))
       return
     }
     const { error } = await supabase.auth.signInWithOtp({
@@ -83,8 +83,8 @@ export default function Login() {
       options: { emailRedirectTo: window.location.origin },
     })
     setSending(false)
-    if (error) setNotice(friendlyError(error))
-    else setNotice('Ti abbiamo inviato un link di accesso. Controlla la posta (anche lo spam).')
+    if (error) setNotice(friendlyError(error, t))
+    else setNotice(t('Ti abbiamo inviato un link di accesso. Controlla la posta (anche lo spam).'))
   }
 
   // Registrazione con codice invito: il codice (generato dall'atleta con la figura
@@ -92,17 +92,17 @@ export default function Login() {
   // link il profilo e la vista dedicata vengono creati automaticamente.
   async function handleInvite(e: React.FormEvent) {
     e.preventDefault()
-    if (!email.trim() || !inviteCode.trim()) { setNotice('Inserisci email e codice invito.'); return }
+    if (!email.trim() || !inviteCode.trim()) { setNotice(t('Inserisci email e codice invito.')); return }
     setSending(true); setNotice('')
     const { data, error } = await supabase.rpc('crm_redeem_invite', {
       p_code: inviteCode.trim(), p_email: email.trim(),
     })
-    if (error) { setSending(false); setNotice(friendlyError(error)); return }
+    if (error) { setSending(false); setNotice(friendlyError(error, t)); return }
     if (!data?.ok) {
       setSending(false)
       setNotice(data?.error === 'already_registered'
-        ? 'Questa email è già registrata: torna al login e accedi normalmente (o usa il link via email).'
-        : (data?.error || 'Codice non valido.'))
+        ? t('Questa email è già registrata: torna al login e accedi normalmente (o usa il link via email).')
+        : (data?.error || t('Codice non valido.')))
       return
     }
     const { error: otpErr } = await supabase.auth.signInWithOtp({
@@ -110,9 +110,11 @@ export default function Login() {
       options: { emailRedirectTo: window.location.origin },
     })
     setSending(false)
-    if (otpErr) { setNotice(friendlyError(otpErr)); return }
+    if (otpErr) { setNotice(friendlyError(otpErr, t)); return }
     setInviteCode('')
-    setNotice(`Codice valido${data.player ? ` — sarai collegato a ${data.player}` : ''}! Ti abbiamo inviato il link per completare la registrazione. Controlla la posta (anche lo spam).`)
+    setNotice(data.player
+      ? t('Codice valido — sarai collegato a {name}! Ti abbiamo inviato il link per completare la registrazione. Controlla la posta (anche lo spam).').replace('{name}', data.player)
+      : t('Codice valido! Ti abbiamo inviato il link per completare la registrazione. Controlla la posta (anche lo spam).'))
   }
 
   return (
@@ -180,7 +182,7 @@ export default function Login() {
                 autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="nome@email.com"
+                placeholder={t('nome@email.com')}
               />
             </label>
 
@@ -193,7 +195,7 @@ export default function Login() {
                 spellCheck={false}
                 value={inviteCode}
                 onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
-                placeholder="ES. ELI-4F2A91"
+                placeholder={t('ES. ELI-4F2A91')}
               />
             </label>
 
@@ -214,7 +216,7 @@ export default function Login() {
                 autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="nome@email.com"
+                placeholder={t('nome@email.com')}
               />
             </label>
 

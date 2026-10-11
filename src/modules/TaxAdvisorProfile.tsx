@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../auth/AuthContext'
 import { useAthlete } from '../lib/athlete'
+import { useLang } from '../lib/i18n'
 import { Spinner, Field, Input, Textarea } from '../components/ui'
 import Icon from '../components/Icon'
 
@@ -17,6 +18,7 @@ type P = Record<string, any>
 
 export default function TaxAdvisorProfile() {
   const { session, role } = useAuth()
+  const { t } = useLang()
   const { athletes } = useAthlete()
   const [p, setP] = useState<P>({})
   const [loading, setLoading] = useState(true)
@@ -58,7 +60,7 @@ export default function TaxAdvisorProfile() {
     const { data } = supabase.storage.from('agent-profiles').getPublicUrl(path)
     set(field, data.publicUrl)
     setUpl('')
-    setMsg('Immagine caricata — ricordati di salvare.')
+    setMsg(t('Immagine caricata — ricordati di salvare.'))
   }
 
   async function save() {
@@ -67,7 +69,7 @@ export default function TaxAdvisorProfile() {
     const { error } = await supabase.from('crm_tax_profile')
       .upsert({ ...p, advisor_id: uid, updated_at: new Date().toISOString() })
     setBusy(false)
-    setMsg(error ? error.message : 'Profilo salvato.')
+    setMsg(error ? error.message : t('Profilo salvato.'))
   }
 
   if (loading) return <Spinner />
@@ -84,15 +86,15 @@ export default function TaxAdvisorProfile() {
                 {(p.name || 'A').slice(0, 1)}
               </div>}
           <div style={{ minWidth: 0 }}>
-            <div style={{ ...kicker, color: ACCENT }}>Il tuo commercialista</div>
-            <div style={{ fontSize: 18, fontWeight: 800 }}>{p.name || 'Agente'}</div>
+            <div style={{ ...kicker, color: ACCENT }}>{t('Il tuo commercialista')}</div>
+            <div style={{ fontSize: 18, fontWeight: 800 }}>{p.name || t('Agente')}</div>
             <div className="faint" style={{ fontSize: 12.5 }}>{[p.title, p.agency_name].filter(Boolean).join(' · ')}</div>
           </div>
         </div>
         <div className="grid g3" style={{ gap: 10, marginTop: 16 }}>
-          <Info k="Email" v={p.email} href={p.email ? `mailto:${p.email}` : undefined} />
-          <Info k="Telefono" v={p.phone} href={p.phone ? `tel:${p.phone}` : undefined} />
-          <Info k="Agenzia" v={p.agency_name} />
+          <Info k={t('Email')} v={p.email} href={p.email ? `mailto:${p.email}` : undefined} />
+          <Info k={t('Telefono')} v={p.phone} href={p.phone ? `tel:${p.phone}` : undefined} />
+          <Info k={t('Agenzia')} v={p.agency_name} />
         </div>
       </div>
     )
@@ -111,12 +113,12 @@ export default function TaxAdvisorProfile() {
                 {(p.name || 'A').slice(0, 1)}
               </div>}
           <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ ...kicker, color: ACCENT }}>Commercialista</div>
+            <div style={{ ...kicker, color: ACCENT }}>{t('Commercialista')}</div>
             <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: -0.3, marginTop: 2 }}>
-              {p.name || 'Il mio profilo'}
+              {p.name || t('Il mio profilo')}
             </div>
             <div className="faint" style={{ fontSize: 12.5, marginTop: 2 }}>
-              {[p.title, p.agency_name].filter(Boolean).join(' · ') || 'Completa i tuoi dati'}
+              {[p.title, p.agency_name].filter(Boolean).join(' · ') || t('Completa i tuoi dati')}
             </div>
           </div>
           {p.agency_logo_url && (
@@ -125,7 +127,7 @@ export default function TaxAdvisorProfile() {
             </div>
           )}
           <div>
-            <div style={{ ...kicker, fontSize: 10, color: 'var(--text-dim)' }}>Assistiti</div>
+            <div style={{ ...kicker, fontSize: 10, color: 'var(--text-dim)' }}>{t('Assistiti')}</div>
             <div style={{ fontSize: 22, fontWeight: 900, borderBottom: `2px solid ${ACCENT}`, display: 'inline-block' }}>
               {athletes.length}
             </div>
@@ -135,19 +137,19 @@ export default function TaxAdvisorProfile() {
 
       {/* --- dati personali --- */}
       <div className="card">
-        <div className="card-head"><div className="card-title">I miei contatti</div></div>
+        <div className="card-head"><div className="card-title">{t('I miei contatti')}</div></div>
         <div className="grid g2" style={{ gap: 10 }}>
-          <Field label="Nome e cognome"><Input value={p.name || ''} onChange={e => set('name', e.target.value)} /></Field>
-          <Field label="Ruolo"><Input value={p.title || ''} onChange={e => set('title', e.target.value)} placeholder="Es. Dottore commercialista" /></Field>
-          <Field label="Email"><Input value={p.email || ''} onChange={e => set('email', e.target.value)} /></Field>
-          <Field label="Telefono"><Input value={p.phone || ''} onChange={e => set('phone', e.target.value)} /></Field>
-          <Field label="WhatsApp"><Input value={p.whatsapp || ''} onChange={e => set('whatsapp', e.target.value)} /></Field>
-          <Field label="Albo / Iscrizione"><Input value={p.licence || ''} onChange={e => set('licence', e.target.value)} placeholder="Numero iscrizione" /></Field>
+          <Field label={t('Nome e cognome')}><Input value={p.name || ''} onChange={e => set('name', e.target.value)} /></Field>
+          <Field label={t('Ruolo')}><Input value={p.title || ''} onChange={e => set('title', e.target.value)} placeholder={t('Es. Dottore commercialista')} /></Field>
+          <Field label={t('Email')}><Input value={p.email || ''} onChange={e => set('email', e.target.value)} /></Field>
+          <Field label={t('Telefono')}><Input value={p.phone || ''} onChange={e => set('phone', e.target.value)} /></Field>
+          <Field label={t('WhatsApp')}><Input value={p.whatsapp || ''} onChange={e => set('whatsapp', e.target.value)} /></Field>
+          <Field label={t('Albo / Iscrizione')}><Input value={p.licence || ''} onChange={e => set('licence', e.target.value)} placeholder={t('Numero iscrizione')} /></Field>
         </div>
-        <Field label="Foto profilo">
+        <Field label={t('Foto profilo')}>
           <div className="flex gap" style={{ alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <button className="btn btn-sm" disabled={upl === 'photo_url'} onClick={() => photoRef.current?.click()}>
-              <Icon name="upload" size={13} /> {upl === 'photo_url' ? 'Carico…' : 'Carica foto'}
+              <Icon name="upload" size={13} /> {upl === 'photo_url' ? t('Carico…') : t('Carica foto')}
             </button>
             <input ref={photoRef} type="file" accept="image/*" hidden
               onChange={e => { const f = e.target.files?.[0]; if (f) upload(f, 'photo_url'); e.target.value = '' }} />
@@ -158,37 +160,37 @@ export default function TaxAdvisorProfile() {
 
       {/* --- agenzia --- */}
       <div className="card">
-        <div className="card-head"><div className="card-title">Studio</div></div>
+        <div className="card-head"><div className="card-title">{t('Studio')}</div></div>
         <div className="faint" style={{ fontSize: 12, marginBottom: 12 }}>
-          I dati dello studio per cui lavori: li vedono AUVI e gli atleti che segui.
+          {t('I dati dello studio per cui lavori: li vedono AUVI e gli atleti che segui.')}
         </div>
         <div className="grid g2" style={{ gap: 10 }}>
-          <Field label="Studio"><Input value={p.agency_name || ''} onChange={e => set('agency_name', e.target.value)} /></Field>
+          <Field label={t('Studio')}><Input value={p.agency_name || ''} onChange={e => set('agency_name', e.target.value)} /></Field>
           
-          <Field label="Sito web"><Input value={p.agency_website || ''} onChange={e => set('agency_website', e.target.value)} placeholder="https://…" /></Field>
+          <Field label={t('Sito web')}><Input value={p.agency_website || ''} onChange={e => set('agency_website', e.target.value)} placeholder="https://…" /></Field>
           
-          <Field label="Email agenzia"><Input value={p.agency_email || ''} onChange={e => set('agency_email', e.target.value)} /></Field>
-          <Field label="Telefono agenzia"><Input value={p.agency_phone || ''} onChange={e => set('agency_phone', e.target.value)} /></Field>
+          <Field label={t('Email agenzia')}><Input value={p.agency_email || ''} onChange={e => set('agency_email', e.target.value)} /></Field>
+          <Field label={t('Telefono agenzia')}><Input value={p.agency_phone || ''} onChange={e => set('agency_phone', e.target.value)} /></Field>
           
           
         </div>
-        <Field label="Sede"><Input value={p.agency_address || ''} onChange={e => set('agency_address', e.target.value)} placeholder="Via, città, paese" /></Field>
-        <Field label="Logo agenzia">
+        <Field label={t('Sede')}><Input value={p.agency_address || ''} onChange={e => set('agency_address', e.target.value)} placeholder={t('Via, città, paese')} /></Field>
+        <Field label={t('Logo agenzia')}>
           <div className="flex gap" style={{ alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <button className="btn btn-sm" disabled={upl === 'agency_logo_url'} onClick={() => logoRef.current?.click()}>
-              <Icon name="upload" size={13} /> {upl === 'agency_logo_url' ? 'Carico…' : 'Carica logo'}
+              <Icon name="upload" size={13} /> {upl === 'agency_logo_url' ? t('Carico…') : t('Carica logo')}
             </button>
             <input ref={logoRef} type="file" accept="image/*" hidden
               onChange={e => { const f = e.target.files?.[0]; if (f) upload(f, 'agency_logo_url'); e.target.value = '' }} />
             {p.agency_logo_url && <img src={p.agency_logo_url} alt="" style={{ width: 34, height: 34, borderRadius: 9, objectFit: 'contain', background: '#fff' }} />}
           </div>
         </Field>
-        <Field label="Note"><Textarea rows={2} value={p.notes || ''} onChange={e => set('notes', e.target.value)} /></Field>
+        <Field label={t('Note')}><Textarea rows={2} value={p.notes || ''} onChange={e => set('notes', e.target.value)} /></Field>
       </div>
 
       <div className="flex gap" style={{ alignItems: 'center', gap: 12 }}>
         <button className="btn btn-primary" disabled={busy} onClick={save}>
-          <Icon name="check" size={14} /> {busy ? 'Salvo…' : 'Salva profilo'}
+          <Icon name="check" size={14} /> {busy ? t('Salvo…') : t('Salva profilo')}
         </button>
         {msg && <span className="faint" style={{ fontSize: 13 }}>{msg}</span>}
       </div>

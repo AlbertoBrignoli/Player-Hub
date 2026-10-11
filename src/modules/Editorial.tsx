@@ -57,12 +57,12 @@ const IG_PINK = '#E1306C' // colore del marchio Instagram: resta fisso di propos
 // sia dal bottone rapido della lista "Da fare". Il file entra anche nei Media
 // (cartella Pubblicati) e il contenuto passa a "Grafica caricata".
 async function uploadEntryGraphics(entry: EditorialEntry, files: File[], ctx: {
-  userId?: string; role?: string | null; athleteId: number | null; isTeam: boolean
+  userId?: string; role?: string | null; athleteId: number | null; isTeam: boolean; t: (s: string) => string
 }): Promise<{ ok: number; error?: string }> {
   let ok = 0
   let error: string | undefined
   for (const file of files) {
-    if (file.size > MAX_UPLOAD) { error = tooBig(file); continue }
+    if (file.size > MAX_UPLOAD) { error = tooBig(file, ctx.t); continue }
     const path = `editorial/${entry.id}/${Date.now()}-${file.name.replace(/[^\w.\-]/g, '_')}`
     const up = await supabase.storage.from(BUCKET).upload(path, file, { upsert: false })
     if (up.error) { error = up.error.message; continue }
@@ -79,14 +79,14 @@ async function uploadEntryGraphics(entry: EditorialEntry, files: File[], ctx: {
     if (status !== entry.status) await updateRow('crm_editorial', entry.id, { status })
     notify(ctx.isTeam ? 'player' : 'team', `Grafica caricata: ${entry.title}`,
       `${ok} file pront${ok > 1 ? 'i' : 'o'} nel calendario editoriale.`, 'editorial', ctx.athleteId)
-    toast(`${ok} grafic${ok > 1 ? 'he' : 'a'} caricat${ok > 1 ? 'e' : 'a'} — anche in Media, Pubblicati`)
+    toast((ok > 1 ? ctx.t('{n} grafiche caricate — anche in Media, Pubblicati') : ctx.t('{n} grafica caricata — anche in Media, Pubblicati')).replace('{n}', String(ok)))
   }
   return { ok, error }
 }
 
 // limite del progetto per singolo file: i mini video stanno sotto, i girati lunghi vanno esportati più leggeri
 const MAX_UPLOAD = 50 * 1048576
-const tooBig = (f: File) => `"${f.name}" supera 50 MB: esporta il video più leggero (1080p, pochi secondi) e ricaricalo`
+const tooBig = (f: File, t: (s: string) => string) => t('"{name}" supera 50 MB: esporta il video più leggero (1080p, pochi secondi) e ricaricalo').replace('{name}', f.name)
 
 const MONTHS = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre']
 const DOW = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom']
@@ -211,7 +211,7 @@ export default function Editorial() {
     if (!files.length || !entry) return
     setQuickBusy(entry.id)
     try {
-      const { ok, error } = await uploadEntryGraphics(entry, files, { userId: session?.user.id, role: profile?.role, athleteId, isTeam })
+      const { ok, error } = await uploadEntryGraphics(entry, files, { userId: session?.user.id, role: profile?.role, athleteId, isTeam, t })
       if (error) toast(error, 'err')
       if (ok) reload()
     } finally {
@@ -308,11 +308,11 @@ export default function Editorial() {
         </div>
       ) : view === 'pubblicati' ? (
         <EntryList title={t('Pubblicati')} entries={listEntries.filter(e => e.status === 'pubblicato').reverse()}
-          onOpen={setOpenEntry} empty="Ancora nessun contenuto pubblicato. Confermando un post come pubblicato, finisce qui." />
+          onOpen={setOpenEntry} empty={t('Ancora nessun contenuto pubblicato. Confermando un post come pubblicato, finisce qui.')} />
       ) : todo.length === 0 ? (
         <div className="card">
           <Empty icon={<Icon name="check" size={32} strokeWidth={1.4} />} title={t('Niente da fare')}
-            hint={isTeam ? 'Tutti i contenuti in programma hanno copy e grafica.' : 'Quando un contenuto è pronto da pubblicare lo trovi qui.'} />
+            hint={isTeam ? t('Tutti i contenuti in programma hanno copy e grafica.') : t('Quando un contenuto è pronto da pubblicare lo trovi qui.')} />
         </div>
       ) : (
         <div className="grid" style={{ gap: 14 }}>
@@ -450,6 +450,7 @@ function TodoRow({ e, preview, todayKey, onOpen, action }: {
 function EntryList({ title, entries, onOpen, empty }: {
   title: string; entries: EditorialEntry[]; onOpen: (e: EditorialEntry) => void; empty: string
 }) {
+  const { t } = useLang()
   return (
     <div className="card">
       <div className="card-head"><div className="card-title">{title}</div><div className="card-hint">{entries.length}</div></div>
@@ -465,7 +466,7 @@ function EntryList({ title, entries, onOpen, empty }: {
                 <div className="row-title">{e.title}</div>
                 <div className="row-sub">{fmtDate(e.entry_date)}{e.match_info?.league ? ` · ${e.match_info.league}` : ''}</div>
               </div>
-              <Badge tone={STATUSES[e.status]?.tone}>{STATUSES[e.status]?.label}</Badge>
+              <Badge tone={STATUSES[e.status]?.tone}>{t(STATUSES[e.status]?.label || e.status)}</Badge>
             </button>
           ))}
         </div>
@@ -506,7 +507,7 @@ function EntryModal({ entry, onClose, onChanged }: {
     try {
       await navigator.clipboard.writeText(entry.hashtags || '')
       setHCopied(true); setTimeout(() => setHCopied(false), 1800)
-      toast('Hashtag copiati negli appunti')
+      toast(t('Hashtag copiati negli appunti'))
     } catch { /* ignore */ }
   }
 
@@ -551,7 +552,7 @@ function EntryModal({ entry, onClose, onChanged }: {
     if (error) toast(error.message, 'err')
     else {
       if (copy.trim()) notify(isTeam ? 'player' : 'team', `Copy aggiornato: ${entry.title}`, 'Il testo del post è stato aggiornato nel calendario editoriale.', 'editorial', athleteId)
-      toast('Copy salvato')
+      toast(t('Copy salvato'))
       onChanged()
     }
     setSaving(false)
@@ -561,7 +562,7 @@ function EntryModal({ entry, onClose, onChanged }: {
     try {
       await navigator.clipboard.writeText(copy)
       setCopied(true); setTimeout(() => setCopied(false), 1800)
-      toast('Copy copiato negli appunti')
+      toast(t('Copy copiato negli appunti'))
     } catch { /* ignore */ }
   }
 
@@ -579,7 +580,7 @@ function EntryModal({ entry, onClose, onChanged }: {
     if (!files.length) return
     setUploading(true); setErr('')
     try {
-      const { ok, error } = await uploadEntryGraphics(entry, files, { userId: session?.user.id, role: profile?.role, athleteId, isTeam })
+      const { ok, error } = await uploadEntryGraphics(entry, files, { userId: session?.user.id, role: profile?.role, athleteId, isTeam, t })
       if (error) setErr(error)
       if (ok) { loadMedia(); onChanged() }
     } finally {
@@ -597,7 +598,7 @@ function EntryModal({ entry, onClose, onChanged }: {
     let ok = 0
     try {
       for (const file of files) {
-        if (file.size > MAX_UPLOAD) { toast(tooBig(file), 'err'); continue }
+        if (file.size > MAX_UPLOAD) { toast(tooBig(file, t), 'err'); continue }
         const path = `editorial/${entry.id}/mat-${Date.now()}-${file.name.replace(/[^\w.\-]/g, '_')}`
         const up = await supabase.storage.from(BUCKET).upload(path, file, { upsert: false })
         if (up.error) { toast(up.error.message, 'err'); continue }
@@ -610,7 +611,7 @@ function EntryModal({ entry, onClose, onChanged }: {
       if (ok) {
         notify(isTeam ? 'player' : 'team', `Materiale per "${entry.title}"`,
           `${ok} file caricat${ok > 1 ? 'i' : 'o'} nel contenuto, pronto per la grafica.`, 'editorial', athleteId)
-        toast(`${ok} file aggiunt${ok > 1 ? 'i' : 'o'} al materiale`)
+        toast((ok > 1 ? t('{n} file aggiunti al materiale') : t('{n} file aggiunto al materiale')).replace('{n}', String(ok)))
         loadMedia(); onChanged()
       }
     } finally {
@@ -666,7 +667,7 @@ function EntryModal({ entry, onClose, onChanged }: {
     if (ok) {
       notify(isTeam ? 'player' : 'team', `Materiale per "${entry.title}"`,
         `${ok} foto selezionat${ok > 1 ? 'e' : 'a'} dalla libreria, pronte per la grafica.`, 'editorial', athleteId)
-      toast(`${ok} foto collegat${ok > 1 ? 'e' : 'a'} dalla libreria`)
+      toast((ok > 1 ? t('{n} foto collegate dalla libreria') : t('{n} foto collegata dalla libreria')).replace('{n}', String(ok)))
       loadMedia(); onChanged()
     }
   }
@@ -675,7 +676,7 @@ function EntryModal({ entry, onClose, onChanged }: {
     // Non si può approvare/pubblicare finché l'atleta non ha caricato il materiale:
     // altrimenti il team vedrebbe "approvato" senza avere le foto per la grafica.
     if ((s === 'pronto' || s === 'pubblicato') && approvate.length === 0) {
-      toast('Per approvare carica prima il materiale: le foto da cui il team preparerà la grafica.', 'err')
+      toast(t('Per approvare carica prima il materiale: le foto da cui il team preparerà la grafica.'), 'err')
       return
     }
     await updateRow('crm_editorial', entry.id, { status: s })
@@ -684,7 +685,7 @@ function EntryModal({ entry, onClose, onChanged }: {
       await supabase.from('crm_media')
         .update({ folder: 'Pubblicati', status: 'pubblicata' })
         .eq('editorial_id', entry.id).eq('kind', 'grafica')
-      toast('Contenuto pubblicato — grafiche archiviate in Media → Pubblicati')
+      toast(t('Contenuto pubblicato — grafiche archiviate in Media → Pubblicati'))
     }
     onChanged()
   }
@@ -698,14 +699,14 @@ function EntryModal({ entry, onClose, onChanged }: {
   // finali nella cartella "Pubblicati" della Media e avvisa la controparte (per il
   // team è il segnale che il lavoro è andato a buon fine).
   async function publish() {
-    if (approvate.length === 0) { toast('Per confermare la pubblicazione serve prima il materiale.', 'err'); return }
+    if (approvate.length === 0) { toast(t('Per confermare la pubblicazione serve prima il materiale.'), 'err'); return }
     const { error } = await updateRow('crm_editorial', entry.id, { status: 'pubblicato' })
     if (error) { setErr(error.message); return }
     await supabase.from('crm_media').update({ status: 'pubblicata', folder: 'Pubblicati' })
       .eq('editorial_id', entry.id).eq('kind', 'grafica')
     notify(isTeam ? 'player' : 'team', `Pubblicato: ${entry.title}`,
       'Contenuto confermato come pubblicato — lavoro completato', 'editorial', athleteId)
-    toast('Segnato come pubblicato'); onChanged()
+    toast(t('Segnato come pubblicato')); onChanged()
   }
 
   const isMatchDayAthlete = !isTeam && entry.type === 'partita'
@@ -716,14 +717,14 @@ function EntryModal({ entry, onClose, onChanged }: {
     const { error } = await updateRow('crm_editorial', entry.id, { status: 'pronto', revision: null })
     if (error) { setErr(error.message); return }
     notify('team', `Grafica accettata: ${entry.title}`, "L'atleta ha accettato la grafica pre-partita.", 'editorial', athleteId)
-    toast('Grafica accettata'); onChanged(); onClose()
+    toast(t('Grafica accettata')); onChanged(); onClose()
   }
   async function sendRevision(note: string, pins: { x: number; y: number; note: string }[]) {
     const rev = { note: note || null, pins, at: new Date().toISOString(), by: 'player' }
     const { error } = await updateRow('crm_editorial', entry.id, { revision: rev })
     if (error) { setErr(error.message); return }
     notify('team', `Modifiche richieste: ${entry.title}`, note || "L'atleta ha segnato dei punti da modificare sulla grafica.", 'editorial', athleteId)
-    toast('Richiesta inviata al team'); onChanged(); onClose()
+    toast(t('Richiesta inviata al team')); onChanged(); onClose()
   }
 
   return (
@@ -738,21 +739,21 @@ function EntryModal({ entry, onClose, onChanged }: {
             <Select value={entry.status} onChange={e => setStatus(e.target.value)} style={{ width: 200 }}>
               {Object.entries(STATUSES).map(([k, v]) => {
                 const locked = (k === 'pronto' || k === 'pubblicato') && approvate.length === 0
-                return <option key={k} value={k} disabled={locked}>{v.label}{locked ? ' · manca materiale' : ''}</option>
+                return <option key={k} value={k} disabled={locked}>{t(v.label)}{locked ? ' · ' + t('manca materiale') : ''}</option>
               })}
             </Select>
-            {isAdmin && entry.type !== 'partita' && <ConfirmButton onConfirm={removeEntry}>Elimina</ConfirmButton>}
+            {isAdmin && entry.type !== 'partita' && <ConfirmButton onConfirm={removeEntry}>{t('Elimina')}</ConfirmButton>}
           </div>
           <div className="flex gap">
             {isTeam && approvate.length > 0 && (
-              <button className="btn" onClick={() => setIgOpen(true)} title="Copia la caption e scarica le foto in ordine">
-                <Icon name="image" size={14} /> Prepara per Instagram
+              <button className="btn" onClick={() => setIgOpen(true)} title={t('Copia la caption e scarica le foto in ordine')}>
+                <Icon name="image" size={14} /> {t('Prepara per Instagram')}
               </button>
             )}
             {isTeam && entry.status !== 'pubblicato' && (
               <button className="btn btn-primary" onClick={publish} disabled={approvate.length === 0}
-                title={approvate.length === 0 ? 'Serve prima il materiale' : 'Conferma che il post è stato pubblicato'}>
-                <Icon name="check" size={14} /> Conferma pubblicato
+                title={approvate.length === 0 ? t('Serve prima il materiale') : t('Conferma che il post è stato pubblicato')}>
+                <Icon name="check" size={14} /> {t('Conferma pubblicato')}
               </button>
             )}
             <button className="btn" onClick={onClose}>{t('Chiudi')}</button>
@@ -762,9 +763,9 @@ function EntryModal({ entry, onClose, onChanged }: {
       <div className="grid" style={{ gap: 18 }}>
         <div className="flex gap wrap" style={{ alignItems: 'center' }}>
           <Badge tone={STATUSES[entry.status]?.tone}>{t(STATUSES[entry.status]?.label || entry.status)}</Badge>
-          <Badge>{TYPES[entry.type]?.label || entry.type}</Badge>
-          {entry.theme && <Badge>{THEMES[entry.theme] || entry.theme}</Badge>}
-          {brandName && <Badge tone="red">Contenuto {brandName}</Badge>}
+          <Badge>{t(TYPES[entry.type]?.label || entry.type)}</Badge>
+          {entry.theme && <Badge>{t(THEMES[entry.theme] || entry.theme)}</Badge>}
+          {brandName && <Badge tone="red">{t('Contenuto {brand}').replace('{brand}', brandName)}</Badge>}
           {entry.requested_by && <Badge tone="accent">{t('Proposto dal giocatore')}</Badge>}
           <span className="faint" style={{ fontSize: 12.5 }}>{fmtDate(entry.entry_date)}</span>
         </div>
@@ -776,22 +777,22 @@ function EntryModal({ entry, onClose, onChanged }: {
 
         {isMatchDayAthlete && (
           <div className="card" style={{ background: 'var(--bg-2)' }}>
-            <div className="card-title" style={{ marginBottom: 8 }}>Grafica pre-partita</div>
+            <div className="card-title" style={{ marginBottom: 8 }}>{t('Grafica pre-partita')}</div>
             {firstGraphicImg && urls[firstGraphicImg.storage_path] ? (
               showAnnotator ? (
                 <RevisionAnnotator url={urls[firstGraphicImg.storage_path]} onCancel={() => setShowAnnotator(false)} onSend={sendRevision} />
               ) : (
                 <>
                   <img src={urls[firstGraphicImg.storage_path]} alt="" style={{ width: '100%', borderRadius: 10, display: 'block' }} />
-                  {entry.revision && <div className="faint" style={{ fontSize: 12.5, marginTop: 8 }}>Hai già inviato una richiesta di modifiche — il team ci sta lavorando.</div>}
+                  {entry.revision && <div className="faint" style={{ fontSize: 12.5, marginTop: 8 }}>{t('Hai già inviato una richiesta di modifiche — il team ci sta lavorando.')}</div>}
                   <div className="flex gap" style={{ marginTop: 12 }}>
-                    <button className="btn btn-primary" style={{ flex: 1 }} onClick={acceptGraphic}><Icon name="check" size={15} /> Accetta</button>
-                    <button className="btn" style={{ flex: 1 }} onClick={() => setShowAnnotator(true)}><Icon name="edit" size={15} /> Chiedi modifiche</button>
+                    <button className="btn btn-primary" style={{ flex: 1 }} onClick={acceptGraphic}><Icon name="check" size={15} /> {t('Accetta')}</button>
+                    <button className="btn" style={{ flex: 1 }} onClick={() => setShowAnnotator(true)}><Icon name="edit" size={15} /> {t('Chiedi modifiche')}</button>
                   </div>
                 </>
               )
             ) : (
-              <div className="faint" style={{ fontSize: 13 }}>Il team non ha ancora caricato la grafica. Ti avviseremo appena è pronta da approvare.</div>
+              <div className="faint" style={{ fontSize: 13 }}>{t('Il team non ha ancora caricato la grafica. Ti avviseremo appena è pronta da approvare.')}</div>
             )}
           </div>
         )}
@@ -804,7 +805,7 @@ function EntryModal({ entry, onClose, onChanged }: {
             {isTeam && (
               <>
                 <button className="btn btn-primary btn-sm" disabled={uploading} onClick={() => fileRef.current?.click()}>
-                  <Icon name="upload" size={13} /> {uploading ? 'Carico…' : 'Carica grafica'}
+                  <Icon name="upload" size={13} /> {uploading ? t('Carico…') : t('Carica grafica')}
                 </button>
                 <input ref={fileRef} type="file" multiple accept="image/*,video/*,.pdf,.psd,.ai" hidden onChange={onUpload} />
               </>
@@ -828,7 +829,7 @@ function EntryModal({ entry, onClose, onChanged }: {
             <div className="flex gap wrap" style={{ marginBottom: 10 }}>
               {entry.status !== 'pubblicato' && (
                 <button className="btn btn-primary" onClick={publish} disabled={approvate.length === 0}
-                  title={approvate.length === 0 ? 'Serve prima il materiale' : 'Conferma che il post è stato pubblicato'}>
+                  title={approvate.length === 0 ? t('Serve prima il materiale') : t('Conferma che il post è stato pubblicato')}>
                   <Icon name="check" size={14} /> {t('Segna come pubblicato')}
                 </button>
               )}
@@ -838,14 +839,14 @@ function EntryModal({ entry, onClose, onChanged }: {
                 </button>
               )}
               {approvate.length > 0 && (
-                <button className="btn" onClick={() => setIgOpen(true)} title="Copia la caption e scarica le foto in ordine">
+                <button className="btn" onClick={() => setIgOpen(true)} title={t('Copia la caption e scarica le foto in ordine')}>
                   <Icon name="instagram" size={14} /> {t('Prepara per Instagram')}
                 </button>
               )}
             </div>
           )}
           {grafiche.length === 0
-            ? <div className="faint" style={{ fontSize: 12.5, padding: '6px 0' }}>{isTeam ? 'Carica qui i file pronti da pubblicare: finiscono anche in Media → Pubblicati.' : 'Il team caricherà qui la grafica finale, pronta da pubblicare.'}</div>
+            ? <div className="faint" style={{ fontSize: 12.5, padding: '6px 0' }}>{isTeam ? t('Carica qui i file pronti da pubblicare: finiscono anche in Media → Pubblicati.') : t('Il team caricherà qui la grafica finale, pronta da pubblicare.')}</div>
             : (isTeam || grafiche.length > 1 || (!firstGraphicImg && !firstGraphicVideo)) && (
               <div className="list">
                 {grafiche.map(m => (
@@ -871,7 +872,7 @@ function EntryModal({ entry, onClose, onChanged }: {
         </div>
 
         {isTeam && entry.revision && (
-          <More title={`Modifiche richieste dall'atleta${entry.revision.pins?.length ? ` · ${entry.revision.pins.length} punti` : ''}`} tone="var(--magenta)">
+          <More title={`${t("Modifiche richieste dall'atleta")}${entry.revision.pins?.length ? ' · ' + t('{n} punti').replace('{n}', String(entry.revision.pins.length)) : ''}`} tone="var(--magenta)">
             {entry.revision.note && <div style={{ fontSize: 13, marginBottom: 8 }}>{entry.revision.note}</div>}
             {firstGraphicImg && urls[firstGraphicImg.storage_path] && (entry.revision.pins?.length > 0) && (
               <div style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', marginBottom: 8 }}>
@@ -893,20 +894,20 @@ function EntryModal({ entry, onClose, onChanged }: {
             <div className="flex gap">
               <button className="btn btn-sm" onClick={copyToClipboard} disabled={!copy}>{copied ? t('Copiato') : t('Copia')}</button>
               <button className="btn btn-sm" onClick={downloadCopy} disabled={!copy}>{t('Scarica .txt')}</button>
-              <button className="btn btn-primary btn-sm" disabled={saving} onClick={saveCopy}>{saving ? 'Salvo…' : 'Salva copy'}</button>
+              <button className="btn btn-primary btn-sm" disabled={saving} onClick={saveCopy}>{saving ? t('Salvo…') : t('Salva copy')}</button>
             </div>
           </div>
           <Textarea rows={5} value={copy} onChange={e => setCopy(e.target.value)}
             placeholder={t("Scrivi qui il copy del post: didascalia, hashtag, tag…")} />
-          <div className="faint" style={{ fontSize: 11.5, marginTop: 4 }}>Copy modificabile da entrambi: il team lo prepara, tu lo approvi o lo ritocchi.</div>
+          <div className="faint" style={{ fontSize: 11.5, marginTop: 4 }}>{t('Copy modificabile da entrambi: il team lo prepara, tu lo approvi o lo ritocchi.')}</div>
         </div>
         )}
 
         {entry.hashtags && (
           <div>
             <div className="flex between" style={{ marginBottom: 6 }}>
-              <div style={{ fontWeight: 650 }}>Hashtag {brandName ? `· da ${brandName}` : ''}</div>
-              <button className="btn btn-sm" onClick={copyHashtags}>{hCopied ? 'Copiati' : 'Copia hashtag'}</button>
+              <div style={{ fontWeight: 650 }}>Hashtag {brandName ? `· ${t('da {brand}').replace('{brand}', brandName)}` : ''}</div>
+              <button className="btn btn-sm" onClick={copyHashtags}>{hCopied ? t('Copiati') : t('Copia hashtag')}</button>
             </div>
             <div className="card" style={{ background: 'var(--bg-2)', fontSize: 13, color: 'var(--text-dim)', whiteSpace: 'pre-wrap' }}>{entry.hashtags}</div>
           </div>
@@ -916,15 +917,15 @@ function EntryModal({ entry, onClose, onChanged }: {
         <div>
           <div className="flex between" style={{ marginBottom: 6 }}>
             <div style={{ fontWeight: 650 }}>
-              Materiale{approvate.length ? '' : ' per la grafica'}
-              {approvate.length > 0 && <span className="faint" style={{ fontWeight: 400, fontSize: 12 }}> · {approvate.length} file pronti</span>}
+              {approvate.length ? t('Materiale') : t('Materiale per la grafica')}
+              {approvate.length > 0 && <span className="faint" style={{ fontWeight: 400, fontSize: 12 }}> · {t('{n} file pronti').replace('{n}', String(approvate.length))}</span>}
             </div>
             <div className="flex gap" style={{ gap: 8 }}>
               <button className="btn btn-sm" onClick={() => setPickerOpen(true)}>
-                <Icon name="image" size={13} /> Seleziona da Media
+                <Icon name="image" size={13} /> {t('Seleziona da Media')}
               </button>
               <button className="btn btn-sm" disabled={uploading} onClick={() => materialRef.current?.click()}>
-                <Icon name="upload" size={13} /> {uploading ? 'Carico…' : 'Carica materiale'}
+                <Icon name="upload" size={13} /> {uploading ? t('Carico…') : t('Carica materiale')}
               </button>
             </div>
             <input ref={materialRef} type="file" multiple accept="image/*,video/*" hidden onChange={onUploadMaterial} />
@@ -933,8 +934,8 @@ function EntryModal({ entry, onClose, onChanged }: {
             ? <div style={{ fontSize: 12.5, color: 'var(--gold)', background: 'var(--yellow-soft)', borderRadius: 10, padding: '8px 12px',
                 display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Icon name="clock" size={14} /> {entry.status !== 'pubblicato'
-                  ? 'Serve il materiale (foto/video da cui nasce la grafica): senza non si può segnare Pronto o Pubblicato.'
-                  : 'Nessun materiale collegato.'}
+                  ? t('Serve il materiale (foto/video da cui nasce la grafica): senza non si può segnare Pronto o Pubblicato.')
+                  : t('Nessun materiale collegato.')}
               </div>
             : (
               <div className="asset-grid">
@@ -1043,7 +1044,7 @@ function InstagramExport({ caption, title, photos, urls, onClose }: {
 
   async function copyCaption() {
     try { await navigator.clipboard.writeText(caption || ''); setCopied(true); setTimeout(() => setCopied(false), 2000); toast(t('Caption copiata')) }
-    catch { toast('Copia non riuscita', 'err') }
+    catch { toast(t('Copia non riuscita'), 'err') }
   }
 
   async function savePhotos() {
@@ -1068,7 +1069,7 @@ function InstagramExport({ caption, title, photos, urls, onClose }: {
     <Modal title={t("Pronto per Instagram")} onClose={onClose} wide>
       <div className="grid" style={{ gap: 16 }}>
         <div className="faint" style={{ fontSize: 12.5 }}>
-          1) Copia la caption · 2) Salva le foto (escono <b style={{ color: 'var(--text)' }}>in ordine 1→{photos.length}</b>) · 3) Apri Instagram, carica le foto, incolla la caption. 30 secondi.
+          {t('1) Copia la caption · 2) Salva le foto (escono')} <b style={{ color: 'var(--text)' }}>{t('in ordine 1→{n}').replace('{n}', String(photos.length))}</b>{t(') · 3) Apri Instagram, carica le foto, incolla la caption. 30 secondi.')}
         </div>
 
         {/* azioni principali */}
@@ -1077,10 +1078,10 @@ function InstagramExport({ caption, title, photos, urls, onClose }: {
             <Icon name="copy" size={14} /> {copied ? t('Caption copiata') : t('Copia caption')}
           </button>
           <button className="btn btn-primary" onClick={savePhotos} disabled={preparing || busy || files.length === 0}>
-            <Icon name="image" size={14} /> {preparing ? 'Preparo le foto…' : busy ? 'Scarico…' : canShareFiles ? `Salva ${files.length} foto sul telefono` : `Scarica ${files.length} foto`}
+            <Icon name="image" size={14} /> {preparing ? t('Preparo le foto…') : busy ? t('Scarico…') : (canShareFiles ? t('Salva {n} foto sul telefono') : t('Scarica {n} foto')).replace('{n}', String(files.length))}
           </button>
         </div>
-        {canShareFiles && <div className="faint" style={{ fontSize: 12, marginTop: -4 }}>Si apre la condivisione: scegli <b style={{ color: 'var(--text)' }}>“Salva {files.length} immagini”</b> → finiscono in Foto nell'ordine giusto.</div>}
+        {canShareFiles && <div className="faint" style={{ fontSize: 12, marginTop: -4 }}>{t('Si apre la condivisione: scegli')} <b style={{ color: 'var(--text)' }}>“{t('Salva {n} immagini').replace('{n}', String(files.length))}”</b> {t("→ finiscono in Foto nell'ordine giusto.")}</div>}
 
         {/* anteprima ordine */}
         <div>
@@ -1095,7 +1096,7 @@ function InstagramExport({ caption, title, photos, urls, onClose }: {
                   ? <img src={urls[m.storage_path]} alt="" style={{ width: 56, height: 56, borderRadius: 8, objectFit: 'cover' }} />
                   : <div style={{ width: 56, height: 56, borderRadius: 8, background: 'var(--surface-2)' }} />}
                 <div className="row-main" style={{ minWidth: 0 }}>
-                  <div className="row-title" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.file_name || `Foto ${i + 1}`}</div>
+                  <div className="row-title" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.file_name || t('Foto {n}').replace('{n}', String(i + 1))}</div>
                 </div>
               </div>
             ))}
@@ -1123,6 +1124,7 @@ function Info({ k, v }: { k: string; v: any }) {
 function NewEntryModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
   const { session, isTeam, profile } = useAuth()
   const { athleteId } = useAthlete()
+  const { t } = useLang()
   const [title, setTitle] = useState('')
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10))
   const [type, setType] = useState('post')
@@ -1133,7 +1135,7 @@ function NewEntryModal({ onClose, onCreated }: { onClose: () => void; onCreated:
   const [err, setErr] = useState('')
 
   async function create() {
-    if (!title.trim()) { setErr('Serve un titolo.'); return }
+    if (!title.trim()) { setErr(t('Serve un titolo.')); return }
     setBusy(true); setErr('')
     const isRequest = !isTeam
     const { error } = await insertRow('crm_editorial', {
@@ -1151,42 +1153,41 @@ function NewEntryModal({ onClose, onCreated }: { onClose: () => void; onCreated:
         `${TYPES[type]?.label || 'Contenuto'}${theme ? ` · ${THEMES[theme]}` : ''} per il ${fmtDate(date)}: "${title.trim()}". Apri per vedere brief e materiale.`,
         'editorial')
     }
-    toast(isRequest ? 'Proposta inviata al team' : 'Contenuto creato')
+    toast(isRequest ? t('Proposta inviata al team') : t('Contenuto creato'))
     onCreated()
   }
 
   return (
-    <Modal title={isTeam ? 'Nuovo contenuto' : 'Proponi un contenuto'} onClose={onClose} wide
-      footer={<><button className="btn" onClick={onClose}>Annulla</button>
-        <button className="btn btn-primary" disabled={busy || !title.trim()} onClick={create}>{busy ? 'Invio…' : isTeam ? 'Crea' : 'Invia al team'}</button></>}>
+    <Modal title={isTeam ? t('Nuovo contenuto') : t('Proponi un contenuto')} onClose={onClose} wide
+      footer={<><button className="btn" onClick={onClose}>{t('Annulla')}</button>
+        <button className="btn btn-primary" disabled={busy || !title.trim()} onClick={create}>{busy ? t('Invio…') : isTeam ? t('Crea') : t('Invia al team')}</button></>}>
       <div className="grid" style={{ gap: 14 }}>
         {!isTeam && (
           <div className="faint" style={{ fontSize: 12.5 }}>
-            Segna qui l'idea: scegli tipo e ambiente, descrivi cosa hai in mente, aggiungi il copy se vuoi.
-            Il team riceve la notifica e prepara tutto. Il materiale lo carichi dentro il contenuto una volta creato.
+            {t("Segna qui l'idea: scegli tipo e ambiente, descrivi cosa hai in mente, aggiungi il copy se vuoi. Il team riceve la notifica e prepara tutto. Il materiale lo carichi dentro il contenuto una volta creato.")}
           </div>
         )}
-        <Field label="Titolo"><Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Es. Post con la famiglia, Reel allenamento…" autoFocus /></Field>
+        <Field label={t('Titolo')}><Input value={title} onChange={e => setTitle(e.target.value)} placeholder={t('Es. Post con la famiglia, Reel allenamento…')} autoFocus /></Field>
         <div className="grid g3" style={{ gap: 12 }}>
-          <Field label="Data"><Input type="date" value={date} onChange={e => setDate(e.target.value)} /></Field>
-          <Field label="Formato">
+          <Field label={t('Data')}><Input type="date" value={date} onChange={e => setDate(e.target.value)} /></Field>
+          <Field label={t('Formato')}>
             <Select value={type} onChange={e => setType(e.target.value)}>
-              {Object.entries(TYPES).filter(([k]) => k !== 'partita').map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+              {Object.entries(TYPES).filter(([k]) => k !== 'partita').map(([k, v]) => <option key={k} value={k}>{t(v.label)}</option>)}
             </Select>
           </Field>
-          <Field label="Ambiente">
+          <Field label={t('Ambiente')}>
             <Select value={theme} onChange={e => setTheme(e.target.value)}>
-              {Object.entries(THEMES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              {Object.entries(THEMES).map(([k, v]) => <option key={k} value={k}>{t(v)}</option>)}
             </Select>
           </Field>
         </div>
-        <Field label="Cosa hai in mente (brief)">
+        <Field label={t('Cosa hai in mente (brief)')}>
           <Textarea rows={3} value={brief} onChange={e => setBrief(e.target.value)}
-            placeholder="Es. Post con mia moglie in formato carosello, foto al tramonto dopo la partita…" />
+            placeholder={t('Es. Post con mia moglie in formato carosello, foto al tramonto dopo la partita…')} />
         </Field>
-        <Field label="Copy (facoltativo — il team lo rifinisce, poi tu approvi)">
+        <Field label={t('Copy (facoltativo — il team lo rifinisce, poi tu approvi)')}>
           <Textarea rows={3} value={copy} onChange={e => setCopy(e.target.value)}
-            placeholder="Se hai già in testa la didascalia, scrivila qui." />
+            placeholder={t('Se hai già in testa la didascalia, scrivila qui.')} />
         </Field>
         {err && <div className="msg-err">{err}</div>}
       </div>
@@ -1246,30 +1247,30 @@ function MediaPicker({ athleteId, excludeSourceIds, onClose, onConfirm }: {
   }
 
   return (
-    <Modal title="Seleziona dalle foto in Media" onClose={onClose} wide
+    <Modal title={t('Seleziona dalle foto in Media')} onClose={onClose} wide
       footer={
         <div className="flex between" style={{ width: '100%', alignItems: 'center' }}>
           <span className="faint" style={{ fontSize: 12.5 }}>
-            {sel.size ? `${sel.size} selezionat${sel.size > 1 ? 'e' : 'a'}` : 'Tocca le foto da collegare'}
+            {sel.size ? (sel.size > 1 ? t('{n} selezionate') : t('{n} selezionata')).replace('{n}', String(sel.size)) : t('Tocca le foto da collegare')}
           </span>
           <div className="flex gap">
-            <button className="btn" onClick={onClose}>Annulla</button>
+            <button className="btn" onClick={onClose}>{t('Annulla')}</button>
             <button className="btn btn-primary" disabled={busy || sel.size === 0} onClick={confirm}>
-              {busy ? 'Collego…' : `Aggiungi${sel.size ? ' ' + sel.size : ''}`}
+              {busy ? t('Collego…') : `${t('Aggiungi')}${sel.size ? ' ' + sel.size : ''}`}
             </button>
           </div>
         </div>
       }>
       {loading ? <Spinner /> : items.length === 0 ? (
-        <Empty icon={<Icon name="image" size={28} strokeWidth={1.4} />} title="Nessuna foto in libreria"
-          hint="Carica prima le foto in Media, poi potrai selezionarle qui." />
+        <Empty icon={<Icon name="image" size={28} strokeWidth={1.4} />} title={t('Nessuna foto in libreria')}
+          hint={t('Carica prima le foto in Media, poi potrai selezionarle qui.')} />
       ) : (
         <div className="grid" style={{ gap: 18 }}>
           {folders.map(f => (
             <div key={f}>
               <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.8px',
                 fontWeight: 700, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Icon name="folder" size={13} /> {f}
+                <Icon name="folder" size={13} /> {f === 'Senza cartella' ? t(f) : f}
               </div>
               <div className="asset-grid">
                 {items.filter(m => (m.folder || 'Senza cartella') === f)
@@ -1291,7 +1292,7 @@ function MediaPicker({ athleteId, excludeSourceIds, onClose, onConfirm }: {
                         <div style={{ position: 'absolute', top: 6, left: 6, padding: '2px 7px', borderRadius: 8,
                           background: 'var(--accent)', color: 'var(--ink)', fontSize: 10, fontWeight: 800,
                           display: 'flex', alignItems: 'center', gap: 3 }}>
-                          <Icon name="star" size={11} /> Scelta
+                          <Icon name="star" size={11} /> {t('Scelta')}
                         </div>
                       )}
                       <div style={{ position: 'absolute', top: 6, right: 6, width: 22, height: 22, borderRadius: '50%',
@@ -1322,6 +1323,7 @@ const pinStyle = (x: number, y: number): any => ({
 function RevisionAnnotator({ url, onCancel, onSend }: {
   url: string; onCancel: () => void; onSend: (note: string, pins: { x: number; y: number; note: string }[]) => Promise<void>
 }) {
+  const { t } = useLang()
   const [pins, setPins] = useState<{ x: number; y: number; note: string }[]>([])
   const [note, setNote] = useState('')
   const [zoom, setZoom] = useState(1)
@@ -1338,13 +1340,13 @@ function RevisionAnnotator({ url, onCancel, onSend }: {
   return (
     <div>
       <div className="faint" style={{ fontSize: 12.5, marginBottom: 8 }}>
-        Tocca sulla grafica il punto da cambiare (puoi metterne più di uno). Usa lo zoom per il dettaglio e scrivi cosa modificare.
+        {t('Tocca sulla grafica il punto da cambiare (puoi metterne più di uno). Usa lo zoom per il dettaglio e scrivi cosa modificare.')}
       </div>
       <div className="flex gap" style={{ alignItems: 'center', marginBottom: 8 }}>
         <button className="btn btn-sm" onClick={() => setZoom(z => Math.max(1, +(z - 0.5).toFixed(1)))} disabled={zoom <= 1}>−</button>
         <span className="faint" style={{ fontSize: 12, minWidth: 44, textAlign: 'center' }}>{Math.round(zoom * 100)}%</span>
         <button className="btn btn-sm" onClick={() => setZoom(z => Math.min(4, +(z + 0.5).toFixed(1)))} disabled={zoom >= 4}>+</button>
-        {pins.length > 0 && <button className="btn btn-sm" onClick={() => setPins(p => p.slice(0, -1))}>Annulla ultimo punto</button>}
+        {pins.length > 0 && <button className="btn btn-sm" onClick={() => setPins(p => p.slice(0, -1))}>{t('Annulla ultimo punto')}</button>}
       </div>
       <div style={{ maxHeight: 440, overflow: 'auto', border: '1px solid var(--border)', borderRadius: 10, background: 'var(--ink)' }}>
         <div ref={wrapRef} onClick={addPin} style={{ position: 'relative', width: `${zoom * 100}%`, cursor: 'crosshair' }}>
@@ -1355,16 +1357,16 @@ function RevisionAnnotator({ url, onCancel, onSend }: {
       {pins.map((p, i) => (
         <div key={i} className="flex gap" style={{ alignItems: 'center', marginTop: 8 }}>
           <div style={{ minWidth: 22, height: 22, borderRadius: '50%', background: 'var(--magenta)', color: 'var(--surface)', fontWeight: 800, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: '0 0 auto' }}>{i + 1}</div>
-          <input style={inputStyle} placeholder={`Cosa cambiare nel punto ${i + 1}…`} value={p.note}
+          <input style={inputStyle} placeholder={t('Cosa cambiare nel punto {n}…').replace('{n}', String(i + 1))} value={p.note}
             onChange={e => setPins(arr => arr.map((q, j) => j === i ? { ...q, note: e.target.value } : q))} />
         </div>
       ))}
-      <Textarea rows={3} style={{ marginTop: 10 }} placeholder="Nota generale sulle modifiche (facoltativa)…" value={note} onChange={e => setNote(e.target.value)} />
+      <Textarea rows={3} style={{ marginTop: 10 }} placeholder={t('Nota generale sulle modifiche (facoltativa)…')} value={note} onChange={e => setNote(e.target.value)} />
       <div className="flex gap" style={{ justifyContent: 'flex-end', marginTop: 10 }}>
-        <button className="btn" onClick={onCancel}>Annulla</button>
+        <button className="btn" onClick={onCancel}>{t('Annulla')}</button>
         <button className="btn btn-primary" disabled={sending || (pins.length === 0 && !note.trim())}
           onClick={async () => { setSending(true); await onSend(note.trim(), pins) }}>
-          {sending ? 'Invio…' : 'Invia richiesta modifiche'}
+          {sending ? t('Invio…') : t('Invia richiesta modifiche')}
         </button>
       </div>
     </div>

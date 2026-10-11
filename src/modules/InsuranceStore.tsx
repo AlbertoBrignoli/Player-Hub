@@ -64,11 +64,11 @@ export function OffersTab({ athleteId, isInsurer, canInterest, uid }: { athleteI
         <div>
           <div style={{ fontSize: 11, letterSpacing: 1.4, textTransform: 'uppercase', fontWeight: 800, color: ACCENT }}>{tr('Proposte')}</div>
           <div className="faint" style={{ fontSize: 12.5, marginTop: 2 }}>
-            {isInsurer ? 'Proposte che i tuoi atleti vedono nella loro area. Aggiungile e gestiscile qui.'
-                       : 'Soluzioni pensate per te dal tuo assicuratore. Apri, leggi e segnala se ti interessano.'}
+            {isInsurer ? tr('Proposte che i tuoi atleti vedono nella loro area. Aggiungile e gestiscile qui.')
+                       : tr('Soluzioni pensate per te dal tuo assicuratore. Apri, leggi e segnala se ti interessano.')}
           </div>
         </div>
-        {isInsurer && <button className="btn btn-primary btn-sm" onClick={() => setEditing('new')}><Icon name="plus" size={14} /> Nuova proposta</button>}
+        {isInsurer && <button className="btn btn-primary btn-sm" onClick={() => setEditing('new')}><Icon name="plus" size={14} /> {tr('Nuova proposta')}</button>}
       </div>
 
       {/* due grandi tab: Sport / Personale */}
@@ -79,7 +79,7 @@ export function OffersTab({ athleteId, isInsurer, canInterest, uid }: { athleteI
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
               background: cat === c.k ? ACCENT : 'var(--card)', color: cat === c.k ? '#fff' : 'var(--text)',
               border: '1px solid ' + (cat === c.k ? ACCENT : 'var(--border)') }}>
-            <Icon name={c.icon} size={20} /> {c.l}
+            <Icon name={c.icon} size={20} /> {tr(c.l)}
           </button>
         ))}
       </div>
@@ -88,8 +88,8 @@ export function OffersTab({ athleteId, isInsurer, canInterest, uid }: { athleteI
         const shown = offers.filter(o => (o.category || 'sport') === cat)
         if (shown.length === 0) return (
           <div className="card"><Empty icon={<Icon name="lock" size={28} strokeWidth={1.4} />}
-            title={isInsurer ? `Nessuna proposta ${cat === 'sport' ? 'Sport' : 'Personale'}` : 'Nessuna proposta al momento'}
-            hint={isInsurer ? 'Aggiungi una proposta con "Nuova proposta".' : 'Quando il tuo assicuratore aggiunge proposte, compaiono qui.'} /></div>
+            title={isInsurer ? (cat === 'sport' ? tr('Nessuna proposta Sport') : tr('Nessuna proposta Personale')) : tr('Nessuna proposta al momento')}
+            hint={isInsurer ? tr('Aggiungi una proposta con "Nuova proposta".') : tr('Quando il tuo assicuratore aggiunge proposte, compaiono qui.')} /></div>
         )
         return (
           <div className="grid" style={{ gap: 12 }}>
@@ -100,16 +100,16 @@ export function OffersTab({ athleteId, isInsurer, canInterest, uid }: { athleteI
                     <div className="flex gap" style={{ alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
                       <Badge>{tr(typeLabel(o.type))}</Badge>
                       {o.price_hint && <span style={{ fontSize: 12.5, fontWeight: 700, color: ACCENT }}>{o.price_hint}</span>}
-                      {isInsurer && <span className="faint" style={{ fontSize: 11 }}>· {o.player_id ? (athletes.find(a => a.api_player_id === o.player_id)?.name || 'atleta') : 'tutti i tuoi atleti'}{o.active ? '' : ' · nascosta'}</span>}
+                      {isInsurer && <span className="faint" style={{ fontSize: 11 }}>· {o.player_id ? (athletes.find(a => a.api_player_id === o.player_id)?.name || tr('atleta')) : tr('tutti i tuoi atleti')}{o.active ? '' : ' · ' + tr('nascosta')}</span>}
                     </div>
                     <div style={{ fontSize: 16, fontWeight: 800, letterSpacing: -0.2 }}>{o.title}</div>
                     {o.description && <div className="faint" style={{ fontSize: 13, marginTop: 4, whiteSpace: 'pre-wrap' }}>{o.description}</div>}
                   </div>
                 </div>
                 <div className="flex gap" style={{ gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
-                  {o.brochure_path && <button className="btn btn-sm" onClick={() => openPath(o.brochure_path!)}><Icon name="file" size={13} /> {o.brochure_name || 'Brochure'}</button>}
-                  {!isInsurer && canInterest && <button className="btn btn-primary btn-sm" onClick={() => interested(o)}><Icon name="check" size={13} /> Mi interessa</button>}
-                  {isInsurer && <><button className="btn btn-sm" onClick={() => setEditing(o)}><Icon name="edit" size={13} /> Modifica</button>
+                  {o.brochure_path && <button className="btn btn-sm" onClick={() => openPath(o.brochure_path!)}><Icon name="file" size={13} /> {o.brochure_name || tr('Brochure')}</button>}
+                  {!isInsurer && canInterest && <button className="btn btn-primary btn-sm" onClick={() => interested(o)}><Icon name="check" size={13} /> {tr('Mi interessa')}</button>}
+                  {isInsurer && <><button className="btn btn-sm" onClick={() => setEditing(o)}><Icon name="edit" size={13} /> {tr('Modifica')}</button>
                     <ConfirmButton onConfirm={() => del(o)}>{tr('Elimina')}</ConfirmButton></>}
                 </div>
               </div>
@@ -171,7 +171,7 @@ function OfferModal({ offer, uid, defaultCategory, onClose, onSaved }: { offer: 
           <Field label={tr("Categoria")}><Select value={f.category || 'sport'} onChange={e => set('category', e.target.value)}>
             <option value="sport">{tr('Sport')}</option><option value="personale">{tr('Personale')}</option>
           </Select></Field>
-          <Field label={tr("Tipo")}><Select value={f.type} onChange={e => set('type', e.target.value)}>{TYPES.map(t => <option key={t.k} value={t.k}>{t.l}</option>)}</Select></Field>
+          <Field label={tr("Tipo")}><Select value={f.type} onChange={e => set('type', e.target.value)}>{TYPES.map(t => <option key={t.k} value={t.k}>{tr(t.l)}</option>)}</Select></Field>
           <Field label={tr("Prezzo indicativo")}><Input value={f.price_hint || ''} onChange={e => set('price_hint', e.target.value)} placeholder={tr("es. da 15€/mese")} /></Field>
         </div>
         <Field label={tr("Titolo")}><Input value={f.title} onChange={e => set('title', e.target.value)} placeholder={tr("es. Polizza infortuni extra-professionale")} /></Field>
@@ -192,7 +192,7 @@ function OfferModal({ offer, uid, defaultCategory, onClose, onSaved }: { offer: 
           </div>
         </div>
         <label className="flex gap" style={{ alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13.5 }}>
-          <input type="checkbox" checked={f.active !== false} onChange={e => set('active', e.target.checked)} /> Visibile agli atleti
+          <input type="checkbox" checked={f.active !== false} onChange={e => set('active', e.target.checked)} /> {tr('Visibile agli atleti')}
         </label>
       </div>
     </Modal>
@@ -231,17 +231,17 @@ export function EditorialTab({ slug, isInsurer, uid, defaultTitle, defaultBody }
   }
 
   if (loading) return <Spinner />
-  const shownTitle = page?.title || defaultTitle
-  const shownBody = page?.body || defaultBody
+  const shownTitle = page?.title || tr(defaultTitle)
+  const shownBody = page?.body || tr(defaultBody)
 
   if (editing) {
     return (
       <div className="card grid" style={{ gap: 12 }}>
-        <Field label="Titolo"><Input value={title} onChange={e => setTitle(e.target.value)} /></Field>
+        <Field label={tr('Titolo')}><Input value={title} onChange={e => setTitle(e.target.value)} /></Field>
         <Field label={tr("Testo")}><Textarea value={body} onChange={e => setBody(e.target.value)} rows={14} /></Field>
         <div className="flex gap" style={{ marginLeft: 'auto' }}>
-          <button className="btn" onClick={() => setEditing(false)}>Annulla</button>
-          <button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? 'Salvo…' : 'Salva'}</button>
+          <button className="btn" onClick={() => setEditing(false)}>{tr('Annulla')}</button>
+          <button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? tr('Salvo…') : tr('Salva')}</button>
         </div>
       </div>
     )
@@ -251,11 +251,11 @@ export function EditorialTab({ slug, isInsurer, uid, defaultTitle, defaultBody }
     <div className="card">
       <div className="flex between" style={{ alignItems: 'flex-start', gap: 12, marginBottom: 10 }}>
         <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: -0.4 }}>{shownTitle}</div>
-        {isInsurer && <button className="btn btn-sm" onClick={() => { setTitle(page?.title || defaultTitle); setBody(page?.body || defaultBody); setEditing(true) }}>
-          <Icon name="edit" size={13} /> Modifica</button>}
+        {isInsurer && <button className="btn btn-sm" onClick={() => { setTitle(page?.title || tr(defaultTitle)); setBody(page?.body || tr(defaultBody)); setEditing(true) }}>
+          <Icon name="edit" size={13} /> {tr('Modifica')}</button>}
       </div>
       <div style={{ fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-wrap', color: 'var(--text)' }}>{shownBody}</div>
-      {isInsurer && !page && <div className="faint" style={{ fontSize: 12, marginTop: 12 }}>Questo è un testo di partenza: premi "Modifica" per personalizzarlo. Lo vedono i tuoi atleti.</div>}
+      {isInsurer && !page && <div className="faint" style={{ fontSize: 12, marginTop: 12 }}>{tr('Questo è un testo di partenza: premi "Modifica" per personalizzarlo. Lo vedono i tuoi atleti.')}</div>}
     </div>
   )
 }

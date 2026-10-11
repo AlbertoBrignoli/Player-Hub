@@ -8,6 +8,7 @@ import { Modal, Field, Input, Empty, Spinner, Badge } from '../components/ui'
 import Icon from '../components/Icon'
 import { fmtDateTime } from '../lib/format'
 import { RequestForm, ROLE_LABEL } from './AccessRequests'
+import { useLang } from '../lib/i18n'
 
 // "I miei atleti": l'hub del professionista per tutti i collegamenti con gli atleti.
 // - invita un atleta (codice AUVI-XXXXXX che l'atleta inserisce in Collegamenti)
@@ -43,23 +44,27 @@ type Req = {
   requester_id: string; requester_role: string
 }
 
-export function inviteText(code: string) {
-  return `Ciao, ti invito a collegarmi al tuo Player Hub AUVI: apri l'app, vai in Collegamenti e inserisci il codice ${code}. ${APP_URL}`
+type Tr = (s: string) => string
+const same: Tr = s => s
+
+export function inviteText(code: string, tr: Tr = same) {
+  return tr("Ciao, ti invito a collegarmi al tuo Player Hub AUVI: apri l'app, vai in Collegamenti e inserisci il codice {code}. {url}")
+    .replace('{code}', code).replace('{url}', APP_URL)
 }
 
-export async function shareInvite(code: string) {
-  const text = inviteText(code)
+export async function shareInvite(code: string, tr: Tr = same) {
+  const text = inviteText(code, tr)
   if (navigator.share) {
     try { await navigator.share({ text }); return } catch { /* annullato */ return }
   }
-  await copyText(text, 'Invito copiato')
+  await copyText(text, tr('Invito copiato'), tr)
 }
-export function whatsappInvite(code: string) {
-  window.open(`https://wa.me/?text=${encodeURIComponent(inviteText(code))}`, '_blank', 'noopener')
+export function whatsappInvite(code: string, tr: Tr = same) {
+  window.open(`https://wa.me/?text=${encodeURIComponent(inviteText(code, tr))}`, '_blank', 'noopener')
 }
-async function copyText(text: string, msg = 'Copiato') {
+async function copyText(text: string, msg = 'Copiato', tr: Tr = same) {
   try { await navigator.clipboard.writeText(text); toast(msg) }
-  catch { toast('Copia non riuscita', 'err') }
+  catch { toast(tr('Copia non riuscita'), 'err') }
 }
 
 function initials(n: string | null | undefined) {
@@ -94,10 +99,11 @@ const STYLE = `
 `
 
 function Section({ title, count, children }: { title: string; count?: number; children: React.ReactNode }) {
+  const { t } = useLang()
   return (
     <div className="ma-section">
       <div className="flex between" style={{ alignItems: 'center' }}>
-        <span className="ma-kicker">{title}</span>
+        <span className="ma-kicker">{t(title)}</span>
         {count != null && <span className="faint" style={{ fontSize: 12 }}>{count}</span>}
       </div>
       {children}
@@ -108,6 +114,7 @@ function Section({ title, count, children }: { title: string; count?: number; ch
 export function MyAthletes() {
   const { role, session } = useAuth()
   const { athletes, setAthleteId } = useAthlete()
+  const { t } = useLang()
   const uid: string | undefined = session?.user?.id
   const [roster, setRoster] = useState<Ath[]>([])
   const [invites, setInvites] = useState<Invite[]>([])
@@ -141,15 +148,15 @@ export function MyAthletes() {
   if (loading) return <Spinner />
 
   const nameOf = (id: number) =>
-    roster.find(a => a.api_player_id === id)?.name || athletes.find(a => a.api_player_id === id)?.name || `Atleta ${id}`
+    roster.find(a => a.api_player_id === id)?.name || athletes.find(a => a.api_player_id === id)?.name || t('Atleta {id}').replace('{id}', String(id))
 
   const ctas = (
     <div className="ma-actions">
       <button className="btn btn-primary" onClick={() => setInviteOpen(true)}>
-        <Icon name="plus" size={15} /> Invita un atleta
+        <Icon name="plus" size={15} /> {t('Invita un atleta')}
       </button>
       <button className="btn" onClick={() => setCodeOpen(true)}>
-        <Icon name="key" size={14} /> Ho un codice dall'atleta
+        <Icon name="key" size={14} /> {t("Ho un codice dall'atleta")}
       </button>
     </div>
   )
@@ -160,10 +167,10 @@ export function MyAthletes() {
 
       <div className="ma-head">
         <div>
-          <div className="ma-kicker">I miei atleti</div>
+          <div className="ma-kicker">{t('I miei atleti')}</div>
           <div className="flex" style={{ alignItems: 'baseline', gap: 8, marginTop: 6 }}>
             <span className="ma-count">{roster.length}</span>
-            <span className="faint" style={{ fontSize: 13 }}>{roster.length === 1 ? 'atleta collegato' : 'atleti collegati'}</span>
+            <span className="faint" style={{ fontSize: 13 }}>{roster.length === 1 ? t('atleta collegato') : t('atleti collegati')}</span>
           </div>
         </div>
         {ctas}
@@ -171,8 +178,8 @@ export function MyAthletes() {
 
       {roster.length === 0 ? (
         <div className="card">
-          <Empty icon={<Icon name="users" size={28} strokeWidth={1.4} />} title="Nessun atleta collegato"
-            hint="Invita un atleta: gli mandi un codice e lui lo inserisce nel suo Player Hub. Se invece è l'atleta ad averti dato un codice, inseriscilo tu." />
+          <Empty icon={<Icon name="users" size={28} strokeWidth={1.4} />} title={t('Nessun atleta collegato')}
+            hint={t("Invita un atleta: gli mandi un codice e lui lo inserisce nel suo Player Hub. Se invece è l'atleta ad averti dato un codice, inseriscilo tu.")} />
           <div className="flex" style={{ justifyContent: 'center', paddingBottom: 18 }}>{ctas}</div>
         </div>
       ) : (
@@ -184,7 +191,7 @@ export function MyAthletes() {
                   ? <img className="ma-av" src={a.photo_url} alt="" />
                   : <div className="ma-ini">{initials(a.name)}</div>}
                 <div style={{ minWidth: 0 }}>
-                  <div className="ma-name">{a.name || `Atleta ${a.api_player_id}`}</div>
+                  <div className="ma-name">{a.name || t('Atleta {id}').replace('{id}', String(a.api_player_id))}</div>
                   <div className="ma-sub">{[a.team_name, a.position].filter(Boolean).join(' · ') || '—'}</div>
                 </div>
                 <div className="ma-card-btns">
@@ -192,7 +199,7 @@ export function MyAthletes() {
                     <Icon name="message" size={14} /> <span className="ma-lbl">Chat</span>
                   </button>
                   <button className="btn btn-primary btn-sm" onClick={() => openArea(a.api_player_id)}>
-                    Apri area <Icon name="chevron-right" size={13} />
+                    {t('Apri area')} <Icon name="chevron-right" size={13} />
                   </button>
                 </div>
               </div>
@@ -203,7 +210,7 @@ export function MyAthletes() {
 
       <Section title="I miei inviti" count={invites.length}>
         {invites.length === 0 ? (
-          <div className="faint" style={{ fontSize: 12.5 }}>Nessun invito ancora creato.</div>
+          <div className="faint" style={{ fontSize: 12.5 }}>{t('Nessun invito ancora creato.')}</div>
         ) : (
           <div className="grid" style={{ gap: 8 }}>
             {invites.map(i => {
@@ -213,9 +220,9 @@ export function MyAthletes() {
                   <div style={{ minWidth: 0 }}>
                     <div className="flex" style={{ alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                       <span className="ma-code" style={{ textDecoration: i.status === 'revoked' ? 'line-through' : 'none' }}>{i.code}</span>
-                      {active ? <Badge tone="green">Attivo</Badge>
-                        : i.status === 'used' ? <Badge>{i.player_name ? `Usato da ${i.player_name}` : 'Usato'}</Badge>
-                        : <Badge tone="red">Revocato</Badge>}
+                      {active ? <Badge tone="green">{t('Attivo')}</Badge>
+                        : i.status === 'used' ? <Badge>{i.player_name ? t('Usato da {name}').replace('{name}', i.player_name) : t('Usato')}</Badge>
+                        : <Badge tone="red">{t('Revocato')}</Badge>}
                     </div>
                     <div className="faint" style={{ fontSize: 11.5, marginTop: 3 }}>
                       {i.label ? i.label + ' · ' : ''}{fmtDateTime(i.created_at)}
@@ -223,10 +230,10 @@ export function MyAthletes() {
                   </div>
                   {active && (
                     <div className="flex" style={{ gap: 4, flexShrink: 0 }}>
-                      <button className="btn btn-ghost btn-sm" title="Copia codice" onClick={() => copyText(i.code, 'Codice copiato')}>
+                      <button className="btn btn-ghost btn-sm" title={t('Copia codice')} onClick={() => copyText(i.code, t('Codice copiato'), t)}>
                         <Icon name="copy" size={13} />
                       </button>
-                      <button className="btn btn-ghost btn-sm" title="Condividi" onClick={() => shareInvite(i.code)}>
+                      <button className="btn btn-ghost btn-sm" title={t('Condividi')} onClick={() => shareInvite(i.code, t)}>
                         <Icon name="send" size={13} />
                       </button>
                     </div>
@@ -246,12 +253,12 @@ export function MyAthletes() {
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontWeight: 700, fontSize: 13.5 }}>{nameOf(r.player_id)}</div>
                   <div className="faint" style={{ fontSize: 11.5 }}>
-                    {ROLE_LABEL[r.requester_role] || r.requester_role} · {fmtDateTime(r.created_at)}
+                    {t(ROLE_LABEL[r.requester_role] || r.requester_role)} · {fmtDateTime(r.created_at)}
                   </div>
                 </div>
-                {r.status === 'approvata' ? <Badge tone="green">Collegato</Badge>
-                  : r.status === 'pending' ? <Badge tone="gold">In attesa</Badge>
-                  : r.status === 'rifiutata' ? <Badge tone="red">Rifiutata</Badge>
+                {r.status === 'approvata' ? <Badge tone="green">{t('Collegato')}</Badge>
+                  : r.status === 'pending' ? <Badge tone="gold">{t('In attesa')}</Badge>
+                  : r.status === 'rifiutata' ? <Badge tone="red">{t('Rifiutata')}</Badge>
                   : <Badge>{r.status}</Badge>}
               </div>
             ))}
@@ -261,7 +268,7 @@ export function MyAthletes() {
 
       {inviteOpen && <InviteSheet onClose={() => { setInviteOpen(false); load() }} />}
       {codeOpen && (
-        <Modal title="Ho un codice dall'atleta" onClose={() => setCodeOpen(false)}>
+        <Modal title={t("Ho un codice dall'atleta")} onClose={() => setCodeOpen(false)}>
           <RequestForm bare mine={reqs} onDone={() => { setCodeOpen(false); load() }} />
         </Modal>
       )}
@@ -271,6 +278,7 @@ export function MyAthletes() {
 
 // Foglio "Invita un atleta": crea il codice e lo mostra grande con le azioni di condivisione.
 function InviteSheet({ onClose }: { onClose: () => void }) {
+  const { t } = useLang()
   const [label, setLabel] = useState('')
   const [code, setCode] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -282,46 +290,45 @@ function InviteSheet({ onClose }: { onClose: () => void }) {
     setBusy(false)
     if (error) { toast(error.message, 'err'); return }
     const res = data as any
-    if (!res?.ok || !res.code) { toast(res?.error || 'Invito non creato', 'err'); return }
+    if (!res?.ok || !res.code) { toast(res?.error || t('Invito non creato'), 'err'); return }
     setCode(res.code)
   }
 
   return (
-    <Modal title="Invita un atleta" onClose={onClose}
-      footer={code ? <button className="btn" onClick={onClose}>Fatto</button> : undefined}>
+    <Modal title={t('Invita un atleta')} onClose={onClose}
+      footer={code ? <button className="btn" onClick={onClose}>{t('Fatto')}</button> : undefined}>
       {!code ? (
         <>
           <div className="faint" style={{ fontSize: 13, marginBottom: 12 }}>
-            Crei un codice personale da mandare all'atleta. Quando lo inserisce nel suo Player Hub
-            (Collegamenti) sei collegato: è la sua conferma.
+            {t("Crei un codice personale da mandare all'atleta. Quando lo inserisce nel suo Player Hub (Collegamenti) sei collegato: è la sua conferma.")}
           </div>
-          <Field label="Per chi? (facoltativo)">
-            <Input value={label} onChange={e => setLabel(e.target.value)} placeholder="es. Mario Rossi"
+          <Field label={t('Per chi? (facoltativo)')}>
+            <Input value={label} onChange={e => setLabel(e.target.value)} placeholder={t('es. Mario Rossi')}
               onKeyDown={e => { if (e.key === 'Enter') create() }} />
           </Field>
           <button className="btn btn-primary" style={{ width: '100%' }} disabled={busy} onClick={create}>
-            {busy ? 'Creazione…' : 'Crea codice invito'}
+            {busy ? t('Creazione…') : t('Crea codice invito')}
           </button>
         </>
       ) : (
         <>
           <div className="faint" style={{ fontSize: 13 }}>
-            Manda questo codice all'atleta{label.trim() ? <> (<b style={{ color: 'var(--text)' }}>{label.trim()}</b>)</> : null}.
+            {t("Manda questo codice all'atleta")}{label.trim() ? <> (<b style={{ color: 'var(--text)' }}>{label.trim()}</b>)</> : null}.
           </div>
           <div className="ma-bigcode">{code}</div>
           <div className="ma-share">
-            <button className="btn btn-primary" onClick={() => shareInvite(code)}>
-              <Icon name="send" size={14} /> Condividi
+            <button className="btn btn-primary" onClick={() => shareInvite(code, t)}>
+              <Icon name="send" size={14} /> {t('Condividi')}
             </button>
-            <button className="btn" onClick={() => whatsappInvite(code)}>
+            <button className="btn" onClick={() => whatsappInvite(code, t)}>
               <Icon name="message" size={14} /> WhatsApp
             </button>
-            <button className="btn" onClick={() => copyText(code, 'Codice copiato')}>
-              <Icon name="copy" size={14} /> Copia
+            <button className="btn" onClick={() => copyText(code, t('Codice copiato'), t)}>
+              <Icon name="copy" size={14} /> {t('Copia')}
             </button>
           </div>
           <div className="faint" style={{ fontSize: 11.5, marginTop: 12 }}>
-            Il codice è monouso: lo trovi anche in "I miei inviti".
+            {t('Il codice è monouso: lo trovi anche in "I miei inviti".')}
           </div>
         </>
       )}

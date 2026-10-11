@@ -5,6 +5,7 @@ import { useAthlete } from '../lib/athlete'
 import { Spinner, Empty } from '../components/ui'
 import Icon from '../components/Icon'
 import { BrandLogo } from './BrandCard'
+import { useLang } from '../lib/i18n'
 import type { Brand } from '../lib/types'
 
 // Home del brand: hero con la sua identità (accento + claim dal DB, non cablati),
@@ -27,6 +28,7 @@ const kicker: React.CSSProperties = {
 }
 
 export default function BrandHome({ goto }: { goto?: (r: string) => void }) {
+  const { t } = useLang()
   const { session } = useAuth()
   const { setAthleteId } = useAthlete()
   const [brand, setBrand] = useState<Brand | null>(null)
@@ -91,7 +93,7 @@ export default function BrandHome({ goto }: { goto?: (r: string) => void }) {
             <BrandLogo url={brand?.logo_url} name={brand?.name} size={54} />
           </div>
           <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ ...kicker, color: accent }}>Area partner · AUVI</div>
+            <div style={{ ...kicker, color: accent }}>{t('Area partner · AUVI')}</div>
             <div style={{ fontSize: 30, fontWeight: 900, letterSpacing: -0.5, lineHeight: 1.05, marginTop: 3, textTransform: 'uppercase' }}>
               {brand?.name || 'Brand'}
             </div>
@@ -102,7 +104,7 @@ export default function BrandHome({ goto }: { goto?: (r: string) => void }) {
           {goto && (
             <button className="btn btn-sm" onClick={() => goto('brandcard')}
               style={{ background: accent, color: '#fff', fontWeight: 800, border: 'none' }}>
-              <Icon name="edit" size={13} /> Modifica scheda
+              <Icon name="edit" size={13} /> {t('Modifica scheda')}
             </button>
           )}
         </div>
@@ -118,7 +120,7 @@ export default function BrandHome({ goto }: { goto?: (r: string) => void }) {
 
       {/* --- Dati del brand --- */}
       <div className="card">
-        <div style={{ ...kicker, color: 'var(--text-dim)', marginBottom: 12 }}>Scheda brand</div>
+        <div style={{ ...kicker, color: 'var(--text-dim)', marginBottom: 12 }}>{t('Scheda brand')}</div>
         <div className="grid g3" style={{ gap: 10 }}>
           <Info k="Referente" v={brand?.contact_name} />
           <Info k="Ruolo" v={brand?.contact_role} />
@@ -146,8 +148,8 @@ export default function BrandHome({ goto }: { goto?: (r: string) => void }) {
 
       {rows.length === 0 && (
         <div className="card">
-          <Empty icon={<Icon name="user" size={30} strokeWidth={1.4} />} title="Nessun atleta collegato"
-            hint="Chiedi ad AUVI di collegare gli atleti alla tua area." />
+          <Empty icon={<Icon name="user" size={30} strokeWidth={1.4} />} title={t("Nessun atleta collegato")}
+            hint={t("Chiedi ad AUVI di collegare gli atleti alla tua area.")} />
         </div>
       )}
     </div>
@@ -158,15 +160,16 @@ function AthleteGroup({ title, hint, rows, accent, kicker, fmtK, open, isPartner
   title: string; hint: string; rows: any[]; accent: string; kicker: React.CSSProperties
   fmtK: (n: number) => string; open: (id: number, route: string) => void; isPartner?: boolean
 }) {
+  const { t } = useLang()
   return (
     <div>
       <div className="flex between" style={{ alignItems: 'flex-end', marginBottom: 12 }}>
         <div>
           <div className="flex gap" style={{ alignItems: 'center', gap: 9 }}>
             <span style={{ width: 3, height: 15, background: isPartner ? accent : 'var(--text-dim)', borderRadius: 2 }} />
-            <span style={{ ...kicker, color: 'var(--text)' }}>{title}</span>
+            <span style={{ ...kicker, color: 'var(--text)' }}>{t(title)}</span>
           </div>
-          <div className="faint" style={{ fontSize: 11.5, marginTop: 4, marginLeft: 12 }}>{hint}</div>
+          <div className="faint" style={{ fontSize: 11.5, marginTop: 4, marginLeft: 12 }}>{t(hint)}</div>
         </div>
         <span className="faint" style={{ fontSize: 12 }}>{rows.length}</span>
       </div>
@@ -192,11 +195,11 @@ function AthleteGroup({ title, hint, rows, accent, kicker, fmtK, open, isPartner
                     {isPartner && <span style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: .8, textTransform: 'uppercase', color: '#111', background: accent, borderRadius: 999, padding: '2px 7px' }}>Partner</span>}
                   </div>
                   <div className="faint" style={{ fontSize: 12 }}>
-                    {[a.position, a.team_name].filter(Boolean).join(' · ') || 'Atleta'}
+                    {[a.position, a.team_name].filter(Boolean).join(' · ') || t('Atleta')}
                   </div>
                   {a.instagram_followers ? (
                     <div style={{ ...kicker, fontSize: 10.5, color: isPartner ? accent : 'var(--text-dim)', marginTop: 4 }}>
-                      {fmtK(a.instagram_followers)} follower
+                      {t('{n} follower').replace('{n}', fmtK(a.instagram_followers))}
                     </div>
                   ) : null}
                 </div>
@@ -208,11 +211,11 @@ function AthleteGroup({ title, hint, rows, accent, kicker, fmtK, open, isPartner
                 </button>
                 {isPartner && (
                   <button className="btn btn-ghost btn-sm" onClick={e => { e.stopPropagation(); open(a.api_player_id, 'messages') }}>
-                    <Icon name="message" size={13} /> Scrivi
+                    <Icon name="message" size={13} /> {t('Scrivi')}
                   </button>
                 )}
                 <button className="btn btn-ghost btn-sm" onClick={e => { e.stopPropagation(); open(a.api_player_id, 'campaigns') }}>
-                  <Icon name="image" size={13} /> Campagne
+                  <Icon name="image" size={13} /> {t('Campagne')}
                 </button>
               </div>
             </div>
@@ -224,9 +227,10 @@ function AthleteGroup({ title, hint, rows, accent, kicker, fmtK, open, isPartner
 }
 
 function Metric({ label, value, accent, small }: { label: string; value: string; accent: string; small?: boolean }) {
+  const { t } = useLang()
   return (
     <div>
-      <div style={{ ...kicker, fontSize: 10, color: 'var(--text-dim)' }}>{label}</div>
+      <div style={{ ...kicker, fontSize: 10, color: 'var(--text-dim)' }}>{t(label)}</div>
       <div style={{ fontSize: small ? 15 : 22, fontWeight: 900, marginTop: 2, borderBottom: `2px solid ${accent}`, display: 'inline-block', paddingBottom: 2 }}>
         {value}
       </div>
@@ -235,9 +239,10 @@ function Metric({ label, value, accent, small }: { label: string; value: string;
 }
 
 function Info({ k, v }: { k: string; v: any }) {
+  const { t } = useLang()
   return (
     <div>
-      <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.8px', fontWeight: 700 }}>{k}</div>
+      <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.8px', fontWeight: 700 }}>{t(k)}</div>
       <div style={{ fontSize: 13.5, marginTop: 2 }}>{v || '—'}</div>
     </div>
   )

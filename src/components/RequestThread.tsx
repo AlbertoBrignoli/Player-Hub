@@ -6,6 +6,7 @@ import { toast } from '../lib/toast'
 import { useAuth } from '../auth/AuthContext'
 import Icon from './Icon'
 import { fmtDateTime } from '../lib/format'
+import { useLang } from '../lib/i18n'
 
 const BUCKET = 'service-files'
 
@@ -18,6 +19,7 @@ const ROLE_TAG: Record<string, string> = { partner: 'Partner', admin: 'AUVI', cr
 
 export default function RequestThread({ requestId, placeholder }: { requestId: string; placeholder?: string }) {
   const { profile } = useAuth()
+  const { t } = useLang()
   const [msgs, setMsgs] = useState<Msg[]>([])
   const [body, setBody] = useState('')
   const [busy, setBusy] = useState(false)
@@ -38,7 +40,7 @@ export default function RequestThread({ requestId, placeholder }: { requestId: s
     let file_path: string | null = null
     if (file && file.size > 45 * 1048576) {
       setBusy(false)
-      toast('File oltre 45 MB: per video e file pesanti incolla un link scaricabile (WeTransfer, Drive)', 'err')
+      toast(t('File oltre 45 MB: per video e file pesanti incolla un link scaricabile (WeTransfer, Drive)'), 'err')
       return
     }
     if (file) {
@@ -59,14 +61,14 @@ export default function RequestThread({ requestId, placeholder }: { requestId: s
   async function open(m: Msg) {
     if (!m.file_path) return
     const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(m.file_path, 300)
-    if (error || !data) { toast(error?.message || 'File non disponibile', 'err'); return }
+    if (error || !data) { toast(error?.message || t('File non disponibile'), 'err'); return }
     window.open(data.signedUrl, '_blank', 'noopener')
   }
 
   return (
     <div className="rq-thread">
       {msgs.length === 0 ? (
-        <div className="faint" style={{ fontSize: 12.5 }}>Ancora nessun messaggio. Qui passano aggiornamenti, report e file.</div>
+        <div className="faint" style={{ fontSize: 12.5 }}>{t('Ancora nessun messaggio. Qui passano aggiornamenti, report e file.')}</div>
       ) : (
         <div className="rq-msgs">
           {msgs.map(m => {
@@ -74,8 +76,8 @@ export default function RequestThread({ requestId, placeholder }: { requestId: s
             return (
               <div key={m.id} className={`rq-msg ${mine ? 'mine' : ''}`}>
                 <div className="rq-meta">
-                  <b>{mine ? 'Tu' : m.author_name || 'Utente'}</b>
-                  {!mine && m.author_role && ROLE_TAG[m.author_role] && <span className="rq-tag">{ROLE_TAG[m.author_role]}</span>}
+                  <b>{mine ? t('Tu') : m.author_name || t('Utente')}</b>
+                  {!mine && m.author_role && ROLE_TAG[m.author_role] && <span className="rq-tag">{t(ROLE_TAG[m.author_role])}</span>}
                   <span>{fmtDateTime(m.created_at)}</span>
                 </div>
                 {m.body && <div className="rq-body">{m.body}</div>}
@@ -90,7 +92,7 @@ export default function RequestThread({ requestId, placeholder }: { requestId: s
         </div>
       )}
       <div className="rq-compose">
-        <textarea className="input" rows={2} value={body} placeholder={placeholder || 'Scrivi un messaggio…'}
+        <textarea className="input" rows={2} value={body} placeholder={placeholder || t('Scrivi un messaggio…')}
           onChange={e => setBody(e.target.value)} />
         <div className="flex gap" style={{ gap: 8, justifyContent: 'flex-end' }}>
           <input ref={fileRef} type="file" hidden onChange={e => { const f = e.target.files?.[0]; if (f) send(f); e.target.value = '' }} />
@@ -98,7 +100,7 @@ export default function RequestThread({ requestId, placeholder }: { requestId: s
             <Icon name="upload" size={14} /> File
           </button>
           <button className="btn btn-primary btn-sm" disabled={busy || !body.trim()} onClick={() => send()}>
-            <Icon name="send" size={14} /> Invia
+            <Icon name="send" size={14} /> {t('Invia')}
           </button>
         </div>
       </div>

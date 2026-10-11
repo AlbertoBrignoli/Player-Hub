@@ -22,9 +22,9 @@ function attSize(n?: number | null) {
   if (n < 1048576) return (n / 1024).toFixed(0) + ' KB'
   return (n / 1048576).toFixed(1) + ' MB'
 }
-async function openAttachment(a: EventAttachment) {
+async function openAttachment(a: EventAttachment, tr: (s: string) => string = s => s) {
   const { data, error } = await supabase.storage.from(a.bucket || DOC_BUCKET).createSignedUrl(a.path, 300)
-  if (error || !data?.signedUrl) { toast('Impossibile aprire il file', 'err'); return }
+  if (error || !data?.signedUrl) { toast(tr('Impossibile aprire il file'), 'err'); return }
   window.open(data.signedUrl, '_blank')
 }
 
@@ -150,7 +150,7 @@ export default function Agenda({ goto }: { goto?: (r: string) => void }) {
       const key = String(x.fixture_id ?? x.id)
       const prev = matches.get(key)
       if (prev) { if (x.player_id != null && !prev._pids!.includes(x.player_id)) prev._pids!.push(x.player_id); return }
-      const title = x.home_team && x.away_team ? `${x.home_team} – ${x.away_team}` : (x.opponent ? `vs ${x.opponent}` : 'Partita')
+      const title = x.home_team && x.away_team ? `${x.home_team} – ${x.away_team}` : (x.opponent ? `vs ${x.opponent}` : tr('Partita'))
       matches.set(key, {
         id: 'match-' + key, title, type: 'partita', start_at: x.match_date, end_at: null,
         location: x.stadium || x.venue || null, notes: x.league || null, created_at: x.match_date,
@@ -169,7 +169,7 @@ export default function Agenda({ goto }: { goto?: (r: string) => void }) {
       ;((data as { event_id: string }[]) || []).forEach(r => { c[r.event_id] = (c[r.event_id] || 0) + 1 })
     }
     setCounts(c)
-  }, [idsKey])
+  }, [idsKey]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { reload() }, [reload])
 
   // nessun atleta collegato: niente caricamento infinito, ma il passo successivo
@@ -238,7 +238,7 @@ export default function Agenda({ goto }: { goto?: (r: string) => void }) {
       </div>
 
       {rows.length === 0 ? (
-        <Empty icon={<Icon name="clock" size={24} strokeWidth={1.6} />} title="Agenda vuota" hint="Aggiungi i tuoi impegni personali; allenamenti e partite compaiono in automatico."
+        <Empty icon={<Icon name="clock" size={24} strokeWidth={1.6} />} title={tr('Agenda vuota')} hint={tr('Aggiungi i tuoi impegni personali; allenamenti e partite compaiono in automatico.')}
           action={canAdd ? { label: '+ ' + addLabel, onClick: () => setEdit(emptyEv(defType)) } : undefined} />
       ) : view === 'lista'
         ? <ListView rows={rows} {...shared} />
@@ -376,7 +376,7 @@ function ListView(props: SharedProps) {
 
 function CalendarView(props: SharedProps & { focusId?: string | null }) {
   const { rows, onAdd, tagOf, onOpenMatch, focusId } = props
-  const { t: tr } = useLang()
+  const { t: tr, lang } = useLang()
   const focused = focusId ? rows.find(r => r.id === focusId) : undefined
   const [cur, setCur] = useState(() => { const d = focused ? new Date(focused.start_at) : new Date(); return { y: d.getFullYear(), m: d.getMonth() } })
   const [sel, setSel] = useState<Date | null>(() => focused ? new Date(focused.start_at) : null)
@@ -448,7 +448,7 @@ function CalendarView(props: SharedProps & { focusId?: string | null }) {
       {sel && (
         <>
           <div style={sectionLabel} className="flex between">
-            <span>{sel.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}</span>
+            <span>{sel.toLocaleDateString(lang === 'en' ? 'en-GB' : 'it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
             <span className="flex gap">
               {onAdd && <button className="btn btn-sm" onClick={() => { const dd = new Date(sel); dd.setHours(12, 0, 0, 0); onAdd(dd.toISOString()) }}>+ {tr('Aggiungi')}</button>}
               <button className="btn btn-ghost btn-sm" onClick={() => setSel(null)}>{tr('Chiudi')}</button>
@@ -466,15 +466,16 @@ function CalendarView(props: SharedProps & { focusId?: string | null }) {
 // Stessa scheda dell'impegno in formato riga: tipo, titolo, giorno e ora.
 // Un tocco seleziona quel giorno nel calendario, dove compare la scheda completa.
 function EvRow({ e, onOpen, tagOf }: { e: AgItem; onOpen?: () => void; tagOf: TagOf }) {
-  const { t: tr } = useLang()
+  const { t: tr, lang } = useLang()
   const t = typeFor(e)
   const d = new Date(e.start_at)
-  const day = d.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' })
-  const time = d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
+  const loc = lang === 'en' ? 'en-GB' : 'it-IT'
+  const day = d.toLocaleDateString(loc, { weekday: 'short', day: 'numeric', month: 'short' })
+  const time = d.toLocaleTimeString(loc, { hour: '2-digit', minute: '2-digit' })
   return (
     <button className={'card ev-row' + (onOpen ? '' : ' ag-row-static')} onClick={onOpen} disabled={!onOpen} style={{ borderLeft: `3px solid ${t.c}`, color: 'inherit' }}>
       <span className="ev-row-ic" style={{ background: t.c + '22', color: t.c }}><Icon name={t.icon} size={14} /></span>
-      <span className="ev-row-t">{e.title}</span>
+      <span className="ev-row-t">{tr(e.title)}</span>
       <Chips e={e} tagOf={tagOf} />
       <span className="ev-row-when">{day} · <b>{time}</b></span>
       {!e._match && e.request_status === 'da_confermare' && <span className="ev-row-dot" title={tr('Da confermare')} />}
@@ -492,7 +493,7 @@ function StatusChip({ e }: { e: AgItem }) {
   const who = tr(ROLE_LABEL[e.proposed_by_role || ''] || '')
   const conf: Record<string, { bg: string; c: string; ic: string; l: string }> = {
     da_confermare: { bg: 'var(--yellow-soft)', c: 'var(--gold)', ic: 'clock',
-      l: e.proposed_by_role === 'partner' ? tr('Da confermare') : team ? `${tr('Proposta da')} ${who} · ${tr('da confermare')}` : tr("Richiesta dell'atleta · da confermare") },
+      l: e.proposed_by_role === 'partner' ? tr('Da confermare') : team ? `${tr('Proposta da {who}').replace('{who}', who)} · ${tr('da confermare')}` : tr("Richiesta dell'atleta · da confermare") },
     modifica_richiesta: { bg: 'rgba(221,0,136,.10)', c: 'var(--magenta)', ic: 'edit', l: tr('Modifica richiesta') },
     rifiutata: { bg: 'rgba(229,63,0,.10)', c: 'var(--red)', ic: 'x', l: team ? tr('Non accettata') : tr('Richiesta non accolta') },
     confermata: { bg: 'rgba(18,161,80,.12)', c: 'var(--green)', ic: 'check', l: tr('Confermato') },
@@ -559,7 +560,7 @@ export function EvCard({ e, focus, canEdit, onEdit, onDel, canConfirm, onConfirm
             {e.attachments.map(a => (
               <button key={a.path} className={'btn btn-sm' + (e.type === 'report' ? ' btn-primary' : '')} title={a.name}
                 style={{ display: 'inline-flex', alignItems: 'center', gap: 6, maxWidth: '100%' }}
-                onClick={() => openAttachment(a)}>
+                onClick={() => openAttachment(a, tr)}>
                 <Icon name={e.type === 'report' ? 'file' : 'download'} size={13} />
                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.type === 'report' ? tr('Apri report') : a.name}</span>
               </button>
@@ -620,7 +621,7 @@ export function EvCard({ e, focus, canEdit, onEdit, onDel, canConfirm, onConfirm
 
 // Commenti e richieste di modifica sull'impegno: chi non puo' modificarlo interagisce da qui.
 function Thread({ eventId, uid, mainIsChange, onCount }: { eventId: string; uid?: string; mainIsChange: boolean; onCount: (d: number) => void }) {
-  const { t: tr } = useLang()
+  const { t: tr, lang } = useLang()
   const [list, setList] = useState<EventComment[] | null>(null)
   const [text, setText] = useState('')
   const [busy, setBusy] = useState(false)
@@ -647,7 +648,7 @@ function Thread({ eventId, uid, mainIsChange, onCount }: { eventId: string; uid?
     onCount(-1); setList(l => (l || []).filter(x => x.id !== c.id))
   }
   const who = (c: EventComment) => c.author_id === uid ? tr('Tu') : tr(ROLE_LABEL[c.author_role || ''] || 'Utente')
-  const when = (iso: string) => new Date(iso).toLocaleString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+  const when = (iso: string) => new Date(iso).toLocaleString(lang === 'en' ? 'en-GB' : 'it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
 
   return (
     <div className="ag-thread">
@@ -758,8 +759,8 @@ function EventForm({ value, isAdmin, role, uid, athleteId, nameOf, athleteChoice
 
   return (
     <Modal title={proposing
-        ? (f.id ? tr('Correggi la proposta') : `${tr('Proponi un impegno a')} ${who}`)
-        : direct ? (f.id ? tr('Modifica pasto o integratore') : `${tr('Pasto o integratore per')} ${who}`)
+        ? (f.id ? tr('Correggi la proposta') : tr('Proponi un impegno a {who}').replace('{who}', who))
+        : direct ? (f.id ? tr('Modifica pasto o integratore') : tr('Pasto o integratore per {who}').replace('{who}', who))
         : (f.id ? tr('Modifica impegno') : tr('Nuovo impegno'))} onClose={onClose}
       footer={<>
         <button className="btn btn-ghost" onClick={onClose}>{tr('Annulla')}</button>
@@ -814,7 +815,7 @@ function EventForm({ value, isAdmin, role, uid, athleteId, nameOf, athleteChoice
           <Icon name="upload" size={14} /> {uploading ? tr('Carico…') : tr('Aggiungi file')}
         </button>
         <input ref={fileRef} type="file" multiple hidden onChange={onFiles} />
-        <div className="faint" style={{ fontSize: 11.5, marginTop: 6 }}>Hotel, voli, biglietti, prenotazioni: l'atleta li apre e li scarica sul telefono.</div>
+        <div className="faint" style={{ fontSize: 11.5, marginTop: 6 }}>{tr("Hotel, voli, biglietti, prenotazioni: l'atleta li apre e li scarica sul telefono.")}</div>
       </div>
     </Modal>
   )

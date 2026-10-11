@@ -54,7 +54,7 @@ export default function Messages() {
           ...(agentName ? [{ key: 'agente', label: agentName, sub: tr('Procuratore'), icon: 'briefcase' }] : []),
           ...(insurerName ? [{ key: 'assicuratore', label: insurerName, sub: tr('Assicuratore'), icon: 'lock' }] : []),
           ...(taxName ? [{ key: 'commercialista', label: taxName, sub: tr('Commercialista'), icon: 'briefcase' }] : []),
-          ...(hasCoach ? [{ key: 'fitness', label: coachName || 'Preparatore', sub: tr('Preparazione atletica'), icon: 'dumbbell' }] : []),
+          ...(hasCoach ? [{ key: 'fitness', label: coachName || tr('Preparatore'), sub: tr('Preparazione atletica'), icon: 'dumbbell' }] : []),
           ...brands.map(b => ({ key: `brand:${b.id}`, label: b.name, sub: tr('Partner ufficiale'), icon: 'award', accent: b.accent_color, logo: b.logo_url })),
         ]
 
@@ -175,9 +175,9 @@ export default function Messages() {
   // e in chiaro a quale atleta sta scrivendo: il selettore in alto è troppo defilato.
   const toAthlete = isAdmin || isCoach || isBrand || isAgent || isInsurer || isTax
   const athlete = athletes.find(a => a.api_player_id === athleteId)
-  const placeholder = toAthlete
-    ? `Scrivi a ${athlete?.name || 'giocatore'}…`
-    : `Scrivi a ${active?.label || 'AUVI'}…`
+  const placeholder = tr('Scrivi a {name}…').replace('{name}', toAthlete
+    ? (athlete?.name || tr('giocatore'))
+    : (active?.label || 'AUVI'))
 
   return (
     <div className="grid" style={{ gap: 10 }}>
@@ -205,14 +205,14 @@ export default function Messages() {
                 </div>}
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', fontWeight: 800, color: 'var(--text-dim)' }}>
-                Stai scrivendo a
+                {tr('Stai scrivendo a')}
               </div>
               {/* l'atleta si sceglie una volta sola, dal selettore in alto */}
               <div style={{ fontSize: 18, fontWeight: 900, letterSpacing: -0.2, lineHeight: 1.2 }}>
                 {athlete?.name || tr('Nessun atleta selezionato')}
               </div>
               <div className="faint" style={{ fontSize: 11.5, marginTop: 1 }}>
-                {active?.label} · conversazione riservata
+                {active?.label} · {tr('conversazione riservata')}
               </div>
             </div>
           </div>
@@ -224,14 +224,14 @@ export default function Messages() {
             </div>}
             <div>
               <div style={{ fontWeight: 800, fontSize: 14.5, textTransform: active.accent ? 'uppercase' : 'none', letterSpacing: active.accent ? .5 : 0 }}>{active.label}</div>
-              <div className="faint" style={{ fontSize: 11.5 }}>{active.sub} · conversazione riservata</div>
+              <div className="faint" style={{ fontSize: 11.5 }}>{active.sub} · {tr('conversazione riservata')}</div>
             </div>
           </div>
         )}
         <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
           {loading ? <Spinner /> : rows.length === 0 ? (
             <Empty icon={<Icon name="message" size={30} strokeWidth={1.4} />} title={tr("Nessun messaggio")}
-              hint={`Inizia la conversazione con ${toAthlete ? (athlete?.name || 'il giocatore') : (active?.label || 'il tuo referente')}.`} />
+              hint={tr('Inizia la conversazione con {name}.').replace('{name}', toAthlete ? (athlete?.name || tr('il giocatore')) : (active?.label || tr('il tuo referente')))} />
           ) : (
             <div className="chat">
               {rows.map(m => {

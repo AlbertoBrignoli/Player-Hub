@@ -7,6 +7,7 @@ import { toast, undoable } from '../../lib/toast'
 import { notify } from '../../lib/notify'
 import { fmtDate } from '../../lib/format'
 import { useIsMobile } from '../../lib/useIsMobile'
+import { useLang } from '../../lib/i18n'
 import { Modal, Field, Input, Textarea, Select, Spinner, Empty, Badge } from '../../components/ui'
 import Icon from '../../components/Icon'
 import ExerciseLibrary, { ExMedia, ExlStyle } from './ExerciseLibrary'
@@ -114,6 +115,7 @@ function Landing({ nav }: { nav: (r: string) => void }) {
   const [fromExisting, setFromExisting] = useState(false)
   const [assign, setAssign] = useState<Template | null>(null)
   const [busyId, setBusyId] = useState<string | null>(null)
+  const { t: tr } = useLang()
 
   async function load() {
     if (!uid) { setLoading(false); return }
@@ -132,16 +134,16 @@ function Landing({ nav }: { nav: (r: string) => void }) {
     setBusyId(t.id)
     try {
       const pid = await copyProgram(t, t.id, { name: `${t.name} (copia)`, is_template: true, player_id: null, trainer_id: uid, status: 'draft', program_date: null, start_time: null })
-      toast('Modello duplicato', 'ok', { label: 'Apri', onClick: () => nav(`${ROUTE}?id=${pid}`) })
+      toast(tr('Modello duplicato'), 'ok', { label: tr('Apri'), onClick: () => nav(`${ROUTE}?id=${pid}`) })
       load()
-    } catch (e) { toast((e as Error).message || 'Non riesco a duplicare il modello', 'err') }
+    } catch (e) { toast((e as Error).message || tr('Non riesco a duplicare il modello'), 'err') }
     setBusyId(null)
   }
 
   function remove(t: Template) {
     const snapshot = items
     setItems(prev => prev.filter(x => x.id !== t.id))
-    undoable(`Modello eliminato: ${t.name}`,
+    undoable(tr('Modello eliminato: {name}').replace('{name}', t.name),
       async () => { const { error } = await supabase.from('fitness_programs').delete().eq('id', t.id); if (error) throw error },
       () => setItems(snapshot))
   }
@@ -152,26 +154,26 @@ function Landing({ nav }: { nav: (r: string) => void }) {
     <div>
       <div className="tb-head">
         <div>
-          <h1 className="tb-title">Crea scheda</h1>
-          <div className="tb-sub">Prepari la scheda una volta sola, poi la assegni agli atleti che vuoi.</div>
+          <h1 className="tb-title">{tr('Crea scheda')}</h1>
+          <div className="tb-sub">{tr('Prepari la scheda una volta sola, poi la assegni agli atleti che vuoi.')}</div>
         </div>
         <div className="tb-head-actions">
-          <button className="btn" onClick={() => setFromExisting(true)}><Icon name="copy" size={14} /> Da una scheda esistente</button>
-          <button className="btn btn-primary" onClick={() => nav(`${ROUTE}?id=new`)}><Icon name="plus" size={14} /> Nuova scheda</button>
+          <button className="btn" onClick={() => setFromExisting(true)}><Icon name="copy" size={14} /> {tr('Da una scheda esistente')}</button>
+          <button className="btn btn-primary" onClick={() => nav(`${ROUTE}?id=new`)}><Icon name="plus" size={14} /> {tr('Nuova scheda')}</button>
         </div>
       </div>
 
-      {error && <div className="tb-error">Non riesco a caricare i modelli: {error}</div>}
+      {error && <div className="tb-error">{tr('Non riesco a caricare i modelli:')} {error}</div>}
 
       {items.length === 0 && !error ? (
         <div className="card">
-          <Empty icon={<Icon name="layers" size={22} />} title="Nessun modello ancora"
-            hint="Un modello è una scheda senza atleta: scegli gli esercizi dalla libreria, imposta serie e carichi, poi assegnala a uno o più atleti in un passaggio."
-            action={{ label: 'Crea la prima scheda', onClick: () => nav(`${ROUTE}?id=new`) }} />
+          <Empty icon={<Icon name="layers" size={22} />} title={tr('Nessun modello ancora')}
+            hint={tr('Un modello è una scheda senza atleta: scegli gli esercizi dalla libreria, imposta serie e carichi, poi assegnala a uno o più atleti in un passaggio.')}
+            action={{ label: tr('Crea la prima scheda'), onClick: () => nav(`${ROUTE}?id=new`) }} />
         </div>
       ) : (
         <>
-          <div className="tb-section">I miei modelli <span>{items.length}</span></div>
+          <div className="tb-section">{tr('I miei modelli')} <span>{items.length}</span></div>
           <div className="tb-grid">
             {items.map(t => {
               const n = t.fitness_exercises?.[0]?.count ?? 0
@@ -181,17 +183,17 @@ function Landing({ nav }: { nav: (r: string) => void }) {
                     <div className="tb-tcard-name">{t.name}</div>
                     {(t.focus || t.objective) && <div className="tb-tcard-focus">{t.focus || t.objective}</div>}
                     <div className="tb-tcard-meta">
-                      <span><b>{n}</b> {n === 1 ? 'esercizio' : 'esercizi'}</span>
+                      <span><b>{n}</b> {n === 1 ? tr('esercizio') : tr('esercizi')}</span>
                       {t.duration_min ? <span><b>{t.duration_min}</b> min</span> : null}
-                      {t.intensity ? <span>Intensità {t.intensity.toLowerCase()}</span> : null}
+                      {t.intensity ? <span>{tr('Intensità {v}').replace('{v}', tr(t.intensity).toLowerCase())}</span> : null}
                     </div>
-                    {t.updated_at && <div className="tb-tcard-date">Aggiornato il {fmtDate(t.updated_at.slice(0, 10))}</div>}
+                    {t.updated_at && <div className="tb-tcard-date">{tr('Aggiornato il {date}').replace('{date}', fmtDate(t.updated_at.slice(0, 10)))}</div>}
                   </button>
                   <div className="tb-tcard-actions">
-                    <button className="btn btn-sm" onClick={() => nav(`${ROUTE}?id=${t.id}`)}><Icon name="edit" size={12} /> Apri</button>
-                    <button className="btn btn-sm" disabled={busyId === t.id} onClick={() => duplicate(t)}><Icon name="copy" size={12} /> {busyId === t.id ? 'Duplico…' : 'Duplica'}</button>
-                    <button className="btn btn-sm" disabled={n === 0} title={n === 0 ? 'Aggiungi almeno un esercizio' : undefined} onClick={() => setAssign(t)}><Icon name="send" size={12} /> Assegna</button>
-                    <button className="btn btn-sm btn-danger tb-del" onClick={() => remove(t)} aria-label={`Elimina ${t.name}`}><Icon name="trash" size={13} /></button>
+                    <button className="btn btn-sm" onClick={() => nav(`${ROUTE}?id=${t.id}`)}><Icon name="edit" size={12} /> {tr('Apri')}</button>
+                    <button className="btn btn-sm" disabled={busyId === t.id} onClick={() => duplicate(t)}><Icon name="copy" size={12} /> {busyId === t.id ? tr('Duplico…') : tr('Duplica')}</button>
+                    <button className="btn btn-sm" disabled={n === 0} title={n === 0 ? tr('Aggiungi almeno un esercizio') : undefined} onClick={() => setAssign(t)}><Icon name="send" size={12} /> {tr('Assegna')}</button>
+                    <button className="btn btn-sm btn-danger tb-del" onClick={() => remove(t)} aria-label={tr('Elimina {name}').replace('{name}', t.name)}><Icon name="trash" size={13} /></button>
                   </div>
                 </div>
               )
@@ -217,7 +219,8 @@ function FromExistingModal({ onClose, onCreated }: { onClose: () => void; onCrea
   const [loading, setLoading] = useState(true)
   const [q, setQ] = useState('')
   const [busy, setBusy] = useState<string | null>(null)
-  const nameOf = (pid: number | null) => athletes.find(a => a.api_player_id === pid)?.name || 'Atleta'
+  const { t: tr } = useLang()
+  const nameOf = (pid: number | null) => athletes.find(a => a.api_player_id === pid)?.name || tr('Atleta')
 
   useEffect(() => {
     const ids = athletes.map(a => a.api_player_id)
@@ -238,18 +241,18 @@ function FromExistingModal({ onClose, onCreated }: { onClose: () => void; onCrea
     setBusy(r.id)
     try {
       const pid = await copyProgram(r as unknown as FitnessProgram, r.id, { is_template: true, player_id: null, trainer_id: uid, status: 'draft', program_date: null, start_time: null, pdf_path: null, recurring: false, recurrence: null })
-      toast('Modello creato dalla scheda')
+      toast(tr('Modello creato dalla scheda'))
       onCreated(pid)
-    } catch (e) { toast((e as Error).message || 'Non riesco a copiare la scheda', 'err'); setBusy(null) }
+    } catch (e) { toast((e as Error).message || tr('Non riesco a copiare la scheda'), 'err'); setBusy(null) }
   }
 
   return (
-    <Modal wide title="Da una scheda esistente" onClose={onClose}>
-      <div className="tb-hint">Scegli una scheda di un tuo atleta: diventa un nuovo modello, l'originale resta com'è.</div>
-      <Field label="Cerca"><Input value={q} onChange={e => setQ(e.target.value)} placeholder="Nome scheda, focus o atleta" /></Field>
+    <Modal wide title={tr('Da una scheda esistente')} onClose={onClose}>
+      <div className="tb-hint">{tr('Scegli una scheda di un tuo atleta: diventa un nuovo modello, l\'originale resta com\'è.')}</div>
+      <Field label={tr('Cerca')}><Input value={q} onChange={e => setQ(e.target.value)} placeholder={tr('Nome scheda, focus o atleta')} /></Field>
       {loading ? <Spinner /> : list.length === 0 ? (
-        <Empty title={rows.length ? 'Nessuna scheda trovata' : 'Nessuna scheda da copiare'}
-          hint={rows.length ? 'Prova con un altro nome.' : 'Le schede che crei per i tuoi atleti compariranno qui.'} />
+        <Empty title={rows.length ? tr('Nessuna scheda trovata') : tr('Nessuna scheda da copiare')}
+          hint={rows.length ? tr('Prova con un altro nome.') : tr('Le schede che crei per i tuoi atleti compariranno qui.')} />
       ) : (
         <div className="tb-pick-list">
           {list.map(r => (
@@ -258,7 +261,7 @@ function FromExistingModal({ onClose, onCreated }: { onClose: () => void; onCrea
                 <div className="tb-pick-name">{r.name}</div>
                 <div className="tb-pick-sub">{[nameOf(r.player_id), r.program_date ? fmtDate(r.program_date) : '', r.focus].filter(Boolean).join(' · ')}</div>
               </div>
-              {busy === r.id ? <span className="tb-pick-sub">Copio…</span> : <Badge tone={r.status === 'published' ? 'green' : 'gold'}>{r.status === 'published' ? 'Pubblicata' : 'Bozza'}</Badge>}
+              {busy === r.id ? <span className="tb-pick-sub">{tr('Copio…')}</span> : <Badge tone={r.status === 'published' ? 'green' : 'gold'}>{r.status === 'published' ? tr('Pubblicata') : tr('Bozza')}</Badge>}
             </button>
           ))}
         </div>
@@ -280,6 +283,7 @@ function AssignModal({ template, exercises, nav, onClose }: {
   const [time, setTime] = useState('')
   const [status, setStatus] = useState<'draft' | 'published'>('draft')
   const [busy, setBusy] = useState(false)
+  const { t: tr } = useLang()
 
   const toggle = (id: number) => setSel(prev => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n })
   const allOn = athletes.length > 0 && sel.size === athletes.length
@@ -309,30 +313,30 @@ function AssignModal({ template, exercises, nav, onClose }: {
       }
     }
     setBusy(false)
-    if (ok) toast(`Scheda assegnata a ${ok} ${ok === 1 ? 'atleta' : 'atleti'}`, 'ok', { label: 'Apri', onClick: () => nav('fitness') })
-    if (failed.length) toast(`Non assegnata a: ${failed.join(', ')}`, 'err')
+    if (ok) toast(ok === 1 ? tr('Scheda assegnata a 1 atleta') : tr('Scheda assegnata a {n} atleti').replace('{n}', String(ok)), 'ok', { label: tr('Apri'), onClick: () => nav('fitness') })
+    if (failed.length) toast(`${tr('Non assegnata a:')} ${failed.join(', ')}`, 'err')
     if (!failed.length) onClose()
   }
 
   return (
-    <Modal wide title={`Assegna · ${template.name || 'scheda'}`} onClose={onClose}
+    <Modal wide title={`${tr('Assegna')} · ${template.name || tr('scheda')}`} onClose={onClose}
       footer={athletes.length ? <>
-        <button className="btn" onClick={onClose} disabled={busy}>Annulla</button>
+        <button className="btn" onClick={onClose} disabled={busy}>{tr('Annulla')}</button>
         <button className="btn btn-primary" onClick={run} disabled={busy || sel.size === 0}>
-          {busy ? 'Assegno…' : sel.size === 0 ? 'Scegli gli atleti' : `Assegna a ${sel.size} ${sel.size === 1 ? 'atleta' : 'atleti'}`}
+          {busy ? tr('Assegno…') : sel.size === 0 ? tr('Scegli gli atleti') : sel.size === 1 ? tr('Assegna a 1 atleta') : tr('Assegna a {n} atleti').replace('{n}', String(sel.size))}
         </button>
       </> : undefined}>
       {athletes.length === 0 ? (
-        <Empty icon={<Icon name="users" size={22} />} title="Non hai ancora atleti collegati"
-          hint="Collega i tuoi atleti per assegnare loro le schede."
-          action={{ label: 'Vai ai miei atleti', onClick: () => { onClose(); nav('my-athletes') } }} />
+        <Empty icon={<Icon name="users" size={22} />} title={tr('Non hai ancora atleti collegati')}
+          hint={tr('Collega i tuoi atleti per assegnare loro le schede.')}
+          action={{ label: tr('Vai ai miei atleti'), onClick: () => { onClose(); nav('my-athletes') } }} />
       ) : (
         <>
-          <div className="tb-hint">Ogni atleta riceve una copia della scheda: puoi personalizzarla dopo senza toccare il modello.</div>
+          <div className="tb-hint">{tr('Ogni atleta riceve una copia della scheda: puoi personalizzarla dopo senza toccare il modello.')}</div>
           <div className="tb-assign-top">
-            <span className="tb-label-inline">Atleti</span>
+            <span className="tb-label-inline">{tr('Atleti')}</span>
             <button className="btn btn-ghost btn-sm" onClick={() => setSel(allOn ? new Set() : new Set(athletes.map(a => a.api_player_id)))}>
-              {allOn ? 'Deseleziona tutti' : 'Seleziona tutti'}
+              {allOn ? tr('Deseleziona tutti') : tr('Seleziona tutti')}
             </button>
           </div>
           <div className="tb-athletes">
@@ -343,23 +347,23 @@ function AssignModal({ template, exercises, nav, onClose }: {
                   {a.photo_url
                     ? <img src={a.photo_url} alt="" className="tb-ath-img" />
                     : <span className="tb-ath-img tb-ath-ini">{(a.name || '?').slice(0, 1)}</span>}
-                  <span className="tb-ath-name">{a.name || 'Atleta'}</span>
+                  <span className="tb-ath-name">{a.name || tr('Atleta')}</span>
                   <span className="tb-ath-check">{on && <Icon name="check" size={12} />}</span>
                 </button>
               )
             })}
           </div>
           <div className="tb-form-grid" style={{ marginTop: 16 }}>
-            <Field label="Data"><Input type="date" value={date} onChange={e => setDate(e.target.value)} /></Field>
-            <Field label="Orario di inizio"><Input type="time" value={time} onChange={e => setTime(e.target.value)} /></Field>
+            <Field label={tr('Data')}><Input type="date" value={date} onChange={e => setDate(e.target.value)} /></Field>
+            <Field label={tr('Orario di inizio')}><Input type="time" value={time} onChange={e => setTime(e.target.value)} /></Field>
           </div>
-          <div className="tb-label-inline" style={{ marginTop: 4 }}>Come la invio</div>
+          <div className="tb-label-inline" style={{ marginTop: 4 }}>{tr('Come la invio')}</div>
           <div className="tb-seg" role="radiogroup">
             <button role="radio" aria-checked={status === 'draft'} className={status === 'draft' ? 'on' : ''} onClick={() => setStatus('draft')}>
-              <b>Bozza</b><span>La rivedi prima di inviarla</span>
+              <b>{tr('Bozza')}</b><span>{tr('La rivedi prima di inviarla')}</span>
             </button>
             <button role="radio" aria-checked={status === 'published'} className={status === 'published' ? 'on' : ''} onClick={() => setStatus('published')}>
-              <b>Pubblica subito</b><span>L'atleta la vede e riceve l'avviso</span>
+              <b>{tr('Pubblica subito')}</b><span>{tr('L\'atleta la vede e riceve l\'avviso')}</span>
             </button>
           </div>
         </>
@@ -390,6 +394,7 @@ function Builder({ id, nav }: { id: string; nav: (r: string) => void }) {
   const [dragIdx, setDragIdx] = useState<number | null>(null)
   const [overIdx, setOverIdx] = useState<number | null>(null)
   const compact = useIsMobile(1100) // sotto i 1100px la libreria si apre a foglio
+  const { t: tr } = useLang()
 
   useEffect(() => {
     if (isNew) return
@@ -425,7 +430,7 @@ function Builder({ id, nav }: { id: string; nav: (r: string) => void }) {
   }
   function confirmPresc(d: FitnessExercise) {
     if (!presc) return
-    if (presc.index < 0) { changeList(prev => [...prev, withKey(d)]); toast(`Aggiunto: ${d.name}`) }
+    if (presc.index < 0) { changeList(prev => [...prev, withKey(d)]); toast(tr('Aggiunto: {name}').replace('{name}', d.name)) }
     else changeList(prev => prev.map((e, i) => (i === presc.index ? { ...e, ...d } : e)))
     setPresc(null)
   }
@@ -444,13 +449,13 @@ function Builder({ id, nav }: { id: string; nav: (r: string) => void }) {
     const ex = exercises[i]
     changeList(prev => prev.filter(e => e._k !== ex._k))
     // nessuna scrittura nel DB: l'annulla rimette l'esercizio al suo posto
-    undoable(`Rimosso: ${ex.name || 'esercizio'}`, () => undefined,
+    undoable(tr('Rimosso: {name}').replace('{name}', ex.name || tr('esercizio')), () => undefined,
       () => changeList(prev => { if (prev.some(e => e._k === ex._k)) return prev; const c = [...prev]; c.splice(Math.min(i, c.length), 0, ex); return c }))
   }
 
   async function save(): Promise<string | null> {
-    if (!form.name?.trim()) { toast('Dai un nome alla scheda', 'err'); document.getElementById('tb-name')?.focus(); return null }
-    if (!uid) { toast('Sessione non valida: rientra e riprova.', 'err'); return null }
+    if (!form.name?.trim()) { toast(tr('Dai un nome alla scheda'), 'err'); document.getElementById('tb-name')?.focus(); return null }
+    if (!uid) { toast(tr('Sessione non valida: rientra e riprova.'), 'err'); return null }
     setSaving(true)
     const payload = {
       ...programFields(form), program_date: null, start_time: null,
@@ -462,7 +467,7 @@ function Builder({ id, nav }: { id: string; nav: (r: string) => void }) {
       if (error) { setSaving(false); toast(error.message, 'err'); return null }
     } else {
       const { data, error } = await supabase.from('fitness_programs').insert(payload).select('id').single()
-      if (error || !data) { setSaving(false); toast(error?.message || 'Salvataggio non riuscito', 'err'); return null }
+      if (error || !data) { setSaving(false); toast(error?.message || tr('Salvataggio non riuscito'), 'err'); return null }
       target = (data as { id: string }).id
       setPid(target)
       // aggiorna l'indirizzo senza ricaricare la vista (il refresh riapre questo modello)
@@ -474,25 +479,25 @@ function Builder({ id, nav }: { id: string; nav: (r: string) => void }) {
     setSaving(false)
     if (del.error || ins.error) { toast((del.error || ins.error)!.message, 'err'); return null }
     setDirty(false)
-    toast('Scheda salvata')
+    toast(tr('Scheda salvata'))
     return target
   }
 
   async function openAssign() {
-    if (!named.length) { toast('Aggiungi almeno un esercizio prima di assegnare', 'err'); return }
+    if (!named.length) { toast(tr('Aggiungi almeno un esercizio prima di assegnare'), 'err'); return }
     const target = dirty || !pid ? await save() : pid
     if (target) setAssign(true)
   }
 
   async function pdf() {
-    if (!named.length) { toast('Aggiungi almeno un esercizio', 'err'); return }
-    toast('Preparo il PDF…')
-    try { await downloadPdf({ ...form, program_date: null, start_time: null }, named); toast('PDF pronto') }
-    catch { toast('Non riesco a generare il PDF', 'err') }
+    if (!named.length) { toast(tr('Aggiungi almeno un esercizio'), 'err'); return }
+    toast(tr('Preparo il PDF…'))
+    try { await downloadPdf({ ...form, program_date: null, start_time: null }, named, tr); toast(tr('PDF pronto')) }
+    catch { toast(tr('Non riesco a generare il PDF'), 'err') }
   }
 
   function back() {
-    if (dirty && !confirm('Hai modifiche non salvate. Uscire comunque?')) return
+    if (dirty && !confirm(tr('Hai modifiche non salvate. Uscire comunque?'))) return
     setDirty(false)
     nav(ROUTE)
   }
@@ -500,9 +505,9 @@ function Builder({ id, nav }: { id: string; nav: (r: string) => void }) {
   if (loading) return <Spinner />
   if (notFound) return (
     <div className="card">
-      <Empty icon={<Icon name="layers" size={22} />} title="Modello non trovato"
-        hint="Potrebbe essere stato eliminato, oppure appartiene a un altro preparatore."
-        action={{ label: 'Torna ai miei modelli', onClick: () => nav(ROUTE) }} />
+      <Empty icon={<Icon name="layers" size={22} />} title={tr('Modello non trovato')}
+        hint={tr('Potrebbe essere stato eliminato, oppure appartiene a un altro preparatore.')}
+        action={{ label: tr('Torna ai miei modelli'), onClick: () => nav(ROUTE) }} />
     </div>
   )
 
@@ -513,79 +518,79 @@ function Builder({ id, nav }: { id: string; nav: (r: string) => void }) {
       {/* barra superiore */}
       <div className="tb-bar">
         <button className="btn btn-ghost btn-sm tb-back" onClick={back}>
-          <span style={{ display: 'inline-flex', transform: 'rotate(180deg)' }}><Icon name="chevron-right" size={14} /></span> I miei modelli
+          <span style={{ display: 'inline-flex', transform: 'rotate(180deg)' }}><Icon name="chevron-right" size={14} /></span> {tr('I miei modelli')}
         </button>
         <div className="tb-bar-title">
-          <h1 className="tb-title tb-title-sm">{form.name?.trim() || 'Nuova scheda'}</h1>
-          <span className={`tb-state ${dirty ? 'dirty' : ''}`}>{saving ? 'Salvo…' : dirty ? 'Modifiche non salvate' : pid ? 'Salvata' : 'Non ancora salvata'}</span>
+          <h1 className="tb-title tb-title-sm">{form.name?.trim() || tr('Nuova scheda')}</h1>
+          <span className={`tb-state ${dirty ? 'dirty' : ''}`}>{saving ? tr('Salvo…') : dirty ? tr('Modifiche non salvate') : pid ? tr('Salvata') : tr('Non ancora salvata')}</span>
         </div>
         <div className="tb-bar-actions">
-          <button className="btn btn-sm" onClick={() => setPreview(true)}><Icon name="file" size={13} /> Anteprima</button>
+          <button className="btn btn-sm" onClick={() => setPreview(true)}><Icon name="file" size={13} /> {tr('Anteprima')}</button>
           <button className="btn btn-sm" onClick={pdf}><Icon name="download" size={13} /> PDF</button>
-          <button className="btn btn-sm" onClick={openAssign} disabled={saving}><Icon name="send" size={13} /> Assegna</button>
-          <button className="btn btn-primary btn-sm tb-save-desk" onClick={save} disabled={saving}><Icon name="check" size={13} /> {saving ? 'Salvo…' : 'Salva'}</button>
+          <button className="btn btn-sm" onClick={openAssign} disabled={saving}><Icon name="send" size={13} /> {tr('Assegna')}</button>
+          <button className="btn btn-primary btn-sm tb-save-desk" onClick={save} disabled={saving}><Icon name="check" size={13} /> {saving ? tr('Salvo…') : tr('Salva')}</button>
         </div>
       </div>
 
       <div className="tb-panes">
         {/* SINISTRA: libreria (solo desktop) */}
         {!compact && (
-          <aside className="tb-lib" aria-label="Libreria esercizi">
-            <div className="tb-pane-label">Libreria esercizi</div>
+          <aside className="tb-lib" aria-label={tr('Libreria esercizi')}>
+            <div className="tb-pane-label">{tr('Libreria esercizi')}</div>
             {library}
           </aside>
         )}
 
         {/* DESTRA: la scheda */}
-        <section className="tb-plan" aria-label="Scheda">
+        <section className="tb-plan" aria-label={tr('Scheda')}>
           <div className="card tb-card">
-            <Field label="Nome scheda">
-              <Input id="tb-name" className="input tb-name-input" value={form.name || ''} onChange={e => set('name', e.target.value)} placeholder="Es. Forza arti inferiori, settimana 1" />
+            <Field label={tr('Nome scheda')}>
+              <Input id="tb-name" className="input tb-name-input" value={form.name || ''} onChange={e => set('name', e.target.value)} placeholder={tr('Es. Forza arti inferiori, settimana 1')} />
             </Field>
             <div className="tb-form-grid">
-              <Field label="Focus"><Input value={form.focus || ''} onChange={e => set('focus', e.target.value)} placeholder="Gambe, core…" /></Field>
-              <Field label="Intensità">
+              <Field label={tr('Focus')}><Input value={form.focus || ''} onChange={e => set('focus', e.target.value)} placeholder={tr('Gambe, core…')} /></Field>
+              <Field label={tr('Intensità')}>
                 <Select value={form.intensity || 'Media'} onChange={e => set('intensity', e.target.value)}>
-                  <option>Bassa</option><option>Media</option><option>Alta</option>
+                  <option value="Bassa">{tr('Bassa')}</option><option value="Media">{tr('Media')}</option><option value="Alta">{tr('Alta')}</option>
                 </Select>
               </Field>
-              <Field label="Durata (min)"><Input type="number" inputMode="numeric" min={0} value={form.duration_min ?? ''} onChange={e => set('duration_min', e.target.value ? Number(e.target.value) : null)} placeholder={estimate ? String(estimate) : '60'} /></Field>
+              <Field label={tr('Durata (min)')}><Input type="number" inputMode="numeric" min={0} value={form.duration_min ?? ''} onChange={e => set('duration_min', e.target.value ? Number(e.target.value) : null)} placeholder={estimate ? String(estimate) : '60'} /></Field>
             </div>
-            <Field label="Obiettivo"><Input value={form.objective || ''} onChange={e => set('objective', e.target.value)} placeholder="Cosa deve ottenere l'atleta da questa seduta" /></Field>
+            <Field label={tr('Obiettivo')}><Input value={form.objective || ''} onChange={e => set('objective', e.target.value)} placeholder={tr('Cosa deve ottenere l\'atleta da questa seduta')} /></Field>
             <div className="tb-form-grid">
-              <Field label="Riscaldamento"><Input value={form.warmup || ''} onChange={e => set('warmup', e.target.value)} placeholder="Es. 10 min mobilità" /></Field>
-              <Field label="Recupero tra serie"><Input value={form.recovery_between_sets || ''} onChange={e => set('recovery_between_sets', e.target.value)} placeholder="Es. 90s" /></Field>
-              <Field label="Recupero tra esercizi"><Input value={form.recovery_between_exercises || ''} onChange={e => set('recovery_between_exercises', e.target.value)} placeholder="Es. 2 min" /></Field>
-              <Field label="Defaticamento"><Input value={form.cooldown || ''} onChange={e => set('cooldown', e.target.value)} placeholder="Es. 5 min stretching" /></Field>
+              <Field label={tr('Riscaldamento')}><Input value={form.warmup || ''} onChange={e => set('warmup', e.target.value)} placeholder={tr('Es. 10 min mobilità')} /></Field>
+              <Field label={tr('Recupero tra serie')}><Input value={form.recovery_between_sets || ''} onChange={e => set('recovery_between_sets', e.target.value)} placeholder={tr('Es. 90s')} /></Field>
+              <Field label={tr('Recupero tra esercizi')}><Input value={form.recovery_between_exercises || ''} onChange={e => set('recovery_between_exercises', e.target.value)} placeholder={tr('Es. 2 min')} /></Field>
+              <Field label={tr('Defaticamento')}><Input value={form.cooldown || ''} onChange={e => set('cooldown', e.target.value)} placeholder={tr('Es. 5 min stretching')} /></Field>
             </div>
-            <Field label="Note per l'atleta"><Textarea rows={2} value={form.note_athlete || ''} onChange={e => set('note_athlete', e.target.value)} placeholder="Compaiono in fondo alla scheda dell'atleta" /></Field>
+            <Field label={tr('Note per l\'atleta')}><Textarea rows={2} value={form.note_athlete || ''} onChange={e => set('note_athlete', e.target.value)} placeholder={tr('Compaiono in fondo alla scheda dell\'atleta')} /></Field>
           </div>
 
           {/* riepilogo */}
           <div className="tb-summary" aria-live="polite">
-            <div><b>{named.length}</b><span>{named.length === 1 ? 'esercizio' : 'esercizi'}</span></div>
-            <div><b>{totalSets || 0}</b><span>serie totali</span></div>
-            <div><b>{estimate ? `${estimate}′` : '0′'}</b><span>tempo stimato</span></div>
-            {form.duration_min ? <div><b>{form.duration_min}′</b><span>durata indicata</span></div> : null}
+            <div><b>{named.length}</b><span>{named.length === 1 ? tr('esercizio') : tr('esercizi')}</span></div>
+            <div><b>{totalSets || 0}</b><span>{tr('serie totali')}</span></div>
+            <div><b>{estimate ? `${estimate}′` : '0′'}</b><span>{tr('tempo stimato')}</span></div>
+            {form.duration_min ? <div><b>{form.duration_min}′</b><span>{tr('durata indicata')}</span></div> : null}
           </div>
 
           {/* esercizi */}
           <div className="tb-list-head">
-            <span className="tb-pane-label" style={{ margin: 0 }}>Esercizi</span>
-            <span className="tb-list-hint">Trascina o usa le frecce per riordinare</span>
+            <span className="tb-pane-label" style={{ margin: 0 }}>{tr('Esercizi')}</span>
+            <span className="tb-list-hint">{tr('Trascina o usa le frecce per riordinare')}</span>
           </div>
           {exercises.length === 0 ? (
             <div className="card tb-empty-list">
-              <div className="tb-empty-title">La scheda è vuota</div>
+              <div className="tb-empty-title">{tr('La scheda è vuota')}</div>
               <div className="tb-empty-text">
-                <span className="tb-desk">Scegli un esercizio dalla libreria a sinistra: imposti serie, ripetizioni e carico e lo trovi qui.</span>
-                <span className="tb-mob">Tocca “Aggiungi esercizio” in basso: imposti serie, ripetizioni e carico e lo trovi qui.</span>
+                <span className="tb-desk">{tr('Scegli un esercizio dalla libreria a sinistra: imposti serie, ripetizioni e carico e lo trovi qui.')}</span>
+                <span className="tb-mob">{tr('Tocca “Aggiungi esercizio” in basso: imposti serie, ripetizioni e carico e lo trovi qui.')}</span>
               </div>
             </div>
           ) : (
             <ol className="tb-list">
               {exercises.map((ex, i) => {
-                const parts = prescParts(ex)
+                const parts = prescParts(ex, tr)
                 return (
                   <li key={ex._k}
                     className={`card tb-ex ${dragIdx === i ? 'dragging' : ''} ${overIdx === i && dragIdx !== i ? 'over' : ''}`}
@@ -594,22 +599,22 @@ function Builder({ id, nav }: { id: string; nav: (r: string) => void }) {
                     onDragOver={e => { e.preventDefault(); if (overIdx !== i) setOverIdx(i) }}
                     onDragEnd={() => { setDragIdx(null); setOverIdx(null) }}
                     onDrop={() => onDrop(i)}>
-                    <span className="tb-ex-n" title="Trascina per riordinare">{i + 1}</span>
+                    <span className="tb-ex-n" title={tr('Trascina per riordinare')}>{i + 1}</span>
                     <span className="tb-ex-img"><ExMedia url={ex.image_url} width={160} className="exl-thumb" /></span>
                     <div className="tb-ex-body">
-                      <div className="tb-ex-name">{ex.name || 'Esercizio senza nome'}</div>
+                      <div className="tb-ex-name">{ex.name || tr('Esercizio senza nome')}</div>
                       {ex.muscle_group && <div className="tb-ex-sub">{ex.muscle_group}</div>}
                       <div className="tb-ex-chips">
-                        {parts.length ? parts.map((p, j) => <Chip key={j}>{p}</Chip>) : <span className="tb-ex-sub">Nessuna prescrizione</span>}
+                        {parts.length ? parts.map((p, j) => <Chip key={j}>{p}</Chip>) : <span className="tb-ex-sub">{tr('Nessuna prescrizione')}</span>}
                       </div>
                       {ex.technical_notes && <div className="tb-ex-note">{ex.technical_notes}</div>}
                     </div>
                     <div className="tb-ex-actions">
-                      <button className="btn btn-sm" onClick={() => setPresc({ index: i, draft: { ...ex } })}><Icon name="sliders" size={12} /> Prescrizione</button>
+                      <button className="btn btn-sm" onClick={() => setPresc({ index: i, draft: { ...ex } })}><Icon name="sliders" size={12} /> {tr('Prescrizione')}</button>
                       <div className="tb-ex-move">
-                        <button className="btn btn-sm" onClick={() => move(i, -1)} disabled={i === 0} aria-label="Sposta su">↑</button>
-                        <button className="btn btn-sm" onClick={() => move(i, 1)} disabled={i === exercises.length - 1} aria-label="Sposta giù">↓</button>
-                        <button className="btn btn-sm btn-danger" onClick={() => removeAt(i)} aria-label={`Rimuovi ${ex.name}`}><Icon name="trash" size={13} /></button>
+                        <button className="btn btn-sm" onClick={() => move(i, -1)} disabled={i === 0} aria-label={tr('Sposta su')}>↑</button>
+                        <button className="btn btn-sm" onClick={() => move(i, 1)} disabled={i === exercises.length - 1} aria-label={tr('Sposta giù')}>↓</button>
+                        <button className="btn btn-sm btn-danger" onClick={() => removeAt(i)} aria-label={tr('Rimuovi {name}').replace('{name}', ex.name)}><Icon name="trash" size={13} /></button>
                       </div>
                     </div>
                   </li>
@@ -622,13 +627,13 @@ function Builder({ id, nav }: { id: string; nav: (r: string) => void }) {
 
       {/* barra fissa su telefono/tablet */}
       <div className="tb-mobilebar">
-        <button className="btn" onClick={() => setLibOpen(true)}><Icon name="plus" size={14} /> Aggiungi esercizio</button>
-        <button className="btn btn-primary" onClick={save} disabled={saving}>{saving ? 'Salvo…' : 'Salva'}</button>
+        <button className="btn" onClick={() => setLibOpen(true)}><Icon name="plus" size={14} /> {tr('Aggiungi esercizio')}</button>
+        <button className="btn btn-primary" onClick={save} disabled={saving}>{saving ? tr('Salvo…') : tr('Salva')}</button>
       </div>
 
       {libOpen && compact && (
-        <Modal wide title={`Aggiungi esercizio${named.length ? ` · ${named.length} in scheda` : ''}`} onClose={() => setLibOpen(false)}
-          footer={<button className="btn btn-primary" onClick={() => setLibOpen(false)}>Fatto</button>}>
+        <Modal wide title={`${tr('Aggiungi esercizio')}${named.length ? ` · ${tr('{n} in scheda').replace('{n}', String(named.length))}` : ''}`} onClose={() => setLibOpen(false)}
+          footer={<button className="btn btn-primary" onClick={() => setLibOpen(false)}>{tr('Fatto')}</button>}>
           <div className="tb-sheet-lib">{library}</div>
         </Modal>
       )}
@@ -637,13 +642,13 @@ function Builder({ id, nav }: { id: string; nav: (r: string) => void }) {
           onCancel={() => setPresc(null)} onConfirm={confirmPresc} />
       )}
       {preview && (
-        <Modal wide title="Anteprima scheda" onClose={() => setPreview(false)} dismissable
+        <Modal wide title={tr('Anteprima scheda')} onClose={() => setPreview(false)} dismissable
           footer={<>
-            <button className="btn" onClick={pdf}><Icon name="download" size={14} /> Scarica PDF</button>
-            <button className="btn btn-primary" onClick={() => setPreview(false)}>Chiudi</button>
+            <button className="btn" onClick={pdf}><Icon name="download" size={14} /> {tr('Scarica PDF')}</button>
+            <button className="btn btn-primary" onClick={() => setPreview(false)}>{tr('Chiudi')}</button>
           </>}>
           <div style={{ maxWidth: 460, margin: '0 auto' }}>
-            <SchedaPreview form={{ ...form, program_date: null, start_time: null }} exercises={named} athleteName="Modello" />
+            <SchedaPreview form={{ ...form, program_date: null, start_time: null }} exercises={named} athleteName={tr('Modello')} />
           </div>
         </Modal>
       )}

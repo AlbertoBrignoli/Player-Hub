@@ -87,15 +87,16 @@ const daysTo = (d?: string | null) =>
 function expiryTone(d?: string | null) {
   const n = daysTo(d)
   if (n === null) return null
-  if (n < 0) return { c: DANGER, l: 'Scaduta' }
-  if (n <= 30) return { c: DANGER, l: `Scade tra ${n} g` }
-  if (n <= 60) return { c: WARN, l: `Scade tra ${n} g` }
-  return { c: OK, l: `Scade tra ${n} g` }
+  // l è la chiave di traduzione: {n} si sostituisce al momento del render
+  if (n < 0) return { c: DANGER, l: 'Scaduta', n }
+  if (n <= 30) return { c: DANGER, l: 'Scade tra {n} g', n }
+  if (n <= 60) return { c: WARN, l: 'Scade tra {n} g', n }
+  return { c: OK, l: 'Scade tra {n} g', n }
 }
 
-async function openDoc(path: string) {
+async function openDoc(path: string, errMsg = 'Impossibile aprire il documento') {
   const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, 120)
-  if (error || !data?.signedUrl) { toast('Impossibile aprire il documento', 'err'); return }
+  if (error || !data?.signedUrl) { toast(errMsg, 'err'); return }
   window.open(data.signedUrl, '_blank')
 }
 
@@ -146,7 +147,7 @@ export default function Insurance() {
       title: file.name.replace(/\.[^.]+$/, ''),
       attachments: [{ name: file.name, path, size: file.size, mime: file.type }],
     })
-    toast('Documento caricato: completa i dati')
+    toast(tr('Documento caricato: completa i dati'))
   }
 
   const ofArea = useMemo(() => rows.filter(p => p.area === area), [rows, area])
@@ -180,11 +181,11 @@ export default function Insurance() {
           ))}
         </div>
         <button className={`pill-tab ${area === 'anagrafica' ? 'active' : ''}`} onClick={() => setArea('anagrafica')}
-          title="Dati bancari e identità dell'atleta"
+          title={tr("Dati bancari e identità dell'atleta")}
           style={area === 'anagrafica'
             ? { background: ACCENT, color: '#fff', borderColor: ACCENT }
             : { borderColor: ACCENT, color: ACCENT }}>
-          <Icon name="user" size={13} /> Anagrafica
+          <Icon name="user" size={13} /> {tr('Anagrafica')}
         </button>
       </div>
 
@@ -206,7 +207,7 @@ export default function Insurance() {
                     background: 'var(--bg-2)', border: '1px solid var(--border)', padding: '22px' }}>
         <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 5, background: ACCENT }} />
         <div style={{ ...kicker, color: ACCENT }}>
-          Assicurazioni · {tr(AREAS.find(a => a.k === area)?.l || '')}
+          {tr('Assicurazioni')} · {tr(AREAS.find(a => a.k === area)?.l || '')}
         </div>
         <div className="faint" style={{ fontSize: 12, marginTop: 3 }}>
           {tr(AREAS.find(a => a.k === area)?.hint || '')}
@@ -236,13 +237,13 @@ export default function Insurance() {
                     <div style={{ minWidth: 0 }}>
                       <div style={{ fontSize: 13.5, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.title}</div>
                       <div className="faint" style={{ fontSize: 11.5 }}>
-                        {[p.category, p.company].filter(Boolean).join(' · ')}
+                        {[p.category && tr(p.category), p.company].filter(Boolean).join(' · ')}
                       </div>
                     </div>
                   </div>
                   <div style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                     <div style={{ fontSize: 12.5, fontWeight: 700 }}>{fmtDate(p.expiry_date)}</div>
-                    {t && <div style={{ fontSize: 11, fontWeight: 800, color: t.c }}>{tr(t.l)}</div>}
+                    {t && <div style={{ fontSize: 11, fontWeight: 800, color: t.c }}>{tr(t.l).replace('{n}', String(t.n))}</div>}
                   </div>
                 </div>
               )
@@ -261,12 +262,12 @@ export default function Insurance() {
           {canManage && (
             <div className="flex gap" style={{ flexWrap: 'wrap' }}>
               <button className="btn btn-sm" disabled={quickBusy} onClick={() => quickRef.current?.click()}>
-                <Icon name="upload" size={13} /> {quickBusy ? 'Carico…' : 'Carica polizza'}
+                <Icon name="upload" size={13} /> {quickBusy ? tr('Carico…') : tr('Carica polizza')}
               </button>
               <input ref={quickRef} type="file" hidden onChange={quickUpload} />
               <button className="btn btn-sm" style={{ background: ACCENT, color: '#fff', fontWeight: 800, border: 'none' }}
                 onClick={() => setEdit({ area: area === 'riepilogo' ? 'sport' : area, status: 'attiva' })}>
-                <Icon name="plus" size={13} /> Nuova polizza
+                <Icon name="plus" size={13} /> {tr('Nuova polizza')}
               </button>
             </div>
           )}
@@ -275,10 +276,10 @@ export default function Insurance() {
         {ofArea.length === 0 ? (
           <div className="card">
             <Empty icon={<Icon name="archive" size={30} strokeWidth={1.4} />}
-              title="Nessuna polizza in questa area"
+              title={tr('Nessuna polizza in questa area')}
               hint={canManage
-                ? 'Carica il documento della polizza o inseriscila a mano.'
-                : 'Il tuo assicuratore le caricherà qui.'} />
+                ? tr('Carica il documento della polizza o inseriscila a mano.')
+                : tr('Il tuo assicuratore le caricherà qui.')} />
           </div>
         ) : (
           <div className="grid g2" style={{ gap: 12 }}>
@@ -292,22 +293,22 @@ export default function Insurance() {
                       <div style={{ minWidth: 0 }}>
                         <div style={{ fontSize: 15.5, fontWeight: 800 }}>{p.title}</div>
                         <div className="faint" style={{ fontSize: 12, marginTop: 2 }}>
-                          {[p.category, p.company].filter(Boolean).join(' · ') || '—'}
+                          {[p.category && tr(p.category), p.company].filter(Boolean).join(' · ') || '—'}
                         </div>
                       </div>
                       {t && (
                         <span style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: .5, textTransform: 'uppercase',
-                                       color: t.c, whiteSpace: 'nowrap' }}>{t.l}</span>
+                                       color: t.c, whiteSpace: 'nowrap' }}>{tr(t.l).replace('{n}', String(t.n))}</span>
                       )}
                     </div>
 
                     <div className="grid g2" style={{ gap: 8, marginTop: 13 }}>
-                      <Info k="Numero polizza" v={p.policy_number} />
-                      <Info k="Scadenza" v={p.expiry_date ? fmtDate(p.expiry_date) : null} />
-                      <Info k="Assicurato" v={p.insured_party} />
-                      <Info k="Massimale" v={p.coverage_amount ? fmtMoney(p.coverage_amount) : null} />
-                      <Info k="Premio" v={p.premium ? `${fmtMoney(p.premium)}${p.payment_frequency ? ' · ' + p.payment_frequency : ''}` : null} />
-                      <Info k="Franchigia" v={p.deductible} />
+                      <Info k={tr('Numero polizza')} v={p.policy_number} />
+                      <Info k={tr('Scadenza')} v={p.expiry_date ? fmtDate(p.expiry_date) : null} />
+                      <Info k={tr('Assicurato')} v={p.insured_party} />
+                      <Info k={tr('Massimale')} v={p.coverage_amount ? fmtMoney(p.coverage_amount) : null} />
+                      <Info k={tr('Premio')} v={p.premium ? `${fmtMoney(p.premium)}${p.payment_frequency ? ' · ' + tr(p.payment_frequency) : ''}` : null} />
+                      <Info k={tr('Franchigia')} v={p.deductible} />
                     </div>
 
                     {p.attachments && p.attachments.length > 0 && (
@@ -315,7 +316,7 @@ export default function Insurance() {
                         {p.attachments.map(a => (
                           <button key={a.path} className="btn btn-sm" title={a.name}
                             style={{ display: 'inline-flex', alignItems: 'center', gap: 6, maxWidth: 230 }}
-                            onClick={() => openDoc(a.path)}>
+                            onClick={() => openDoc(a.path, tr('Impossibile aprire il documento'))}>
                             <Icon name="download" size={13} />
                             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</span>
                           </button>
@@ -328,7 +329,7 @@ export default function Insurance() {
                     {canManage && (
                       <div className="flex gap" style={{ marginTop: 13, flexWrap: 'wrap' }}>
                         <button className="btn btn-sm" onClick={() => setPayFor(p)}>
-                          <Icon name="plus" size={12} /> Pagamento
+                          <Icon name="plus" size={12} /> {tr('Pagamento')}
                         </button>
                         <button className="btn btn-ghost btn-sm" onClick={() => setEdit(p)}>{tr('Modifica')}</button>
                         <ConfirmButton onConfirm={async () => { await deleteRow('crm_insurance_policies', p.id); reload() }}>{tr('Elimina')}</ConfirmButton>
@@ -374,7 +375,7 @@ function Overview({ rows, pays }: { rows: Policy[]; pays: Payment[] }) {
   // ripartizione per categoria, dalla più cara
   const perCat = Object.entries(
     attive.reduce((acc: Record<string, number>, p) => {
-      const k = p.category || 'Altro'
+      const k = p.category || 'Altro' // chiave: tradotta al render
       acc[k] = (acc[k] || 0) + annualCost(p)
       return acc
     }, {})
@@ -389,32 +390,32 @@ function Overview({ rows, pays }: { rows: Policy[]; pays: Payment[] }) {
   function copiaRiepilogo() {
     const righe = attive.map(p => {
       const g = (p.coverage_items || []).map(x =>
-        `    - ${x.name}${x.amount ? ` (massimale ${x.amount} €)` : ''}${x.note ? ` — ${x.note}` : ''}`).join('\n')
+        `    - ${x.name}${x.amount ? ` (${tr('massimale')} ${x.amount} €)` : ''}${x.note ? ` — ${x.note}` : ''}`).join('\n')
       return [
-        `POLIZZA: ${p.title}`,
-        `  Area: ${p.area} · Categoria: ${p.category || '—'}`,
-        `  Compagnia: ${p.company || '—'} · N. ${p.policy_number || '—'}`,
-        `  Assicurato: ${p.insured_party || '—'} · Contraente: ${p.holder || '—'}`,
-        `  Decorrenza: ${p.start_date || '—'} · Scadenza: ${p.expiry_date || '—'}`,
-        `  Premio: ${p.premium ?? '—'} € ${p.payment_frequency || ''} → costo annuo ${annualCost(p)} €`,
-        `  Massimale: ${p.coverage_amount ?? '—'} € · Franchigia: ${p.deductible || '—'}`,
-        g ? `  Garanzie:\n${g}` : '  Garanzie: non dettagliate',
-        p.notes ? `  Note: ${p.notes}` : '',
+        `${tr('POLIZZA')}: ${p.title}`,
+        `  ${tr('Area')}: ${p.area === 'sport' || p.area === 'personale' ? tr(p.area === 'sport' ? 'Sport' : 'Personale') : p.area} · ${tr('Categoria')}: ${p.category ? tr(p.category) : '—'}`,
+        `  ${tr('Compagnia')}: ${p.company || '—'} · ${tr('N.')} ${p.policy_number || '—'}`,
+        `  ${tr('Assicurato')}: ${p.insured_party || '—'} · ${tr('Contraente')}: ${p.holder || '—'}`,
+        `  ${tr('Decorrenza')}: ${p.start_date || '—'} · ${tr('Scadenza')}: ${p.expiry_date || '—'}`,
+        `  ${tr('Premio')}: ${p.premium ?? '—'} € ${p.payment_frequency ? tr(p.payment_frequency) : ''} → ${tr('costo annuo')} ${annualCost(p)} €`,
+        `  ${tr('Massimale')}: ${p.coverage_amount ?? '—'} € · ${tr('Franchigia')}: ${p.deductible || '—'}`,
+        g ? `  ${tr('Garanzie')}:\n${g}` : `  ${tr('Garanzie')}: ${tr('non dettagliate')}`,
+        p.notes ? `  ${tr('Note')}: ${p.notes}` : '',
       ].filter(Boolean).join('\n')
     }).join('\n\n')
 
-    const testo = `RIEPILOGO ASSICURATIVO\nCosto annuo totale: ${totale} €\nPolizze attive: ${attive.length}\n\n${righe}`
+    const testo = `${tr('RIEPILOGO ASSICURATIVO')}\n${tr('Costo annuo totale')}: ${totale} €\n${tr('Polizze attive')}: ${attive.length}\n\n${righe}`
     navigator.clipboard.writeText(testo)
-      .then(() => toast('Riepilogo copiato: incollalo nel tuo assistente AI'))
-      .catch(() => toast('Copia non riuscita', 'err'))
+      .then(() => toast(tr('Riepilogo copiato: incollalo nel tuo assistente AI')))
+      .catch(() => toast(tr('Copia non riuscita'), 'err'))
   }
 
   if (attive.length === 0) {
     return (
       <div className="card">
         <Empty icon={<Icon name="activity" size={30} strokeWidth={1.4} />}
-          title="Nessun dato da riepilogare"
-          hint="Quando ci saranno polizze, qui vedrai quanto spendi e per cosa sei coperto." />
+          title={tr('Nessun dato da riepilogare')}
+          hint={tr('Quando ci saranno polizze, qui vedrai quanto spendi e per cosa sei coperto.')} />
       </div>
     )
   }
@@ -428,13 +429,13 @@ function Overview({ rows, pays }: { rows: Policy[]; pays: Payment[] }) {
         <div style={{ ...kicker, color: ACCENT }}>{tr('Spesa assicurativa annua')}</div>
         <div style={{ fontSize: 36, fontWeight: 900, letterSpacing: -1, marginTop: 6 }}>{fmtMoney(totale)}</div>
         <div className="faint" style={{ fontSize: 12, marginTop: 2 }}>
-          su {attive.length} polizze · {fmtMoney(totale / 12)} al mese
+          {tr('su {n} polizze · {m} al mese').replace('{n}', String(attive.length)).replace('{m}', fmtMoney(totale / 12))}
         </div>
 
         <div className="flex gap" style={{ gap: 26, marginTop: 18, flexWrap: 'wrap' }}>
           {perArea.map(a => (
             <Metric key={a.area}
-              label={a.area === 'sport' ? 'Sport' : 'Personale'}
+              label={a.area === 'sport' ? tr('Sport') : tr('Personale')}
               value={fmtMoney(a.costo)} tone={ACCENT} />
           ))}
         </div>
@@ -450,8 +451,8 @@ function Overview({ rows, pays }: { rows: Policy[]; pays: Payment[] }) {
         return (
           <div className="card">
             <div className="flex between" style={{ alignItems: 'center', marginBottom: 10 }}>
-              <div style={{ ...kicker, color: 'var(--text-dim)' }}>Speso nel {anno}</div>
-              <span className="faint" style={{ fontSize: 11.5 }}>{pays.length} pagamenti registrati</span>
+              <div style={{ ...kicker, color: 'var(--text-dim)' }}>{tr('Speso nel {anno}').replace('{anno}', String(anno))}</div>
+              <span className="faint" style={{ fontSize: 11.5 }}>{tr('{n} pagamenti registrati').replace('{n}', String(pays.length))}</span>
             </div>
             <div className="flex gap" style={{ gap: 26, flexWrap: 'wrap', marginBottom: 12 }}>
               <Metric label={tr("Effettivo")} value={fmtMoney(speso)} tone={OK} />
@@ -474,7 +475,7 @@ function Overview({ rows, pays }: { rows: Policy[]; pays: Payment[] }) {
             return (
               <div key={cat}>
                 <div className="flex between" style={{ fontSize: 13, marginBottom: 4 }}>
-                  <span style={{ fontWeight: 600 }}>{cat}</span>
+                  <span style={{ fontWeight: 600 }}>{tr(cat)}</span>
                   <span className="faint">{fmtMoney(costo)} · {pct}%</span>
                 </div>
                 <div style={{ height: 6, borderRadius: 3, background: 'var(--border)', overflow: 'hidden' }}>
@@ -490,12 +491,11 @@ function Overview({ rows, pays }: { rows: Policy[]; pays: Payment[] }) {
       <div className="card">
         <div className="flex between" style={{ alignItems: 'center', marginBottom: 12 }}>
           <div style={{ ...kicker, color: 'var(--text-dim)' }}>{tr('Per cosa sei coperto')}</div>
-          <span className="faint" style={{ fontSize: 11.5 }}>{garanzie.length} garanzie</span>
+          <span className="faint" style={{ fontSize: 11.5 }}>{tr('{n} garanzie').replace('{n}', String(garanzie.length))}</span>
         </div>
         {garanzie.length === 0 ? (
           <div className="faint" style={{ fontSize: 13 }}>
-            Le garanzie non sono ancora state dettagliate. Chiedi al tuo assicuratore di compilarle:
-            compariranno qui, polizza per polizza.
+            {tr('Le garanzie non sono ancora state dettagliate. Chiedi al tuo assicuratore di compilarle: compariranno qui, polizza per polizza.')}
           </div>
         ) : (
           <div className="grid" style={{ gap: 8 }}>
@@ -523,11 +523,10 @@ function Overview({ rows, pays }: { rows: Policy[]; pays: Payment[] }) {
       <div className="card">
         <div style={{ ...kicker, color: 'var(--text-dim)', marginBottom: 8 }}>{tr('Analisi con AI')}</div>
         <div className="faint" style={{ fontSize: 12.5, marginBottom: 12 }}>
-          Copia il riepilogo completo delle tue polizze e incollalo in ChatGPT o Claude
-          per farti spiegare coperture, sovrapposizioni e buchi di tutela.
+          {tr('Copia il riepilogo completo delle tue polizze e incollalo in ChatGPT o Claude per farti spiegare coperture, sovrapposizioni e buchi di tutela.')}
         </div>
         <button className="btn btn-sm" onClick={copiaRiepilogo}>
-          <Icon name="copy" size={13} /> Copia riepilogo per AI
+          <Icon name="copy" size={13} /> {tr('Copia riepilogo per AI')}
         </button>
       </div>
     </div>
@@ -559,6 +558,7 @@ function Info({ k, v }: { k: string; v?: any }) {
 function PaymentForm({ policy, playerId, onClose, onSaved }: {
   policy: Policy; playerId: number; onClose: () => void; onSaved: () => void
 }) {
+  const { t: tr } = useLang()
   const [amount, setAmount] = useState<string>(policy.premium ? String(policy.premium) : '')
   const [paidOn, setPaidOn] = useState(new Date().toISOString().slice(0, 10))
   const [method, setMethod] = useState('')
@@ -577,25 +577,25 @@ function PaymentForm({ policy, playerId, onClose, onSaved }: {
   }
 
   return (
-    <Modal title={`Pagamento · ${policy.title}`} onClose={onClose}
+    <Modal title={`${tr('Pagamento')} · ${policy.title}`} onClose={onClose}
       footer={<>
-        <button className="btn btn-ghost" onClick={onClose}>Annulla</button>
-        <button className="btn btn-primary" disabled={busy || !amount} onClick={save}>{busy ? 'Salvo…' : 'Registra'}</button>
+        <button className="btn btn-ghost" onClick={onClose}>{tr('Annulla')}</button>
+        <button className="btn btn-primary" disabled={busy || !amount} onClick={save}>{busy ? tr('Salvo…') : tr('Registra')}</button>
       </>}>
       <div className="grid g2" style={{ gap: 10 }}>
-        <Field label="Importo (€)"><Input type="number" value={amount} onChange={e => setAmount(e.target.value)} /></Field>
-        <Field label="Data"><Input type="date" value={paidOn} onChange={e => setPaidOn(e.target.value)} /></Field>
+        <Field label={tr('Importo (€)')}><Input type="number" value={amount} onChange={e => setAmount(e.target.value)} /></Field>
+        <Field label={tr('Data')}><Input type="date" value={paidOn} onChange={e => setPaidOn(e.target.value)} /></Field>
       </div>
-      <Field label="Metodo">
+      <Field label={tr('Metodo')}>
         <Select value={method} onChange={e => setMethod(e.target.value)}>
           <option value="">—</option>
-          <option value="bonifico">Bonifico</option>
-          <option value="carta">Carta</option>
-          <option value="RID">Addebito automatico</option>
-          <option value="contanti">Contanti</option>
+          <option value="bonifico">{tr('Bonifico')}</option>
+          <option value="carta">{tr('Carta')}</option>
+          <option value="RID">{tr('Addebito automatico')}</option>
+          <option value="contanti">{tr('Contanti')}</option>
         </Select>
       </Field>
-      <Field label="Note"><Input value={note} onChange={e => setNote(e.target.value)} placeholder="Es. prima rata 2026" /></Field>
+      <Field label={tr('Note')}><Input value={note} onChange={e => setNote(e.target.value)} placeholder={tr('Es. prima rata 2026')} /></Field>
     </Modal>
   )
 }
@@ -603,6 +603,7 @@ function PaymentForm({ policy, playerId, onClose, onSaved }: {
 function PolicyForm({ value, playerId, onClose, onSaved }: {
   value: Partial<Policy>; playerId: number; onClose: () => void; onSaved: () => void
 }) {
+  const { t: tr } = useLang()
   const [f, setF] = useState<Partial<Policy>>(value)
   const [busy, setBusy] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -662,61 +663,61 @@ function PolicyForm({ value, playerId, onClose, onSaved }: {
   const cats = CATEGORIES[f.area || 'sport'] || []
 
   return (
-    <Modal wide title={f.id ? 'Modifica polizza' : 'Nuova polizza'} onClose={onClose}
+    <Modal wide title={f.id ? tr('Modifica polizza') : tr('Nuova polizza')} onClose={onClose}
       footer={<>
-        <button className="btn btn-ghost" onClick={onClose}>Annulla</button>
-        <button className="btn btn-primary" disabled={busy || !f.title} onClick={save}>{busy ? 'Salvo…' : 'Salva'}</button>
+        <button className="btn btn-ghost" onClick={onClose}>{tr('Annulla')}</button>
+        <button className="btn btn-primary" disabled={busy || !f.title} onClick={save}>{busy ? tr('Salvo…') : tr('Salva')}</button>
       </>}>
       {!f.id && (f.attachments?.length ?? 0) > 0 && (
         <div className="faint" style={{ fontSize: 12.5, marginBottom: 10, borderLeft: `2px solid ${ACCENT}`, paddingLeft: 10 }}>
-          Documento allegato. Compila i dati essenziali: <b>area</b>, <b>categoria</b>,
-          <b> importo</b> e <b>scadenza</b> — bastano per la dashboard dei costi.
+          {tr('Documento allegato. Compila i dati essenziali:')} <b>{tr('area')}</b>, <b>{tr('categoria')}</b>,
+          <b> {tr('importo')}</b> {tr('e')} <b>{tr('scadenza')}</b> — {tr('bastano per la dashboard dei costi.')}
         </div>
       )}
       <div className="grid g2" style={{ gap: 10 }}>
-        <Field label="Area">
+        <Field label={tr('Area')}>
           <Select value={f.area || 'sport'} onChange={e => { set('area', e.target.value); set('category', '') }}>
-            <option value="sport">Sport</option>
-            <option value="personale">Personale</option>
+            <option value="sport">{tr('Sport')}</option>
+            <option value="personale">{tr('Personale')}</option>
           </Select>
         </Field>
-        <Field label="Categoria">
+        <Field label={tr('Categoria')}>
           <Select value={f.category || ''} onChange={e => set('category', e.target.value)}>
-            <option value="">— seleziona —</option>
-            {cats.map(c => <option key={c} value={c}>{c}</option>)}
+            <option value="">{tr('— seleziona —')}</option>
+            {cats.map(c => <option key={c} value={c}>{tr(c)}</option>)}
           </Select>
         </Field>
       </div>
-      <Field label="Titolo"><Input value={f.title || ''} onChange={e => set('title', e.target.value)} placeholder="Es. Infortuni professionali" /></Field>
+      <Field label={tr('Titolo')}><Input value={f.title || ''} onChange={e => set('title', e.target.value)} placeholder={tr('Es. Infortuni professionali')} /></Field>
       <div className="grid g2" style={{ gap: 10 }}>
-        <Field label="Compagnia"><Input value={f.company || ''} onChange={e => set('company', e.target.value)} /></Field>
-        <Field label="Intermediario"><Input value={f.broker || ''} onChange={e => set('broker', e.target.value)} /></Field>
-        <Field label="Numero polizza"><Input value={f.policy_number || ''} onChange={e => set('policy_number', e.target.value)} /></Field>
-        <Field label="Contraente"><Input value={f.holder || ''} onChange={e => set('holder', e.target.value)} /></Field>
-        <Field label="Assicurato"><Input value={f.insured_party || ''} onChange={e => set('insured_party', e.target.value)} placeholder="Es. atleta, coniuge, figlio" /></Field>
-        <Field label="Stato">
+        <Field label={tr('Compagnia')}><Input value={f.company || ''} onChange={e => set('company', e.target.value)} /></Field>
+        <Field label={tr('Intermediario')}><Input value={f.broker || ''} onChange={e => set('broker', e.target.value)} /></Field>
+        <Field label={tr('Numero polizza')}><Input value={f.policy_number || ''} onChange={e => set('policy_number', e.target.value)} /></Field>
+        <Field label={tr('Contraente')}><Input value={f.holder || ''} onChange={e => set('holder', e.target.value)} /></Field>
+        <Field label={tr('Assicurato')}><Input value={f.insured_party || ''} onChange={e => set('insured_party', e.target.value)} placeholder={tr('Es. atleta, coniuge, figlio')} /></Field>
+        <Field label={tr('Stato')}>
           <Select value={f.status || 'attiva'} onChange={e => set('status', e.target.value)}>
-            <option value="attiva">Attiva</option>
-            <option value="in_rinnovo">In rinnovo</option>
-            <option value="scaduta">Scaduta</option>
-            <option value="disdetta">Disdetta</option>
+            <option value="attiva">{tr('Attiva')}</option>
+            <option value="in_rinnovo">{tr('In rinnovo')}</option>
+            <option value="scaduta">{tr('Scaduta')}</option>
+            <option value="disdetta">{tr('Disdetta')}</option>
           </Select>
         </Field>
-        <Field label="Decorrenza"><Input type="date" value={f.start_date || ''} onChange={e => set('start_date', e.target.value)} /></Field>
-        <Field label="Scadenza"><Input type="date" value={f.expiry_date || ''} onChange={e => set('expiry_date', e.target.value)} /></Field>
-        <Field label={f.premium_is_annual ? 'Premio annuo (€)' : 'Premio per rata (€)'}>
+        <Field label={tr('Decorrenza')}><Input type="date" value={f.start_date || ''} onChange={e => set('start_date', e.target.value)} /></Field>
+        <Field label={tr('Scadenza')}><Input type="date" value={f.expiry_date || ''} onChange={e => set('expiry_date', e.target.value)} /></Field>
+        <Field label={f.premium_is_annual ? tr('Premio annuo (€)') : tr('Premio per rata (€)')}>
           <Input type="number" value={f.premium ?? ''} onChange={e => set('premium', e.target.value)} />
         </Field>
-        <Field label="Frequenza">
+        <Field label={tr('Frequenza')}>
           <Select value={f.payment_frequency || ''} onChange={e => set('payment_frequency', e.target.value)}>
             <option value="">—</option>
-            <option value="annuale">Annuale</option>
-            <option value="semestrale">Semestrale</option>
-            <option value="trimestrale">Trimestrale</option>
-            <option value="mensile">Mensile</option>
+            <option value="annuale">{tr('Annuale')}</option>
+            <option value="semestrale">{tr('Semestrale')}</option>
+            <option value="trimestrale">{tr('Trimestrale')}</option>
+            <option value="mensile">{tr('Mensile')}</option>
           </Select>
         </Field>
-        <Field label="Costo annuo">
+        <Field label={tr('Costo annuo')}>
           <div style={{ padding: '9px 2px' }}>
             <div style={{ fontSize: 15, fontWeight: 800, color: ACCENT }}>
               {annualCost(f) ? fmtMoney(annualCost(f)) : '—'}
@@ -724,35 +725,35 @@ function PolicyForm({ value, playerId, onClose, onSaved }: {
             <label className="flex gap" style={{ gap: 7, fontSize: 12, cursor: 'pointer', marginTop: 5 }}>
               <input type="checkbox" checked={!!f.premium_is_annual}
                 onChange={e => set('premium_is_annual', e.target.checked)} />
-              L'importo inserito è già il totale annuo
+              {tr("L'importo inserito è già il totale annuo")}
             </label>
           </div>
         </Field>
-        <Field label="Massimale (€)"><Input type="number" value={f.coverage_amount ?? ''} onChange={e => set('coverage_amount', e.target.value)} /></Field>
-        <Field label="Franchigia"><Input value={f.deductible || ''} onChange={e => set('deductible', e.target.value)} /></Field>
+        <Field label={tr('Massimale (€)')}><Input type="number" value={f.coverage_amount ?? ''} onChange={e => set('coverage_amount', e.target.value)} /></Field>
+        <Field label={tr('Franchigia')}><Input value={f.deductible || ''} onChange={e => set('deductible', e.target.value)} /></Field>
       </div>
-      <Field label="Note"><Textarea rows={2} value={f.notes || ''} onChange={e => set('notes', e.target.value)} /></Field>
+      <Field label={tr('Note')}><Textarea rows={2} value={f.notes || ''} onChange={e => set('notes', e.target.value)} /></Field>
 
       <div style={{ marginTop: 4 }}>
         <div className="flex between" style={{ alignItems: 'center', marginBottom: 8 }}>
-          <div style={{ ...kicker, color: 'var(--text-dim)' }}>Garanzie · per cosa copre</div>
+          <div style={{ ...kicker, color: 'var(--text-dim)' }}>{tr('Garanzie · per cosa copre')}</div>
           <button className="btn btn-ghost btn-sm" onClick={() => setCov(prev => [...prev, { name: '' }])}>
-            <Icon name="plus" size={12} /> Aggiungi garanzia
+            <Icon name="plus" size={12} /> {tr('Aggiungi garanzia')}
           </button>
         </div>
         {cov.length === 0 ? (
           <div className="faint" style={{ fontSize: 11.5, marginBottom: 10 }}>
-            Es. "Invalidità permanente" · 500.000 € — alimentano la dashboard delle coperture.
+            {tr('Es. "Invalidità permanente" · 500.000 € — alimentano la dashboard delle coperture.')}
           </div>
         ) : (
           <div className="grid" style={{ gap: 7, marginBottom: 10 }}>
             {cov.map((c, i) => (
               <div key={i} className="flex gap" style={{ gap: 7, alignItems: 'center' }}>
-                <Input style={{ flex: 2 }} placeholder="Garanzia" value={c.name}
+                <Input style={{ flex: 2 }} placeholder={tr('Garanzia')} value={c.name}
                   onChange={e => setCovAt(i, 'name', e.target.value)} />
-                <Input style={{ flex: 1 }} type="number" placeholder="Massimale €" value={c.amount ?? ''}
+                <Input style={{ flex: 1 }} type="number" placeholder={tr('Massimale €')} value={c.amount ?? ''}
                   onChange={e => setCovAt(i, 'amount', e.target.value ? Number(e.target.value) : null)} />
-                <Input style={{ flex: 1.4 }} placeholder="Note" value={c.note || ''}
+                <Input style={{ flex: 1.4 }} placeholder={tr('Note')} value={c.note || ''}
                   onChange={e => setCovAt(i, 'note', e.target.value)} />
                 <button className="btn btn-ghost btn-sm" onClick={() => setCov(prev => prev.filter((_, j) => j !== i))}>
                   <Icon name="x" size={12} />
@@ -764,7 +765,7 @@ function PolicyForm({ value, playerId, onClose, onSaved }: {
       </div>
 
       <div style={{ marginTop: 4 }}>
-        <div style={{ ...kicker, color: 'var(--text-dim)', marginBottom: 8 }}>Documenti</div>
+        <div style={{ ...kicker, color: 'var(--text-dim)', marginBottom: 8 }}>{tr('Documenti')}</div>
         {atts.length > 0 && (
           <div className="grid" style={{ gap: 6, marginBottom: 8 }}>
             {atts.map(a => (
@@ -773,17 +774,17 @@ function PolicyForm({ value, playerId, onClose, onSaved }: {
                   <Icon name="file" size={15} />
                   <span style={{ fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</span>
                 </span>
-                <button className="btn btn-ghost btn-sm" onClick={() => setAtts(prev => prev.filter(x => x.path !== a.path))}>Rimuovi</button>
+                <button className="btn btn-ghost btn-sm" onClick={() => setAtts(prev => prev.filter(x => x.path !== a.path))}>{tr('Rimuovi')}</button>
               </div>
             ))}
           </div>
         )}
         <button className="btn btn-sm" disabled={uploading} onClick={() => fileRef.current?.click()}>
-          <Icon name="upload" size={14} /> {uploading ? 'Carico…' : 'Aggiungi documento'}
+          <Icon name="upload" size={14} /> {uploading ? tr('Carico…') : tr('Aggiungi documento')}
         </button>
         <input ref={fileRef} type="file" multiple hidden onChange={onFiles} />
         <div className="faint" style={{ fontSize: 11.5, marginTop: 6 }}>
-          Polizza, condizioni, quietanze: l'atleta li apre e li scarica dal suo telefono.
+          {tr("Polizza, condizioni, quietanze: l'atleta li apre e li scarica dal suo telefono.")}
         </div>
       </div>
     </Modal>
@@ -796,6 +797,7 @@ const DOC_TYPES = ['Carta d\'identità', 'Passaporto', 'Patente']
 
 function AnagraficaCard({ athleteId, canEdit }: { athleteId: number | null; canEdit: boolean }) {
   const { session } = useAuth()
+  const { t: tr } = useLang()
   const [data, setData] = useState<any | null>(null)
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
@@ -832,7 +834,7 @@ function AnagraficaCard({ athleteId, canEdit }: { athleteId: number | null; canE
     const { error } = await supabase.from('crm_athlete_anagrafica').upsert(payload, { onConflict: 'player_id' })
     setBusy(false)
     if (error) { toast(error.message, 'err'); return }
-    toast('Anagrafica salvata'); setEditing(false); load()
+    toast(tr('Anagrafica salvata')); setEditing(false); load()
   }
 
   async function uploadDoc(e: React.ChangeEvent<HTMLInputElement>) {
@@ -849,7 +851,7 @@ function AnagraficaCard({ athleteId, canEdit }: { athleteId: number | null; canE
     setUploading(false)
     if (added.length) {
       setForm((f: any) => ({ ...f, id_docs: [...(f.id_docs || []), ...added] }))
-      toast(`${added.length} file caricat${added.length > 1 ? 'i' : 'o'}`)
+      toast((added.length > 1 ? tr('{n} file caricati') : tr('{n} file caricato')).replace('{n}', String(added.length)))
     }
   }
 
@@ -863,8 +865,8 @@ function AnagraficaCard({ athleteId, canEdit }: { athleteId: number | null; canE
       <span className="flex gap" style={{ alignItems: 'center', gap: 8, minWidth: 0 }}>
         <span style={{ fontSize: 13.5, fontWeight: 600, textAlign: 'right', wordBreak: 'break-all' }}>{v || '—'}</span>
         {copy && v && (
-          <button className="btn btn-ghost btn-sm" title="Copia"
-            onClick={() => { navigator.clipboard.writeText(v); toast('Copiato') }}><Icon name="copy" size={12} /></button>
+          <button className="btn btn-ghost btn-sm" title={tr('Copia')}
+            onClick={() => { navigator.clipboard.writeText(v); toast(tr('Copiato')) }}><Icon name="copy" size={12} /></button>
         )}
       </span>
     </div>
@@ -874,78 +876,78 @@ function AnagraficaCard({ athleteId, canEdit }: { athleteId: number | null; canE
     <div className="card">
       <div className="flex between" style={{ alignItems: 'center', marginBottom: 6 }}>
         <div>
-          <div style={{ ...kicker, color: ACCENT }}>Anagrafica</div>
-          <div className="faint" style={{ fontSize: 12, marginTop: 2 }}>Dati bancari e identità dell'atleta</div>
+          <div style={{ ...kicker, color: ACCENT }}>{tr('Anagrafica')}</div>
+          <div className="faint" style={{ fontSize: 12, marginTop: 2 }}>{tr("Dati bancari e identità dell'atleta")}</div>
         </div>
         {canEdit && !editing && (
           <button className="btn btn-sm" onClick={() => { setForm({ ...(data || {}), id_docs: docsOf(data) }); setEditing(true) }}>
-            <Icon name={empty ? 'plus' : 'edit'} size={13} /> {empty ? 'Compila' : 'Modifica'}
+            <Icon name={empty ? 'plus' : 'edit'} size={13} /> {empty ? tr('Compila') : tr('Modifica')}
           </button>
         )}
       </div>
 
       {editing ? (
         <div className="grid" style={{ gap: 12, marginTop: 8 }}>
-          <Field label="Intestatario"><Input value={form.account_holder || ''} onChange={e => set('account_holder', e.target.value)} placeholder="Nome e cognome" /></Field>
-          <Field label="Codice fiscale"><Input value={form.fiscal_code || ''} onChange={e => set('fiscal_code', e.target.value.toUpperCase())} /></Field>
+          <Field label={tr('Intestatario')}><Input value={form.account_holder || ''} onChange={e => set('account_holder', e.target.value)} placeholder={tr('Nome e cognome')} /></Field>
+          <Field label={tr('Codice fiscale')}><Input value={form.fiscal_code || ''} onChange={e => set('fiscal_code', e.target.value.toUpperCase())} /></Field>
           <Field label="IBAN"><Input value={form.iban || ''} onChange={e => set('iban', e.target.value.toUpperCase().replace(/\s/g, ''))} placeholder="IT.." /></Field>
           <Field label="BIC / SWIFT"><Input value={form.bic_swift || ''} onChange={e => set('bic_swift', e.target.value.toUpperCase())} /></Field>
-          <Field label="Banca"><Input value={form.bank_name || ''} onChange={e => set('bank_name', e.target.value)} /></Field>
-          <Field label="Indirizzo sede della banca"><Input value={form.bank_address || ''} onChange={e => set('bank_address', e.target.value)} /></Field>
+          <Field label={tr('Banca')}><Input value={form.bank_name || ''} onChange={e => set('bank_name', e.target.value)} /></Field>
+          <Field label={tr('Indirizzo sede della banca')}><Input value={form.bank_address || ''} onChange={e => set('bank_address', e.target.value)} /></Field>
           <div className="flex gap" style={{ gap: 10 }}>
-            <Field label="Tipo documento"><Select value={form.id_doc_type || ''} onChange={e => set('id_doc_type', e.target.value)}>
-              <option value="">—</option>{DOC_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+            <Field label={tr('Tipo documento')}><Select value={form.id_doc_type || ''} onChange={e => set('id_doc_type', e.target.value)}>
+              <option value="">—</option>{DOC_TYPES.map(t => <option key={t} value={t}>{tr(t)}</option>)}
             </Select></Field>
-            <Field label="Numero documento"><Input value={form.id_doc_number || ''} onChange={e => set('id_doc_number', e.target.value)} /></Field>
+            <Field label={tr('Numero documento')}><Input value={form.id_doc_number || ''} onChange={e => set('id_doc_number', e.target.value)} /></Field>
           </div>
           <div>
-            <div className="faint" style={{ fontSize: 12, marginBottom: 6 }}>Documenti (identità, tessera sanitaria, ecc.) — puoi caricarne più insieme</div>
+            <div className="faint" style={{ fontSize: 12, marginBottom: 6 }}>{tr('Documenti (identità, tessera sanitaria, ecc.) — puoi caricarne più insieme')}</div>
             {(form.id_docs || []).length > 0 && (
               <div className="grid" style={{ gap: 6, marginBottom: 8 }}>
                 {(form.id_docs || []).map((doc: any, i: number) => (
                   <div key={i} className="flex between" style={{ alignItems: 'center', gap: 10,
                     border: '1px solid var(--border)', borderRadius: 10, padding: '8px 10px' }}>
                     <span className="flex gap" style={{ alignItems: 'center', gap: 8, minWidth: 0 }}>
-                      <Icon name="file" size={13} /> <span style={{ fontSize: 12.5, overflow: 'hidden', textOverflow: 'ellipsis' }}>{doc.name || 'Documento'}</span>
+                      <Icon name="file" size={13} /> <span style={{ fontSize: 12.5, overflow: 'hidden', textOverflow: 'ellipsis' }}>{tr(doc.name || 'Documento')}</span>
                     </span>
                     <span className="flex gap" style={{ gap: 6, flexShrink: 0 }}>
-                      <button className="btn btn-ghost btn-sm" onClick={() => openDoc(doc.path)}>Apri</button>
-                      <button className="btn btn-ghost btn-sm" onClick={() => setForm((f: any) => ({ ...f, id_docs: (f.id_docs || []).filter((_: any, j: number) => j !== i) }))}>Rimuovi</button>
+                      <button className="btn btn-ghost btn-sm" onClick={() => openDoc(doc.path, tr('Impossibile aprire il documento'))}>{tr('Apri')}</button>
+                      <button className="btn btn-ghost btn-sm" onClick={() => setForm((f: any) => ({ ...f, id_docs: (f.id_docs || []).filter((_: any, j: number) => j !== i) }))}>{tr('Rimuovi')}</button>
                     </span>
                   </div>
                 ))}
               </div>
             )}
             <button className="btn btn-sm" disabled={uploading} onClick={() => fileRef.current?.click()}>
-              <Icon name="upload" size={13} /> {uploading ? 'Carico…' : 'Carica file'}
+              <Icon name="upload" size={13} /> {uploading ? tr('Carico…') : tr('Carica file')}
             </button>
             <input ref={fileRef} type="file" multiple accept="image/*,application/pdf" hidden onChange={uploadDoc} />
           </div>
           <div className="flex gap" style={{ gap: 8, marginTop: 4 }}>
-            <button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? 'Salvo…' : 'Salva'}</button>
-            <button className="btn" onClick={() => setEditing(false)}>Annulla</button>
+            <button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? tr('Salvo…') : tr('Salva')}</button>
+            <button className="btn" onClick={() => setEditing(false)}>{tr('Annulla')}</button>
           </div>
         </div>
       ) : empty ? (
         <div className="faint" style={{ fontSize: 13, padding: '10px 0' }}>
-          Anagrafica non ancora compilata.{canEdit ? ' Premi "Compila" per aggiungerla.' : ''}
+          {tr('Anagrafica non ancora compilata.')}{canEdit ? ' ' + tr('Premi "Compila" per aggiungerla.') : ''}
         </div>
       ) : (
         <div style={{ marginTop: 4 }}>
-          <Row k="Intestatario" v={d.account_holder} />
-          <Row k="Codice fiscale" v={d.fiscal_code} copy />
+          <Row k={tr('Intestatario')} v={d.account_holder} />
+          <Row k={tr('Codice fiscale')} v={d.fiscal_code} copy />
           <Row k="IBAN" v={d.iban} copy />
           <Row k="BIC / SWIFT" v={d.bic_swift} copy />
-          <Row k="Banca" v={d.bank_name} />
-          <Row k="Indirizzo sede banca" v={d.bank_address} />
-          <Row k="Documento" v={[d.id_doc_type, d.id_doc_number].filter(Boolean).join(' · ')} />
+          <Row k={tr('Banca')} v={d.bank_name} />
+          <Row k={tr('Indirizzo sede banca')} v={d.bank_address} />
+          <Row k={tr('Documento')} v={[d.id_doc_type && tr(d.id_doc_type), d.id_doc_number].filter(Boolean).join(' · ')} />
           {docsOf(d).length > 0 && (
             <div style={{ paddingTop: 12 }}>
-              <div className="faint" style={{ fontSize: 12, marginBottom: 6 }}>Documenti allegati</div>
+              <div className="faint" style={{ fontSize: 12, marginBottom: 6 }}>{tr('Documenti allegati')}</div>
               <div className="grid" style={{ gap: 6 }}>
                 {docsOf(d).map((doc, i) => (
-                  <button key={i} className="btn btn-sm" style={{ justifyContent: 'flex-start' }} onClick={() => openDoc(doc.path)}>
-                    <Icon name="file" size={13} /> {doc.name || 'Documento'}
+                  <button key={i} className="btn btn-sm" style={{ justifyContent: 'flex-start' }} onClick={() => openDoc(doc.path, tr('Impossibile aprire il documento'))}>
+                    <Icon name="file" size={13} /> {tr(doc.name || 'Documento')}
                   </button>
                 ))}
               </div>

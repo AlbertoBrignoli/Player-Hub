@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { Input } from './ui'
 import Icon from './Icon'
+import { useLang } from '../lib/i18n'
 
 // Campo "Luogo" con autocomplete indirizzi reali (Geoapify, via Edge Function
 // che nasconde la chiave). Se il servizio non è configurato o non risponde,
@@ -13,6 +14,7 @@ export default function LuogoAutocomplete({ value, onChange, placeholder }: {
   onChange: (v: string) => void
   placeholder?: string
 }) {
+  const { t } = useLang()
   const [items, setItems] = useState<Sugg[]>([])
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -60,7 +62,7 @@ export default function LuogoAutocomplete({ value, onChange, placeholder }: {
 
   return (
     <div ref={boxRef} style={{ position: 'relative' }}>
-      <Input value={value} placeholder={placeholder || 'Inizia a scrivere un indirizzo…'}
+      <Input value={value} placeholder={placeholder || t('Inizia a scrivere un indirizzo…')}
         autoComplete="off"
         onChange={e => onChange(e.target.value)}
         onFocus={() => { if (items.length) setOpen(true) }} />

@@ -3,6 +3,7 @@ import { useAuth } from '../auth/AuthContext'
 import { enablePush, getPushState, isIosBrowser, pushSupported } from '../lib/push'
 import { toast } from '../lib/toast'
 import Icon from './Icon'
+import { useLang } from '../lib/i18n'
 
 const DISMISS_KEY = 'push-nudge-dismissed'
 
@@ -11,6 +12,7 @@ const DISMISS_KEY = 'push-nudge-dismissed'
 // Su iPhone da browser spiega il passaggio "Aggiungi a Home", senza cui iOS non manda push.
 export default function PushNudge() {
   const { session, role } = useAuth()
+  const { t: tr } = useLang()
   const [state, setState] = useState<'on' | 'off' | 'unsupported' | 'loading'>('loading')
   const [busy, setBusy] = useState(false)
   const [dismissed, setDismissed] = useState(() => {
@@ -31,9 +33,9 @@ export default function PushNudge() {
     setBusy(true)
     const err = await enablePush(session.user.id, role)
     setBusy(false)
-    if (err) { toast(err, 'err'); return }
+    if (err) { toast(tr(err), 'err'); return }
     setState('on')
-    toast('Notifiche attive su questo dispositivo')
+    toast(tr('Notifiche attive su questo dispositivo'))
   }
 
   function dismiss() {
@@ -42,20 +44,20 @@ export default function PushNudge() {
   }
 
   return (
-    <div className="nudge" role="region" aria-label="Notifiche" style={{ marginBottom: 16 }}>
+    <div className="nudge" role="region" aria-label={tr('Notifiche')} style={{ marginBottom: 16 }}>
       <div className="nudge-ico"><Icon name="bell" size={20} /></div>
       <div style={{ minWidth: 0 }}>
-        <div className="nudge-t">{ios ? 'Aggiungi AUVI alla schermata Home' : 'Attiva le notifiche'}</div>
+        <div className="nudge-t">{ios ? tr('Aggiungi AUVI alla schermata Home') : tr('Attiva le notifiche')}</div>
         <div className="nudge-s">
           {ios
-            ? 'Tocca Condividi → Aggiungi a Home, poi apri l\'app da lì: su iPhone le notifiche arrivano solo così.'
-            : 'Partite, foto da approvare e messaggi: ti avvisiamo appena succede qualcosa.'}
+            ? tr('Tocca Condividi → Aggiungi a Home, poi apri l\'app da lì: su iPhone le notifiche arrivano solo così.')
+            : tr('Partite, foto da approvare e messaggi: ti avvisiamo appena succede qualcosa.')}
         </div>
       </div>
       {!ios && pushSupported() && (
-        <button className="btn btn-primary btn-sm" disabled={busy} onClick={activate}>{busy ? 'Attivo…' : 'Attiva'}</button>
+        <button className="btn btn-primary btn-sm" disabled={busy} onClick={activate}>{busy ? tr('Attivo…') : tr('Attiva')}</button>
       )}
-      <button className="btn btn-ghost btn-sm" onClick={dismiss} aria-label="Non ora" style={{ color: 'rgba(255,255,255,.7)', marginLeft: ios ? 'auto' : 0 }}>
+      <button className="btn btn-ghost btn-sm" onClick={dismiss} aria-label={tr('Non ora')} style={{ color: 'rgba(255,255,255,.7)', marginLeft: ios ? 'auto' : 0 }}>
         <Icon name="x" size={16} />
       </button>
     </div>

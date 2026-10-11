@@ -11,6 +11,7 @@ import Icon from '../components/Icon'
 import RequestThread from '../components/RequestThread'
 import { ApiSeason, ApiMatchList, type ApiSeasonRow } from '../components/apistats'
 import { fmtDate, fmtDateTime, seasonOf } from '../lib/format'
+import { useLang } from '../lib/i18n'
 
 type Req = {
   id: string; player_id: number; player_name: string | null; service_id: string | null
@@ -28,6 +29,7 @@ const STATUS: Record<string, { l: string; tone: 'gold' | 'blue' | 'green' | 'red
 }
 
 export default function PartnerHome() {
+  const { t } = useLang()
   const [reqs, setReqs] = useState<Req[]>([])
   const [svcs, setSvcs] = useState<Svc[]>([])
   const [athletes, setAthletes] = useState<Athlete[]>([])
@@ -52,7 +54,7 @@ export default function PartnerHome() {
   useEffect(() => { load() }, [])
 
   const open = reqs.find(r => r.id === openId) || null
-  const partnerName = svcs[0]?.partner_name || 'Area partner'
+  const partnerName = svcs[0]?.partner_name || t('Area partner')
   const logo = svcs[0]?.logo_url
 
   if (loading) return <Spinner />
@@ -73,34 +75,34 @@ export default function PartnerHome() {
       <div className="partner-hero">
         {logo && <img src={logo} alt={partnerName} />}
         <div>
-          <div className="partner-hero-k">Area partner · AUVI</div>
+          <div className="partner-hero-k">{t('Area partner')} · AUVI</div>
           <div className="partner-hero-t">{partnerName}</div>
-          <div className="partner-hero-s">Le richieste degli atleti AUVI per i tuoi servizi: prendile in carico, invia report e file, chiudile.</div>
+          <div className="partner-hero-s">{t('Le richieste degli atleti AUVI per i tuoi servizi: prendile in carico, invia report e file, chiudile.')}</div>
         </div>
       </div>
 
       <div className="kv-grid kv-grid-hero">
-        <div className="kv"><div className="kv-k">Nuove</div><div className="kv-v" style={{ color: nNew ? 'var(--gold)' : undefined }}>{nNew}</div><div className="kv-sub">da prendere in carico</div></div>
-        <div className="kv"><div className="kv-k">In lavorazione</div><div className="kv-v">{nWork}</div></div>
-        <div className="kv"><div className="kv-k">Completate</div><div className="kv-v">{nDone}</div></div>
-        <div className="kv"><div className="kv-k">Atleti seguiti</div><div className="kv-v">{athletes.length}</div></div>
+        <div className="kv"><div className="kv-k">{t('Nuove')}</div><div className="kv-v" style={{ color: nNew ? 'var(--gold)' : undefined }}>{nNew}</div><div className="kv-sub">{t('da prendere in carico')}</div></div>
+        <div className="kv"><div className="kv-k">{t('In lavorazione')}</div><div className="kv-v">{nWork}</div></div>
+        <div className="kv"><div className="kv-k">{t('Completate')}</div><div className="kv-v">{nDone}</div></div>
+        <div className="kv"><div className="kv-k">{t('Atleti seguiti')}</div><div className="kv-v">{athletes.length}</div></div>
       </div>
 
       <div className="card">
         <div className="card-head">
-          <div className="card-title">Richieste</div>
+          <div className="card-title">{t('Richieste')}</div>
           <div className="flex gap" style={{ gap: 6 }}>
             {(['attive', 'completate', 'tutte'] as const).map(k => (
               <button key={k} className={`btn btn-sm ${filter === k ? 'btn-primary' : ''}`} onClick={() => setFilter(k)}>
-                {k === 'attive' ? 'Attive' : k === 'completate' ? 'Completate' : 'Tutte'}
+                {k === 'attive' ? t('Attive') : k === 'completate' ? t('Completate') : t('Tutte')}
               </button>
             ))}
           </div>
         </div>
         {shown.length === 0 ? (
           <Empty icon={<Icon name="inbox" size={26} strokeWidth={1.5} />}
-            title={reqs.length ? 'Niente in questa vista' : 'Ancora nessuna richiesta'}
-            hint={reqs.length ? undefined : 'Quando un atleta AUVI compila il questionario del tuo servizio, la richiesta arriva qui e ricevi una notifica.'} />
+            title={reqs.length ? t('Niente in questa vista') : t('Ancora nessuna richiesta')}
+            hint={reqs.length ? undefined : t('Quando un atleta AUVI compila il questionario del tuo servizio, la richiesta arriva qui e ricevi una notifica.')} />
         ) : (
           <div className="list">
             {shown.map(r => {
@@ -112,11 +114,11 @@ export default function PartnerHome() {
                   onClick={() => goto(`partner-home?req=${r.id}`)}>
                   {a?.photo_url ? <img src={a.photo_url} alt="" className="partner-ava" /> : <span className="partner-ava" />}
                   <div className="row-main">
-                    <div className="row-title">{r.player_name || a?.name || 'Atleta'}</div>
+                    <div className="row-title">{r.player_name || a?.name || t('Atleta')}</div>
                     <div className="row-sub">{what}</div>
-                    <div className="row-sub">{[a?.team_name, a?.position].filter(Boolean).join(' · ')} · inviata {fmtDate(r.created_at)}</div>
+                    <div className="row-sub">{[a?.team_name, a?.position].filter(Boolean).join(' · ')} · {t('inviata {date}').replace('{date}', fmtDate(r.created_at))}</div>
                   </div>
-                  <Badge tone={st.tone}>{st.l}</Badge>
+                  <Badge tone={st.tone}>{t(st.l)}</Badge>
                 </button>
               )
             })}
@@ -130,6 +132,7 @@ export default function PartnerHome() {
 function RequestDetail({ req, svc, athlete, onBack, onChanged }: {
   req: Req; svc: Svc | null; athlete: Athlete | null; onBack: () => void; onChanged: () => void
 }) {
+  const { t } = useLang()
   const [note, setNote] = useState(req.internal_note || '')
   const [busy, setBusy] = useState(false)
   const [stats, setStats] = useState<ApiSeasonRow[]>([])
@@ -169,14 +172,14 @@ function RequestDetail({ req, svc, athlete, onBack, onChanged }: {
     }).eq('id', req.id)
     setBusy(false)
     if (error) { toast(error.message, 'err'); return }
-    toast(status === 'completata' ? 'Richiesta completata: l\'atleta riceve la notifica' : 'Presa in carico: l\'atleta riceve la notifica')
+    toast(status === 'completata' ? t("Richiesta completata: l'atleta riceve la notifica") : t("Presa in carico: l'atleta riceve la notifica"))
     onChanged()
   }
 
   return (
     <div className="grid" style={{ gap: 16 }}>
       <button onClick={onBack} className="flex gap" style={{ alignItems: 'center', gap: 8, alignSelf: 'start', background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', fontSize: 13, fontWeight: 600, padding: 0 }}>
-        ← Tutte le richieste
+        ← {t('Tutte le richieste')}
       </button>
 
       <div className="card">
@@ -184,28 +187,28 @@ function RequestDetail({ req, svc, athlete, onBack, onChanged }: {
           {athlete?.photo_url ? <img src={athlete.photo_url} alt="" className="partner-ava lg" /> : <span className="partner-ava lg" />}
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 19, fontWeight: 800 }}>{req.player_name || athlete?.name}</div>
-            <div className="muted" style={{ fontSize: 13 }}>{[athlete?.position, athlete?.team_name, athlete?.age ? `${athlete.age} anni` : null].filter(Boolean).join(' · ')}</div>
-            <div className="faint" style={{ fontSize: 12, marginTop: 2 }}>{req.service_title} · inviata {fmtDate(req.created_at)}</div>
+            <div className="muted" style={{ fontSize: 13 }}>{[athlete?.position, athlete?.team_name, athlete?.age ? t('{n} anni').replace('{n}', String(athlete.age)) : null].filter(Boolean).join(' · ')}</div>
+            <div className="faint" style={{ fontSize: 12, marginTop: 2 }}>{req.service_title} · {t('inviata {date}').replace('{date}', fmtDate(req.created_at))}</div>
           </div>
-          <Badge tone={st.tone}>{st.l}</Badge>
+          <Badge tone={st.tone}>{t(st.l)}</Badge>
         </div>
 
         <div style={{ marginTop: 14 }}>
-          <div className="kv-title">Messaggio di stato per l'atleta</div>
+          <div className="kv-title">{t("Messaggio di stato per l'atleta")}</div>
           <Textarea rows={2} value={note} onChange={e => setNote(e.target.value)}
-            placeholder="Es. Iniziamo dalle ultime 3 partite, report entro venerdì" />
+            placeholder={t('Es. Iniziamo dalle ultime 3 partite, report entro venerdì')} />
           <div className="flex gap wrap" style={{ gap: 8, marginTop: 10 }}>
             {req.status === 'aperta' && (
-              <button className="btn btn-primary" disabled={busy} onClick={() => setStatus('in_carico')}>Prendi in carico</button>
+              <button className="btn btn-primary" disabled={busy} onClick={() => setStatus('in_carico')}>{t('Prendi in carico')}</button>
             )}
             {req.status === 'in_carico' && (
               <>
-                <button className="btn btn-primary" disabled={busy} onClick={() => setStatus('completata')}>Segna completata</button>
-                <button className="btn" disabled={busy} onClick={() => setStatus('in_carico')}>Aggiorna messaggio</button>
+                <button className="btn btn-primary" disabled={busy} onClick={() => setStatus('completata')}>{t('Segna completata')}</button>
+                <button className="btn" disabled={busy} onClick={() => setStatus('in_carico')}>{t('Aggiorna messaggio')}</button>
               </>
             )}
             {req.status === 'completata' && (
-              <button className="btn" disabled={busy} onClick={() => setStatus('in_carico')}>Riapri</button>
+              <button className="btn" disabled={busy} onClick={() => setStatus('in_carico')}>{t('Riapri')}</button>
             )}
           </div>
         </div>
@@ -213,7 +216,7 @@ function RequestDetail({ req, svc, athlete, onBack, onChanged }: {
 
       {rows.length > 0 && (
         <div className="card">
-          <div className="card-head"><div className="card-title">Cosa chiede l'atleta</div></div>
+          <div className="card-head"><div className="card-title">{t("Cosa chiede l'atleta")}</div></div>
           <div className="grid" style={{ gap: 10 }}>
             {rows.map(r => (
               <div key={r.k}>
@@ -229,24 +232,24 @@ function RequestDetail({ req, svc, athlete, onBack, onChanged }: {
 
       <div className="card">
         <div className="card-head">
-          <div className="card-title">Lavoro con l'atleta</div>
-          <div className="card-hint">messaggi e file · li vedono atleta e AUVI</div>
+          <div className="card-title">{t("Lavoro con l'atleta")}</div>
+          <div className="card-hint">{t('messaggi e file · li vedono atleta e AUVI')}</div>
         </div>
-        <RequestThread requestId={req.id} placeholder="Scrivi all'atleta o allega il report…" />
+        <RequestThread requestId={req.id} placeholder={t("Scrivi all'atleta o allega il report…")} />
       </div>
 
       <div className="card">
         <div className="card-head">
-          <div className="card-title">Stagione {curSeason}</div>
-          <div className="card-hint">dati API-Football</div>
+          <div className="card-title">{t('Stagione {s}').replace('{s}', curSeason)}</div>
+          <div className="card-hint">{t('dati API-Football')}</div>
         </div>
         {stats.length ? <ApiSeason rows={stats} matches={matches} role={athlete?.position} />
-          : <div className="faint" style={{ fontSize: 13 }}>Statistiche di stagione non ancora disponibili.</div>}
+          : <div className="faint" style={{ fontSize: 13 }}>{t('Statistiche di stagione non ancora disponibili.')}</div>}
       </div>
 
       {matches.length > 0 && (
         <div className="card">
-          <div className="card-head"><div className="card-title">Ultime partite</div><div className="card-hint">per scegliere cosa analizzare</div></div>
+          <div className="card-head"><div className="card-title">{t('Ultime partite')}</div><div className="card-hint">{t('per scegliere cosa analizzare')}</div></div>
           <ApiMatchList matches={matches} />
         </div>
       )}
@@ -263,6 +266,7 @@ type Ev = { id: string; type: string; title: string; start_at: string; request_s
 // Tutto passa dal calendario dell'atleta: la call da confermare con un tocco, il report che si apre
 // dall'impegno. Il partner non tocca il calendario: usa due funzioni controllate (RPC).
 function CalendarActions({ req }: { req: Req }) {
+  const { t } = useLang()
   const [evs, setEvs] = useState<Ev[]>([])
   const [mode, setMode] = useState<'call' | 'report' | null>(null)
   const [busy, setBusy] = useState(false)
@@ -286,21 +290,21 @@ function CalendarActions({ req }: { req: Req }) {
   useEffect(() => { load() }, [req.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function proposeCall() {
-    if (!when) { toast('Scegli giorno e ora della call', 'err'); return }
+    if (!when) { toast(t('Scegli giorno e ora della call'), 'err'); return }
     setBusy(true)
     const { error } = await supabase.rpc('crm_partner_propose_call', {
       p_req: req.id, p_start: new Date(when).toISOString(), p_minutes: Number(mins), p_link: meet || null, p_note: cnote || null,
     })
     setBusy(false)
     if (error) { toast(error.message, 'err'); return }
-    toast("Call proposta: l'atleta la trova nel calendario da confermare")
+    toast(t("Call proposta: l'atleta la trova nel calendario da confermare"))
     setMode(null); setWhen(''); setMeet(''); setCnote(''); load()
   }
 
   async function deliver() {
-    if (!file && !link.trim()) { toast('Carica il report o incolla un link scaricabile', 'err'); return }
+    if (!file && !link.trim()) { toast(t('Carica il report o incolla un link scaricabile'), 'err'); return }
     if (file && file.size > MAX_UPLOAD_MB * 1048576) {
-      toast(`File oltre ${MAX_UPLOAD_MB} MB: caricalo su WeTransfer/Drive e incolla il link`, 'err'); return
+      toast(t('File oltre {n} MB: caricalo su WeTransfer/Drive e incolla il link').replace('{n}', String(MAX_UPLOAD_MB)), 'err'); return
     }
     setBusy(true)
     let path: string | null = null
@@ -315,14 +319,14 @@ function CalendarActions({ req }: { req: Req }) {
     })
     setBusy(false)
     if (error) { toast(error.message, 'err'); return }
-    toast("Consegnato: l'atleta lo apre dal suo calendario")
+    toast(t("Consegnato: l'atleta lo apre dal suo calendario"))
     setMode(null); setTitle(''); setFile(null); setLink(''); setRnote(''); load()
   }
 
   async function withdraw(ev: Ev) {
     const { error } = await supabase.from('crm_events').delete().eq('id', ev.id)
     if (error) { toast(error.message, 'err'); return }
-    toast('Proposta ritirata'); load()
+    toast(t('Proposta ritirata')); load()
   }
 
   const ST: Record<string, { l: string; tone: 'gold' | 'green' | 'red' | 'blue' }> = {
@@ -333,49 +337,49 @@ function CalendarActions({ req }: { req: Req }) {
   return (
     <div className="card">
       <div className="card-head">
-        <div className="card-title">Nel calendario dell'atleta</div>
-        <div className="card-hint">l'atleta riceve la notifica e apre tutto dal calendario</div>
+        <div className="card-title">{t("Nel calendario dell'atleta")}</div>
+        <div className="card-hint">{t("l'atleta riceve la notifica e apre tutto dal calendario")}</div>
       </div>
       <div className="flex gap wrap" style={{ gap: 8 }}>
         <button className={`btn ${mode === 'call' ? 'btn-primary' : ''}`} onClick={() => setMode(mode === 'call' ? null : 'call')}>
-          <Icon name="calendar" size={14} /> Proponi una call
+          <Icon name="calendar" size={14} /> {t('Proponi una call')}
         </button>
         <button className={`btn ${mode === 'report' ? 'btn-primary' : ''}`} onClick={() => setMode(mode === 'report' ? null : 'report')}>
-          <Icon name="file" size={14} /> Consegna report
+          <Icon name="file" size={14} /> {t('Consegna report')}
         </button>
       </div>
 
       {mode === 'call' && (
         <div className="grid" style={{ gap: 10, marginTop: 14 }}>
           <div className="row2">
-            <Field label="Giorno e ora"><Input type="datetime-local" value={when} onChange={e => setWhen(e.target.value)} /></Field>
-            <Field label="Durata">
+            <Field label={t('Giorno e ora')}><Input type="datetime-local" value={when} onChange={e => setWhen(e.target.value)} /></Field>
+            <Field label={t('Durata')}>
               <Select value={mins} onChange={e => setMins(e.target.value)}>
-                {['20', '30', '45', '60', '90'].map(m => <option key={m} value={m}>{m} minuti</option>)}
+                {['20', '30', '45', '60', '90'].map(m => <option key={m} value={m}>{t('{n} minuti').replace('{n}', m)}</option>)}
               </Select>
             </Field>
           </div>
-          <Field label="Link della call (Meet, Zoom, Teams)"><Input value={meet} placeholder="https://meet.google.com/…" onChange={e => setMeet(e.target.value)} /></Field>
-          <Field label="Di cosa parliamo (facoltativo)"><Input value={cnote} placeholder="Es. analisi OFI – Asteras" onChange={e => setCnote(e.target.value)} /></Field>
+          <Field label={t('Link della call (Meet, Zoom, Teams)')}><Input value={meet} placeholder="https://meet.google.com/…" onChange={e => setMeet(e.target.value)} /></Field>
+          <Field label={t('Di cosa parliamo (facoltativo)')}><Input value={cnote} placeholder={t('Es. analisi OFI – Asteras')} onChange={e => setCnote(e.target.value)} /></Field>
           <button className="btn btn-primary" disabled={busy} onClick={proposeCall} style={{ justifySelf: 'start' }}>
-            {busy ? 'Invio…' : "Proponi all'atleta"}
+            {busy ? t('Invio…') : t("Proponi all'atleta")}
           </button>
         </div>
       )}
 
       {mode === 'report' && (
         <div className="grid" style={{ gap: 10, marginTop: 14 }}>
-          <Field label="Titolo"><Input value={title} placeholder="Es. Report post-partita · OFI – Asteras" onChange={e => setTitle(e.target.value)} /></Field>
-          <Field label={`Documento (PDF, fino a ${MAX_UPLOAD_MB} MB: si apre nell'app)`}>
+          <Field label={t('Titolo')}><Input value={title} placeholder={t('Es. Report post-partita · OFI – Asteras')} onChange={e => setTitle(e.target.value)} /></Field>
+          <Field label={t("Documento (PDF, fino a {n} MB: si apre nell'app)").replace('{n}', String(MAX_UPLOAD_MB))}>
             <input type="file" className="input" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.png,.jpg,.jpeg"
               onChange={e => setFile(e.target.files?.[0] || null)} />
           </Field>
-          <Field label="Video o file pesanti: link scaricabile (WeTransfer, Drive, Dropbox)">
+          <Field label={t('Video o file pesanti: link scaricabile (WeTransfer, Drive, Dropbox)')}>
             <Input value={link} placeholder="https://…" onChange={e => setLink(e.target.value)} />
           </Field>
-          <Field label="Nota per l'atleta (facoltativo)"><Textarea rows={2} value={rnote} onChange={e => setRnote(e.target.value)} /></Field>
+          <Field label={t("Nota per l'atleta (facoltativo)")}><Textarea rows={2} value={rnote} onChange={e => setRnote(e.target.value)} /></Field>
           <button className="btn btn-primary" disabled={busy} onClick={deliver} style={{ justifySelf: 'start' }}>
-            {busy ? 'Caricamento…' : 'Consegna nel calendario'}
+            {busy ? t('Caricamento…') : t('Consegna nel calendario')}
           </button>
         </div>
       )}
@@ -389,13 +393,13 @@ function CalendarActions({ req }: { req: Req }) {
                 <Icon name={ev.type === 'call' ? 'calendar' : 'file'} size={16} />
                 <div className="row-main">
                   <div className="row-title">{ev.title}</div>
-                  <div className="row-sub">{ev.type === 'call' ? fmtDateTime(ev.start_at) : `consegnato ${fmtDate(ev.start_at)}`}
-                    {ev.attachments?.length ? ' · documento' : ''}{ev.link_url ? ' · link' : ''}</div>
+                  <div className="row-sub">{ev.type === 'call' ? fmtDateTime(ev.start_at) : t('consegnato {date}').replace('{date}', fmtDate(ev.start_at))}
+                    {ev.attachments?.length ? ' · ' + t('documento') : ''}{ev.link_url ? ' · link' : ''}</div>
                   {ev.request_status === 'modifica_richiesta' && ev.change_note && <div className="row-sub" style={{ color: 'var(--magenta)' }}>«{ev.change_note}»</div>}
                 </div>
-                {st && <Badge tone={st.tone}>{st.l}</Badge>}
+                {st && <Badge tone={st.tone}>{t(st.l)}</Badge>}
                 {ev.type === 'call' && ev.request_status !== 'confermata' && (
-                  <button className="btn btn-ghost btn-sm" onClick={() => withdraw(ev)}>Ritira</button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => withdraw(ev)}>{t('Ritira')}</button>
                 )}
               </div>
             )

@@ -6,6 +6,7 @@ import { toast } from '../lib/toast'
 import { goto } from '../lib/route'
 import { Modal, Field, Input, Select, Tabs } from './ui'
 import Icon from './Icon'
+import { useLang } from '../lib/i18n'
 
 // "+" sempre a portata di pollice: nuovo impegno o nuova task con solo titolo e data.
 // I dettagli (note, allegati, priorità) si aggiungono dopo, dalla scheda completa.
@@ -33,6 +34,7 @@ export default function QuickAdd({ controlled, initialKind, onClose }: {
 } = {}) {
   const { session } = useAuth()
   const { athleteId } = useAthlete()
+  const { t } = useLang()
   const { canEvent, canTask } = useQuickAddPermissions()
   const [openState, setOpenState] = useState(false)
   const open = controlled ? true : openState
@@ -64,41 +66,41 @@ export default function QuickAdd({ controlled, initialKind, onClose }: {
     setBusy(false)
     if (error) { toast(error.message, 'err'); return }
     const dest = kind === 'event' ? 'agenda' : 'tasks'
-    toast(kind === 'event' ? 'Impegno aggiunto' : 'Task aggiunta', 'ok', { label: 'Apri', onClick: () => goto(dest) })
+    toast(kind === 'event' ? t('Impegno aggiunto') : t('Task aggiunta'), 'ok', { label: t('Apri'), onClick: () => goto(dest) })
     reset(); setOpen(false)
   }
 
   return (
     <>
       {!controlled && (
-        <button className="bell" onClick={() => setOpen(true)} aria-label="Aggiungi" title="Aggiungi impegno o task">
+        <button className="bell" onClick={() => setOpen(true)} aria-label={t('Aggiungi')} title={t('Aggiungi impegno o task')}>
           <Icon name="plus" size={18} />
         </button>
       )}
       {open && (
-        <Modal title="Aggiungi" onClose={() => setOpen(false)}
-          footer={<><button className="btn" onClick={() => setOpen(false)}>Annulla</button>
-            <button className="btn btn-primary" disabled={busy || !title.trim()} onClick={save}>{busy ? 'Salvo…' : 'Aggiungi'}</button></>}>
+        <Modal title={t('Aggiungi')} onClose={() => setOpen(false)}
+          footer={<><button className="btn" onClick={() => setOpen(false)}>{t('Annulla')}</button>
+            <button className="btn btn-primary" disabled={busy || !title.trim()} onClick={save}>{busy ? t('Salvo…') : t('Aggiungi')}</button></>}>
           {canEvent && canTask && (
-            <Tabs tabs={[{ key: 'event', label: 'Impegno' }, { key: 'task', label: 'Task' }]} value={kind} onChange={setKind} style={{ marginBottom: 16 }} />
+            <Tabs tabs={[{ key: 'event', label: t('Impegno') }, { key: 'task', label: t('Task') }]} value={kind} onChange={setKind} style={{ marginBottom: 16 }} />
           )}
-          <Field label={kind === 'event' ? 'Cosa' : 'Da fare'}>
+          <Field label={kind === 'event' ? t('Cosa') : t('Da fare')}>
             <Input autoFocus value={title} onChange={e => setTitle(e.target.value)}
-              placeholder={kind === 'event' ? 'Es. Visita medica, shooting, volo' : 'Es. Inviare contratto firmato'}
+              placeholder={kind === 'event' ? t('Es. Visita medica, shooting, volo') : t('Es. Inviare contratto firmato')}
               onKeyDown={e => { if (e.key === 'Enter') save() }} />
           </Field>
           {kind === 'event' ? (
             <div className="row2">
-              <Field label="Quando"><Input type="datetime-local" value={start} onChange={e => setStart(e.target.value)} /></Field>
-              <Field label="Dove (facoltativo)"><Input value={location} onChange={e => setLocation(e.target.value)} placeholder="Indirizzo o luogo" /></Field>
+              <Field label={t('Quando')}><Input type="datetime-local" value={start} onChange={e => setStart(e.target.value)} /></Field>
+              <Field label={t('Dove (facoltativo)')}><Input value={location} onChange={e => setLocation(e.target.value)} placeholder={t('Indirizzo o luogo')} /></Field>
             </div>
           ) : (
             <div className="row2">
-              <Field label="Scadenza (facoltativa)"><Input type="date" value={due} onChange={e => setDue(e.target.value)} /></Field>
-              <Field label="Chi">
+              <Field label={t('Scadenza (facoltativa)')}><Input type="date" value={due} onChange={e => setDue(e.target.value)} /></Field>
+              <Field label={t('Chi')}>
                 <Select value={assignee} onChange={e => setAssignee(e.target.value as 'auvi' | 'player')}>
                   <option value="auvi">AUVI</option>
-                  <option value="player">Atleta</option>
+                  <option value="player">{t('Atleta')}</option>
                 </Select>
               </Field>
             </div>

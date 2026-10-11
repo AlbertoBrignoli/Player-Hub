@@ -8,6 +8,7 @@ import { Empty, Spinner, Badge, Select, ConfirmButton } from '../components/ui'
 import Icon from '../components/Icon'
 import { fmtDate } from '../lib/format'
 import type { Doc } from '../lib/types'
+import { useLang } from '../lib/i18n'
 
 const CATS: Record<string, string> = { contratto: 'Contratto', identita: 'Identità', medico: 'Medico', fiscale: 'Fiscale', altro: 'Altro' }
 const BUCKET = 'crm-documents'
@@ -15,6 +16,7 @@ const BUCKET = 'crm-documents'
 export default function Documents() {
   const { athleteId } = useAthlete()
   const { session, isAdmin } = useAuth()
+  const { t } = useLang()
   const { rows, loading, reload } = useCollection<Doc>('crm_documents', { orderBy: 'created_at', match: { player_id: athleteId } })
   const [uploading, setUploading] = useState(false)
   const [cat, setCat] = useState('altro')
@@ -53,9 +55,9 @@ export default function Documents() {
     const { error, count } = await supabase.from('crm_documents')
       .delete({ count: 'exact' }).eq('id', d.id)
     if (error) { toast(error.message, 'err'); return }
-    if (!count) { toast('Non hai i permessi per eliminare questo documento.', 'err'); return }
+    if (!count) { toast(t('Non hai i permessi per eliminare questo documento.'), 'err'); return }
     if (d.file_path) await supabase.storage.from(BUCKET).remove([d.file_path])
-    toast(`"${d.name}" eliminato`)
+    toast(t('"{name}" eliminato').replace('{name}', d.name))
     reload()
   }
 
@@ -65,15 +67,15 @@ export default function Documents() {
     <div className="grid" style={{ gap: 16 }}>
       <div className="card flex between wrap gap">
         <div>
-          <div style={{ fontWeight: 650 }}>Carica un documento</div>
-          <div className="faint" style={{ fontSize: 12.5 }}>Archivio cifrato e privato · visibile solo a te e ad AUVI</div>
+          <div style={{ fontWeight: 650 }}>{t('Carica un documento')}</div>
+          <div className="faint" style={{ fontSize: 12.5 }}>{t('Archivio cifrato e privato · visibile solo a te e ad AUVI')}</div>
         </div>
         <div className="flex gap">
           <Select value={cat} onChange={e => setCat(e.target.value)} style={{ width: 150 }}>
-            {Object.entries(CATS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+            {Object.entries(CATS).map(([k, v]) => <option key={k} value={k}>{t(v)}</option>)}
           </Select>
           <button className="btn btn-primary" disabled={uploading} onClick={() => fileRef.current?.click()}>
-            <Icon name="upload" size={14} /> {uploading ? 'Carico…' : 'Carica file'}
+            <Icon name="upload" size={14} /> {uploading ? t('Carico…') : t('Carica file')}
           </button>
           <input ref={fileRef} type="file" hidden onChange={onFile} />
         </div>
@@ -81,18 +83,18 @@ export default function Documents() {
       {err && <div className="msg-err">{err}</div>}
 
       <div className="card">
-        {rows.length === 0 ? <Empty icon={<Icon name="archive" size={30} strokeWidth={1.4} />} title="Archivio vuoto" hint="Carica contratti, documenti d'identità, referti medici…" /> : (
+        {rows.length === 0 ? <Empty icon={<Icon name="archive" size={30} strokeWidth={1.4} />} title={t('Archivio vuoto')} hint={t("Carica contratti, documenti d'identità, referti medici…")} /> : (
           <div className="list">
             {rows.map(d => (
               <div className="row" key={d.id}>
                 <div style={{ width: 38, height: 38, borderRadius: 9, background: 'var(--surface-2)', display: 'grid', placeItems: 'center', fontSize: 17 }}>{fileIcon(d.mime)}</div>
                 <div className="row-main">
                   <div className="row-title">{d.name}</div>
-                  <div className="row-sub">{humanSize(d.size)} · caricato {fmtDate(d.created_at)}</div>
+                  <div className="row-sub">{humanSize(d.size)} · {t('caricato {date}').replace('{date}', fmtDate(d.created_at))}</div>
                 </div>
-                <Badge>{CATS[d.category] || d.category}</Badge>
-                <button className="btn btn-sm" onClick={() => open(d)}>Apri</button>
-                {canDelete(d) && <ConfirmButton onConfirm={() => remove(d)}>Elimina</ConfirmButton>}
+                <Badge>{CATS[d.category] ? t(CATS[d.category]) : d.category}</Badge>
+                <button className="btn btn-sm" onClick={() => open(d)}>{t('Apri')}</button>
+                {canDelete(d) && <ConfirmButton onConfirm={() => remove(d)}>{t('Elimina')}</ConfirmButton>}
               </div>
             ))}
           </div>

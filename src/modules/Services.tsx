@@ -121,9 +121,9 @@ export default function Services() {
   const attive = reqs.filter(r => r.status === 'aperta' || r.status === 'in_carico')
 
   const athleteName = (r: Req) =>
-    r.player_name || athletes.find(a => a.api_player_id === r.player_id)?.name || 'Atleta'
+    r.player_name || athletes.find(a => a.api_player_id === r.player_id)?.name || t('Atleta')
   const activeAthlete = athletes.find(a => a.api_player_id === athleteId)
-  const firstName = (activeAthlete?.name || '').trim().split(/\s+/)[0] || 'Atleta'
+  const firstName = (activeAthlete?.name || '').trim().split(/\s+/)[0] || t('Atleta')
 
   if (loading) return <Spinner />
 
@@ -142,12 +142,12 @@ export default function Services() {
       <div>
         <div style={{ ...kicker, color: T.muted, fontSize: 10, letterSpacing: 2.5 }}>{t('Servizi AUVI')}</div>
         <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: -0.6, marginTop: 4 }}>
-          {isPlayer ? `Ciao, ${firstName}` : 'Servizi e richieste'}
+          {isPlayer ? t('Ciao, {name}').replace('{name}', firstName) : t('Servizi e richieste')}
         </div>
         <div style={{ fontSize: 12.5, color: T.dim, marginTop: 4, maxWidth: 620 }}>
           {isPlayer
-            ? 'Scopri i servizi, apri la scheda del partner e mandaci la richiesta: pensiamo noi a seguirti fino alla fine.'
-            : 'Catalogo dei servizi proposti agli atleti e richieste da gestire.'}
+            ? t('Scopri i servizi, apri la scheda del partner e mandaci la richiesta: pensiamo noi a seguirti fino alla fine.')
+            : t('Catalogo dei servizi proposti agli atleti e richieste da gestire.')}
         </div>
       </div>
 
@@ -163,7 +163,7 @@ export default function Services() {
                 background: on ? T.text : 'transparent',
                 color: on ? '#fff' : T.dim, fontWeight: 800, fontSize: 13,
               }}>
-              {k === 'store' ? 'Store' : `Richieste${reqs.length ? ` · ${reqs.length}` : ''}`}
+              {k === 'store' ? 'Store' : `${t('Richieste')}${reqs.length ? ` · ${reqs.length}` : ''}`}
             </button>
           )
         })}
@@ -192,11 +192,11 @@ export default function Services() {
                   <div style={{ fontSize: 13.5, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {attive[0].service_title}
                   </div>
-                  <div style={{ fontSize: 11.5, color: T.dim }}>{st(attive[0].status).l}</div>
+                  <div style={{ fontSize: 11.5, color: T.dim }}>{t(st(attive[0].status).l)}</div>
                 </div>
               </div>
               <span style={{ fontSize: 12.5, color: T.dim, whiteSpace: 'nowrap' }}>
-                {attive.length} in corso →
+                {t('{n} in corso →').replace('{n}', String(attive.length))}
               </span>
             </button>
           )}
@@ -217,7 +217,7 @@ export default function Services() {
                       background: on ? T.text : 'transparent',
                       color: on ? '#fff' : T.dim, fontWeight: 700, fontSize: 12.5,
                     }}>
-                    {c}
+                    {c === 'Tutti' ? t('Tutti') : c}
                   </button>
                 )
               })}
@@ -334,7 +334,7 @@ function VerifiedCard({ s, onOpen }: { s: Service; onOpen: () => void }) {
           position: 'absolute', left: 10, top: 10, display: 'flex', alignItems: 'center', gap: 6,
           background: 'rgba(11,11,14,.72)', color: '#4ade80', padding: '4px 9px', borderRadius: 999,
           fontSize: 9.5, letterSpacing: 1.4, fontWeight: 800, textTransform: 'uppercase',
-        }}>● Verificato</span>
+        }}>● {t('Verificato')}</span>
       </div>
       <div style={{ padding: 16 }}>
         {s.hero_claim && (
@@ -343,7 +343,7 @@ function VerifiedCard({ s, onOpen }: { s: Service; onOpen: () => void }) {
         )}
         <div style={{ fontSize: 18, fontWeight: 800, marginTop: 4, letterSpacing: -0.3 }}>{svcField(s, 'title', lang)}</div>
         {s.partner_name && (
-          <div style={{ fontSize: 12.5, color: T.dim, marginTop: 2 }}>con {s.partner_name}</div>
+          <div style={{ fontSize: 12.5, color: T.dim, marginTop: 2 }}>{t('con {name}').replace('{name}', s.partner_name)}</div>
         )}
       </div>
     </button>
@@ -368,11 +368,11 @@ function StudioHero({ studio, onOpen }: { studio: Service[]; onOpen: (s: Service
         <div style={{ position: 'relative', color: '#fff' }}>
           <img src={AUVI_MARK} alt="AUVI" style={{ height: 22, opacity: .95 }} />
           <div style={{ ...kicker, fontSize: 10, color: T.yellow, letterSpacing: 2, marginTop: 14 }}>
-            Il team creativo della tua agenzia
+            {t('Il team creativo della tua agenzia')}
           </div>
           <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: -0.6, marginTop: 6 }}>Own your image.</div>
           <div style={{ fontSize: 12.5, color: '#d5d5de', marginTop: 4 }}>
-            Diamo forza all'immagine, valore alle storie.
+            {t("Diamo forza all'immagine, valore alle storie.")}
           </div>
         </div>
       </div>
@@ -425,13 +425,13 @@ function RequestsView({ reqs, isPlayer, isAdmin, openReq, athleteName, onManage,
       <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 16, padding: 20 }}>
         <Empty icon={<Icon name="inbox" size={30} strokeWidth={1.4} />}
           title={t("Nessuna richiesta")}
-          hint={isPlayer ? 'Apri lo Store e manda la tua prima richiesta.' : 'Non ci sono ancora richieste.'} />
+          hint={isPlayer ? t('Apri lo Store e manda la tua prima richiesta.') : t('Non ci sono ancora richieste.')} />
         {isPlayer && (
           <div style={{ textAlign: 'center', marginTop: 12 }}>
             <button onClick={onEmptyGoStore}
               style={{ padding: '10px 18px', borderRadius: 999, border: 'none', cursor: 'pointer',
                 background: T.text, color: '#fff', fontWeight: 800 }}>
-              Vai allo store
+              {t('Vai allo store')}
             </button>
           </div>
         )}
@@ -441,7 +441,7 @@ function RequestsView({ reqs, isPlayer, isAdmin, openReq, athleteName, onManage,
 
   return (
     <div className="grid" style={{ gap: 14 }}>
-      <div style={{ fontSize: 12.5, color: T.dim }}>{nCorso} in corso · {nFatte} completate</div>
+      <div style={{ fontSize: 12.5, color: T.dim }}>{t('{n} in corso · {m} completate').replace('{n}', String(nCorso)).replace('{m}', String(nFatte))}</div>
       <div className="flex gap" style={{ gap: 8 }}>
         {([['tutte', 'Tutte'], ['corso', 'In corso'], ['fatte', 'Completate']] as const).map(([k, l]) => {
           const on = filter === k
@@ -450,7 +450,7 @@ function RequestsView({ reqs, isPlayer, isAdmin, openReq, athleteName, onManage,
               style={{ padding: '7px 13px', borderRadius: 999, cursor: 'pointer',
                 border: `1px solid ${on ? T.text : T.border}`, background: on ? T.text : 'transparent',
                 color: on ? '#fff' : T.dim, fontWeight: 700, fontSize: 12 }}>
-              {l}
+              {t(l)}
             </button>
           )
         })}
@@ -475,12 +475,12 @@ function RequestsView({ reqs, isPlayer, isAdmin, openReq, athleteName, onManage,
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontSize: 14, fontWeight: 800 }}>{r.service_title}</div>
                     <div style={{ fontSize: 11.5, color: T.dim }}>
-                      {!isPlayer && `${athleteName(r)} · `}Inviata {fmtDate(r.created_at)}
+                      {!isPlayer && `${athleteName(r)} · `}{t('Inviata {date}').replace('{date}', fmtDate(r.created_at))}
                     </div>
                   </div>
                 </div>
                 <span style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', color: s.c, whiteSpace: 'nowrap' }}>
-                  {s.l}
+                  {t(s.l)}
                 </span>
               </div>
 
@@ -508,7 +508,7 @@ function RequestsView({ reqs, isPlayer, isAdmin, openReq, athleteName, onManage,
               </div>
               {expanded === r.id && (
                 <div style={{ marginTop: 12 }}>
-                  <RequestThread requestId={r.id} placeholder={isPlayer ? 'Scrivi al partner o allega un video…' : 'Scrivi all\'atleta e al partner…'} />
+                  <RequestThread requestId={r.id} placeholder={isPlayer ? t('Scrivi al partner o allega un video…') : t("Scrivi all'atleta e al partner…")} />
                 </div>
               )}
             </div>
@@ -568,13 +568,13 @@ export function ManageForm({ req, service, athlete, onClose, onSaved }: {
   }
 
   return (
-    <Modal title={`Gestisci · ${req.service_title}`} onClose={onClose}
+    <Modal title={`${t('Gestisci')} · ${req.service_title}`} onClose={onClose}
       footer={<>
         <button className="btn btn-ghost" onClick={onClose}>{t('Annulla')}</button>
-        <button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? 'Salvo…' : 'Salva'}</button>
+        <button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? t('Salvo…') : t('Salva')}</button>
       </>}>
       <div style={{ fontSize: 12.5, color: T.dim, marginBottom: 10 }}>
-        {athlete} · inviata {fmtDate(req.created_at)}
+        {athlete} · {t('inviata {date}').replace('{date}', fmtDate(req.created_at))}
       </div>
       {rows.length > 0 ? (
         <div style={{ background: 'var(--bg-2)', border: `1px solid ${T.border}`, borderRadius: 12, padding: 12, marginBottom: 12 }}>

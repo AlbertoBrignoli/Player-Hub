@@ -5,6 +5,7 @@ import { useAuth } from '../auth/AuthContext'
 import { toast } from '../lib/toast'
 import Icon from '../components/Icon'
 import { telUrl, whatsappUrl } from '../lib/ics'
+import { useLang } from '../lib/i18n'
 
 // I referenti dell'atleta: procuratore, assicuratore, preparatore.
 // Ognuno con la propria scheda e il canale di chat dedicato.
@@ -32,6 +33,7 @@ const kicker: React.CSSProperties = {
 export default function ReferentiCard({ goto }: { goto?: (r: string) => void }) {
   const { athleteId } = useAthlete()
   const { role } = useAuth()
+  const { t } = useLang()
   const [refs, setRefs] = useState<Ref[]>([])
   const [pending, setPending] = useState(0)
   const isPlayer = role === 'player'
@@ -119,21 +121,21 @@ export default function ReferentiCard({ goto }: { goto?: (r: string) => void }) 
         <div className="card" style={{ borderColor: 'var(--yellow)', marginBottom: 14 }}>
           <div className="flex between" style={{ alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <div>
-              <div style={{ ...kicker, fontSize: 10, color: 'var(--text)' }}>Da approvare</div>
+              <div style={{ ...kicker, fontSize: 10, color: 'var(--text)' }}>{t('Da approvare')}</div>
               <div style={{ fontSize: 14.5, fontWeight: 700, marginTop: 2 }}>
-                {pending} {pending === 1 ? 'professionista chiede' : 'professionisti chiedono'} accesso alla tua area
+                {(pending === 1 ? t('{n} professionista chiede accesso alla tua area') : t('{n} professionisti chiedono accesso alla tua area')).replace('{n}', String(pending))}
               </div>
             </div>
             <button className="btn btn-sm" style={{ background: 'var(--yellow)', color: 'var(--ink)', fontWeight: 800, border: 'none' }}
-              onClick={() => goto?.('access-requests')}>Vedi richieste</button>
+              onClick={() => goto?.('access-requests')}>{t('Vedi richieste')}</button>
           </div>
         </div>
       )}
 
       {refs.length > 0 && (
       <div className="flex between" style={{ alignItems: 'center', marginBottom: 12 }}>
-        <div style={{ ...kicker, color: 'var(--text-dim)' }}>I tuoi referenti</div>
-        <span className="faint" style={{ fontSize: 11.5 }}>Scrivi direttamente dall'app</span>
+        <div style={{ ...kicker, color: 'var(--text-dim)' }}>{t('I tuoi referenti')}</div>
+        <span className="faint" style={{ fontSize: 11.5 }}>{t("Scrivi direttamente dall'app")}</span>
       </div>
       )}
 
@@ -151,9 +153,9 @@ export default function ReferentiCard({ goto }: { goto?: (r: string) => void }) 
                       {r.name.slice(0, 1)}
                     </div>}
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ ...kicker, fontSize: 9.5, color: r.accent }}>{r.label}</div>
+                  <div style={{ ...kicker, fontSize: 9.5, color: r.accent }}>{t(r.label)}</div>
                   <div style={{ fontSize: 15, fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {r.name}
+                    {t(r.name)}
                   </div>
                   {r.detail && (
                     <div className="faint" style={{ fontSize: 11.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -166,16 +168,16 @@ export default function ReferentiCard({ goto }: { goto?: (r: string) => void }) 
               <div className="flex gap" style={{ marginTop: 12, flexWrap: 'wrap' }}>
                 <button className="btn btn-sm" style={{ background: 'var(--yellow)', color: 'var(--ink)', fontWeight: 800, border: 'none' }}
                   onClick={() => { try { sessionStorage.setItem('chat_channel', r.key) } catch {} ; goto?.('messages') }}>
-                  <Icon name="message" size={13} /> Scrivi
+                  <Icon name="message" size={13} /> {t('Scrivi')}
                 </button>
                 {r.email && (
                   <a className="btn btn-ghost btn-sm" href={`mailto:${r.email}`}>
-                    <Icon name="mail" size={13} /> Email
+                    <Icon name="mail" size={13} /> {t('Email')}
                   </a>
                 )}
                 {r.phone && (
                   <a className="btn btn-ghost btn-sm" href={telUrl(r.phone)}>
-                    <Icon name="smartphone" size={13} /> Chiama
+                    <Icon name="smartphone" size={13} /> {t('Chiama')}
                   </a>
                 )}
                 {r.phone && (
