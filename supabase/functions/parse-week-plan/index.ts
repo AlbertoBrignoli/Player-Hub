@@ -2,7 +2,8 @@
 // restituisce gli impegni come lista da spuntare, ciascuno con la sua data. Non scrive nel calendario:
 // lo fa l'atleta con "Salva" (RPC crm_save_week_plans, che divide per settimana).
 // Body {"plan_id":"<uuid>"}. Auth: JWT dell'utente (deve poter gestire l'atleta: RLS su crm_week_plans).
-// Chiave: secret ANTHROPIC_API_KEY delle Edge Functions (o cp_secrets.anthropic_api_key).
+// Chiave: secret ANTHROPIC_API_KEY delle Edge Functions (o cp_secrets.anthropic_api_key);
+// per una chiave personale serve anche ANTHROPIC_WORKSPACE_ID.
 // Senza chiave risponde 503 {error:"ai_not_configured"} e l'app passa all'inserimento a mano.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -20,6 +21,14 @@ async function apiKey(): Promise<string | null> {
   if (env) return env;
   const { data } = await service.from("cp_secrets").select("value").eq("key", "anthropic_api_key").maybeSingle();
   return data?.value || null;
+}
+
+// chiavi personali (non legate a un workspace) vogliono anche l'id del workspace: secret ANTHROPIC_WORKSPACE_ID
+function aiHeaders(key: string): Record<string, string> {
+  const h: Record<string, string> = { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" };
+  const ws = Deno.env.get("ANTHROPIC_WORKSPACE_ID");
+  if (ws) h["anthropic-workspace-id"] = ws;
+  return h;
 }
 
 function b64(buf: ArrayBuffer): string {
@@ -64,7 +73,21 @@ Deno.serve(async (req) => {
   try {
     const auth = req.headers.get("Authorization") || "";
     const user = createClient(URL, Deno.env.get("SUPABASE_ANON_KEY")!, { global: { headers: { Authorization: auth } } });
-    const { plan_id } = await req.json();
+    const { plan_id, probe } = await req.json();
+    // controllo di configurazione: dice solo se la chiave c'è ed è valida, non la espone mai
+    if (probe) {
+      const { data: sec } = await service.from("cp_secrets").select("value").eq("key", "sync_secret").maybeSingle();
+      if (!sec?.value || req.headers.get("x-sync-secret") !== sec.value) return json({ error: "forbidden" }, 403);
+      const k = await apiKey();
+      if (!k) return json({ configured: false });
+      const r = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: aiHeaders(k),
+        body: JSON.stringify({ model: MODEL, max_tokens: 1, messages: [{ role: "user", content: "ok" }] }),
+      });
+      const o = await r.json().catch(() => ({}));
+      return json({ configured: true, valid: r.ok, error: r.ok ? undefined : o?.error?.message });
+    }
     if (!plan_id) return json({ error: "plan_id mancante" }, 400);
 
     // RLS: legge il programma solo chi gestisce l'atleta
@@ -103,7 +126,7 @@ In warnings segnala in italiano solo ciò che è davvero illeggibile o ambiguo.`
 
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
-      headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+      headers: aiHeaders(key),
       body: JSON.stringify({
         model: MODEL,
         max_tokens: 8000,
