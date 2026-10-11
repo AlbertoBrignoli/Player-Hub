@@ -86,7 +86,7 @@ Deno.serve(async (req) => {
         body: JSON.stringify({ model: MODEL, max_tokens: 1, messages: [{ role: "user", content: "ok" }] }),
       });
       const o = await r.json().catch(() => ({}));
-      return json({ configured: true, valid: r.ok, error: r.ok ? undefined : o?.error?.message });
+      return json({ configured: true, valid: r.ok, workspace_id_set: !!Deno.env.get("ANTHROPIC_WORKSPACE_ID"), error: r.ok ? undefined : o?.error?.message });
     }
     if (!plan_id) return json({ error: "plan_id mancante" }, 400);
 
