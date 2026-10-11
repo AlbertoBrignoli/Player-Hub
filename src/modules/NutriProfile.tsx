@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../auth/AuthContext'
 import { Spinner, Field, Input, Textarea } from '../components/ui'
 import Icon from '../components/Icon'
+import { useLang } from '../lib/i18n'
 
 // Profilo del nutrizionista sportivo: lo compila lui, l'atleta lo vede in "Il mio team".
 const ACCENT = '#4D7C0F'
@@ -15,6 +16,7 @@ type P = Record<string, any>
 
 export default function NutriProfile() {
   const { session } = useAuth()
+  const { t } = useLang()
   const [p, setP] = useState<P>({})
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
@@ -31,10 +33,10 @@ export default function NutriProfile() {
 
   const set = (k: string, v: any) => setP(prev => ({ ...prev, [k]: v }))
   const F = (k: string, label: string, ph = '') => (
-    <Field label={label}><Input value={p[k] || ''} onChange={e => set(k, e.target.value)} placeholder={ph} /></Field>
+    <Field label={t(label)}><Input value={p[k] || ''} onChange={e => set(k, e.target.value)} placeholder={ph ? t(ph) : ''} /></Field>
   )
   const A = (k: string, label: string, ph = '', rows = 2) => (
-    <Field label={label}><Textarea rows={rows} value={p[k] || ''} onChange={e => set(k, e.target.value)} placeholder={ph} /></Field>
+    <Field label={t(label)}><Textarea rows={rows} value={p[k] || ''} onChange={e => set(k, e.target.value)} placeholder={ph ? t(ph) : ''} /></Field>
   )
 
   const photoRef = useRef<HTMLInputElement>(null)
@@ -49,7 +51,7 @@ export default function NutriProfile() {
     const { data } = supabase.storage.from('agent-profiles').getPublicUrl(path)
     set('photo_url', data.publicUrl)
     setUpl(false)
-    setMsg('Immagine caricata — ricordati di salvare.')
+    setMsg(t('Immagine caricata — ricordati di salvare.'))
   }
 
   async function save() {
@@ -58,7 +60,7 @@ export default function NutriProfile() {
     const { error } = await supabase.from('crm_nutri_profile')
       .upsert({ ...p, nutri_id: uid, updated_at: new Date().toISOString() })
     setBusy(false)
-    setMsg(error ? error.message : 'Profilo salvato.')
+    setMsg(error ? error.message : t('Profilo salvato.'))
   }
 
   if (loading) return <Spinner />
@@ -75,15 +77,15 @@ export default function NutriProfile() {
                 {(p.name || 'N').slice(0, 1)}
               </div>}
           <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ ...kicker, color: ACCENT }}>Nutrizionista sportivo</div>
-            <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: -0.3, marginTop: 2 }}>{p.name || 'Il mio profilo'}</div>
-            <div className="faint" style={{ fontSize: 12.5, marginTop: 2 }}>{p.title || 'Completa i tuoi dati: il tuo nome compare sulle indicazioni che dai agli atleti'}</div>
+            <div style={{ ...kicker, color: ACCENT }}>{t('Nutrizionista sportivo')}</div>
+            <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: -0.3, marginTop: 2 }}>{p.name || t('Il mio profilo')}</div>
+            <div className="faint" style={{ fontSize: 12.5, marginTop: 2 }}>{p.title || t('Completa i tuoi dati: il tuo nome compare sulle indicazioni che dai agli atleti')}</div>
           </div>
         </div>
       </div>
 
       <div className="card">
-        <div className="card-head"><div className="card-title">Anagrafica e profilo professionale</div></div>
+        <div className="card-head"><div className="card-title">{t('Anagrafica e profilo professionale')}</div></div>
         <div className="grid g2" style={{ gap: 10 }}>
           {F('name', 'Nome e cognome', 'Es. Dott.ssa Maria Rossi')}
           {F('title', 'Titolo professionale', 'Es. Biologa nutrizionista dello sport')}
@@ -92,10 +94,10 @@ export default function NutriProfile() {
           {F('city', 'Città', 'Città, paese')}
           {F('years_experience', 'Anni di esperienza')}
         </div>
-        <Field label="Foto profilo">
+        <Field label={t('Foto profilo')}>
           <div className="flex gap" style={{ alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <button className="btn btn-sm" disabled={upl} onClick={() => photoRef.current?.click()}>
-              <Icon name="upload" size={13} /> {upl ? 'Carico…' : 'Carica foto'}
+              <Icon name="upload" size={13} /> {upl ? t('Carico…') : t('Carica foto')}
             </button>
             <input ref={photoRef} type="file" accept="image/*" hidden
               onChange={e => { const f = e.target.files?.[0]; if (f) upload(f); e.target.value = '' }} />
@@ -105,7 +107,7 @@ export default function NutriProfile() {
       </div>
 
       <div className="card">
-        <div className="card-head"><div className="card-title">Contatti</div></div>
+        <div className="card-head"><div className="card-title">{t('Contatti')}</div></div>
         <div className="grid g2" style={{ gap: 10 }}>
           {F('email', 'Email')}
           {F('phone', 'Telefono')}
@@ -115,7 +117,7 @@ export default function NutriProfile() {
       </div>
 
       <div className="card">
-        <div className="card-head"><div className="card-title">Esperienza e specializzazioni</div></div>
+        <div className="card-head"><div className="card-title">{t('Esperienza e specializzazioni')}</div></div>
         {F('clubs', 'Club e atleti seguiti', 'Es. AEK, Nazionale U21…')}
         {A('specialties', 'Specializzazioni', 'Es. composizione corporea, integrazione, recupero, gestione del peso, trasferte…')}
         {A('bio', 'Presentazione', 'Percorso, metodo, approccio…', 4)}
@@ -123,7 +125,7 @@ export default function NutriProfile() {
 
       <div className="flex gap" style={{ alignItems: 'center', gap: 12, position: 'sticky', bottom: 0 }}>
         <button className="btn btn-primary" disabled={busy} onClick={save}>
-          <Icon name="check" size={14} /> {busy ? 'Salvo…' : 'Salva profilo'}
+          <Icon name="check" size={14} /> {busy ? t('Salvo…') : t('Salva profilo')}
         </button>
         {msg && <span className="faint" style={{ fontSize: 13 }}>{msg}</span>}
       </div>

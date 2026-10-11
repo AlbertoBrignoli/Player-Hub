@@ -7,6 +7,7 @@ import { supabase } from '../lib/supabase'
 import { toast } from '../lib/toast'
 import { Modal } from './ui'
 import Icon from './Icon'
+import { useLang } from '../lib/i18n'
 
 type Item = { key: string; on: boolean; date: string; start: string; end: string; type: string; title: string; location: string; notes: string }
 type Plan = { id: string; week_start: string; status: string; file_path: string | null; file_name: string | null }
@@ -23,7 +24,6 @@ export function mondayOf(d: Date) { const x = new Date(d); x.setHours(12, 0, 0, 
 // da venerdì in poi il programma che serve è quello della settimana dopo
 export function defaultWeek(now = new Date()) { const m = mondayOf(now); if (now.getDay() === 5 || now.getDay() === 6 || now.getDay() === 0) m.setDate(m.getDate() + 7); return iso(m) }
 const addDays = (s: string, n: number) => { const d = new Date(s + 'T12:00:00'); d.setDate(d.getDate() + n); return iso(d) }
-const label = (s: string) => new Date(s + 'T12:00:00').toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })
 const weekOf = (s: string) => iso(mondayOf(new Date(s + 'T12:00:00')))
 let seq = 0
 const mk = (p: Partial<Item>): Item => ({ key: 'i' + (++seq), on: true, date: '', start: '', end: '', type: 'allenamento', title: '', location: '', notes: '', ...p })
@@ -38,6 +38,8 @@ function partsInTz(isoStr: string, tz: string) {
 export default function WeekPlanModal({ playerId, tz, onClose, onSaved }: {
   playerId: number; tz: string; onClose: () => void; onSaved: () => void
 }) {
+  const { t, lang } = useLang()
+  const label = (d: string) => new Date(d + 'T12:00:00').toLocaleDateString(lang === 'en' ? 'en-GB' : 'it-IT', { day: 'numeric', month: 'short' })
   const [week, setWeek] = useState(defaultWeek())
   const [step, setStep] = useState<'start' | 'reading' | 'review'>('start')
   const [plan, setPlan] = useState<Plan | null>(null)
@@ -64,7 +66,7 @@ export default function WeekPlanModal({ playerId, tz, onClose, onSaved }: {
       const s = partsInTz(e.start_at, tz)
       return mk({ date: s.date, start: s.time, end: e.end_at ? partsInTz(e.end_at, tz).time : '', type: e.type, title: e.title, location: e.location || '', notes: e.notes || '' })
     }))
-    setNote('Programma già salvato: modifica e salva di nuovo, il team riceve l\'aggiornamento.')
+    setNote(t("Programma già salvato: modifica e salva di nuovo, il team riceve l'aggiornamento."))
     setStep('review')
   }
 
@@ -72,7 +74,7 @@ export default function WeekPlanModal({ playerId, tz, onClose, onSaved }: {
     let file_path: string | null = null
     if (file && file.type.startsWith('image/')) file = await shrinkImage(file)
     if (file) {
-      if (file.size > 20 * 1048576) { toast('File troppo grande (max 20 MB): fai una foto del programma', 'err'); return null }
+      if (file.size > 20 * 1048576) { toast(t('File troppo grande (max 20 MB): fai una foto del programma'), 'err'); return null }
       file_path = `${playerId}/${Date.now()}-${file.name.replace(/[^\w.\-]+/g, '_')}`
       const up = await supabase.storage.from('week-plans').upload(file_path, file, { upsert: false, contentType: file.type || undefined })
       if (up.error) { toast(up.error.message, 'err'); return null }
@@ -98,8 +100,8 @@ export default function WeekPlanModal({ playerId, tz, onClose, onSaved }: {
     if (error || !data) {
       setItems([])
       setNote(code === 'ai_not_configured'
-        ? 'Lettura automatica non ancora attiva: aggiungi gli impegni qui sotto, bastano pochi tocchi.'
-        : 'Non sono riuscito a leggere il programma: aggiungi gli impegni qui sotto o riprova con una foto più nitida.')
+        ? t('Lettura automatica non ancora attiva: aggiungi gli impegni qui sotto, bastano pochi tocchi.')
+        : t('Non sono riuscito a leggere il programma: aggiungi gli impegni qui sotto o riprova con una foto più nitida.'))
       setStep('review'); return
     }
     const list = ((data as any).items || []) as any[]
@@ -107,7 +109,7 @@ export default function WeekPlanModal({ playerId, tz, onClose, onSaved }: {
       date: it.date, start: (it.start || '').slice(0, 5), end: (it.end || '').slice(0, 5),
       type: TYPES[it.type] ? it.type : 'allenamento', title: it.title || '', location: it.location || '', notes: it.notes || '',
     })))
-    setNote((data as any).warnings || (list.length ? '' : 'Nel documento non ho trovato impegni con un orario: aggiungili qui sotto.'))
+    setNote((data as any).warnings || (list.length ? '' : t('Nel documento non ho trovato impegni con un orario: aggiungili qui sotto.')))
     setStep('review')
   }
 
@@ -137,7 +139,7 @@ export default function WeekPlanModal({ playerId, tz, onClose, onSaved }: {
     setBusy(false)
     if (error) { toast(error.message, 'err'); return }
     const r = (data || {}) as { events?: number; weeks?: number }
-    toast(`Programma salvato: ${r.events ?? keep.length} impegni${(r.weeks || 1) > 1 ? ` in ${r.weeks} settimane` : ''}, il tuo team è avvisato`)
+    toast(((r.weeks || 1) > 1 ? t('Programma salvato: {n} impegni in {w} settimane, il tuo team è avvisato') : t('Programma salvato: {n} impegni, il tuo team è avvisato')).replace('{n}', String(r.events ?? keep.length)).replace('{w}', String(r.weeks)))
     onSaved()
   }
 
@@ -146,17 +148,17 @@ export default function WeekPlanModal({ playerId, tz, onClose, onSaved }: {
   const tickWeek = (w: string, on: boolean) => setItems(xs => xs.map(x => weekOf(x.date) === w ? { ...x, on } : x))
 
   return (
-    <Modal title="Programma della settimana" onClose={onClose}
+    <Modal title={t('Programma della settimana')} onClose={onClose}
       footer={step === 'review' ? (
         <>
-          <button className="btn btn-ghost" onClick={onClose}>Annulla</button>
-          <button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? 'Salvo…' : `Salva programma · ${onCount}`}</button>
+          <button className="btn btn-ghost" onClick={onClose}>{t('Annulla')}</button>
+          <button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? t('Salvo…') : `${t('Salva programma')} · ${onCount}`}</button>
         </>
       ) : undefined}>
       {step === 'start' && (
         <div className="grid" style={{ gap: 14 }}>
           <div>
-            <div className="kv-title">Settimana</div>
+            <div className="kv-title">{t('Settimana')}</div>
             <div className="flex gap wrap" style={{ gap: 6 }}>
               {[-7, 0, 7].map(off => {
                 const w = addDays(defaultWeek(), off)
@@ -171,34 +173,34 @@ export default function WeekPlanModal({ playerId, tz, onClose, onSaved }: {
           {existing ? (
             <div className="wp-existing">
               <Icon name="check" size={16} />
-              <div style={{ flex: 1 }}>Hai già salvato il programma di questa settimana.</div>
-              <button className="btn btn-sm" onClick={() => openExisting(existing)}>Modifica</button>
+              <div style={{ flex: 1 }}>{t('Hai già salvato il programma di questa settimana.')}</div>
+              <button className="btn btn-sm" onClick={() => openExisting(existing)}>{t('Modifica')}</button>
             </div>
           ) : null}
           <label className="wp-drop">
             <input type="file" accept="application/pdf,image/*" hidden disabled={busy}
               onChange={e => { const f = e.target.files?.[0]; if (f) upload(f); e.target.value = '' }} />
             <Icon name="upload" size={26} />
-            <b>{busy ? 'Carico…' : 'Carica il PDF o fai una foto'}</b>
-            <span>Il programma che ti manda il club: lo leggo io e ti mostro gli impegni da confermare.</span>
+            <b>{busy ? t('Carico…') : t('Carica il PDF o fai una foto')}</b>
+            <span>{t('Il programma che ti manda il club: lo leggo io e ti mostro gli impegni da confermare.')}</span>
           </label>
-          <button className="btn btn-ghost btn-sm" style={{ justifySelf: 'center' }} disabled={busy} onClick={manual}>Inseriscilo a mano</button>
+          <button className="btn btn-ghost btn-sm" style={{ justifySelf: 'center' }} disabled={busy} onClick={manual}>{t('Inseriscilo a mano')}</button>
         </div>
       )}
 
       {step === 'reading' && (
         <div style={{ textAlign: 'center', padding: '24px 0' }}>
           <div className="spinner" style={{ margin: '0 auto' }} />
-          <div style={{ fontWeight: 700, marginTop: 12 }}>Leggo il programma…</div>
-          <div className="faint" style={{ fontSize: 12.5 }}>Giorni, orari e luoghi di tutte le settimane: di solito meno di un minuto.</div>
+          <div style={{ fontWeight: 700, marginTop: 12 }}>{t('Leggo il programma…')}</div>
+          <div className="faint" style={{ fontSize: 12.5 }}>{t('Giorni, orari e luoghi di tutte le settimane: di solito meno di un minuto.')}</div>
         </div>
       )}
 
       {step === 'review' && (
         <div className="grid" style={{ gap: 12 }}>
           <div className="faint" style={{ fontSize: 12.5 }}>
-            {weeks.length > 1 ? `Ho trovato ${weeks.length} settimane` : `Settimana ${label(week)} – ${label(addDays(week, 6))}`} · ✓ entra nel calendario, ✕ resta fuori. Correggi un orario se serve.
-            {plan?.file_path && <> · <button className="link-btn" onClick={openFile}>vedi il file</button></>}
+            {weeks.length > 1 ? t('Ho trovato {n} settimane').replace('{n}', String(weeks.length)) : `${t('Settimana')} ${label(week)} – ${label(addDays(week, 6))}`} · {t('✓ entra nel calendario, ✕ resta fuori. Correggi un orario se serve.')}
+            {plan?.file_path && <> · <button className="link-btn" onClick={openFile}>{t('vedi il file')}</button></>}
           </div>
           {note && <div className="wp-note">{note}</div>}
           {weeks.map(w => {
@@ -207,11 +209,11 @@ export default function WeekPlanModal({ playerId, tz, onClose, onSaved }: {
             return (
               <div key={w} className="wp-week">
                 <div className="wp-week-h">
-                  <div><b>Settimana {label(w)} – {label(addDays(w, 6))}</b><span className="faint"> · {on}/{wi.length} da inserire</span></div>
+                  <div><b>{t('Settimana')} {label(w)} – {label(addDays(w, 6))}</b><span className="faint"> · {on}/{wi.length} {t('da inserire')}</span></div>
                   {wi.length > 0 && (
                     <div className="flex" style={{ gap: 6 }}>
-                      <button className="btn btn-sm" onClick={() => tickWeek(w, true)}>✓ Tutto</button>
-                      <button className="btn btn-sm btn-ghost" onClick={() => tickWeek(w, false)}>✕ Niente</button>
+                      <button className="btn btn-sm" onClick={() => tickWeek(w, true)}>✓ {t('Tutto')}</button>
+                      <button className="btn btn-sm btn-ghost" onClick={() => tickWeek(w, false)}>✕ {t('Niente')}</button>
                     </div>
                   )}
                 </div>
@@ -220,25 +222,25 @@ export default function WeekPlanModal({ playerId, tz, onClose, onSaved }: {
                   return (
                     <div key={d} className="wp-day">
                       <div className="wp-day-h">
-                        <span>{WD[i]} <span className="faint">{label(d)}</span></span>
-                        <button className="btn btn-ghost btn-sm" onClick={() => setItems(xs => [...xs, mk({ date: d, start: '10:00', title: 'Allenamento' })])}>+ Aggiungi</button>
+                        <span>{t(WD[i])} <span className="faint">{label(d)}</span></span>
+                        <button className="btn btn-ghost btn-sm" onClick={() => setItems(xs => [...xs, mk({ date: d, start: '10:00', title: t('Allenamento') })])}>+ {t('Aggiungi')}</button>
                       </div>
-                      {rows.length === 0 ? <div className="faint" style={{ fontSize: 12 }}>Riposo</div> : rows.map(r => (
+                      {rows.length === 0 ? <div className="faint" style={{ fontSize: 12 }}>{t('Riposo')}</div> : rows.map(r => (
                         <div key={r.key} className={`wp-row ${r.on ? '' : 'off'}`}>
                           <button type="button" className={`wp-tick ${r.on ? 'on' : ''}`} aria-pressed={r.on}
-                            aria-label={r.on ? 'Inserito: tocca per togliere' : 'Escluso: tocca per inserire'}
+                            aria-label={r.on ? t('Inserito: tocca per togliere') : t('Escluso: tocca per inserire')}
                             onClick={() => set(r.key, { on: !r.on })}>{r.on ? '✓' : '✕'}</button>
                           <div className="wp-fields">
                             <div className="wp-line">
-                              <input className="input wp-time" type="time" value={r.start} aria-label="Inizio" onChange={e => set(r.key, { start: e.target.value })} />
+                              <input className="input wp-time" type="time" value={r.start} aria-label={t('Inizio')} onChange={e => set(r.key, { start: e.target.value })} />
                               <span className="faint">–</span>
-                              <input className="input wp-time" type="time" value={r.end} aria-label="Fine" onChange={e => set(r.key, { end: e.target.value })} />
+                              <input className="input wp-time" type="time" value={r.end} aria-label={t('Fine')} onChange={e => set(r.key, { end: e.target.value })} />
                             </div>
                             <div className="wp-line2">
-                              <select className="input" value={r.type} aria-label="Tipo" onChange={e => set(r.key, { type: e.target.value })}>
-                                {Object.entries(TYPES).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+                              <select className="input" value={r.type} aria-label={t('Tipo')} onChange={e => set(r.key, { type: e.target.value })}>
+                                {Object.entries(TYPES).map(([k, l]) => <option key={k} value={k}>{t(l)}</option>)}
                               </select>
-                              <input className="input" value={r.title} placeholder="Titolo" onChange={e => set(r.key, { title: e.target.value })} />
+                              <input className="input" value={r.title} placeholder={t('Titolo')} onChange={e => set(r.key, { title: e.target.value })} />
                             </div>
                             {(r.location || r.notes) && <div className="faint" style={{ fontSize: 11.5 }}>{[r.location, r.notes].filter(Boolean).join(' · ')}</div>}
                           </div>

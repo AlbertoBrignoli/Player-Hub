@@ -2,6 +2,7 @@
 // gli altri sotto; scrivendo filtra, e se la voce non c'è la aggiunge (resta in memoria).
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Icon from './Icon'
+import { useLang } from '../lib/i18n'
 import { slotLabel, splitQty, type LibItem } from '../lib/nutriLibrary'
 
 export function NutriPick({ items, slot, exclude, placeholder, onPick }: {
@@ -11,6 +12,7 @@ export function NutriPick({ items, slot, exclude, placeholder, onPick }: {
   placeholder: string
   onPick: (v: { name: string; qty: string }) => void
 }) {
+  const { t } = useLang()
   const [q, setQ] = useState('')
   const [open, setOpen] = useState(false)
   const [hi, setHi] = useState(0)
@@ -28,7 +30,7 @@ export function NutriPick({ items, slot, exclude, placeholder, onPick }: {
     return items.filter(i => {
       const k = i.name.toLowerCase()
       if (exclude.includes(k)) return false
-      if (s && !k.includes(s)) return false
+      if (s && !k.includes(s) && !t(i.name).toLowerCase().includes(s)) return false
       return true
     }).sort((a, b) => Number(b.category === slot) - Number(a.category === slot))
       // stesso alimento in più momenti: in tendina una volta sola (vince quello del momento scelto)
@@ -53,7 +55,7 @@ export function NutriPick({ items, slot, exclude, placeholder, onPick }: {
   }
   const row = (i: LibItem, idx: number) => (
     <button key={i.id} type="button" className={'np-opt' + (idx === hi ? ' hi' : '')} onMouseEnter={() => setHi(idx)} onClick={() => pick(i)}>
-      <span>{i.name}</span><em>{(i.kind === 'integratore' ? i.dose : i.details) || ''}</em>
+      <span>{t(i.name)}</span><em>{t((i.kind === 'integratore' ? i.dose : i.details) || '')}</em>
     </button>
   )
 
@@ -69,14 +71,14 @@ export function NutriPick({ items, slot, exclude, placeholder, onPick }: {
         <div className="np-list">
           {isNew && (
             <button type="button" className="np-opt np-new" onClick={() => pick()}>
-              <span>+ Aggiungi “{typed.name}”{typed.qty ? ` · ${typed.qty}` : ''}</span><em>resta nel tuo menu</em>
+              <span>+ {t('Aggiungi')} “{typed.name}”{typed.qty ? ` · ${typed.qty}` : ''}</span><em>{t('resta nel tuo menu')}</em>
             </button>
           )}
-          {mine.length > 0 && <div className="np-h">{slotLabel(slot)}</div>}
+          {mine.length > 0 && <div className="np-h">{t(slotLabel(slot))}</div>}
           {mine.map((i, k) => row(i, k))}
-          {others.length > 0 && <div className="np-h">Altri momenti</div>}
+          {others.length > 0 && <div className="np-h">{t('Altri momenti')}</div>}
           {others.map((i, k) => row(i, mine.length + k))}
-          {flat.length === 0 && !isNew && <div className="np-empty">Scrivi per aggiungere una voce nuova</div>}
+          {flat.length === 0 && !isNew && <div className="np-empty">{t('Scrivi per aggiungere una voce nuova')}</div>}
         </div>
       )}
     </div>

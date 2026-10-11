@@ -516,13 +516,14 @@ export function EvCard({ e, focus, canEdit, onEdit, onDel, canConfirm, onConfirm
   goto?: (r: string) => void; tagOf: TagOf; onOpenMatch?: (e: AgItem) => void
   canNutri?: boolean; onNutri?: () => void
 }) {
-  const { t: tr } = useLang()
+  const { t: tr, lang } = useLang()
+  const loc = lang === 'en' ? 'en-GB' : 'it-IT'
   const [open, setOpen] = useState(false)
   const t = typeFor(e)
   const isTraining = e.type === 'allenamento' && !!e.fitness_program_id
   const d = new Date(e.start_at)
-  const day = d.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' })
-  const time = d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
+  const day = d.toLocaleDateString(loc, { weekday: 'short', day: 'numeric', month: 'short' })
+  const time = d.toLocaleTimeString(loc, { hour: '2-digit', minute: '2-digit' })
   // chi ha proposto e si e' visto rimandare indietro la proposta la corregge e la ripropone
   const canRepropose = isPro && !!uid && e.created_by === uid && (e.request_status === 'modifica_richiesta' || e.request_status === 'rifiutata')
   return (
@@ -532,7 +533,7 @@ export function EvCard({ e, focus, canEdit, onEdit, onDel, canConfirm, onConfirm
       </span>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div className="flex between" style={{ alignItems: 'flex-start', gap: 10 }}>
-          <div style={{ fontSize: 14.5, fontWeight: 700, lineHeight: 1.3, minWidth: 0, overflowWrap: 'anywhere' }}>{e.title}</div>
+          <div style={{ fontSize: 14.5, fontWeight: 700, lineHeight: 1.3, minWidth: 0, overflowWrap: 'anywhere' }}>{tr(e.title)}</div>
           <span style={{ fontSize: 10.5, color: t.c, fontWeight: 700, textTransform: 'uppercase', letterSpacing: .6, textAlign: 'right', maxWidth: '45%' }}>{tr(t.l)}</span>
         </div>
         <div className="flex gap" style={{ alignItems: 'center', marginTop: 4, flexWrap: 'wrap', gap: 10 }}>
@@ -831,15 +832,15 @@ function NutritionBlock({ n }: { n: EventNutrition }) {
   const foods = n.foods || []
   return (
     <div className="nut-box">
-      <div className="nut-head"><Icon name="layers" size={13} /> {n.slot ? slotLabel(n.slot) : tr('Piano alimentare')}{n.by_name ? <span className="faint"> · {n.by_name}</span> : null}</div>
+      <div className="nut-head"><Icon name="layers" size={13} /> {n.slot ? tr(slotLabel(n.slot)) : tr('Piano alimentare')}{n.by_name ? <span className="faint"> · {n.by_name}</span> : null}</div>
       {foods.length > 0
-        ? <div className="nut-sups" style={{ marginTop: 6 }}>{foods.map((f, i) => <span key={i} className="nut-sup nut-food"><b>{f.name}</b>{f.qty ? ' · ' + f.qty : ''}</span>)}</div>
+        ? <div className="nut-sups" style={{ marginTop: 6 }}>{foods.map((f, i) => <span key={i} className="nut-sup nut-food"><b>{tr(f.name)}</b>{f.qty ? ' · ' + tr(f.qty) : ''}</span>)}</div>
         : n.menu && <div className="nut-menu">{n.menu}</div>}
       {foods.length > 0 && n.free && <div className="nut-menu">{n.free}</div>}
       {sup.length > 0 && (
         <div className="nut-sups">
           {sup.map((x, i) => (
-            <span key={i} className="nut-sup"><Icon name="plus" size={11} /> <b>{x.name}</b>{x.dose ? ' · ' + x.dose : ''}{x.when ? ' · ' + x.when : ''}</span>
+            <span key={i} className="nut-sup"><Icon name="plus" size={11} /> <b>{tr(x.name)}</b>{x.dose ? ' · ' + tr(x.dose) : ''}{x.when ? ' · ' + tr(x.when) : ''}</span>
           ))}
         </div>
       )}
@@ -854,7 +855,7 @@ type Sup = { name: string; dose: string; when: string }
 // Piano alimentare di un impegno: momento della giornata, alimenti e integratori dal menu a tendina
 // del nutrizionista (il suo "Il mio menu"); le voci nuove scritte qui restano nel suo menu.
 function NutritionModal({ ev, onClose, onSaved }: { ev: EventItem; onClose: () => void; onSaved: () => void }) {
-  const { t: tr } = useLang()
+  const { t: tr, lang } = useLang()
   const n = ev.nutrition || {}
   const lib = useNutriLibrary()
   const [slot, setSlot] = useState(n.slot || mealCategoryOf(ev.title, ev.type))
@@ -863,7 +864,7 @@ function NutritionModal({ ev, onClose, onSaved }: { ev: EventItem; onClose: () =
   const [note, setNote] = useState(n.note || '')
   const [sups, setSups] = useState<Sup[]>((n.supplements || []).map(s => ({ name: s.name, dose: s.dose || '', when: s.when || '' })))
   const [busy, setBusy] = useState(false)
-  const when = new Date(ev.start_at).toLocaleString('it-IT', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+  const when = new Date(ev.start_at).toLocaleString(lang === 'en' ? 'en-GB' : 'it-IT', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
   const setFood = (i: number, patch: Partial<Food>) => setFoods(xs => xs.map((x, j) => j === i ? { ...x, ...patch } : x))
   const setSup = (i: number, patch: Partial<Sup>) => setSups(xs => xs.map((x, j) => j === i ? { ...x, ...patch } : x))
   const foodLib = lib.items.filter(i => i.kind === 'cibo')
@@ -892,22 +893,22 @@ function NutritionModal({ ev, onClose, onSaved }: { ev: EventItem; onClose: () =
       <style>{NP_CSS}</style>
       <div className="grid" style={{ gap: 14 }}>
         <div className="flex between" style={{ alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-          <div className="faint" style={{ fontSize: 12.5 }}><b style={{ color: 'var(--text)' }}>{ev.title}</b> · {when}</div>
+          <div className="faint" style={{ fontSize: 12.5 }}><b style={{ color: 'var(--text)' }}>{tr(ev.title)}</b> · {when}</div>
           <Select value={slot} onChange={e => setSlot(e.target.value)} aria-label={tr('Momento')} style={{ width: 'auto' }}>
-            {SLOTS.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
+            {SLOTS.map(s => <option key={s.key} value={s.key}>{tr(s.label)}</option>)}
           </Select>
         </div>
 
         <div className="grid" style={{ gap: 8 }}>
           <span style={{ fontSize: 12.5, fontWeight: 700 }}>{tr('Alimenti')}</span>
           <NutriPick items={foodLib} slot={slot} exclude={foods.map(f => f.name.toLowerCase())}
-            placeholder={`${tr('Scegli o scrivi un alimento')} · ${slotLabel(slot)}`}
+            placeholder={`${tr('Scegli o scrivi un alimento')} · ${tr(slotLabel(slot))}`}
             onPick={v => setFoods(xs => [...xs, v])} />
           {foods.length > 0 && (
             <div className="np-sel">
               {foods.map((f, i) => (
                 <div key={i} className="np-row">
-                  <b>{f.name}</b>
+                  <b>{tr(f.name)}</b>
                   <input value={f.qty} onChange={e => setFood(i, { qty: e.target.value })} placeholder={tr('Quantità')} aria-label={tr('Quantità')} />
                   <button className="ev-ic ev-ic-danger" onClick={() => setFoods(xs => xs.filter((_, j) => j !== i))} aria-label={tr('Togli')}><Icon name="x" size={15} /></button>
                 </div>
@@ -926,7 +927,7 @@ function NutritionModal({ ev, onClose, onSaved }: { ev: EventItem; onClose: () =
             <div className="np-sel">
               {sups.map((x, i) => (
                 <div key={i} className="np-row sup">
-                  <b>{x.name}</b>
+                  <b>{tr(x.name)}</b>
                   <input value={x.dose} onChange={e => setSup(i, { dose: e.target.value })} placeholder={tr('Dose')} aria-label={tr('Dose')} />
                   <select value={x.when} onChange={e => setSup(i, { when: e.target.value })} aria-label={tr('Quando')}>
                     <option value="">{tr('Quando…')}</option>
