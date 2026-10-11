@@ -190,7 +190,7 @@ export default function WeekPlanModal({ playerId, tz, onClose, onSaved }: {
         <div style={{ textAlign: 'center', padding: '24px 0' }}>
           <div className="spinner" style={{ margin: '0 auto' }} />
           <div style={{ fontWeight: 700, marginTop: 12 }}>Leggo il programma…</div>
-          <div className="faint" style={{ fontSize: 12.5 }}>Giorni, orari e luoghi: pochi secondi.</div>
+          <div className="faint" style={{ fontSize: 12.5 }}>Giorni, orari e luoghi di tutte le settimane: di solito meno di un minuto.</div>
         </div>
       )}
 
