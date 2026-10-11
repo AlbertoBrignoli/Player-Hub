@@ -12,7 +12,8 @@ import type { EventItem, EventAttachment, EventComment, EventNutrition } from '.
 import { downloadIcs, mapsUrl } from '../lib/ics'
 import { useRouteParam } from '../lib/route'
 import WeekPlanModal from '../components/WeekPlan'
-import { useNutriLibrary, mealCategoryOf, MEAL_CATS, SUP_WHEN, type LibItem } from '../lib/nutriLibrary'
+import { useNutriLibrary, mealCategoryOf, SLOTS, SUP_WHEN, slotLabel } from '../lib/nutriLibrary'
+import { NutriPick, NP_CSS } from '../components/NutriPick'
 
 const DOC_BUCKET = 'crm-documents'
 function attSize(n?: number | null) {
@@ -272,16 +273,9 @@ const AG_CSS = `
 .nut-head .faint { text-transform: none; letter-spacing: 0; font-weight: 600; }
 .nut-menu { font-size: 13px; margin-top: 4px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .nut-sups { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
+.nut-food { background: rgba(77,124,15,.1); }
 .nut-sup { font-size: 12px; padding: 3px 9px; border-radius: 999px; background: var(--card); border: 1px solid rgba(77,124,15,.3); }
 .nut-add { border-color: rgba(77,124,15,.45); color: #4D7C0F; }
-.lib-pick { display: grid; gap: 6px; }
-.lib-pick-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 11px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; color: #4D7C0F; }
-.lib-q { height: 28px; width: 130px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); padding: 0 8px; font: inherit; font-size: 12.5px; text-transform: none; letter-spacing: 0; color: var(--text); }
-.lib-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.lib-chip { padding: 6px 10px; border-radius: 999px; border: 1px solid rgba(77,124,15,.35); background: rgba(77,124,15,.06); color: var(--text); font-size: 12.5px; font-weight: 600; cursor: pointer; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.lib-chip span { color: var(--text-dim); font-weight: 500; }
-.lib-chip:hover { background: rgba(77,124,15,.14); }
-.lib-more { border-style: dashed; background: transparent; color: #4D7C0F; }
 .nut-row { display: grid; grid-template-columns: minmax(0,1.3fr) minmax(0,1fr) minmax(0,1fr) auto; gap: 6px; align-items: center; }
 @media (max-width: 560px) { .nut-row { grid-template-columns: minmax(0,1fr) minmax(0,1fr); } .nut-row > :nth-child(3) { grid-column: 1; } }
 .ag-chip { display: inline-flex; align-items: center; max-width: 140px; padding: 1px 8px; border-radius: 999px; border: 1px solid; font-size: 11px; font-weight: 700; line-height: 1.5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0; }
@@ -834,14 +828,18 @@ function toLocal(iso: string) {
 function NutritionBlock({ n }: { n: EventNutrition }) {
   const { t: tr } = useLang()
   const sup = n.supplements || []
+  const foods = n.foods || []
   return (
     <div className="nut-box">
-      <div className="nut-head"><Icon name="layers" size={13} /> {tr('Piano alimentare')}{n.by_name ? <span className="faint"> · {n.by_name}</span> : null}</div>
-      {n.menu && <div className="nut-menu">{n.menu}</div>}
+      <div className="nut-head"><Icon name="layers" size={13} /> {n.slot ? slotLabel(n.slot) : tr('Piano alimentare')}{n.by_name ? <span className="faint"> · {n.by_name}</span> : null}</div>
+      {foods.length > 0
+        ? <div className="nut-sups" style={{ marginTop: 6 }}>{foods.map((f, i) => <span key={i} className="nut-sup nut-food"><b>{f.name}</b>{f.qty ? ' · ' + f.qty : ''}</span>)}</div>
+        : n.menu && <div className="nut-menu">{n.menu}</div>}
+      {foods.length > 0 && n.free && <div className="nut-menu">{n.free}</div>}
       {sup.length > 0 && (
         <div className="nut-sups">
           {sup.map((x, i) => (
-            <span key={i} className="nut-sup"><b>{x.name}</b>{x.dose ? ' · ' + x.dose : ''}{x.when ? ' · ' + x.when : ''}</span>
+            <span key={i} className="nut-sup"><Icon name="plus" size={11} /> <b>{x.name}</b>{x.dose ? ' · ' + x.dose : ''}{x.when ? ' · ' + x.when : ''}</span>
           ))}
         </div>
       )}
@@ -850,59 +848,32 @@ function NutritionBlock({ n }: { n: EventNutrition }) {
   )
 }
 
+type Food = { name: string; qty: string }
 type Sup = { name: string; dose: string; when: string }
 
-// Scelta rapida dal menu del nutrizionista: i più usati in vista, il resto con "Tutti" o cercando.
-function LibPicker({ items, onPick, hint }: { items: LibItem[]; onPick: (i: LibItem) => void; hint: string }) {
-  const [all, setAll] = useState(false)
-  const [q, setQ] = useState('')
-  const s = q.trim().toLowerCase()
-  const found = s ? items.filter(i => [i.name, i.details, i.dose].some(x => (x || '').toLowerCase().includes(s))) : items
-  const shown = all || s ? found : found.slice(0, 8)
-  if (items.length === 0) return null
-  return (
-    <div className="lib-pick">
-      <div className="lib-pick-h">
-        <span>{hint}</span>
-        {items.length > 8 && <input className="lib-q" value={q} onChange={e => setQ(e.target.value)} placeholder="Cerca…" />}
-      </div>
-      <div className="lib-chips">
-        {shown.map(i => (
-          <button key={i.id} type="button" className="lib-chip" title={i.details || [i.dose, i.timing].filter(Boolean).join(' · ')} onClick={() => onPick(i)}>
-            + {i.name}{i.kind === 'integratore' && i.dose ? <span> · {i.dose}</span> : null}
-          </button>
-        ))}
-        {!s && items.length > 8 && <button type="button" className="lib-chip lib-more" onClick={() => setAll(a => !a)}>{all ? 'Meno' : `Tutti (${items.length})`}</button>}
-        {s && found.length === 0 && <span className="faint" style={{ fontSize: 12 }}>Nessun risultato: scrivilo a mano, resterà nel menu.</span>}
-      </div>
-    </div>
-  )
-}
-
+// Piano alimentare di un impegno: momento della giornata, alimenti e integratori dal menu a tendina
+// del nutrizionista (il suo "Il mio menu"); le voci nuove scritte qui restano nel suo menu.
 function NutritionModal({ ev, onClose, onSaved }: { ev: EventItem; onClose: () => void; onSaved: () => void }) {
   const { t: tr } = useLang()
   const n = ev.nutrition || {}
-  const [menu, setMenu] = useState(n.menu || '')
+  const lib = useNutriLibrary()
+  const [slot, setSlot] = useState(n.slot || mealCategoryOf(ev.title, ev.type))
+  const [foods, setFoods] = useState<Food[]>((n.foods || []).map(f => ({ name: f.name, qty: f.qty || '' })))
+  const [free, setFree] = useState(n.foods ? (n.free || '') : (n.menu || ''))
   const [note, setNote] = useState(n.note || '')
   const [sups, setSups] = useState<Sup[]>((n.supplements || []).map(s => ({ name: s.name, dose: s.dose || '', when: s.when || '' })))
   const [busy, setBusy] = useState(false)
   const when = new Date(ev.start_at).toLocaleString('it-IT', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+  const setFood = (i: number, patch: Partial<Food>) => setFoods(xs => xs.map((x, j) => j === i ? { ...x, ...patch } : x))
   const setSup = (i: number, patch: Partial<Sup>) => setSups(xs => xs.map((x, j) => j === i ? { ...x, ...patch } : x))
-  // menu personale: pasti della categoria giusta per questo impegno prima, integratori più usati prima
-  const lib = useNutriLibrary()
-  const mealCat = mealCategoryOf(ev.title, ev.type)
-  const meals = lib.items.filter(i => i.kind === 'pasto')
-  const mealsSorted = mealCat ? [...meals.filter(i => i.category === mealCat), ...meals.filter(i => i.category !== mealCat)] : meals
-  const supsLib = lib.items.filter(i => i.kind === 'integratore' && !sups.some(x => x.name.trim().toLowerCase() === i.name.toLowerCase()))
-  const catLabel = MEAL_CATS.find(c => c.key === mealCat)?.label
-  const pickMeal = (i: LibItem) => setMenu(m => m.trim() ? m.trim() + '\n' + (i.details || i.name) : (i.details || i.name))
-  const pickSup = (i: LibItem) => setSups(xs => [...xs, { name: i.name, dose: i.dose || '', when: i.timing || '' }])
+  const foodLib = lib.items.filter(i => i.kind === 'cibo')
+  const supLib = lib.items.filter(i => i.kind === 'integratore')
 
   async function save(clear = false) {
     setBusy(true)
     const { error } = await supabase.rpc('crm_set_event_nutrition', {
       p_event: ev.id,
-      p_nutrition: clear ? null : { menu, note, supplements: sups.filter(s => s.name.trim()) },
+      p_nutrition: clear ? null : { slot, foods: foods.filter(f => f.name.trim()), menu: free, note, supplements: sups.filter(s => s.name.trim()) },
     })
     setBusy(false)
     if (error) { toast(error.message, 'err'); return }
@@ -918,38 +889,60 @@ function NutritionModal({ ev, onClose, onSaved }: { ev: EventItem; onClose: () =
         <button className="btn btn-ghost" onClick={onClose}>{tr('Annulla')}</button>
         <button className="btn btn-primary" disabled={busy} onClick={() => save()}>{busy ? tr('Salvo…') : tr('Salva')}</button>
       </>}>
-      <div className="grid" style={{ gap: 12 }}>
-        <div className="faint" style={{ fontSize: 12.5 }}><b style={{ color: 'var(--text)' }}>{ev.title}</b> · {when}</div>
-        <LibPicker items={mealsSorted} onPick={pickMeal} hint={catLabel ? `Dal tuo menu · ${catLabel} prima` : 'Dal tuo menu'} />
-        <Field label={tr('Cosa mangiare')}>
-          <Textarea rows={3} value={menu} onChange={e => setMenu(e.target.value)}
-            placeholder={tr('Es. Avena 80 g, yogurt greco, frutti rossi, 2 uova · oppure: pasto pre-gara 3 ore prima, carboidrati semplici')} />
-        </Field>
-        <div>
-          <div className="flex between" style={{ alignItems: 'center', marginBottom: 6 }}>
-            <span style={{ fontSize: 12.5, fontWeight: 700 }}>{tr('Integratori')}</span>
-            <button className="btn btn-ghost btn-sm" onClick={() => setSups(xs => [...xs, { name: '', dose: '', when: '' }])}>+ {tr('Aggiungi')}</button>
-          </div>
-          <LibPicker items={supsLib} onPick={pickSup} hint="Tocca per aggiungere" />
-          {sups.length === 0 && <div className="faint" style={{ fontSize: 12, marginTop: 6 }}>{tr('Nessun integratore')}</div>}
-          <div className="grid" style={{ gap: 8 }}>
-            {sups.map((x, i) => (
-              <div key={i} className="nut-row">
-                <Input value={x.name} onChange={e => setSup(i, { name: e.target.value })} placeholder={tr('Es. Creatina')} aria-label={tr('Integratore')} />
-                <Input value={x.dose} onChange={e => setSup(i, { dose: e.target.value })} placeholder={tr('Dose, es. 5 g')} aria-label={tr('Dose')} />
-                <Select value={x.when} onChange={e => setSup(i, { when: e.target.value })} aria-label={tr('Quando')}>
-                  <option value="">{tr('Quando…')}</option>
-                  {SUP_WHEN.map(w => <option key={w} value={w}>{tr(w)}</option>)}
-                </Select>
-                <button className="ev-ic ev-ic-danger" onClick={() => setSups(xs => xs.filter((_, j) => j !== i))} aria-label={tr('Togli')}><Icon name="x" size={15} /></button>
-              </div>
-            ))}
-          </div>
+      <style>{NP_CSS}</style>
+      <div className="grid" style={{ gap: 14 }}>
+        <div className="flex between" style={{ alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <div className="faint" style={{ fontSize: 12.5 }}><b style={{ color: 'var(--text)' }}>{ev.title}</b> · {when}</div>
+          <Select value={slot} onChange={e => setSlot(e.target.value)} aria-label={tr('Momento')} style={{ width: 'auto' }}>
+            {SLOTS.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
+          </Select>
         </div>
-        <div className="faint" style={{ fontSize: 11.5 }}>{tr('Quello che scrivi a mano resta nel tuo menu per la prossima volta.')}</div>
+
+        <div className="grid" style={{ gap: 8 }}>
+          <span style={{ fontSize: 12.5, fontWeight: 700 }}>{tr('Alimenti')}</span>
+          <NutriPick items={foodLib} slot={slot} exclude={foods.map(f => f.name.toLowerCase())}
+            placeholder={`${tr('Scegli o scrivi un alimento')} · ${slotLabel(slot)}`}
+            onPick={v => setFoods(xs => [...xs, v])} />
+          {foods.length > 0 && (
+            <div className="np-sel">
+              {foods.map((f, i) => (
+                <div key={i} className="np-row">
+                  <b>{f.name}</b>
+                  <input value={f.qty} onChange={e => setFood(i, { qty: e.target.value })} placeholder={tr('Quantità')} aria-label={tr('Quantità')} />
+                  <button className="ev-ic ev-ic-danger" onClick={() => setFoods(xs => xs.filter((_, j) => j !== i))} aria-label={tr('Togli')}><Icon name="x" size={15} /></button>
+                </div>
+              ))}
+            </div>
+          )}
+          <Textarea rows={2} value={free} onChange={e => setFree(e.target.value)} placeholder={tr('Indicazioni libere (facoltativo), es. cottura, alternative, orari')} />
+        </div>
+
+        <div className="grid" style={{ gap: 8 }}>
+          <span style={{ fontSize: 12.5, fontWeight: 700 }}>{tr('Integratori')}</span>
+          <NutriPick items={supLib} slot={slot} exclude={sups.map(s => s.name.toLowerCase())}
+            placeholder={tr('Scegli o scrivi un integratore')}
+            onPick={v => setSups(xs => [...xs, { name: v.name, dose: v.qty, when: '' }])} />
+          {sups.length > 0 && (
+            <div className="np-sel">
+              {sups.map((x, i) => (
+                <div key={i} className="np-row sup">
+                  <b>{x.name}</b>
+                  <input value={x.dose} onChange={e => setSup(i, { dose: e.target.value })} placeholder={tr('Dose')} aria-label={tr('Dose')} />
+                  <select value={x.when} onChange={e => setSup(i, { when: e.target.value })} aria-label={tr('Quando')}>
+                    <option value="">{tr('Quando…')}</option>
+                    {SUP_WHEN.map(w => <option key={w} value={w}>{tr(w)}</option>)}
+                  </select>
+                  <button className="ev-ic ev-ic-danger" onClick={() => setSups(xs => xs.filter((_, j) => j !== i))} aria-label={tr('Togli')}><Icon name="x" size={15} /></button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         <Field label={tr('Note')}>
           <Input value={note} onChange={e => setNote(e.target.value)} placeholder={tr('Es. idratazione 500 ml nelle 2 ore prima')} />
         </Field>
+        <div className="faint" style={{ fontSize: 11.5 }}>{tr('Le voci nuove che scrivi qui entrano nel tuo menu, nel momento scelto.')}</div>
       </div>
     </Modal>
   )

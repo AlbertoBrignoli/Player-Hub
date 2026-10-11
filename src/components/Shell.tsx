@@ -13,7 +13,7 @@ import { Modal, Field, Input, Tabs, Empty } from './ui'
 // Schermate home dei vari ruoli: qui compare l'invito ad attivare le notifiche.
 const HOME_ROUTES = ['dashboard', 'brandhome', 'agent-home', 'insurer-home', 'tax-home', 'physio-home', 'partner-home']
 
-export const APP_VERSION = 'v7.7'
+export const APP_VERSION = 'v7.8'
 
 export interface NavDef {
   key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[]
@@ -137,7 +137,7 @@ export const PRO_ROLES: Record<ProRole, { home: string; profile: string; area: N
   // il nutrizionista lavora sul calendario dell'atleta: lì integra pasti e integratori
   nutrizionista: {
     home: 'nutri-home', profile: 'nutri-profile',
-    area: [{ key: 'nutri-menu', label: 'Il mio menu', icon: 'layers' }],
+    area: [{ key: 'nutri-menu', label: 'Alimentazione', icon: 'layers' }],
     extra: [],
     tab: { key: 'nutri-menu', label: 'Menu', icon: 'layers' },
   },
@@ -219,7 +219,7 @@ const TITLES: Record<string, { t: string; s: string }> = {
   'physio-office': { t: 'Il mio ufficio', s: 'Atleti seguiti e spazio clinico' },
   'nutri-home': { t: 'Home', s: 'I tuoi atleti e la loro settimana a tavola' },
   'nutri-profile': { t: 'Il mio profilo', s: 'Anagrafica, contatti e specializzazioni' },
-  'nutri-menu': { t: 'Il mio menu', s: 'Pasti e integratori pronti da assegnare agli atleti' },
+  'nutri-menu': { t: 'Alimentazione', s: 'Il tuo menu: alimenti e integratori per ogni momento della giornata' },
   'agent-profile': { t: 'Il mio profilo', s: 'Contatti personali e agenzia' },
   mediakit: { t: 'Media Kit', s: "I numeri dell'atleta" },
   campaigns: { t: 'Campagne', s: 'Proponi contenuti e carica lo shooting' },

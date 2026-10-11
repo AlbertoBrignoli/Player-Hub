@@ -211,6 +211,9 @@ export interface EventItem {
 }
 
 export interface EventNutrition {
+  slot?: string | null
+  foods?: { name: string; qty?: string | null }[]
+  free?: string | null
   menu?: string | null
   note?: string | null
   supplements?: { name: string; dose?: string | null; when?: string | null }[]
