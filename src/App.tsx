@@ -46,11 +46,14 @@ import ProHome from './modules/ProHome'
 import ExerciseLibrary from './modules/fitness/ExerciseLibrary'
 import TrainingBuilder from './modules/fitness/TrainingBuilder'
 import PartnerHome from './modules/PartnerHome'
+import InstallPage from './modules/InstallPage'
 
 export default function App() {
   const { session, profile, loading } = useAuth()
   const [routeState, setRoute] = useHashRoute()
 
+  // pagina pubblica d'invito (QR code): si apre anche senza accesso
+  if (/^\/(scarica|install|app)\/?$/.test(window.location.pathname)) return <InstallPage />
   if (loading) return <Spinner />
   if (!session) return <Login />
 

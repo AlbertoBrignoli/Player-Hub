@@ -5,6 +5,8 @@ import { AuthProvider } from './auth/AuthContext'
 import { AthleteProvider } from './lib/athlete'
 import { LanguageProvider } from './lib/i18n'
 import './index.css'
+// cattura subito il prompt di installazione (Android/Chrome)
+import './lib/install'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

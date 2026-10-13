@@ -25,7 +25,8 @@ export default function PushNudge() {
 
   useEffect(() => { getPushState().then(setState) }, [])
 
-  if (dismissed || state === 'loading' || state === 'on') return null
+  // su iPhone da browser la guida all'installazione la mostra InstallNudge
+  if (dismissed || state === 'loading' || state === 'on' || ios) return null
   if (state === 'unsupported' && !ios) return null
 
   async function activate() {

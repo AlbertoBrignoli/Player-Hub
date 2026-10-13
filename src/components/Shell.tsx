@@ -7,13 +7,14 @@ import NotificationBell from './NotificationBell'
 import { useLang, LangToggle } from '../lib/i18n'
 import Toaster from './Toaster'
 import PushNudge from './PushNudge'
+import { InstallNudge } from './InstallGuide'
 import Icon from './Icon'
 import { Modal, Field, Input, Tabs, Empty } from './ui'
 
 // Schermate home dei vari ruoli: qui compare l'invito ad attivare le notifiche.
 const HOME_ROUTES = ['dashboard', 'brandhome', 'agent-home', 'insurer-home', 'tax-home', 'physio-home', 'partner-home']
 
-export const APP_VERSION = 'v8.0'
+export const APP_VERSION = 'v8.1'
 
 export interface NavDef {
   key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[]
@@ -415,6 +416,7 @@ export default function Shell({ route, setRoute, right, children }: {
           </div>
         </div>
         <div className="content">
+          {HOME_ROUTES.includes(route) && <InstallNudge />}
           {HOME_ROUTES.includes(route) && <PushNudge />}
           {hub && hubTabs.length > 1 && (
             <div className="hub-tabs">

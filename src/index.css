@@ -836,3 +836,6 @@ input[type="time"]::-webkit-date-and-time-value { text-align: left; }
 .wp-week .wp-day:first-of-type { border-top: 0; padding-top: 0; }
 .wp-tick { width: 34px; height: 34px; flex-shrink: 0; border-radius: 10px; border: 2px solid var(--border-2, var(--border)); background: var(--bg-2); color: var(--text-dim); font-weight: 900; font-size: 16px; display: grid; place-items: center; cursor: pointer; margin-top: 2px; }
 .wp-tick.on { background: var(--green, #12a150); border-color: var(--green, #12a150); color: #fff; }
+.ig-sheet { position: fixed; inset: 0; z-index: 1000; background: rgba(10,10,10,.55); display: flex; align-items: flex-end; justify-content: center; }
+.ig-sheet-in { width: 100%; max-width: 520px; background: var(--card); color: var(--text); border-radius: 22px 22px 0 0; padding: 18px 18px calc(22px + env(safe-area-inset-bottom)); display: grid; gap: 16px; animation: ig-up .22s ease-out; }
+@keyframes ig-up { from { transform: translateY(30px); opacity: 0 } to { transform: none; opacity: 1 } }

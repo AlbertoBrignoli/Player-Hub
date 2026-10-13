@@ -7,6 +7,7 @@ import { Field, Input, Select, Badge, Spinner, ConfirmButton, Empty } from '../c
 import { fmtDate } from '../lib/format'
 import type { AllowedEmail, Profile } from '../lib/types'
 import CalendarSync from '../components/CalendarSync'
+import { InstallInviteCard } from '../components/InstallGuide'
 import { useLang } from '../lib/i18n'
 
 export default function Settings() {
@@ -25,6 +26,7 @@ export default function Settings() {
     return (
       <div className="grid" style={{ gap: 16 }}>
         <CalendarSync />
+        <InstallInviteCard />
         <SecurityCard />
       </div>
     )
@@ -45,6 +47,7 @@ export default function Settings() {
   return (
     <div className="grid" style={{ gap: 16 }}>
       <CalendarSync />
+        <InstallInviteCard />
       <SecurityCard />
       <SocialCard />
 
