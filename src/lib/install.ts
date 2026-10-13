@@ -1,7 +1,7 @@
 // Installazione di Player Hub sul telefono (web app → icona nella schermata Home).
 // Android/Chrome: prompt nativo "Installa" (beforeinstallprompt, catturato all'avvio).
 // iPhone: solo da Safari, con Condividi → Aggiungi alla schermata Home (guidato a passi).
-export const APP_URL = 'https://player-hub-chi.vercel.app'
+export const APP_URL = 'https://playerhub.auviagency.com'
 export const INSTALL_URL = APP_URL + '/scarica'
 
 let deferred: any = null

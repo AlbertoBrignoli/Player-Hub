@@ -15,7 +15,7 @@ import { useLang } from '../lib/i18n'
 // - oppure inserisce il codice ricevuto dall'atleta (crm_request_access)
 // - elenco atleti collegati, inviti e storico.
 
-const APP_URL = 'https://player-hub-chi.vercel.app'
+const APP_URL = 'https://playerhub.auviagency.com'
 
 // area principale per figura professionale
 export const PRO_HOME: Record<string, string> = {

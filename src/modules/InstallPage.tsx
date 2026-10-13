@@ -1,4 +1,4 @@
-// Pagina pubblica d'invito: player-hub-chi.vercel.app/scarica (anche dal QR code).
+// Pagina pubblica d'invito: playerhub.auviagency.com/scarica (anche dal QR code).
 // Riconosce il dispositivo e mostra i passi giusti per mettere Player Hub nella schermata Home.
 import { useEffect, useState } from 'react'
 import Icon from '../components/Icon'

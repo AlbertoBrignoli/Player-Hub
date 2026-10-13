@@ -13,7 +13,7 @@ const supa = createClient(
   { auth: { persistSession: false, autoRefreshToken: false } },
 )
 
-const APP_URL = 'https://player-hub-chi.vercel.app/#/'
+const APP_URL = 'https://playerhub.auviagency.com/#/'
 const TZ = 'Europe/Athens'
 const TOKEN_RE = /^[0-9a-f]{48}$/
 
