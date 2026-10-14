@@ -69,9 +69,11 @@ function Step({ n, children }: { n: number; children: React.ReactNode }) {
 }
 
 // I passi giusti per il dispositivo che si sta usando
-export function InstallSteps({ onInstalled }: { onInstalled?: () => void }) {
+// forced: mostra i passi di un dispositivo preciso (es. da computer, per spiegare iPhone o Android)
+export function InstallSteps({ onInstalled, forced }: { onInstalled?: () => void; forced?: Platform }) {
   const { t } = useLang()
-  const [platform, setPlatform] = useState<Platform>(() => detectPlatform())
+  const [detected, setPlatform] = useState<Platform>(() => detectPlatform())
+  const platform = forced || detected
   const [canPrompt, setCanPrompt] = useState(canPromptInstall())
   useEffect(() => onInstallChange(() => { setCanPrompt(canPromptInstall()); setPlatform(detectPlatform()) }), [])
 
@@ -104,7 +106,7 @@ export function InstallSteps({ onInstalled }: { onInstalled?: () => void }) {
       <Step n={2}>{t('Scorri e scegli')} <b><PlusGlyph /> {t('Aggiungi alla schermata Home')}</b></Step>
       <Step n={3}>{t('Tocca')} <b>{t('Aggiungi')}</b>: {t('l\'icona AUVI compare tra le tue app')}</Step>
       <div className="ig-hint">{t('Aprila sempre dall\'icona: è a schermo intero e ricevi le notifiche.')}</div>
-      <div className="ig-arrow" aria-hidden="true">↓</div>
+      {!forced && <div className="ig-arrow" aria-hidden="true">↓</div>}
     </div>
   )
   if (platform === 'android') return (

@@ -25,7 +25,10 @@ export default function InstallPage() {
   const [platform] = useState(() => detectPlatform())
   const mobile = isMobilePlatform(platform)
   const installed = platform === 'installed'
-  const ios = platform === 'ios-safari' || platform === 'ios-other' || (installed && /iphone|ipad|ipod/i.test(navigator.userAgent))
+  // da computer si sceglie per quale telefono vedere i passi (iPhone di default)
+  const [device, setDevice] = useState<'iphone' | 'android'>('iphone')
+  const desktop = platform === 'desktop'
+  const ios = desktop ? device === 'iphone' : platform === 'ios-safari' || platform === 'ios-other' || (installed && /iphone|ipad|ipod/i.test(navigator.userAgent))
   const [showQr, setShowQr] = useState(!mobile && !installed)
 
   // /download (e /install) in inglese, /scarica in italiano; poi si cambia col selettore
@@ -78,8 +81,17 @@ export default function InstallPage() {
         </Phase>
 
         {/* 2 · schermata Home */}
-        <Phase n={2} title={mobile ? t('Mettila nella schermata Home') : t('Installala sul telefono')} done={installed}>
-          {installed ? <div className="ip-p">{t('Fatto: la stai già usando dall\'icona.')}</div> : <InstallSteps />}
+        <Phase n={2} title={t('Mettila nella schermata Home')} done={installed}>
+          {installed ? <div className="ip-p">{t('Fatto: la stai già usando dall\'icona.')}</div> : desktop ? (
+            <>
+              <div className="ip-p">{t('Dal telefono: inquadra il QR qui sotto oppure apri il link, poi segui questi passi.')}</div>
+              <div className="ip-seg" role="tablist">
+                <button role="tab" aria-selected={device === 'iphone'} className={device === 'iphone' ? 'on' : ''} onClick={() => setDevice('iphone')}>iPhone</button>
+                <button role="tab" aria-selected={device === 'android'} className={device === 'android' ? 'on' : ''} onClick={() => setDevice('android')}>Android</button>
+              </div>
+              <InstallSteps forced={device === 'iphone' ? 'ios-safari' : 'android'} />
+            </>
+          ) : <InstallSteps />}
         </Phase>
 
         {/* 3 · accesso dall'icona + notifiche */}
@@ -105,7 +117,8 @@ export default function InstallPage() {
           ) : (
             <button className="btn btn-sm" onClick={() => setShowQr(true)}><Icon name="grid" size={13} /> {t('Mostra il QR per un altro telefono')}</button>
           )}
-          <ShareInstall />
+          <a className="ip-url" href={window.location.pathname}>{window.location.host + window.location.pathname.replace(/\/$/, '')}</a>
+          <ShareInstall url={window.location.origin + window.location.pathname.replace(/\/$/, '')} en={lang === 'en'} />
         </section>
 
         <div className="ip-help">{t('Problemi? Scrivi al tuo referente AUVI: ti aiutiamo noi.')}</div>
@@ -142,6 +155,10 @@ const IP_CSS = `
 .ip-link { text-align: center; color: rgba(255,255,255,.8); font-size: 13.5px; text-decoration: none; }
 .ip-qr { justify-items: center; text-align: center; }
 .ip-qr-t { font-size: 13px; color: rgba(255,255,255,.75); }
+.ip-url { font-weight: 800; font-size: 17px; color: #FFEC00; text-decoration: none; letter-spacing: .2px; overflow-wrap: anywhere; }
+.ip-seg { display: inline-flex; justify-self: start; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14); border-radius: 12px; padding: 3px; gap: 3px; }
+.ip-seg button { border: 0; background: transparent; color: rgba(255,255,255,.75); font: inherit; font-weight: 700; font-size: 14px; padding: 7px 16px; border-radius: 9px; cursor: pointer; }
+.ip-seg button.on { background: #FFEC00; color: #0A0A0A; }
 .ip-help { text-align: center; color: rgba(255,255,255,.6); font-size: 12.5px; padding: 4px; }
 .ip .lang-toggle { background: rgba(255,255,255,.1) !important; }
 `

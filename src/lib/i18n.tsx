@@ -3111,5 +3111,6 @@ const EN: Record<string, string> = {
   "Su iPhone le notifiche funzionano solo dall'app aperta dall'icona (serve iOS 16.4 o successivo).": "On iPhone, notifications only work in the app opened from the icon (iOS 16.4 or later required).",
   "Ti avvisiamo per partite, programma, report, proposte del tuo team e messaggi.": "We'll let you know about matches, your schedule, reports, your team's proposals and messages.",
   "Problemi? Scrivi al tuo referente AUVI: ti aiutiamo noi.": "Any problems? Message your AUVI contact: we'll help you.",
+  "Dal telefono: inquadra il QR qui sotto oppure apri il link, poi segui questi passi.": "On your phone: scan the QR below or open the link, then follow these steps.",
 }
 
