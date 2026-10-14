@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react'
 import Icon from '../components/Icon'
 import { LangToggle, useLang } from '../lib/i18n'
 import { QrCode, ShareInstall, InstallSteps, IG_CSS } from '../components/InstallGuide'
-import { detectPlatform, isMobilePlatform } from '../lib/install'
+import { detectPlatform, isMobilePlatform, INSTALL_URL, INSTALL_URL_EN } from '../lib/install'
 
 function Phase({ n, title, done, children }: { n: number; title: string; done?: boolean; children: React.ReactNode }) {
   return (
@@ -30,6 +30,8 @@ export default function InstallPage() {
   const desktop = platform === 'desktop'
   const ios = desktop ? device === 'iphone' : platform === 'ios-safari' || platform === 'ios-other' || (installed && /iphone|ipad|ipod/i.test(navigator.userAgent))
   const [showQr, setShowQr] = useState(!mobile && !installed)
+  // link ufficiale (mai localhost o vercel.app), nella lingua della pagina
+  const pageUrl = /^\/(download|install)\/?$/.test(window.location.pathname) ? INSTALL_URL_EN : INSTALL_URL
 
   // /download (e /install) in inglese, /scarica in italiano; poi si cambia col selettore
   useEffect(() => {
@@ -111,14 +113,14 @@ export default function InstallPage() {
         <section className="ip-card ip-qr">
           {showQr ? (
             <>
-              <QrCode size={mobile ? 180 : 220} url={window.location.origin + window.location.pathname} />
+              <QrCode size={mobile ? 180 : 220} url={pageUrl} />
               <div className="ip-qr-t">{mobile ? t('Fai inquadrare questo QR a un compagno o al tuo staff') : t('Inquadra con la fotocamera del telefono')}</div>
             </>
           ) : (
             <button className="btn btn-sm" onClick={() => setShowQr(true)}><Icon name="grid" size={13} /> {t('Mostra il QR per un altro telefono')}</button>
           )}
-          <a className="ip-url" href={window.location.pathname}>{window.location.host + window.location.pathname.replace(/\/$/, '')}</a>
-          <ShareInstall url={window.location.origin + window.location.pathname.replace(/\/$/, '')} en={lang === 'en'} />
+          <a className="ip-url" href={pageUrl}>{pageUrl.replace('https://', '')}</a>
+          <ShareInstall url={pageUrl} en={lang === 'en'} />
         </section>
 
         <div className="ip-help">{t('Problemi? Scrivi al tuo referente AUVI: ti aiutiamo noi.')}</div>
