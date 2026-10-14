@@ -32,11 +32,13 @@ export default function Login() {
   const [showPw, setShowPw] = useState(false)
   const [sending, setSending] = useState(false)
   const [notice, setNotice] = useState('')
-  const [inviteMode, setInviteMode] = useState(false)
+  // dalla guida /scarica: ?invito=1 apre la registrazione con codice, ?accedi=1 il login
+  const startParam = new URLSearchParams(window.location.search)
+  const [inviteMode, setInviteMode] = useState(startParam.has('invito'))
   const [inviteCode, setInviteCode] = useState('')
   // Telefono: di base il video è a tutto schermo con una barra compatta;
   // il modulo si apre solo quando si tocca Accedi / Registrati.
-  const [sheetOpen, setSheetOpen] = useState(false)
+  const [sheetOpen, setSheetOpen] = useState(startParam.has('invito') || startParam.has('accedi'))
   // sfondo nero sotto il login: sull'iPhone installato niente bordi chiari in alto/in basso
   useEffect(() => {
     document.documentElement.classList.add('is-login')

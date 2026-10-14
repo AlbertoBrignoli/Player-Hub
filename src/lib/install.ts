@@ -3,6 +3,7 @@
 // iPhone: solo da Safari, con Condividi → Aggiungi alla schermata Home (guidato a passi).
 export const APP_URL = 'https://playerhub.auviagency.com'
 export const INSTALL_URL = APP_URL + '/scarica'
+export const INSTALL_URL_EN = APP_URL + '/download'
 
 let deferred: any = null
 const listeners = new Set<() => void>()

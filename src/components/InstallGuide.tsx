@@ -4,7 +4,7 @@ import QRCode from 'qrcode'
 import Icon from './Icon'
 import { useLang } from '../lib/i18n'
 import { toast } from '../lib/toast'
-import { INSTALL_URL, canPromptInstall, detectPlatform, onInstallChange, promptInstall, type Platform } from '../lib/install'
+import { INSTALL_URL, INSTALL_URL_EN, canPromptInstall, detectPlatform, onInstallChange, promptInstall, type Platform } from '../lib/install'
 
 // QR del link di installazione: SVG nitido a ogni misura; "Scarica" lo salva in PNG per stamparlo.
 export function QrCode({ url = INSTALL_URL, size = 200, download = false }: { url?: string; size?: number; download?: boolean }) {
@@ -28,21 +28,22 @@ export function QrCode({ url = INSTALL_URL, size = 200, download = false }: { ur
 }
 
 // Condividi il link (WhatsApp, Messaggi, Mail… dal menu del telefono) o copialo
-export function ShareInstall({ compact = false }: { compact?: boolean }) {
+export function ShareInstall({ compact = false, url = INSTALL_URL, en = false }: { compact?: boolean; url?: string; en?: boolean }) {
   const { t } = useLang()
-  const text = t('Scarica Player Hub sul telefono: il tuo spazio AUVI sempre a portata di mano.')
+  // il messaggio segue la lingua del link (es. versione inglese per un atleta straniero)
+  const text = en ? 'Get Player Hub on your phone: your AUVI space always at hand.' : t('Scarica Player Hub sul telefono: il tuo spazio AUVI sempre a portata di mano.')
   async function share() {
     if ((navigator as any).share) {
-      try { await (navigator as any).share({ title: 'Player Hub', text, url: INSTALL_URL }); return } catch { /* annullato */ }
+      try { await (navigator as any).share({ title: 'Player Hub', text, url }); return } catch { /* annullato */ }
     }
     copy()
   }
   async function copy() {
-    try { await navigator.clipboard.writeText(INSTALL_URL); toast(t('Link copiato')) } catch { toast(INSTALL_URL) }
+    try { await navigator.clipboard.writeText(url); toast(t('Link copiato')) } catch { toast(url) }
   }
   return (
     <div className="flex gap" style={{ gap: 8, flexWrap: 'wrap', justifyContent: compact ? 'flex-start' : 'center' }}>
-      <a className="btn btn-sm" href={`https://wa.me/?text=${encodeURIComponent(text + ' ' + INSTALL_URL)}`} target="_blank" rel="noreferrer">
+      <a className="btn btn-sm" href={`https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`} target="_blank" rel="noreferrer">
         <Icon name="message" size={13} /> WhatsApp
       </a>
       <button className="btn btn-sm" onClick={share}><Icon name="send" size={13} /> {t('Condividi')}</button>
@@ -192,19 +193,25 @@ export function InstallNudge() {
 // Scheda in Impostazioni: QR e link per invitare atleti e staff a installare l'app
 export function InstallInviteCard() {
   const { t } = useLang()
+  const [en, setEn] = useState(false)
+  const url = en ? INSTALL_URL_EN : INSTALL_URL
   return (
     <div className="card">
       <style>{IG_CSS}</style>
       <div className="card-head"><div className="card-title">{t('Player Hub sul telefono')}</div></div>
       <div className="flex gap" style={{ gap: 18, flexWrap: 'wrap', alignItems: 'center' }}>
-        <QrCode size={150} download />
+        <QrCode size={150} download url={url} />
         <div style={{ flex: 1, minWidth: 220, display: 'grid', gap: 10 }}>
           <div className="faint" style={{ fontSize: 13, lineHeight: 1.5 }}>
             {t('Fai inquadrare il QR o manda il link: la pagina riconosce il telefono e spiega come aggiungere Player Hub alla schermata Home. Scarica il QR per stamparlo o metterlo in una presentazione.')}
           </div>
-          <code style={{ fontSize: 12.5, padding: '6px 10px', borderRadius: 8, background: 'var(--bg-2)', overflowWrap: 'anywhere' }}>{INSTALL_URL.replace('https://', '')}</code>
-          <ShareInstall compact />
-          <a className="btn btn-sm btn-ghost" href="/scarica" target="_blank" rel="noreferrer" style={{ justifySelf: 'start' }}>{t('Apri la pagina d\'invito')} ↗</a>
+          <code style={{ fontSize: 12.5, padding: '6px 10px', borderRadius: 8, background: 'var(--bg-2)', overflowWrap: 'anywhere' }}>{url.replace('https://', '')}</code>
+          <div className="flex" style={{ gap: 6 }}>
+            <button className={'btn btn-sm' + (!en ? ' btn-primary' : '')} onClick={() => setEn(false)}>Italiano</button>
+            <button className={'btn btn-sm' + (en ? ' btn-primary' : '')} onClick={() => setEn(true)}>English</button>
+          </div>
+          <ShareInstall compact url={url} en={en} />
+          <a className="btn btn-sm btn-ghost" href={en ? '/download' : '/scarica'} target="_blank" rel="noreferrer" style={{ justifySelf: 'start' }}>{t('Apri la pagina d\'invito')} ↗</a>
         </div>
       </div>
     </div>

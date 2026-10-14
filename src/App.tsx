@@ -53,7 +53,7 @@ export default function App() {
   const [routeState, setRoute] = useHashRoute()
 
   // pagina pubblica d'invito (QR code): si apre anche senza accesso
-  if (/^\/(scarica|install|app)\/?$/.test(window.location.pathname)) return <InstallPage />
+  if (/^\/(scarica|download|install|app)\/?$/.test(window.location.pathname)) return <InstallPage />
   if (loading) return <Spinner />
   if (!session) return <Login />
 
