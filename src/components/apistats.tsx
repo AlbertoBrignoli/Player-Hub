@@ -3,6 +3,7 @@
 // Regola: si mostra SOLO cio' che API-Football fornisce davvero. Una voce senza dato non
 // compare (niente caselle "—"); una sezione senza voci non compare.
 import { useState } from 'react'
+import { fixLogo } from '../lib/logos'
 import { Badge } from './ui'
 import Icon from './Icon'
 import { fmtDate } from '../lib/format'
@@ -322,7 +323,7 @@ export function ApiCareer({ rows, role: roleHint }: { rows: ApiSeasonRow[]; role
                 {teamsY.map(([t, list]) => (
                   <div key={t}>
                     <div className="row-title flex" style={{ gap: 6, alignItems: 'center' }}>
-                      {list[0].raw?.team?.logo && <img src={list[0].raw.team.logo} alt="" className="api-logo" />}{t}
+                      {list[0].raw?.team?.logo && <img src={fixLogo(list[0].raw.team.logo)!} alt="" className="api-logo" />}{t}
                     </div>
                     {list.sort((a, b) => (b.appearances || 0) - (a.appearances || 0)).map(r => (
                       <div className="row-sub" key={r.id}>
@@ -404,11 +405,11 @@ export function ApiTransfers({ list }: { list: Raw[] }) {
             <div className="row-main">
               <div className="row-title flex wrap" style={{ gap: '4px 8px', alignItems: 'center' }}>
                 <span className="api-team muted">
-                  {t.teams?.out?.logo && <img src={t.teams.out.logo} alt="" className="api-logo" />}{t.teams?.out?.name}
+                  {t.teams?.out?.logo && <img src={fixLogo(t.teams.out.logo)!} alt="" className="api-logo" />}{t.teams?.out?.name}
                 </span>
                 <span className="faint">→</span>
                 <span className="api-team">
-                  {t.teams?.in?.logo && <img src={t.teams.in.logo} alt="" className="api-logo" />}{t.teams?.in?.name}
+                  {t.teams?.in?.logo && <img src={fixLogo(t.teams.in.logo)!} alt="" className="api-logo" />}{t.teams?.in?.name}
                 </span>
               </div>
               <div className="row-sub">{fmtDate(t.date)}</div>
