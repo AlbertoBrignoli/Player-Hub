@@ -22,6 +22,7 @@ const STUDIO_BG = '/servizi/auvi-hero.jpg'
 const STUDIO_VIDEO = '/servizi/auvi-video.mp4'
 const AUVI_MARK = '/servizi/auvi-mark-white.png'
 const STUDIO_CAT = 'AUVI Studio'
+const BRAND_CAT = 'Brand'
 
 // --- token del design (store, tema chiaro AUVI) ---
 const T = {
@@ -79,8 +80,9 @@ export default function Services() {
   const [loading, setLoading] = useState(true)
   const [open, setOpen] = useState<Service | null>(null)
   const [manage, setManage] = useState<Req | null>(null)
-  const [tab, setTab] = useState<'store' | 'brand' | 'requests'>(() => (new URLSearchParams(window.location.hash.split('?')[1] || '').get('tab') === 'brand' ? 'brand' : 'store'))
-  const [cat, setCat] = useState<string>('Tutti')
+  const [tab, setTab] = useState<'store' | 'requests'>('store')
+  // "Brand" è una categoria della vetrina come Consulenza o Lifestyle (convenzioni con codice sconto)
+  const [cat, setCat] = useState<string>(() => (new URLSearchParams(window.location.hash.split('?')[1] || '').get('tab') === 'brand' ? BRAND_CAT : 'Tutti'))
 
   const isPlayer = role === 'player'
 
@@ -100,7 +102,7 @@ export default function Services() {
   useEffect(() => { if (wantedReq) setTab('requests') }, [wantedReq])
   // dalla notifica "Codice sconto attivato": #/services?tab=brand
   const wantedTab = useRouteParam('tab')
-  useEffect(() => { if (wantedTab === 'brand') setTab('brand') }, [wantedTab])
+  useEffect(() => { if (wantedTab === 'brand') { setTab('store'); setCat(BRAND_CAT) } }, [wantedTab])
 
   // link diretto a una scheda: #/services?service=<id o nome partner> (es. dalla Performance)
   const wanted = useRouteParam('service')
@@ -118,7 +120,7 @@ export default function Services() {
   const cats = useMemo(() => {
     const seen: string[] = []
     for (const s of services) if (!isStudio(s) && !seen.includes(s.category)) seen.push(s.category)
-    return ['Tutti', ...seen]
+    return ['Tutti', ...seen, BRAND_CAT]
   }, [services])
 
   const inCat = (s: Service) => cat === 'Tutti' || s.category === cat
@@ -157,7 +159,7 @@ export default function Services() {
 
       {/* --- segmento Store / Richieste --- */}
       <div className="flex gap" style={{ gap: 8 }}>
-        {(['store', 'brand', 'requests'] as const).map(k => {
+        {(['store', 'requests'] as const).map(k => {
           const on = tab === k
           return (
             <button key={k} onClick={() => setTab(k)}
@@ -167,15 +169,13 @@ export default function Services() {
                 background: on ? T.text : 'transparent',
                 color: on ? '#fff' : T.dim, fontWeight: 800, fontSize: 13,
               }}>
-              {k === 'store' ? 'Store' : k === 'brand' ? 'Brand' : `${t('Richieste')}${reqs.length ? ` · ${reqs.length}` : ''}`}
+              {k === 'store' ? 'Store' : `${t('Richieste')}${reqs.length ? ` · ${reqs.length}` : ''}`}
             </button>
           )
         })}
       </div>
 
-      {tab === 'brand' ? (
-        <BrandDeals />
-      ) : tab === 'requests' ? (
+      {tab === 'requests' ? (
         <RequestsView reqs={reqs} isPlayer={isPlayer} isAdmin={isAdmin} openReq={wantedReq}
           athleteName={athleteName} onManage={setManage} onEmptyGoStore={() => setTab('store')} />
       ) : (
@@ -231,6 +231,8 @@ export default function Services() {
           )}
 
           {/* --- partner verificati --- */}
+          {cat === BRAND_CAT && <BrandDeals />}
+
           {verificati.filter(inCat).length > 0 && (
             <section>
               <div style={{ ...kicker, fontSize: 12, color: T.text, marginBottom: 12 }}>{t('Partner verificati')}</div>
@@ -279,6 +281,8 @@ export default function Services() {
               </div>
             </section>
           )}
+
+          {cat === 'Tutti' && <BrandDeals compact />}
 
           {services.length === 0 && (
             <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 16, padding: 20 }}>

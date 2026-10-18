@@ -26,7 +26,8 @@ async function copy(text: string) {
   try { await navigator.clipboard.writeText(text); return true } catch { return false }
 }
 
-export default function BrandDeals() {
+// compact: dentro "Tutti" della vetrina, solo titolo e card (niente se non ci sono brand)
+export default function BrandDeals({ compact = false }: { compact?: boolean }) {
   const { t, lang } = useLang()
   const { role, isAdmin } = useAuth()
   const { athleteId, athletes } = useAthlete()
@@ -73,14 +74,16 @@ export default function BrandDeals() {
     if (athleteId && code) supabase.rpc('crm_brand_deal_opened', { p_deal: d.id, p_player: athleteId }).then(() => {})
   }
 
-  if (loading) return <Spinner />
+  if (loading) return compact ? null : <Spinner />
+  if (compact && deals.length === 0) return null
 
   const nameOf = (pid: number) => athletes.find(a => a.api_player_id === pid)?.name || `#${pid}`
 
   return (
     <div className="grid" style={{ gap: 16 }}>
       <style>{BD_CSS}</style>
-      <div className="bd-intro">
+      {compact && <div style={{ fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', fontWeight: 800 }}>Brand</div>}
+      {!compact && <div className="bd-intro">
         <div className="bd-steps">
           <span><b>1</b> {t('Attiva il codice')}</span>
           <span><b>2</b> {t('Si copia da solo')}</span>
@@ -91,9 +94,9 @@ export default function BrandDeals() {
             <Icon name="plus" size={13} /> {t('Nuovo brand')}
           </button>
         )}
-      </div>
+      </div>}
 
-      {deals.length === 0 && (
+      {!compact && deals.length === 0 && (
         <div className="card"><Empty icon={<Icon name="tag" size={30} strokeWidth={1.4} />} title={t('Nessun brand per ora')}
           hint={t('Qui troverai le convenzioni con i brand partner di AUVI.')} /></div>
       )}
