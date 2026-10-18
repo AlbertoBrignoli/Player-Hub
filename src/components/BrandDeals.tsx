@@ -107,7 +107,8 @@ export default function BrandDeals({ compact = false }: { compact?: boolean }) {
           const dActs = acts.filter(a => a.deal_id === d.id)
           return (
             <div key={d.id} className="bd-card" style={{ opacity: d.active ? 1 : 0.55 }}>
-              <div className="bd-cover" style={{ background: d.accent_color || '#111' }}>
+              <a className="bd-cover" href={d.shop_url} target="_blank" rel="noopener noreferrer"
+                onClick={e => { e.preventDefault(); openShop(d) }} style={{ background: d.accent_color || '#111' }}>
                 {d.cover_url && <div className="bd-img" style={{ backgroundImage: `url(${d.cover_url})` }} />}
                 <div className="bd-shade" />
                 {d.discount_label && <div className="bd-badge">{d.discount_label}</div>}
@@ -117,7 +118,8 @@ export default function BrandDeals({ compact = false }: { compact?: boolean }) {
                     : <div className="bd-name">{d.brand_name}</div>}
                   {tx(d, 'tagline', lang) && <div className="bd-tag">{tx(d, 'tagline', lang)}</div>}
                 </div>
-              </div>
+                <span className="bd-go">{t('Vai allo shop')} ↗</span>
+              </a>
 
               <div className="bd-body">
                 {tx(d, 'description', lang) && <div className="bd-desc">{tx(d, 'description', lang)}</div>}
@@ -137,8 +139,12 @@ export default function BrandDeals({ compact = false }: { compact?: boolean }) {
                   <button className="btn btn-primary bd-cta" disabled={busy === d.id || !d.has_code} onClick={() => activate(d)}>
                     <Icon name="tag" size={15} /> {busy === d.id ? t('Attivo…') : d.has_code ? t('Attiva il mio codice') : t('Codice in arrivo')}
                   </button>
-                ) : (
-                  <button className="btn bd-cta" onClick={() => openShop(d)}>{t('Vedi lo shop')} ↗</button>
+                ) : null}
+                {!code && (
+                  <a className="btn bd-cta" href={d.shop_url} target="_blank" rel="noopener noreferrer"
+                    onClick={e => { e.preventDefault(); openShop(d) }}>
+                    {t('Vedi lo shop')} ↗ <span className="bd-url">{d.shop_url.replace(/^https?:\/\//, '').replace(/\/$/, '')}</span>
+                  </a>
                 )}
 
                 {tx(d, 'terms', lang) && <div className="bd-terms">{tx(d, 'terms', lang)}</div>}
@@ -296,8 +302,13 @@ const BD_CSS = `
 .bd-steps span { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); }
 .bd-steps b { width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; background: var(--text); color: var(--bg, #fff); font-size: 10.5px; }
 .bd-card { border: 1px solid var(--border); border-radius: 20px; overflow: hidden; background: var(--surface); display: flex; flex-direction: column; }
-.bd-cover { position: relative; height: 210px; }
-.bd-img { position: absolute; inset: 0; background-size: cover; background-position: center 30%; }
+.bd-cover { position: relative; height: 230px; display: block; cursor: pointer; text-decoration: none; }
+.bd-cover:hover .bd-img { transform: scale(1.03); }
+.bd-img { transition: transform .4s ease; }
+.bd-go { position: absolute; top: 12px; left: 12px; background: rgba(0,0,0,.55); color: #fff; font-size: 12px; font-weight: 800; padding: 6px 11px; border-radius: 999px; backdrop-filter: blur(6px); }
+.bd-url { font-weight: 600; opacity: .6; font-size: 12.5px; margin-left: 6px; }
+a.bd-cta { text-decoration: none; display: inline-flex; align-items: center; }
+.bd-img { position: absolute; inset: 0; background-size: cover; background-position: center 28%; }
 .bd-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,.05) 30%, rgba(0,0,0,.78) 100%); }
 .bd-badge { position: absolute; top: 12px; right: 12px; background: var(--yellow, #F5D400); color: #111; font-weight: 900; font-size: 15px; padding: 6px 12px; border-radius: 999px; letter-spacing: -.2px; }
 .bd-head { position: absolute; left: 16px; right: 16px; bottom: 14px; color: #fff; display: grid; gap: 6px; }

@@ -119,7 +119,7 @@ grant execute on function public.crm_brand_deal_opened(uuid, bigint) to authenti
 insert into public.crm_brand_deals (brand_name, tagline, description, shop_url, logo_url, cover_url, accent_color, terms, i18n, sort)
 select 'CiaoGym', 'Activewear premium per allenamento e tempo libero',
        'Abbigliamento per l''allenamento e il tempo libero, uomo e donna. Spedizione in tutto il mondo.',
-       'https://ciaogym.com/en_global/', '/brand-deals/ciaogym-logo-white.svg', '/brand-deals/ciaogym-cover.jpg', '#111111',
+       'https://ciaogym.com/en_global/', '/brand-deals/ciaogym-logo-white.svg', '/brand-deals/ciaogym-cover-2.jpg', '#111111',
        'Inserisci il codice nel carrello, prima del pagamento.',
        '{"en": {"tagline": "Premium activewear for training and everyday", "description": "Training and athleisure apparel for men and women. Worldwide shipping.", "terms": "Enter the code in your cart before paying."}}'::jsonb,
        1
