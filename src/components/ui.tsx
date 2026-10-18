@@ -5,10 +5,12 @@ import { useLang } from '../lib/i18n'
 const modalStack: number[] = []
 let modalSeq = 0
 
-export function Modal({ title, onClose, children, footer, wide, dismissable = false }: {
+export function Modal({ title, onClose, children, footer, wide, dismissable = false, noClose = false }: {
   title: string; onClose: () => void; children: React.ReactNode; footer?: React.ReactNode; wide?: boolean
   /** true = anche un clic sullo sfondo chiude (solo per finestre senza form) */
   dismissable?: boolean
+  /** true = niente ✕ (passaggio obbligatorio, es. foto profilo) */
+  noClose?: boolean
 }) {
   const { t } = useLang()
   const closeRef = React.useRef(onClose)
@@ -37,7 +39,7 @@ export function Modal({ title, onClose, children, footer, wide, dismissable = fa
         style={wide ? { maxWidth: 680 } : undefined} onMouseDown={e => e.stopPropagation()}>
         <div className="modal-head">
           <div className="modal-title">{title}</div>
-          <button className="close-x" onClick={onClose} aria-label={t('Chiudi')}>×</button>
+          {!noClose && <button className="close-x" onClick={onClose} aria-label={t('Chiudi')}>×</button>}
         </div>
         <div className="modal-body">{children}</div>
         {footer && <div className="modal-foot">{footer}</div>}

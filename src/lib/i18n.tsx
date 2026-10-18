@@ -3124,5 +3124,18 @@ const EN: Record<string, string> = {
   "Iscrizione / Licenza": "Registration / Licence",
   "Email studio": "Practice email",
   "Telefono studio": "Practice phone",
+  // --- foto e logo professionisti (18/10/2026) ---
+  "obbligatoria": "required",
+  "Foto di rappresentanza: primo piano, viso ben visibile, sfondo neutro e buona luce. Niente selfie, occhiali da sole o foto di gruppo. È quella che vedono gli atleti e AUVI.": "A professional headshot: face clearly visible, neutral background and good light. No selfies, sunglasses or group photos. It's what athletes and AUVI see.",
+  "Cambia foto": "Change photo",
+  "Logo personale": "Personal logo",
+  "Se hai un tuo logo (studio, brand personale), caricalo: comparirà accanto al tuo nome. Meglio PNG con sfondo trasparente.": "If you have your own logo (practice, personal brand), upload it: it will appear next to your name. A PNG with a transparent background works best.",
+  "Il logo della tua agenzia o il tuo logo personale: comparirà accanto al tuo nome. Meglio PNG con sfondo trasparente.": "Your agency logo or your personal logo: it will appear next to your name. A PNG with a transparent background works best.",
+  "Il logo del tuo studio o il tuo logo personale: comparirà accanto al tuo nome. Meglio PNG con sfondo trasparente.": "Your practice logo or your personal logo: it will appear next to your name. A PNG with a transparent background works best.",
+  "Per lavorare con gli atleti AUVI serve una foto profilo di rappresentanza: è come ti presenti a loro e al loro team.": "To work with AUVI athletes you need a professional profile photo: it's how you introduce yourself to them and their team.",
+  "Foto salvata: benvenuto!": "Photo saved: welcome!",
+  "Carica la tua foto profilo: è obbligatoria.": "Upload your profile photo: it's required.",
+  "Scegli un'immagine (JPG o PNG)": "Choose an image (JPG or PNG)",
+  "Caricamento non riuscito": "Upload failed",
 }
 

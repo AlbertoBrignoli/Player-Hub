@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../auth/AuthContext'
 import { Spinner, Field, Input, Textarea } from '../components/ui'
 import Icon from '../components/Icon'
+import { ProImages } from '../components/ProImages'
 import { useLang } from '../lib/i18n'
 
 // Profilo del nutrizionista sportivo: lo compila lui, l'atleta lo vede in "Il mio team".
@@ -56,6 +57,7 @@ export default function NutriProfile() {
 
   async function save() {
     if (!uid) return
+    if (!p.photo_url) { setMsg(t('Carica la tua foto profilo: è obbligatoria.')); return }
     setBusy(true); setMsg('')
     const { error } = await supabase.from('crm_nutri_profile')
       .upsert({ ...p, nutri_id: uid, updated_at: new Date().toISOString() })
@@ -94,16 +96,8 @@ export default function NutriProfile() {
           {F('city', 'Città', 'Città, paese')}
           {F('years_experience', 'Anni di esperienza')}
         </div>
-        <Field label={t('Foto profilo')}>
-          <div className="flex gap" style={{ alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-            <button className="btn btn-sm" disabled={upl} onClick={() => photoRef.current?.click()}>
-              <Icon name="upload" size={13} /> {upl ? t('Carico…') : t('Carica foto')}
-            </button>
-            <input ref={photoRef} type="file" accept="image/*" hidden
-              onChange={e => { const f = e.target.files?.[0]; if (f) upload(f); e.target.value = '' }} />
-            {p.photo_url && <img src={p.photo_url} alt="" style={{ width: 34, height: 34, borderRadius: 9, objectFit: 'cover' }} />}
-          </div>
-        </Field>
+        <ProImages uid={uid!} photo={p.photo_url} logo={p.logo_url}
+          onPhoto={u => set('photo_url', u)} onLogo={u => set('logo_url', u)} />
       </div>
 
       <div className="card">

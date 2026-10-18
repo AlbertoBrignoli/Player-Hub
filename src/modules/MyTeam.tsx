@@ -18,6 +18,7 @@ type Member = {
   name: string | null; title: string | null; photo_url: string | null
   email: string | null; phone: string | null; whatsapp: string | null; agency_name: string | null
   pro_id: string | null
+  logo_url: string | null
 }
 
 type Area = { route: string; label: string }
@@ -150,7 +151,7 @@ export default function MyTeam({ goto }: { goto?: (r: string) => void }) {
               const showArea = !!r.area && (canOpenAll || role === m.role)
               return (
                 <MemberCard key={i} name={m.name} roleLabel={t(r.label)} icon={r.icon}
-                  title={m.title} agency={m.agency_name} photo={m.photo_url}
+                  title={m.title} agency={m.agency_name} photo={m.photo_url} logo={m.logo_url}
                   email={m.email} phone={m.phone} whatsapp={m.whatsapp}
                   area={showArea ? r.area : undefined}
                   onArea={showArea && r.area && goto ? () => goto(r.area!.route) : undefined}
@@ -175,9 +176,9 @@ export default function MyTeam({ goto }: { goto?: (r: string) => void }) {
   )
 }
 
-function MemberCard({ name, roleLabel, icon, title, agency, photo, email, phone, whatsapp, accent, area, onArea, onOpen }: {
+function MemberCard({ name, roleLabel, icon, title, agency, photo, logo, email, phone, whatsapp, accent, area, onArea, onOpen }: {
   name: string | null; roleLabel: string; icon: string
-  title?: string | null; agency?: string | null; photo?: string | null
+  title?: string | null; agency?: string | null; photo?: string | null; logo?: string | null
   email?: string | null; phone?: string | null; whatsapp?: string | null; accent?: string
   area?: Area; onArea?: () => void; onOpen?: () => void
 }) {
@@ -201,7 +202,10 @@ function MemberCard({ name, roleLabel, icon, title, agency, photo, email, phone,
             </div>
           )}
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 15, fontWeight: 800 }}>{name || '—'}</div>
+            <div className="flex gap" style={{ alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 15, fontWeight: 800 }}>{name || '—'}</span>
+              {logo && <img src={logo} alt="" style={{ height: 22, maxWidth: 70, objectFit: 'contain', flexShrink: 0 }} />}
+            </div>
             <div className="flex gap" style={{ alignItems: 'center', gap: 6, marginTop: 2 }}>
               <span style={{ color: 'var(--text-dim)', display: 'inline-flex' }}><Icon name={icon} size={12} /></span>
               <span style={{ fontSize: 12, color: 'var(--text-dim)',

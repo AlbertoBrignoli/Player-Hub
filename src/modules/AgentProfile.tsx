@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthContext'
 import { useAthlete } from '../lib/athlete'
 import { Spinner, Field, Input, Textarea } from '../components/ui'
 import Icon from '../components/Icon'
+import { ProImages } from '../components/ProImages'
 import { useLang } from '../lib/i18n'
 
 // Profilo del procuratore: contatti personali + agenzia per cui lavora.
@@ -65,6 +66,7 @@ export default function AgentProfile() {
 
   async function save() {
     if (!uid) return
+    if (!p.photo_url) { setMsg(t('Carica la tua foto profilo: è obbligatoria.')); return }
     setBusy(true); setMsg('')
     const { error } = await supabase.from('crm_agent_profile')
       .upsert({ ...p, agent_id: uid, updated_at: new Date().toISOString() })
@@ -146,16 +148,9 @@ export default function AgentProfile() {
           <Field label={t('WhatsApp')}><Input value={p.whatsapp || ''} onChange={e => set('whatsapp', e.target.value)} /></Field>
           <Field label={t('Licenza FIFA')}><Input value={p.licence || ''} onChange={e => set('licence', e.target.value)} placeholder={t('Numero licenza')} /></Field>
         </div>
-        <Field label={t('Foto profilo')}>
-          <div className="flex gap" style={{ alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-            <button className="btn btn-sm" disabled={upl === 'photo_url'} onClick={() => photoRef.current?.click()}>
-              <Icon name="upload" size={13} /> {upl === 'photo_url' ? t('Carico…') : t('Carica foto')}
-            </button>
-            <input ref={photoRef} type="file" accept="image/*" hidden
-              onChange={e => { const f = e.target.files?.[0]; if (f) upload(f, 'photo_url'); e.target.value = '' }} />
-            {p.photo_url && <img src={p.photo_url} alt="" style={{ width: 34, height: 34, borderRadius: 9, objectFit: 'cover' }} />}
-          </div>
-        </Field>
+        <ProImages uid={uid!} photo={p.photo_url} logo={p.agency_logo_url}
+          onPhoto={u => set('photo_url', u)} onLogo={u => set('agency_logo_url', u)}
+          logoHint="Il logo della tua agenzia o il tuo logo personale: comparirà accanto al tuo nome. Meglio PNG con sfondo trasparente." />
       </div>
 
       {/* --- agenzia --- */}
@@ -175,16 +170,6 @@ export default function AgentProfile() {
           <Field label={t('LinkedIn')}><Input value={p.agency_linkedin || ''} onChange={e => set('agency_linkedin', e.target.value)} /></Field>
         </div>
         <Field label={t('Sede')}><Input value={p.agency_address || ''} onChange={e => set('agency_address', e.target.value)} placeholder={t('Via, città, paese')} /></Field>
-        <Field label={t('Logo agenzia')}>
-          <div className="flex gap" style={{ alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-            <button className="btn btn-sm" disabled={upl === 'agency_logo_url'} onClick={() => logoRef.current?.click()}>
-              <Icon name="upload" size={13} /> {upl === 'agency_logo_url' ? t('Carico…') : t('Carica logo')}
-            </button>
-            <input ref={logoRef} type="file" accept="image/*" hidden
-              onChange={e => { const f = e.target.files?.[0]; if (f) upload(f, 'agency_logo_url'); e.target.value = '' }} />
-            {p.agency_logo_url && <img src={p.agency_logo_url} alt="" style={{ width: 34, height: 34, borderRadius: 9, objectFit: 'contain', background: '#fff' }} />}
-          </div>
-        </Field>
         <Field label={t('Note')}><Textarea rows={2} value={p.notes || ''} onChange={e => set('notes', e.target.value)} /></Field>
       </div>
 

@@ -22,6 +22,7 @@ import Tasks from './modules/Tasks'
 import Messages from './modules/Messages'
 import Settings from './modules/Settings'
 import PasswordSetup from './components/PasswordSetup'
+import { ProPhotoGate } from './components/ProImages'
 import MediaKit from './modules/MediaKit'
 import BrandCard from './modules/BrandCard'
 import BrandHome from './modules/BrandHome'
@@ -150,6 +151,7 @@ export default function App() {
     <>
       <Shell route={route} setRoute={setRoute}>{view}</Shell>
       <PasswordSetup />
+      <ProPhotoGate />
     </>
   )
 }

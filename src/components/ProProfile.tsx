@@ -31,13 +31,13 @@ const CFG: Record<string, Cfg> = {
     links: [['agency_website', 'Sito web']],
   },
   preparatore: {
-    table: 'fitness_coach_profile', idCol: 'trainer_id', title: 'headline',
+    table: 'fitness_coach_profile', idCol: 'trainer_id', title: 'headline', logo: 'logo_url',
     about: [['experience', 'Esperienza'], ['bio_method', 'Metodo'], ['bio_philosophy', 'Filosofia'], ['education', 'Formazione'],
       ['certifications', 'Certificazioni'], ['teams', 'Squadre'], ['specializations', 'Specializzazioni'], ['services', 'Servizi'], ['availability', 'Disponibilità']],
     place: [], links: [],
   },
   fisioterapista: {
-    table: 'crm_physio_profile', idCol: 'physio_id', title: 'title',
+    table: 'crm_physio_profile', idCol: 'physio_id', title: 'title', logo: 'logo_url',
     about: [['bio', 'Presentazione'], ['years_experience', 'Anni di esperienza'], ['experience_desc', 'Esperienza'], ['clubs', 'Club professionistici'],
       ['national_teams', 'Nazionali'], ['degree', 'Laurea'], ['masters', 'Master / Specializzazioni post-laurea'], ['certifications', 'Certificazioni'],
       ['sports', 'Sport'], ['body_areas', 'Aree del corpo'], ['pathologies', 'Patologie'], ['techniques', 'Tecniche'], ['methods', 'Metodi di trattamento'],
@@ -47,7 +47,7 @@ const CFG: Record<string, Cfg> = {
     links: [['website', 'Sito web']],
   },
   nutrizionista: {
-    table: 'crm_nutri_profile', idCol: 'nutri_id', title: 'title',
+    table: 'crm_nutri_profile', idCol: 'nutri_id', title: 'title', logo: 'logo_url',
     about: [['bio', 'Presentazione'], ['specialties', 'Specializzazioni'], ['clubs', 'Club e atleti seguiti'], ['years_experience', 'Anni di esperienza'],
       ['licence', 'Albo / Iscrizione'], ['languages', 'Lingue']],
     place: [['city', 'Città']],

@@ -517,6 +517,7 @@ export interface FitnessLibraryItem {
 }
 
 export interface CoachProfile {
+  logo_url?: string | null
   trainer_id: string
   name?: string | null
   photo_url?: string | null

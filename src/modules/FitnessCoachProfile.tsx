@@ -4,6 +4,8 @@ import { useAuth } from '../auth/AuthContext'
 import { useAthlete } from '../lib/athlete'
 import { Spinner, Field, Input, Textarea, Empty } from '../components/ui'
 import Icon from '../components/Icon'
+import { ProImages } from '../components/ProImages'
+import { toast } from '../lib/toast'
 import type { CoachProfile } from '../lib/types'
 import { useLang } from '../lib/i18n'
 
@@ -50,6 +52,7 @@ export default function FitnessCoachProfile({ goto }: { goto?: (r: string) => vo
   }
 
   async function save() {
+    if (!p!.photo_url) { toast(t('Carica la tua foto profilo: è obbligatoria.'), 'err'); return }
     setBusy(true)
     await supabase.from('fitness_coach_profile').upsert({ ...p, updated_at: new Date().toISOString() }, { onConflict: 'trainer_id' })
     setBusy(false); setEditing(false)
@@ -74,11 +77,14 @@ export default function FitnessCoachProfile({ goto }: { goto?: (r: string) => vo
             <button className="btn btn-primary" onClick={save} disabled={busy}>{busy ? t('Salvo…') : t('Salva')}</button>
           </div>
         </div>
+        <div style={{ marginBottom: 14 }}>
+          <ProImages uid={p.trainer_id} photo={p.photo_url} logo={p.logo_url}
+            onPhoto={u => set('photo_url', u)} onLogo={u => set('logo_url', u)} />
+        </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(220px, 100%), 1fr))', gap: 12 }}>
           <Field label={t('Nome')}><Input value={p.name || ''} onChange={e => set('name', e.target.value)} /></Field>
           <Field label={t('Ruolo / Club attuale')}><Input value={p.headline || ''} onChange={e => set('headline', e.target.value)} placeholder={t('Preparatore Atletico · AEK Athens')} /></Field>
           <Field label={t('Esperienza')}><Input value={p.experience || ''} onChange={e => set('experience', e.target.value)} placeholder={t('10+ anni')} /></Field>
-          <Field label={t('Foto (URL)')}><Input value={p.photo_url || ''} onChange={e => set('photo_url', e.target.value)} placeholder="https://…" /></Field>
         </div>
         <div style={label}>{t('Biografia')}</div>
         <Field label={t('Metodo di lavoro')}><Textarea rows={2} value={p.bio_method || ''} onChange={e => set('bio_method', e.target.value)} /></Field>
