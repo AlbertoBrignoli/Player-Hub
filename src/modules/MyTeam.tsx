@@ -6,6 +6,7 @@ import { useAuth } from '../auth/AuthContext'
 import { initials } from '../lib/format'
 import Icon from '../components/Icon'
 import { Empty, Spinner } from '../components/ui'
+import ProProfileModal from '../components/ProProfile'
 
 // "Il mio team" (My Club): le persone che lavorano attorno a un atleta.
 // Ogni professionista è una card che apre la SUA area (polizze, fisco, fitness,
@@ -16,6 +17,7 @@ type Member = {
   player_id: number; role: string; sort: number
   name: string | null; title: string | null; photo_url: string | null
   email: string | null; phone: string | null; whatsapp: string | null; agency_name: string | null
+  pro_id: string | null
 }
 
 type Area = { route: string; label: string }
@@ -38,6 +40,8 @@ export default function MyTeam({ goto }: { goto?: (r: string) => void }) {
   const { isAdmin, role } = useAuth()
   const [rows, setRows] = useState<Member[]>([])
   const [loading, setLoading] = useState(true)
+  // scheda del professionista aperta toccando la sua card
+  const [openPro, setOpenPro] = useState<Member | null>(null)
 
   const athlete = athletes.find(a => a.api_player_id === athleteId)
   const isRoster = ROSTER_ROLES.includes(role || '')
@@ -149,11 +153,17 @@ export default function MyTeam({ goto }: { goto?: (r: string) => void }) {
                   title={m.title} agency={m.agency_name} photo={m.photo_url}
                   email={m.email} phone={m.phone} whatsapp={m.whatsapp}
                   area={showArea ? r.area : undefined}
-                  onArea={showArea && r.area && goto ? () => goto(r.area!.route) : undefined} />
+                  onArea={showArea && r.area && goto ? () => goto(r.area!.route) : undefined}
+                  onOpen={m.pro_id ? () => setOpenPro(m) : undefined} />
               )
             })}
           </div>
         </div>
+      )}
+
+      {openPro && openPro.pro_id && (
+        <ProProfileModal role={openPro.role} proId={openPro.pro_id} roleLabel={(ROLE[openPro.role] || { label: openPro.role }).label}
+          fallback={openPro} onClose={() => setOpenPro(null)} />
       )}
 
       {isAdmin && goto && rows.length > 0 && (
@@ -165,18 +175,21 @@ export default function MyTeam({ goto }: { goto?: (r: string) => void }) {
   )
 }
 
-function MemberCard({ name, roleLabel, icon, title, agency, photo, email, phone, whatsapp, accent, area, onArea }: {
+function MemberCard({ name, roleLabel, icon, title, agency, photo, email, phone, whatsapp, accent, area, onArea, onOpen }: {
   name: string | null; roleLabel: string; icon: string
   title?: string | null; agency?: string | null; photo?: string | null
   email?: string | null; phone?: string | null; whatsapp?: string | null; accent?: string
-  area?: Area; onArea?: () => void
+  area?: Area; onArea?: () => void; onOpen?: () => void
 }) {
   const { t } = useLang()
   const sub = [title, agency].filter(Boolean).join(' · ')
   return (
     <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden' }}>
       <div className="flex between" style={{ gap: 12, alignItems: 'center', padding: 14 }}>
-        <div className="flex gap" style={{ alignItems: 'center', gap: 12, minWidth: 0 }}>
+        <div className="flex gap" role={onOpen ? 'button' : undefined} tabIndex={onOpen ? 0 : undefined}
+          onClick={onOpen} onKeyDown={onOpen ? e => { if (e.key === 'Enter') onOpen() } : undefined}
+          title={onOpen ? t('Apri il profilo') : undefined}
+          style={{ alignItems: 'center', gap: 12, minWidth: 0, flex: 1, cursor: onOpen ? 'pointer' : undefined }}>
           {photo ? (
             <img src={photo} alt={name || ''} style={{ width: 46, height: 46, borderRadius: 12, objectFit: 'cover', flexShrink: 0 }} />
           ) : (
@@ -196,6 +209,7 @@ function MemberCard({ name, roleLabel, icon, title, agency, photo, email, phone,
                 {roleLabel}{sub ? ` · ${sub}` : ''}
               </span>
             </div>
+            {onOpen && <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text-dim)', marginTop: 3 }}>{t('Vedi profilo')} →</div>}
           </div>
         </div>
         <div className="flex gap" style={{ gap: 6, flexShrink: 0 }}>

@@ -3112,5 +3112,17 @@ const EN: Record<string, string> = {
   "Ti avvisiamo per partite, programma, report, proposte del tuo team e messaggi.": "We'll let you know about matches, your schedule, reports, your team's proposals and messages.",
   "Problemi? Scrivi al tuo referente AUVI: ti aiutiamo noi.": "Any problems? Message your AUVI contact: we'll help you.",
   "Dal telefono: inquadra il QR qui sotto oppure apri il link, poi segui questi passi.": "On your phone: scan the QR below or open the link, then follow these steps.",
+  // --- profilo professionista da Il mio team (18/10/2026) ---
+  "Profilo verificato": "Verified profile",
+  "Profilo professionale": "Professional profile",
+  "Dove lavora": "Where they work",
+  "Il professionista non ha ancora completato il suo profilo.": "This professional hasn't completed their profile yet.",
+  "Apri il profilo": "Open profile",
+  "Licenza": "Licence",
+  "Agenzia fondata nel": "Agency founded in",
+  "Transfermarkt": "Transfermarkt",
+  "Iscrizione / Licenza": "Registration / Licence",
+  "Email studio": "Practice email",
+  "Telefono studio": "Practice phone",
 }
 
