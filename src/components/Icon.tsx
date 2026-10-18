@@ -3,6 +3,7 @@ import React from 'react'
 // Set di icone a tratto (stile SF Symbols / Feather): niente emoji,
 // colore ereditato da currentColor, peso coerente ovunque.
 const P: Record<string, React.ReactNode> = {
+  tag: <><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z" /><circle cx="7.5" cy="7.5" r="1.5" /></>,
   grid: <><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /></>,
   home: <><path d="M3 9.5 12 3l9 6.5" /><path d="M5 8.5V21h14V8.5" /><path d="M9 21v-7h6v7" /></>,
   activity: <path d="M22 12h-4l-3 8L9 4l-3 8H2" />,

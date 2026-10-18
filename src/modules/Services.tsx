@@ -11,6 +11,7 @@ import { useRouteParam } from '../lib/route'
 import ServiceDetail from '../components/ServiceDetail'
 import RequestThread from '../components/RequestThread'
 import type { Service } from '../components/ServiceDetail'
+import BrandDeals from '../components/BrandDeals'
 
 // Store dei servizi AUVI (redesign UX handoff): l'atleta sfoglia i servizi
 // come in un marketplace, apre la scheda del partner, compila il questionario
@@ -78,7 +79,7 @@ export default function Services() {
   const [loading, setLoading] = useState(true)
   const [open, setOpen] = useState<Service | null>(null)
   const [manage, setManage] = useState<Req | null>(null)
-  const [tab, setTab] = useState<'store' | 'requests'>('store')
+  const [tab, setTab] = useState<'store' | 'brand' | 'requests'>(() => (new URLSearchParams(window.location.hash.split('?')[1] || '').get('tab') === 'brand' ? 'brand' : 'store'))
   const [cat, setCat] = useState<string>('Tutti')
 
   const isPlayer = role === 'player'
@@ -97,6 +98,9 @@ export default function Services() {
   // link diretto a una richiesta (dalle notifiche): #/services?req=<id>
   const wantedReq = useRouteParam('req')
   useEffect(() => { if (wantedReq) setTab('requests') }, [wantedReq])
+  // dalla notifica "Codice sconto attivato": #/services?tab=brand
+  const wantedTab = useRouteParam('tab')
+  useEffect(() => { if (wantedTab === 'brand') setTab('brand') }, [wantedTab])
 
   // link diretto a una scheda: #/services?service=<id o nome partner> (es. dalla Performance)
   const wanted = useRouteParam('service')
@@ -153,7 +157,7 @@ export default function Services() {
 
       {/* --- segmento Store / Richieste --- */}
       <div className="flex gap" style={{ gap: 8 }}>
-        {(['store', 'requests'] as const).map(k => {
+        {(['store', 'brand', 'requests'] as const).map(k => {
           const on = tab === k
           return (
             <button key={k} onClick={() => setTab(k)}
@@ -163,13 +167,15 @@ export default function Services() {
                 background: on ? T.text : 'transparent',
                 color: on ? '#fff' : T.dim, fontWeight: 800, fontSize: 13,
               }}>
-              {k === 'store' ? 'Store' : `${t('Richieste')}${reqs.length ? ` · ${reqs.length}` : ''}`}
+              {k === 'store' ? 'Store' : k === 'brand' ? 'Brand' : `${t('Richieste')}${reqs.length ? ` · ${reqs.length}` : ''}`}
             </button>
           )
         })}
       </div>
 
-      {tab === 'requests' ? (
+      {tab === 'brand' ? (
+        <BrandDeals />
+      ) : tab === 'requests' ? (
         <RequestsView reqs={reqs} isPlayer={isPlayer} isAdmin={isAdmin} openReq={wantedReq}
           athleteName={athleteName} onManage={setManage} onEmptyGoStore={() => setTab('store')} />
       ) : (
