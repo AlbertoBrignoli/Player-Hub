@@ -7,15 +7,43 @@ import { Spinner, Empty } from '../components/ui'
 import Icon from '../components/Icon'
 import { fmtDateTime, initials } from '../lib/format'
 import type { Message, BrandLite } from '../lib/types'
+import StaffChat, { STAFF_ROLE } from '../components/StaffChat'
+import { useRouteParam } from '../lib/route'
 
 // Canali: 'team' = giocatore <-> Alberto (Management) · 'fitness' = giocatore <-> preparatore
 // 'brand:<id>' = giocatore <-> brand (es. Under Armour, solo per Zortea).
 type Chan = { key: string; label: string; sub: string; icon: string; accent?: string | null; logo?: string | null }
 
 const roleLabel = (r?: string | null) =>
-  r === 'admin' ? 'Management' : r === 'preparatore' ? 'Preparatore' : r === 'brand' ? 'Brand' : 'Giocatore'
+  r === 'admin' ? 'Management' : r === 'brand' ? 'Brand' : r === 'player' || !r ? 'Giocatore' : STAFF_ROLE[r] || 'Giocatore'
 
+// Due sezioni: "Con l'atleta" (chat dirette di sempre) e "Staff" (professionisti tra loro).
 export default function Messages() {
+  const { t } = useLang()
+  const { role } = useAuth()
+  const staffParam = useRouteParam('staff')
+  const canStaff = role !== 'brand' && role !== 'partner'
+  const [mode, setMode] = useState<'direct' | 'staff'>(staffParam ? 'staff' : 'direct')
+  useEffect(() => { if (staffParam) setMode('staff') }, [staffParam])
+  if (!canStaff) return <DirectChat />
+  return (
+    <div className="grid" style={{ gap: 10 }}>
+      <div className="seg-2" style={{ display: 'flex', gap: 8 }}>
+        {(['direct', 'staff'] as const).map(k => (
+          <button key={k} onClick={() => setMode(k)} className="btn btn-sm"
+            style={mode === k ? { background: 'var(--text)', color: 'var(--bg, #fff)', borderColor: 'var(--text)' } : undefined}>
+            <Icon name={k === 'direct' ? 'message' : 'users'} size={13} /> {k === 'direct'
+              ? (role === 'player' ? t('Le mie chat') : t('Con l\'atleta'))
+              : (role === 'player' ? t('Il mio staff') : t('Staff'))}
+          </button>
+        ))}
+      </div>
+      {mode === 'staff' ? <StaffChat openThread={staffParam} /> : <DirectChat />}
+    </div>
+  )
+}
+
+function DirectChat() {
   const { t: tr } = useLang()
   const { session, profile, isAdmin, role } = useAuth()
   const { athleteId, athletes } = useAthlete()
@@ -26,6 +54,8 @@ export default function Messages() {
   const [agentName, setAgentName] = useState<string | null>(null)
   const [insurerName, setInsurerName] = useState<string | null>(null)
   const [taxName, setTaxName] = useState<string | null>(null)
+  const [physioName, setPhysioName] = useState<string | null>(null)
+  const [nutriName, setNutriName] = useState<string | null>(null)
   const [chan, setChan] = useState<string>('team')
   const [loading, setLoading] = useState(true)
   const [text, setText] = useState('')
@@ -37,6 +67,8 @@ export default function Messages() {
   const isAgent = role === 'agente'
   const isInsurer = role === 'assicuratore'
   const isTax = role === 'commercialista'
+  const isPhysio = role === 'fisioterapista'
+  const isNutri = role === 'nutrizionista'
 
   // Canali disponibili in base al ruolo e all'atleta attivo.
   const chans: Chan[] = isBrand
@@ -49,11 +81,17 @@ export default function Messages() {
       ? [{ key: 'assicuratore', label: tr('Assicurazioni'), sub: tr('Polizze e coperture'), icon: 'lock' }]
     : isTax
       ? [{ key: 'commercialista', label: tr('Legale e fiscale'), sub: tr('Documenti e scadenze'), icon: 'briefcase' }]
+    : isPhysio
+      ? [{ key: 'fisioterapista', label: tr('Fisioterapia'), sub: tr('Trattamenti e recupero'), icon: 'activity' }]
+    : isNutri
+      ? [{ key: 'nutrizionista', label: tr('Alimentazione'), sub: tr('Piano alimentare e integrazione'), icon: 'layers' }]
       : [
           { key: 'team', label: tr('Alberto · Management'), sub: tr('AUVI Agency'), icon: 'briefcase' },
           ...(agentName ? [{ key: 'agente', label: agentName, sub: tr('Procuratore'), icon: 'briefcase' }] : []),
           ...(insurerName ? [{ key: 'assicuratore', label: insurerName, sub: tr('Assicuratore'), icon: 'lock' }] : []),
           ...(taxName ? [{ key: 'commercialista', label: taxName, sub: tr('Commercialista'), icon: 'briefcase' }] : []),
+          ...(physioName ? [{ key: 'fisioterapista', label: physioName, sub: tr('Fisioterapista'), icon: 'activity' }] : []),
+          ...(nutriName ? [{ key: 'nutrizionista', label: nutriName, sub: tr('Nutrizionista'), icon: 'layers' }] : []),
           ...(hasCoach ? [{ key: 'fitness', label: coachName || tr('Preparatore'), sub: tr('Preparazione atletica'), icon: 'dumbbell' }] : []),
           ...brands.map(b => ({ key: `brand:${b.id}`, label: b.name, sub: tr('Partner ufficiale'), icon: 'award', accent: b.accent_color, logo: b.logo_url })),
         ]
@@ -121,8 +159,8 @@ export default function Messages() {
   useEffect(() => {
     let ok = true
     ;(async () => {
-      if (!athleteId || isBrand || isCoach || isAgent || isInsurer || isTax) {
-        setAgentName(null); setInsurerName(null); setTaxName(null); return
+      if (!athleteId || isBrand || isCoach || isAgent || isInsurer || isTax || isPhysio || isNutri) {
+        setAgentName(null); setInsurerName(null); setTaxName(null); setPhysioName(null); setNutriName(null); return
       }
       const { data } = await supabase.from('crm_athlete_team').select('role, name').eq('player_id', athleteId)
       if (!ok) return
@@ -131,9 +169,11 @@ export default function Messages() {
       setAgentName(byRole('agente'))
       setInsurerName(byRole('assicuratore'))
       setTaxName(byRole('commercialista'))
+      setPhysioName(byRole('fisioterapista'))
+      setNutriName(byRole('nutrizionista'))
     })()
     return () => { ok = false }
-  }, [athleteId, isBrand, isCoach, isAgent, isInsurer, isTax])
+  }, [athleteId, isBrand, isCoach, isAgent, isInsurer, isTax, isPhysio, isNutri])
 
   async function load() {
     if (!athleteId) { setRows([]); setLoading(false); return }
@@ -173,7 +213,7 @@ export default function Messages() {
   const active = chans.find(c => c.key === chan)
   // Chi scrive al giocatore (management, preparatore, brand) deve vedere SEMPRE
   // e in chiaro a quale atleta sta scrivendo: il selettore in alto è troppo defilato.
-  const toAthlete = isAdmin || isCoach || isBrand || isAgent || isInsurer || isTax
+  const toAthlete = isAdmin || isCoach || isBrand || isAgent || isInsurer || isTax || isPhysio || isNutri
   const athlete = athletes.find(a => a.api_player_id === athleteId)
   const placeholder = tr('Scrivi a {name}…').replace('{name}', toAthlete
     ? (athlete?.name || tr('giocatore'))
