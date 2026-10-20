@@ -5,6 +5,7 @@ import { useAthlete } from '../lib/athlete'
 import { useLang } from '../lib/i18n'
 import { Spinner, Empty } from '../components/ui'
 import Icon from '../components/Icon'
+import { ChatAvatar, useChatPhotos } from '../components/ChatAvatar'
 import { fmtDateTime, initials } from '../lib/format'
 import type { Message, BrandLite } from '../lib/types'
 import StaffChat, { STAFF_ROLE } from '../components/StaffChat'
@@ -61,6 +62,7 @@ function DirectChat() {
   const [text, setText] = useState('')
   const [busy, setBusy] = useState(false)
   const endRef = useRef<HTMLDivElement>(null)
+  const photoOf = useChatPhotos()
 
   const isBrand = role === 'brand'
   const isCoach = role === 'preparatore'
@@ -278,8 +280,8 @@ function DirectChat() {
                 const mine = m.sender_id === session?.user.id
                 return (
                   <div key={m.id} style={{ display: 'flex', flexDirection: 'column', alignItems: mine ? 'flex-end' : 'flex-start' }}>
-                    {!mine && <div className="flex gap" style={{ marginBottom: 4, gap: 7 }}>
-                      <div className="avatar" style={{ width: 22, height: 22, fontSize: 10 }}>{initials(m.sender_name)}</div>
+                    {!mine && <div className="flex gap" style={{ marginBottom: 4, gap: 7, alignItems: 'center' }}>
+                      <ChatAvatar name={m.sender_name} role={m.sender_role} photo={m.sender_role === 'brand' && active?.logo ? active.logo : photoOf(m.sender_id, m.sender_role)} />
                       <span className="faint" style={{ fontSize: 11 }}>{m.sender_name} · {tr(roleLabel(m.sender_role))}</span>
                     </div>}
                     <div className={`bubble ${mine ? 'bubble-out' : 'bubble-in'}`}>

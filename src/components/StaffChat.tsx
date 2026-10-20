@@ -10,6 +10,7 @@ import { useLang } from '../lib/i18n'
 import { fmtDateTime, initials } from '../lib/format'
 import { Modal, Spinner, Empty } from './ui'
 import Icon from './Icon'
+import { ChatAvatar, useChatPhotos } from './ChatAvatar'
 
 type Member = { user_id: string; role: string | null; name: string | null }
 type Thread = { id: string; player_id: number; title: string | null; created_by: string; last_at: string; crm_staff_members: Member[] }
@@ -39,6 +40,7 @@ export default function StaffChat({ openThread }: { openThread?: string | null }
   const [notify, setNotify] = useState(false)
   const endRef = useRef<HTMLDivElement>(null)
   const athlete = athletes.find(a => a.api_player_id === athleteId)
+  const photoOf = useChatPhotos()
 
   async function loadThreads() {
     if (!athleteId) { setThreads([]); setLoading(false); return }
@@ -149,7 +151,9 @@ export default function StaffChat({ openThread }: { openThread?: string | null }
           </div>
         ) : threads.map(th => (
           <button key={th.id} className={`sc-item ${active === th.id ? 'on' : ''}`} onClick={() => setActive(th.id)}>
-            <div className="sc-av">{th.title ? <Icon name="users" size={16} /> : initials(titleOf(th))}</div>
+            {th.title
+              ? <div className="sc-av"><Icon name="users" size={16} /></div>
+              : <ChatAvatar size={38} name={titleOf(th)} role={others(th)[0]?.role} photo={photoOf(others(th)[0]?.user_id, others(th)[0]?.role)} />}
             <div style={{ minWidth: 0, flex: 1 }}>
               <div className="sc-t">{titleOf(th)}</div>
               <div className="sc-s">{th.title ? subOf(th) : subOf(th)}</div>
@@ -185,8 +189,8 @@ export default function StaffChat({ openThread }: { openThread?: string | null }
                     const mine = m.sender_id === me
                     return (
                       <div key={m.id} style={{ display: 'flex', flexDirection: 'column', alignItems: mine ? 'flex-end' : 'flex-start' }}>
-                        {!mine && <div className="flex gap" style={{ marginBottom: 4, gap: 7 }}>
-                          <div className="avatar" style={{ width: 22, height: 22, fontSize: 10 }}>{initials(m.sender_name)}</div>
+                        {!mine && <div className="flex gap" style={{ marginBottom: 4, gap: 7, alignItems: 'center' }}>
+                          <ChatAvatar name={m.sender_name} role={m.sender_role} photo={photoOf(m.sender_id, m.sender_role)} />
                           <span className="faint" style={{ fontSize: 11 }}>{m.sender_name} · {t(STAFF_ROLE[m.sender_role || ''] || 'Professionista')}</span>
                         </div>}
                         <div className={`bubble ${mine ? 'bubble-out' : 'bubble-in'}`} style={{ whiteSpace: 'pre-wrap' }}>
