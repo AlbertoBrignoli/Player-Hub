@@ -14,7 +14,7 @@ import { Modal, Field, Input, Tabs, Empty } from './ui'
 // Schermate home dei vari ruoli: qui compare l'invito ad attivare le notifiche.
 const HOME_ROUTES = ['dashboard', 'brandhome', 'agent-home', 'insurer-home', 'tax-home', 'physio-home', 'partner-home']
 
-export const APP_VERSION = 'v9.4'
+export const APP_VERSION = 'v9.5'
 
 export interface NavDef {
   key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[]
@@ -49,6 +49,7 @@ export const NAV: { group: string; items: NavDef[] }[] = [
   { group: 'Altro', items: [
     { key: 'my-team', label: 'Il mio team', icon: 'users' },
     { key: 'messages', label: 'Chat', icon: 'message' },
+    { key: 'my-files', label: 'I miei file', icon: 'folder', adminOnly: true },
     { key: 'access-requests', label: 'Collegamenti', icon: 'key' },
   ]},
 ]
@@ -162,6 +163,7 @@ export function proNav(role: ProRole): { group: string; items: NavDef[] }[] {
       { key: 'my-athletes', label: 'I miei atleti', icon: 'users' },
       cal,
       { key: 'messages', label: 'Chat', icon: 'message' },
+      { key: 'my-files', label: 'I miei file', icon: 'folder' },
     ]},
     ...(r.area.length ? [{ group: 'Area di lavoro', items: r.area }] : []),
     { group: 'Altro', items: [
@@ -208,6 +210,7 @@ const TITLES: Record<string, { t: string; s: string }> = {
   legaltax: { t: 'Legal & Tax', s: 'Pagamenti, documenti e richieste' },
   services: { t: 'Servizi AUVI', s: 'Servizi e partner a tua disposizione' },
   'my-team': { t: 'Il mio team', s: 'Il tuo team di lavoro' },
+  'my-files': { t: 'I miei file', s: 'Documenti ricevuti in chat e cartelle' },
   'training-builder': { t: 'Crea scheda', s: 'Modelli di allenamento da assegnare ai tuoi atleti' },
   'exercise-library': { t: 'Libreria esercizi', s: 'Cerca, filtra e crea esercizi per le sessioni' },
   'my-athletes': { t: 'I miei atleti', s: 'Collegamenti, inviti e accesso rapido a ogni atleta' },

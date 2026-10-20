@@ -11,10 +11,12 @@ import { fmtDateTime, initials } from '../lib/format'
 import { Modal, Spinner, Empty } from './ui'
 import Icon from './Icon'
 import { ChatAvatar, useChatPhotos } from './ChatAvatar'
+import { ChatAttachment, useAttach } from './ChatAttachment'
 
 type Member = { user_id: string; role: string | null; name: string | null }
 type Thread = { id: string; player_id: number; title: string | null; created_by: string; last_at: string; crm_staff_members: Member[] }
-type Msg = { id: string; thread_id: string; sender_id: string; sender_name: string | null; sender_role: string | null; body: string; created_at: string }
+type Msg = { id: string; thread_id: string; sender_id: string; sender_name: string | null; sender_role: string | null; body: string; created_at: string
+  file_path?: string | null; file_name?: string | null; file_mime?: string | null; file_size?: number | null }
 type Pro = { pro_id: string; role: string; name: string | null; photo_url: string | null }
 
 export const STAFF_ROLE: Record<string, string> = {
@@ -41,6 +43,7 @@ export default function StaffChat({ openThread }: { openThread?: string | null }
   const endRef = useRef<HTMLDivElement>(null)
   const athlete = athletes.find(a => a.api_player_id === athleteId)
   const photoOf = useChatPhotos()
+  const attach = useAttach(me)
 
   async function loadThreads() {
     if (!athleteId) { setThreads([]); setLoading(false); return }
@@ -85,12 +88,15 @@ export default function StaffChat({ openThread }: { openThread?: string | null }
   const subOf = (th: Thread) => others(th).map(m => t(STAFF_ROLE[m.role || ''] || 'Professionista')).join(' · ')
 
   async function send() {
-    if (!text.trim() || !thread || !me) return
+    if ((!text.trim() && !attach.pending) || !thread || !me) return
     setBusy(true)
+    const att = await attach.take()
+    if (att === false) { setBusy(false); return }
     const name = profile?.full_name || profile?.email || ''
     const { error } = await supabase.from('crm_staff_messages').insert({
       thread_id: thread.id, sender_id: me, sender_role: role,
-      sender_name: isTeam ? `AUVI · ${name}` : name, body: text.trim(),
+      sender_name: isTeam ? `AUVI · ${name}` : name, body: text.trim() || att?.file_name || '',
+      ...(att || {}),
     })
     setBusy(false)
     if (error) { toast(error.message, 'err'); return }
@@ -194,7 +200,8 @@ export default function StaffChat({ openThread }: { openThread?: string | null }
                           <span className="faint" style={{ fontSize: 11 }}>{m.sender_name} · {t(STAFF_ROLE[m.sender_role || ''] || 'Professionista')}</span>
                         </div>}
                         <div className={`bubble ${mine ? 'bubble-out' : 'bubble-in'}`} style={{ whiteSpace: 'pre-wrap' }}>
-                          {m.body}
+                          {m.file_path && <ChatAttachment path={m.file_path} name={m.file_name} mime={m.file_mime} size={m.file_size} mine={mine} />}
+                          {(!m.file_path || m.body !== m.file_name) && m.body}
                           <div className="bubble-meta">{fmtDateTime(m.created_at)}</div>
                         </div>
                       </div>
@@ -205,10 +212,14 @@ export default function StaffChat({ openThread }: { openThread?: string | null }
               )}
             </div>
             {canWrite ? (
-              <div className="flex gap" style={{ padding: 12, borderTop: '1px solid var(--border)' }}>
-                <input className="input" placeholder={t('Scrivi allo staff…')} value={text}
-                  onChange={e => setText(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }} />
-                <button className="btn btn-primary" disabled={busy || !text.trim()} onClick={send}>{t('Invia')}</button>
+              <div style={{ borderTop: '1px solid var(--border)' }}>
+                {attach.chip}
+                <div className="flex gap" style={{ padding: 12, gap: 6 }}>
+                  {attach.button}
+                  <input className="input" placeholder={t('Scrivi allo staff…')} value={text}
+                    onChange={e => setText(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }} />
+                  <button className="btn btn-primary" disabled={busy || (!text.trim() && !attach.pending)} onClick={send}>{busy && attach.uploading ? t('Carico…') : t('Invia')}</button>
+                </div>
               </div>
             ) : (
               <div className="faint" style={{ padding: 12, borderTop: '1px solid var(--border)', fontSize: 12.5, textAlign: 'center' }}>

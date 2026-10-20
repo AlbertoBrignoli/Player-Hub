@@ -40,6 +40,7 @@ import NutriProfile from './modules/NutriProfile'
 import NutriMenu from './modules/NutriMenu'
 import BrandCampaigns from './modules/BrandCampaigns'
 import MyTeam from './modules/MyTeam'
+import MyFiles from './modules/MyFiles'
 import Archivio from './modules/Archivio'
 import TalentSearch from './modules/TalentSearch'
 import MyAthletes from './modules/MyAthletes'
@@ -65,24 +66,24 @@ export default function App() {
   const isBrand = profile.role === 'brand'
   const brandAllowed = ['settings', 'brandhome', 'mediakit', 'campaigns', 'brandcard', 'talent', 'messages']
   // Il preparatore vede solo fitness, performance dell'atleta e chat.
-  const coachAllowed = ['training-builder', 'exercise-library', 'my-athletes', 'settings', 'dashboard', 'fitness', 'coach-profile', 'coach-office', 'performance', 'agenda', 'messages', 'access-requests', 'my-team']
+  const coachAllowed = ['training-builder', 'exercise-library', 'my-athletes', 'settings', 'dashboard', 'fitness', 'coach-profile', 'coach-office', 'performance', 'agenda', 'messages', 'access-requests', 'my-team', 'my-files']
   const isCoach = profile.role === 'preparatore'
   // L'agente vede solo le competenze del procuratore.
   const agentAllowed = ['my-athletes', 'settings', 'agent-home', 'dashboard', 'performance', 'profile', 'editorial', 'media',
                         'contracts', 'documents', 'sponsors', 'commercial', 'fitness',
-                        'agenda', 'tasks', 'messages', 'agent-profile', 'insurance', 'legaltax', 'services', 'access-requests', 'my-team', 'archivio']
+                        'agenda', 'tasks', 'messages', 'agent-profile', 'insurance', 'legaltax', 'services', 'access-requests', 'my-team', 'archivio', 'my-files']
   const isAgent = profile.role === 'agente'
   // L'assicuratore vede solo la sua area: polizze, scadenze e chat.
-  const insurerAllowed = ['my-athletes', 'settings', 'insurer-home', 'insurance', 'insurer-profile', 'documents', 'agenda', 'messages', 'access-requests', 'my-team']
+  const insurerAllowed = ['my-athletes', 'settings', 'insurer-home', 'insurance', 'insurer-profile', 'documents', 'agenda', 'messages', 'access-requests', 'my-team', 'my-files']
   const isInsurer = profile.role === 'assicuratore'
   // Il commercialista vede solo la sua area.
-  const taxAllowed = ['my-athletes', 'settings', 'tax-home', 'legaltax', 'tax-profile', 'services', 'documents', 'agenda', 'messages', 'access-requests', 'my-team']
+  const taxAllowed = ['my-athletes', 'settings', 'tax-home', 'legaltax', 'tax-profile', 'services', 'documents', 'agenda', 'messages', 'access-requests', 'my-team', 'my-files']
   const isTax = profile.role === 'commercialista'
   // Il fisioterapista vede la sua area: home, profilo, chat e collegamenti.
-  const physioAllowed = ['agenda', 'my-athletes', 'settings', 'physio-home', 'physio-profile', 'physio-office', 'messages', 'access-requests', 'my-team']
+  const physioAllowed = ['agenda', 'my-athletes', 'settings', 'physio-home', 'physio-profile', 'physio-office', 'messages', 'access-requests', 'my-team', 'my-files']
   const isPhysio = profile.role === 'fisioterapista'
   // Il nutrizionista lavora sul calendario dell'atleta: piano alimentare e integratori.
-  const nutriAllowed = ['agenda', 'my-athletes', 'settings', 'nutri-home', 'nutri-profile', 'nutri-menu', 'messages', 'access-requests', 'my-team']
+  const nutriAllowed = ['agenda', 'my-athletes', 'settings', 'nutri-home', 'nutri-profile', 'nutri-menu', 'messages', 'access-requests', 'my-team', 'my-files']
   const isNutri = profile.role === 'nutrizionista'
   // Il partner dei servizi (es. Scouting Department) vede solo la sua area di lavoro.
   const partnerAllowed = ['partner-home', 'settings']
@@ -119,6 +120,7 @@ export default function App() {
       case 'legaltax': return <LegalTax />
       case 'services': return <Services />
       case 'my-team': return <MyTeam goto={setRoute} />
+      case 'my-files': return <MyFiles />
       case 'my-athletes': return <MyAthletes />
       case 'exercise-library': return <ExerciseLibrary mode="browse" />
       case 'training-builder': return <TrainingBuilder goto={setRoute} />

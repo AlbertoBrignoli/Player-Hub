@@ -253,6 +253,10 @@ export interface Message {
   created_at: string
   player_id?: number | null
   channel?: string | null
+  file_path?: string | null
+  file_name?: string | null
+  file_mime?: string | null
+  file_size?: number | null
 }
 
 export interface BrandLite {

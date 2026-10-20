@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { toast } from '../lib/toast'
 import { useAuth } from '../auth/AuthContext'
 import { useAthlete } from '../lib/athlete'
 import { useLang } from '../lib/i18n'
 import { Spinner, Empty } from '../components/ui'
 import Icon from '../components/Icon'
 import { ChatAvatar, useChatPhotos } from '../components/ChatAvatar'
+import { ChatAttachment, useAttach } from '../components/ChatAttachment'
 import { fmtDateTime, initials } from '../lib/format'
 import type { Message, BrandLite } from '../lib/types'
 import StaffChat, { STAFF_ROLE } from '../components/StaffChat'
@@ -63,6 +65,7 @@ function DirectChat() {
   const [busy, setBusy] = useState(false)
   const endRef = useRef<HTMLDivElement>(null)
   const photoOf = useChatPhotos()
+  const attach = useAttach(session?.user.id)
 
   const isBrand = role === 'brand'
   const isCoach = role === 'preparatore'
@@ -198,17 +201,21 @@ function DirectChat() {
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [rows.length])
 
   async function send() {
-    if (!text.trim() || !session || !athleteId) return
+    if ((!text.trim() && !attach.pending) || !session || !athleteId) return
     setBusy(true)
+    const att = await attach.take()
+    if (att === false) { setBusy(false); return }
     const { error } = await supabase.from('crm_messages').insert({
       sender_id: session.user.id,
       sender_name: profile?.full_name || profile?.email,
       sender_role: profile?.role,
-      body: text.trim(),
+      body: text.trim() || att?.file_name || '',
       player_id: athleteId,
       channel: chan,
+      ...(att || {}),
     })
     setBusy(false)
+    if (error) toast(error.message, 'err')
     if (!error) { setText(''); load() }
   }
 
@@ -285,7 +292,8 @@ function DirectChat() {
                       <span className="faint" style={{ fontSize: 11 }}>{m.sender_name} · {tr(roleLabel(m.sender_role))}</span>
                     </div>}
                     <div className={`bubble ${mine ? 'bubble-out' : 'bubble-in'}`}>
-                      {m.body}
+                      {m.file_path && <ChatAttachment path={m.file_path} name={m.file_name} mime={m.file_mime} size={m.file_size} mine={mine} />}
+                      {(!m.file_path || m.body !== m.file_name) && m.body}
                       <div className="bubble-meta">{fmtDateTime(m.created_at)}</div>
                     </div>
                   </div>
@@ -295,10 +303,14 @@ function DirectChat() {
             </div>
           )}
         </div>
-        <div className="flex gap" style={{ padding: 14, borderTop: '1px solid var(--border)' }}>
-          <input className="input" placeholder={placeholder} value={text}
-            onChange={e => setText(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }} />
-          <button className="btn btn-primary" disabled={busy || !text.trim()} onClick={send}>{tr('Invia')}</button>
+        <div style={{ borderTop: '1px solid var(--border)' }}>
+          {attach.chip}
+          <div className="flex gap" style={{ padding: 14, gap: 6 }}>
+            {attach.button}
+            <input className="input" placeholder={placeholder} value={text}
+              onChange={e => setText(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }} />
+            <button className="btn btn-primary" disabled={busy || (!text.trim() && !attach.pending)} onClick={send}>{busy && attach.uploading ? tr('Carico…') : tr('Invia')}</button>
+          </div>
         </div>
       </div>
     </div>
