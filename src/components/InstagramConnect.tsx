@@ -53,8 +53,10 @@ export function InstagramConnect({ athleteId, onSynced }: { athleteId: number; o
     const { data, error } = await supabase.rpc('crm_ig_oauth_start', { p_player: athleteId })
     if (error) { setBusy(''); toast(t(error.message), 'err'); return }
     const { state, app_id } = data as { state: string; app_id: string }
+    // stessi parametri dell'"URL di incorporamento" di Meta (enable_fb_login/force_authentication
+    // davano "Invalid platform app" dopo il login)
     const q = new URLSearchParams({
-      enable_fb_login: '0', force_authentication: '1', client_id: app_id, redirect_uri: IG_REDIRECT,
+      force_reauth: 'true', client_id: app_id, redirect_uri: IG_REDIRECT,
       response_type: 'code', scope: IG_SCOPES, state,
     })
     window.location.href = `https://www.instagram.com/oauth/authorize?${q}`
