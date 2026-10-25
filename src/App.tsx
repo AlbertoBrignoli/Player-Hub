@@ -41,6 +41,7 @@ import NutriMenu from './modules/NutriMenu'
 import BrandCampaigns from './modules/BrandCampaigns'
 import MyTeam from './modules/MyTeam'
 import MyFiles from './modules/MyFiles'
+import Backstage from './modules/Backstage'
 import Archivio from './modules/Archivio'
 import TalentSearch from './modules/TalentSearch'
 import MyAthletes from './modules/MyAthletes'
@@ -64,7 +65,7 @@ export default function App() {
 
   // Il brand ha un set di schermate dedicato e non accede alle aree interne.
   const isBrand = profile.role === 'brand'
-  const brandAllowed = ['settings', 'brandhome', 'mediakit', 'campaigns', 'brandcard', 'talent', 'messages']
+  const brandAllowed = ['settings', 'brandhome', 'mediakit', 'campaigns', 'brandcard', 'talent', 'messages', 'backstage']
   // Il preparatore vede solo fitness, performance dell'atleta e chat.
   const coachAllowed = ['training-builder', 'exercise-library', 'my-athletes', 'settings', 'dashboard', 'fitness', 'coach-profile', 'coach-office', 'performance', 'agenda', 'messages', 'access-requests', 'my-team', 'my-files']
   const isCoach = profile.role === 'preparatore'
@@ -121,6 +122,7 @@ export default function App() {
       case 'services': return <Services />
       case 'my-team': return <MyTeam goto={setRoute} />
       case 'my-files': return <MyFiles />
+      case 'backstage': return <Backstage />
       case 'my-athletes': return <MyAthletes />
       case 'exercise-library': return <ExerciseLibrary mode="browse" />
       case 'training-builder': return <TrainingBuilder goto={setRoute} />

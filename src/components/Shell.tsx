@@ -14,7 +14,7 @@ import { Modal, Field, Input, Tabs, Empty } from './ui'
 // Schermate home dei vari ruoli: qui compare l'invito ad attivare le notifiche.
 const HOME_ROUTES = ['dashboard', 'brandhome', 'agent-home', 'insurer-home', 'tax-home', 'physio-home', 'partner-home']
 
-export const APP_VERSION = 'v9.7'
+export const APP_VERSION = 'v9.8'
 
 export interface NavDef {
   key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[]
@@ -33,6 +33,7 @@ export const NAV: { group: string; items: NavDef[] }[] = [
       { key: 'tasks', label: 'Task' },
     ]},
     { key: 'media', label: 'Media', icon: 'image' },
+    { key: 'backstage', label: 'Backstage', icon: 'eye' },
     { key: 'services', label: 'Servizi AUVI', icon: 'layers' },
     { key: 'performance', label: 'Atleta', icon: 'activity', tabs: [
       { key: 'performance', label: 'Performance' },
@@ -61,6 +62,7 @@ export const BRAND_NAV: { group: string; items: NavDef[] }[] = [
     { key: 'mediakit', label: 'Media Kit', icon: 'activity' },
     { key: 'campaigns', label: 'Campagne', icon: 'image' },
     { key: 'talent', label: 'Ricerca talent', icon: 'star' },
+    { key: 'backstage', label: 'Backstage atleti', icon: 'eye' },
     { key: 'brandcard', label: 'La mia scheda', icon: 'award' },
     { key: 'messages', label: 'Messaggi', icon: 'message' },
   ]},
@@ -211,6 +213,7 @@ const TITLES: Record<string, { t: string; s: string }> = {
   services: { t: 'Servizi AUVI', s: 'Servizi e partner a tua disposizione' },
   'my-team': { t: 'Il mio team', s: 'Il tuo team di lavoro' },
   'my-files': { t: 'I miei file', s: 'Documenti ricevuti in chat e cartelle' },
+  backstage: { t: 'Backstage', s: 'Il tuo profilo privato: chi sei davvero, per chi scegli tu' },
   'training-builder': { t: 'Crea scheda', s: 'Modelli di allenamento da assegnare ai tuoi atleti' },
   'exercise-library': { t: 'Libreria esercizi', s: 'Cerca, filtra e crea esercizi per le sessioni' },
   'my-athletes': { t: 'I miei atleti', s: 'Collegamenti, inviti e accesso rapido a ogni atleta' },
