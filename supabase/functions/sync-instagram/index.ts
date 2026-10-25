@@ -8,7 +8,10 @@
 //   4. aggiorna player.instagram_* e cp_profiles.audience (merge, non sovrascrive
 //      tiktok/youtube/authenticity inseriti a mano)
 //
-// Auth: header x-sync-secret (cron) OPPURE Bearer JWT di un utente admin (bottone in app).
+// Account "Collega Instagram" (auth_type instagram_login): stesse letture su graph.instagram.com,
+// rinnovo con ig_refresh_token, nessuna Pagina Facebook.
+//
+// Auth: header x-sync-secret (cron) OPPURE Bearer JWT di AUVI o dell'atleta (solo il suo account).
 // Il secret è generato per-istanza dalla migration 0018 e vive SOLO nel DB
 // (tabella cp_secrets, senza policy → leggibile solo dal service role).
 // Deploy con verify_jwt=false: l'auth è gestita qui sotto.
@@ -28,32 +31,50 @@ const admin = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
 )
 
-async function graphGet(path: string, params: Record<string, string>) {
+// account collegati con "Collega Instagram" (Instagram Login): stesse chiamate su graph.instagram.com
+const IG_GRAPH = 'https://graph.instagram.com/v21.0'
+
+async function graphGet(path: string, params: Record<string, string>, base = GRAPH) {
   const qs = new URLSearchParams(params).toString()
-  const res = await fetch(`${GRAPH}${path}?${qs}`)
+  const res = await fetch(`${base}${path}?${qs}`)
   const json = await res.json()
   if (json.error) throw new Error(`${json.error.type || 'GraphError'}: ${json.error.message}`)
   return json
 }
 
-async function isAdminJwt(req: Request): Promise<boolean> {
+// AUVI può sincronizzare tutti; l'atleta solo il proprio account ("Aggiorna ora")
+async function jwtCanSync(req: Request, playerId: number | null): Promise<boolean> {
   const auth = req.headers.get('authorization') || ''
   const jwt = auth.replace(/^Bearer\s+/i, '')
   if (!jwt) return false
   const { data: userData } = await admin.auth.getUser(jwt)
   if (!userData?.user) return false
-  const { data: prof } = await admin.from('crm_profiles').select('role').eq('id', userData.user.id).maybeSingle()
-  return prof?.role === 'admin'
+  const { data: prof } = await admin.from('crm_profiles').select('role, player_api_id').eq('id', userData.user.id).maybeSingle()
+  if (prof?.role === 'admin') return true
+  return prof?.role === 'player' && !!playerId && Number(prof.player_api_id) === Number(playerId)
 }
 
 async function syncAccount(acc: any) {
   const upd: any = {}
   let token: string = acc.access_token
   if (!token) throw new Error('Nessun access token salvato')
+  const igLogin = acc.auth_type === 'instagram_login'
+  const base = igLogin ? IG_GRAPH : GRAPH
+  const g = (path: string, params: Record<string, string>) => graphGet(path, params, base)
+
+  // 1b) Instagram Login: rinnovo del token long-lived quando mancano <15 giorni
+  if (igLogin && acc.token_expires_at && (new Date(acc.token_expires_at).getTime() - Date.now()) < 15 * 86400_000) {
+    try {
+      const rf = await graphGet('/refresh_access_token', { grant_type: 'ig_refresh_token', access_token: token }, 'https://graph.instagram.com')
+      token = rf.access_token
+      upd.access_token = token
+      upd.token_expires_at = new Date(Date.now() + (rf.expires_in ? rf.expires_in * 1000 : 60 * 86400_000)).toISOString()
+    } catch (e) { console.warn(`refresh IG fallito per player ${acc.player_id}: ${e}`) }
+  }
 
   // 1) Token long-lived: scambia se manca la scadenza o mancano <15 giorni
   const expSoon = !acc.token_expires_at || (new Date(acc.token_expires_at).getTime() - Date.now()) < 15 * 86400_000
-  if (acc.app_id && acc.app_secret && expSoon) {
+  if (!igLogin && acc.app_id && acc.app_secret && expSoon) {
     try {
       const ex = await graphGet('/oauth/access_token', {
         grant_type: 'fb_exchange_token', client_id: acc.app_id,
@@ -70,6 +91,12 @@ async function syncAccount(acc: any) {
 
   // 2) Scoperta account IG Business (al primo sync)
   let igId: string = acc.ig_user_id
+  if (!igId && igLogin) {
+    const me = await g('/me', { fields: 'user_id,username', access_token: token })
+    igId = String(me.user_id || me.id)
+    upd.ig_user_id = igId
+    upd.ig_username = me.username || null
+  }
   if (!igId) {
     const pages = await graphGet('/me/accounts', { fields: 'id,name,instagram_business_account{id,username}', access_token: token })
     const page = (pages.data || []).find((p: any) => p.instagram_business_account)
@@ -81,7 +108,7 @@ async function syncAccount(acc: any) {
   }
 
   // 3) Profilo: follower
-  const prof = await graphGet(`/${igId}`, { fields: 'followers_count,media_count,username', access_token: token })
+  const prof = await g(`/${igId}`, { fields: 'followers_count,media_count,username', access_token: token })
   const followers: number = prof.followers_count || 0
   if (prof.username) upd.ig_username = prof.username
 
@@ -89,7 +116,7 @@ async function syncAccount(acc: any) {
   let er: number | null = null
   let reach: number | null = null
   try {
-    const media = await graphGet(`/${igId}/media`, { fields: 'id,like_count,comments_count,media_type,timestamp', limit: '12', access_token: token })
+    const media = await g(`/${igId}/media`, { fields: 'id,like_count,comments_count,media_type,timestamp', limit: '12', access_token: token })
     const items = (media.data || []).filter((m: any) => m.like_count != null)
     if (items.length && followers > 0) {
       const per = items.map((m: any) => ((m.like_count || 0) + (m.comments_count || 0)) / followers)
@@ -99,7 +126,7 @@ async function syncAccount(acc: any) {
     const reaches: number[] = []
     for (const m of items.slice(0, 8)) {
       try {
-        const ins = await graphGet(`/${m.id}/insights`, { metric: 'reach', access_token: token })
+        const ins = await g(`/${m.id}/insights`, { metric: 'reach', access_token: token })
         const v = ins.data?.[0]?.values?.[0]?.value
         if (typeof v === 'number' && v > 0) reaches.push(v)
       } catch { /* alcuni formati non hanno reach */ }
@@ -112,7 +139,7 @@ async function syncAccount(acc: any) {
   let ageBand: string | null = null
   let genderSplit: string | null = null
   const demo = async (breakdown: string) => {
-    const r = await graphGet(`/${igId}/insights`, {
+    const r = await g(`/${igId}/insights`, {
       metric: 'follower_demographics', period: 'lifetime', timeframe: 'this_month',
       metric_type: 'total_value', breakdown, access_token: token,
     })
@@ -182,15 +209,15 @@ Deno.serve(async (req: Request) => {
   const headers = { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-sync-secret' }
   if (req.method === 'OPTIONS') return new Response('ok', { headers })
 
+  let playerId: number | null = null
+  try { const body = await req.json(); playerId = body?.player_id ?? null } catch { /* body vuoto dal cron */ }
+
   const { data: secretRow } = await admin.from('cp_secrets').select('value').eq('key', 'sync_secret').maybeSingle()
   const given = req.headers.get('x-sync-secret')
   const bySecret = !!secretRow?.value && !!given && given === secretRow.value
-  if (!bySecret && !(await isAdminJwt(req))) {
+  if (!bySecret && !(await jwtCanSync(req, playerId))) {
     return new Response(JSON.stringify({ error: 'Non autorizzato' }), { status: 401, headers })
   }
-
-  let playerId: number | null = null
-  try { const body = await req.json(); playerId = body?.player_id ?? null } catch { /* body vuoto dal cron */ }
 
   let q = admin.from('cp_social_accounts').select('*')
   if (playerId) q = q.eq('player_id', playerId)

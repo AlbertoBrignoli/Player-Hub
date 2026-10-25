@@ -13,6 +13,7 @@ import { supabase, AGENCY_NAME } from '../lib/supabase'
 import { Modal, Field, Input, Textarea, Select, Badge, Empty, Spinner, Stat, ConfirmButton, Tabs } from '../components/ui'
 import { useRouteParam } from '../lib/route'
 import Icon from '../components/Icon'
+import { InstagramConnect, IgAppSetup } from '../components/InstagramConnect'
 import { fmtMoney, fmtDate, fmtDateTime } from '../lib/format'
 import type { Player } from '../lib/types'
 import {
@@ -173,6 +174,7 @@ export default function Commercial() {
         <PerformanceTab collabs={collabs} perf={perf} />
       </>)}
       {tab === 'mediakit' && prof && score && <MediaKitTab player={player} prof={prof} topFits={topFits} collabs={collabs} cats={cats} saveProf={saveProf} />}
+      {tab === 'profilo' && athleteId && <InstagramConnect athleteId={athleteId} onSynced={reload} />}
       {tab === 'profilo' && prof && <DatiPreferenze prof={prof} saveProf={saveProf} openWizard={() => setWizard(true)} />}
       {tab === 'gestione' && isAdmin && <AdminPanel athleteId={athleteId!} cfg={cfg} cats={cats} opps={opps} collabs={collabs} perf={perf} userName={user?.full_name || 'AUVI'} reload={reload} />}
     </div>
@@ -969,6 +971,8 @@ function AdminPanel({ athleteId, cfg, cats, opps, collabs, perf, userName, reloa
       <AdminEval athleteId={athleteId} reload={reload} />
     </>)}
     {sub === 'impostazioni' && (<>
+      <IgAppSetup />
+      <Section title={tr('Collegamento manuale (avanzato)')} />
       <AdminInstagram athleteId={athleteId} reload={reload} />
       {cfg && <AdminConfig cfg={cfg} reload={reload} />}
     </>)}
