@@ -3364,5 +3364,6 @@ const EN: Record<string, string> = {
   "Il tuo profilo privato: chi sei davvero, per chi scegli tu": "Your private profile: who you really are, for the people you choose",
   "Nuova richiesta per il tuo Backstage": "New request for your Backstage",
   "Un brand è interessato": "A brand is interested",
+  "Foto aggiornata": "Photo updated",
 }
 

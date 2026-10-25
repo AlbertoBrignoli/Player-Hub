@@ -27,7 +27,7 @@ const ROLE_L: Record<string, string> = {
 }
 
 type Post = { id: string; player_id: number; image_path: string | null; caption: string | null; category: string; audience: string; created_at: string }
-type Dir = { player_id: number; name: string; photo_url: string | null; team_name: string | null; pos: string | null; bio: string | null; passions: string[]; posts: number; my_status: string | null }
+type Dir = { player_id: number; name: string; photo_url: string | null; team_name: string | null; pos: string | null; bio: string | null; passions: string[]; posts: number; my_status: string | null; avatar_path: string | null }
 type Stat = { post_id: string; saves: number; interests: number; views: number; who: string[] | null }
 
 async function signed(paths: string[]): Promise<Record<string, string>> {
@@ -39,11 +39,17 @@ async function signed(paths: string[]): Promise<Record<string, string>> {
   return m
 }
 
-async function shrink(file: File): Promise<Blob> {
+async function shrink(file: File, square = false): Promise<Blob> {
   try {
     const bmp = await createImageBitmap(file)
-    const k = Math.min(1, 1600 / Math.max(bmp.width, bmp.height))
     const c = document.createElement('canvas')
+    if (square) {
+      const s = Math.min(bmp.width, bmp.height), o = Math.min(800, s)
+      c.width = o; c.height = o
+      c.getContext('2d')!.drawImage(bmp, (bmp.width - s) / 2, (bmp.height - s) / 2, s, s, 0, 0, o, o)
+      return await new Promise<Blob>((res, rej) => c.toBlob(b => b ? res(b) : rej(new Error('img')), 'image/jpeg', 0.88))
+    }
+    const k = Math.min(1, 1600 / Math.max(bmp.width, bmp.height))
     c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k)
     c.getContext('2d')!.drawImage(bmp, 0, 0, c.width, c.height)
     return await new Promise<Blob>((res, rej) => c.toBlob(b => b ? res(b) : rej(new Error('img')), 'image/jpeg', 0.86))
@@ -63,12 +69,17 @@ export default function Backstage() {
 }
 
 // ─── intestazione comune ─────────────────────────────────────────────────────
-function Head({ d, photo, stats, actions }: { d: Partial<Dir> & { name?: string }; photo?: string | null; stats?: React.ReactNode; actions?: React.ReactNode }) {
+function Head({ d, photo, stats, actions, onPhoto }: { d: Partial<Dir> & { name?: string }; photo?: string | null; stats?: React.ReactNode; actions?: React.ReactNode; onPhoto?: (f: File) => void }) {
   const { t } = useLang()
+  const fileRef = useRef<HTMLInputElement>(null)
   return (
     <div className="bs-head card">
       <div className="bs-id">
-        <div className="bs-av">{photo ? <img src={photo} alt="" /> : <span>{initials(d.name)}</span>}</div>
+        <div className={`bs-av ${onPhoto ? 'edit' : ''}`} onClick={() => onPhoto && fileRef.current?.click()} title={onPhoto ? t('Cambia foto') : undefined}>
+          {photo ? <img src={photo} alt="" /> : <span>{initials(d.name)}</span>}
+          {onPhoto && <i className="bs-cam"><Icon name="camera" size={14} /></i>}
+        </div>
+        {onPhoto && <input ref={fileRef} type="file" accept="image/*" hidden onChange={e => { const f = e.target.files?.[0]; if (f) onPhoto(f); e.target.value = '' }} />}
         <div style={{ minWidth: 0, flex: 1 }}>
           <div className="bs-nm">{d.name}</div>
           <div className="bs-rl">{[d.pos, d.team_name].filter(Boolean).join(' · ')}</div>
@@ -102,7 +113,8 @@ function OwnerView({ playerId }: { playerId: number }) {
   const [open, setOpen] = useState<Post | null>(null)
   const [composing, setComposing] = useState(false)
   const [editing, setEditing] = useState(false)
-  const photo = athletes.find(a => a.api_player_id === playerId)?.photo_url
+  const [avatar, setAvatar] = useState<string | null>(null)
+  const photo = avatar || athletes.find(a => a.api_player_id === playerId)?.photo_url
 
   async function load() {
     const [d, p, s, a, v, dd] = await Promise.all([
@@ -113,7 +125,9 @@ function OwnerView({ playerId }: { playerId: number }) {
       supabase.rpc('bs_visits', { p_player: playerId, p_days: 30 }),
       supabase.rpc('bs_visits_daily', { p_player: playerId }),
     ])
-    setDir(((d.data as Dir[]) || []).find(x => x.player_id === playerId) || null)
+    const me = ((d.data as Dir[]) || []).find(x => x.player_id === playerId) || null
+    setDir(me)
+    setAvatar(me?.avatar_path ? (await signed([me.avatar_path]))[me.avatar_path] || null : null)
     const list = (p.data as Post[]) || []
     setPosts(list)
     setUrls(await signed(list.map(x => x.image_path || '')))
@@ -134,6 +148,18 @@ function OwnerView({ playerId }: { playerId: number }) {
   const shown = posts.filter(p => cat === 'Tutto' || p.category === cat)
   const name = dir?.name || athletes.find(a => a.api_player_id === playerId)?.name || ''
 
+  async function changePhoto(f: File) {
+    const path = `${playerId}/avatar-${Date.now()}.jpg`
+    const up = await supabase.storage.from('backstage').upload(path, await shrink(f, true), { contentType: 'image/jpeg' })
+    if (up.error) { toast(up.error.message, 'err'); return }
+    const old = dir?.avatar_path
+    const { error } = await supabase.from('bs_profiles').upsert({ player_id: playerId, avatar_path: path, bio: dir?.bio ?? null, passions: dir?.passions || [], updated_at: new Date().toISOString() })
+    if (error) { toast(error.message, 'err'); return }
+    if (old) await supabase.storage.from('backstage').remove([old])
+    toast(t('Foto aggiornata'))
+    load()
+  }
+
   async function decide(id: string, status: string) {
     const { error } = await supabase.rpc('bs_decide', { p_id: id, p_status: status })
     if (error) { toast(t(error.message), 'err'); return }
@@ -143,7 +169,7 @@ function OwnerView({ playerId }: { playerId: number }) {
 
   return (
     <div className="bs-wrap">
-      <Head d={{ ...(dir || {}), name }} photo={photo}
+      <Head d={{ ...(dir || {}), name }} photo={photo} onPhoto={changePhoto}
         actions={<div className="flex gap" style={{ gap: 6 }}>
           <button className="btn btn-sm" onClick={() => setEditing(true)}><Icon name="edit" size={13} /></button>
           <button className="btn btn-sm btn-primary" onClick={() => setComposing(true)}><Icon name="plus" size={13} /> {t('Momento')}</button>
@@ -346,7 +372,7 @@ function EditProfile({ playerId, dir, onClose, onDone }: { playerId: number; dir
   const [pass, setPass] = useState((dir?.passions || []).join(', '))
   async function save() {
     const passions = pass.split(',').map(s => s.trim()).filter(Boolean).slice(0, 8)
-    const { error } = await supabase.from('bs_profiles').upsert({ player_id: playerId, bio: bio.trim() || null, passions, updated_at: new Date().toISOString() })
+    const { error } = await supabase.from('bs_profiles').upsert({ player_id: playerId, bio: bio.trim() || null, passions, avatar_path: dir?.avatar_path ?? null, updated_at: new Date().toISOString() })
     if (error) { toast(error.message, 'err'); return }
     onDone()
   }
@@ -373,9 +399,12 @@ function ViewerArea() {
   const [sel, setSel] = useState<number | null>(wanted ? Number(wanted) : null)
   const [incognito, setIncognito] = useState(false)
   const [q, setQ] = useState('')
+  const [av, setAv] = useState<Record<string, string>>({})
   async function load() {
     const [d, s] = await Promise.all([supabase.rpc('bs_directory'), supabase.from('bs_viewer_settings').select('incognito').maybeSingle()])
-    setDir((d.data as Dir[]) || [])
+    const list = (d.data as Dir[]) || []
+    setDir(list)
+    setAv(await signed(list.map(x => x.avatar_path || '')))
     setIncognito(!!(s.data as any)?.incognito)
     setLoading(false)
   }
@@ -383,7 +412,8 @@ function ViewerArea() {
   useEffect(() => { if (wanted) setSel(Number(wanted)) }, [wanted])
   if (loading) return <Spinner />
   const cur = dir.find(d => d.player_id === sel)
-  if (cur) return <ViewerProfile d={cur} onBack={() => { setSel(null); load() }} onChanged={load} />
+  const pic = (x: Dir) => (x.avatar_path && av[x.avatar_path]) || x.photo_url
+  if (cur) return <ViewerProfile d={cur} photo={pic(cur)} onBack={() => { setSel(null); load() }} onChanged={load} />
   const list = dir.filter(d => !q.trim() || [d.name, d.team_name, ...(d.passions || [])].some(v => (v || '').toLowerCase().includes(q.toLowerCase())))
   const st = (s: string | null) => s === 'approved' ? t('Accesso consentito') : s === 'pending' ? t('Richiesta inviata') : s === 'declined' ? t('Non accettata') : t('Privato')
   return (
@@ -398,7 +428,7 @@ function ViewerArea() {
       <input className="input" value={q} onChange={e => setQ(e.target.value)} placeholder={t('Cerca per nome, squadra o passione…')} />
       <div className="bs-dir">{list.map(d => (
         <button key={d.player_id} className="bs-card" onClick={() => setSel(d.player_id)}>
-          <div className="bs-av sm">{d.photo_url ? <img src={d.photo_url} alt="" /> : <span>{initials(d.name)}</span>}</div>
+          <div className="bs-av sm">{pic(d) ? <img src={pic(d)!} alt="" /> : <span>{initials(d.name)}</span>}</div>
           <div style={{ minWidth: 0, flex: 1, textAlign: 'left' }}>
             <b>{d.name}</b>
             <span className="bs-dim">{[d.pos, d.team_name].filter(Boolean).join(' · ')}</span>
@@ -411,7 +441,7 @@ function ViewerArea() {
   )
 }
 
-function ViewerProfile({ d, onBack, onChanged }: { d: Dir; onBack: () => void; onChanged: () => void }) {
+function ViewerProfile({ d, photo, onBack, onChanged }: { d: Dir; photo: string | null; onBack: () => void; onChanged: () => void }) {
   const { t } = useLang()
   const { role } = useAuth()
   const [posts, setPosts] = useState<Post[]>([])
@@ -451,7 +481,7 @@ function ViewerProfile({ d, onBack, onChanged }: { d: Dir; onBack: () => void; o
   return (
     <div className="bs-wrap">
       <button className="btn btn-sm btn-ghost" style={{ justifySelf: 'start' }} onClick={onBack}><Icon name="chevron-left" size={14} /> {t('Tutti gli atleti')}</button>
-      <Head d={d} photo={d.photo_url}
+      <Head d={d} photo={photo}
         actions={canSee && role === 'brand' ? <button className="btn btn-sm btn-primary" onClick={() => goto('messages')}>{t('Proponi collaborazione')}</button> : undefined} />
       {!canSee ? (
         <div className="bs-gatewrap">
@@ -504,6 +534,9 @@ const BS_CSS = `
 .bs-id { display: flex; gap: 14px; align-items: center; }
 .bs-av { width: 84px; height: 84px; border-radius: 50%; padding: 3px; flex-shrink: 0; background: conic-gradient(var(--yellow), #0A0A0A, var(--yellow)); }
 .bs-av.sm { width: 54px; height: 54px; }
+.bs-av { position: relative; }
+.bs-av.edit { cursor: pointer; }
+.bs-cam { position: absolute; right: -2px; bottom: -2px; width: 28px; height: 28px; border-radius: 50%; background: var(--yellow); color: #0A0A0A; display: grid; place-items: center; border: 3px solid var(--surface); font-style: normal; }
 .bs-av img, .bs-av span { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 3px solid var(--surface); display: grid; place-items: center; background: var(--bg-2); font-weight: 900; }
 .bs-nm { font-weight: 900; font-size: 21px; letter-spacing: -.4px; }
 .bs-rl { font-size: 13px; color: var(--text-dim); margin-top: 2px; }
