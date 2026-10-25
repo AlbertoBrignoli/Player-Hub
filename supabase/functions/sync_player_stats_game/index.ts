@@ -52,6 +52,27 @@ async function resolveTargets(req: Request): Promise<{ targets: number[]; lastN:
   return { targets: (data || []).map((p: any) => p.api_player_id as number), lastN, force };
 }
 
+// stati API-Football di una partita chiusa (giocata, annullata o assegnata a tavolino)
+const FINAL = ["FT", "AET", "PEN", "CANC", "ABD", "AWD", "WO"];
+
+async function refreshResult(match: any) {
+  const res = await fetch(`https://v3.football.api-sports.io/fixtures?id=${match.fixture_id}`,
+    { headers: { "x-apisports-key": API_KEY } });
+  const fx = (await res.json())?.response?.[0];
+  if (!fx) return;
+  const status = fx.fixture?.status?.short ?? null;
+  if (!status || status === match.status) return;
+  const isHome = match.team_id ? Number(fx.teams?.home?.id) === Number(match.team_id) : match.venue === "home";
+  const { error } = await supabase.from("matches").update({
+    status,
+    team_score: isHome ? (fx.goals?.home ?? null) : (fx.goals?.away ?? null),
+    opponent_score: isHome ? (fx.goals?.away ?? null) : (fx.goals?.home ?? null),
+    updated_at: new Date().toISOString(),
+  }).eq("fixture_id", match.fixture_id).eq("team_id", match.team_id);
+  if (error) console.error("Result update error:", error);
+  else match.status = status;
+}
+
 async function syncOne(PLAYER_ID: number, lastN: number, force: boolean) {
   const { data: matches, error: matchErr } = await supabase
     .from("matches").select("*").eq("player_id", PLAYER_ID)
@@ -64,6 +85,12 @@ async function syncOne(PLAYER_ID: number, lastN: number, force: boolean) {
   for (const match of matches) {
     const fixture_id = match.fixture_id;
     if (!fixture_id) continue;
+    // risultato e stato: sync_player_matches gira solo lun/gio, quindi una partita del sabato
+    // restava "NS" senza punteggio fino al lunedi' (e "Ultima partita" mostrava quella prima).
+    // Appena passate 2 ore dal calcio d'inizio li aggiorniamo qui, anche se il giocatore non ha giocato.
+    if (!FINAL.includes(match.status) && Date.now() - new Date(match.match_date).getTime() > 2 * 3600 * 1000) {
+      await refreshResult(match);
+    }
     // ancora "fresca": i numeri API si assestano nei giorni dopo la partita
     const fresh = Date.now() - new Date(match.match_date).getTime() < 4 * 24 * 3600 * 1000;
     if (!force && !fresh && match.stats_collected && match.minutes !== null) continue;
