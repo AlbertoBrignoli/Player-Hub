@@ -14,6 +14,7 @@ import { Modal, Field, Input, Textarea, Select, Badge, Empty, Spinner, Stat, Con
 import { useRouteParam } from '../lib/route'
 import Icon from '../components/Icon'
 import { InstagramConnect, IgAppSetup } from '../components/InstagramConnect'
+import MediaKitDeckDialog from '../components/MediaKitDeckDialog'
 import { fmtMoney, fmtDate, fmtDateTime } from '../lib/format'
 import type { Player } from '../lib/types'
 import {
@@ -373,6 +374,7 @@ function MediaKitTab({ player, prof, topFits, collabs, cats, saveProf }: any) {
   const [version, setVersion] = useState<'completo' | 'teaser'>('completo')
   const [busy, setBusy] = useState(false)
   const [done, setDone] = useState(false)
+  const [deck, setDeck] = useState(false)
   const avail = AVAIL_OPTS.filter(a => prof?.availability?.[a.key]).map(a => a.label)
   const aud = prof?.audience || {}
 
@@ -404,11 +406,15 @@ function MediaKitTab({ player, prof, topFits, collabs, cats, saveProf }: any) {
         <div />
       </div>
       {version === 'teaser' && <div className="faint" style={{ fontSize: 11.5, marginBottom: 10 }}>{tr('Il teaser mostra fascia follower, categorie affini e highlights — niente engagement, reach, demografia o storico campagne.')}</div>}
-      <div className="flex gap">
-        <button className="btn btn-primary" disabled={busy} onClick={gen}>
-          <Icon name="download" size={15} /> {busy ? tr('Generazione…') : done ? tr('PDF scaricato') : version === 'teaser' ? tr('Genera PDF teaser') : tr('Genera PDF completo')}
+      <div className="flex gap" style={{ flexWrap: 'wrap' }}>
+        <button className="btn btn-primary" onClick={() => setDeck(true)}>
+          <Icon name="download" size={15} /> {version === 'teaser' ? tr('Presentazione AUVI (teaser)') : tr('Presentazione AUVI')}
+        </button>
+        <button className="btn" disabled={busy} onClick={gen}>
+          <Icon name="file" size={15} /> {busy ? tr('Generazione…') : done ? tr('PDF scaricato') : tr('Scheda A4')}
         </button>
       </div>
+      {deck && <MediaKitDeckDialog player={player} prof={prof} saveProf={saveProf} lang={lang === 'en' ? 'en' : 'it'} teaser={version === 'teaser'} onClose={() => setDeck(false)} />}
       {prof?.media_kit?.generated_at && <div className="faint" style={{ fontSize: 11.5, marginTop: 10 }}>{tr('Ultimo aggiornamento: {date}').replace('{date}', fmtDateTime(prof.media_kit.generated_at))}</div>}
     </div>
     {isAdmin && <TeaserAdminCard player={player} prof={prof} topFits={topFits} />}
