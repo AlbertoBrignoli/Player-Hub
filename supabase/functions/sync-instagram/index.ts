@@ -26,6 +26,10 @@ const COUNTRY: Record<string, string> = {
   MX: 'Messico', ID: 'Indonesia', IN: 'India', EG: 'Egitto', MA: 'Marocco', TN: 'Tunisia',
 }
 
+// paesi fuori dalla lista: nome in italiano dallo standard Intl (es. TW → Taiwan)
+const regionIt = new Intl.DisplayNames(['it'], { type: 'region' })
+const countryName = (c: string) => COUNTRY[c] || (() => { try { return regionIt.of(c) || c } catch { return c } })()
+
 const admin = createClient(
   Deno.env.get('SUPABASE_URL')!,
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
@@ -150,7 +154,7 @@ async function syncAccount(acc: any) {
     if (byCountry.length) {
       geo = byCountry
         .sort((a: any, b: any) => b.value - a.value).slice(0, 3)
-        .map((r: any) => COUNTRY[r.dimension_values?.[0]] || r.dimension_values?.[0])
+        .map((r: any) => countryName(r.dimension_values?.[0]))
     }
   } catch (e) { console.warn(`demografia country: ${e}`) }
   try {
