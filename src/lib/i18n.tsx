@@ -3367,5 +3367,8 @@ const EN: Record<string, string> = {
   "Foto aggiornata": "Photo updated",
   "Trascina per centrare, usa la barra per ingrandire": "Drag to center, use the slider to zoom",
   "Usa questa foto": "Use this photo",
+  "Questa schermata ha avuto un problema": "This screen ran into a problem",
+  "Il resto dell'app funziona. Riprova o ricarica la pagina; se si ripete, avvisa AUVI.": "The rest of the app works. Try again or reload the page; if it happens again, let AUVI know.",
+  "Ricarica": "Reload",
 }
 

@@ -42,6 +42,7 @@ import BrandCampaigns from './modules/BrandCampaigns'
 import MyTeam from './modules/MyTeam'
 import MyFiles from './modules/MyFiles'
 import Backstage from './modules/Backstage'
+import ErrorBoundary from './components/ErrorBoundary'
 import Archivio from './modules/Archivio'
 import TalentSearch from './modules/TalentSearch'
 import MyAthletes from './modules/MyAthletes'
@@ -153,7 +154,7 @@ export default function App() {
 
   return (
     <>
-      <Shell route={route} setRoute={setRoute}>{view}</Shell>
+      <Shell route={route} setRoute={setRoute}><ErrorBoundary resetKey={route}>{view}</ErrorBoundary></Shell>
       <PasswordSetup />
       <ProPhotoGate />
     </>

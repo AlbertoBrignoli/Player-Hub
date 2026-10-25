@@ -115,6 +115,8 @@ function OwnerView({ playerId }: { playerId: number }) {
   const [composing, setComposing] = useState(false)
   const [editing, setEditing] = useState(false)
   const [avatar, setAvatar] = useState<string | null>(null)
+  const [avFile, setAvFile] = useState<File | null>(null)
+  const avCrop = useRef<CropHandle>(null)
   const photo = avatar || athletes.find(a => a.api_player_id === playerId)?.photo_url
 
   async function load() {
@@ -149,8 +151,6 @@ function OwnerView({ playerId }: { playerId: number }) {
   const shown = posts.filter(p => cat === 'Tutto' || p.category === cat)
   const name = dir?.name || athletes.find(a => a.api_player_id === playerId)?.name || ''
 
-  const [avFile, setAvFile] = useState<File | null>(null)
-  const avCrop = useRef<CropHandle>(null)
   async function changePhoto(f: File) {
     const path = `${playerId}/avatar-${Date.now()}.jpg`
     const blob = (await avCrop.current?.toBlob()) || await shrink(f, true)
