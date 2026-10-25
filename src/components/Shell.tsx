@@ -1,3 +1,4 @@
+import { FEATURES } from '../lib/features'
 import React, { useEffect, useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import { useAthlete } from '../lib/athlete'
@@ -14,7 +15,7 @@ import { Modal, Field, Input, Tabs, Empty } from './ui'
 // Schermate home dei vari ruoli: qui compare l'invito ad attivare le notifiche.
 const HOME_ROUTES = ['dashboard', 'brandhome', 'agent-home', 'insurer-home', 'tax-home', 'physio-home', 'partner-home']
 
-export const APP_VERSION = 'v10.1'
+export const APP_VERSION = 'v10.2'
 
 export interface NavDef {
   key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[]
@@ -33,7 +34,7 @@ export const NAV: { group: string; items: NavDef[] }[] = [
       { key: 'tasks', label: 'Task' },
     ]},
     { key: 'media', label: 'Media', icon: 'image' },
-    { key: 'backstage', label: 'Backstage', icon: 'eye' },
+    ...(FEATURES.backstage ? [{ key: 'backstage', label: 'Backstage', icon: 'eye' }] : []),
     { key: 'services', label: 'Servizi AUVI', icon: 'layers' },
     { key: 'performance', label: 'Atleta', icon: 'activity', tabs: [
       { key: 'performance', label: 'Performance' },
@@ -62,7 +63,7 @@ export const BRAND_NAV: { group: string; items: NavDef[] }[] = [
     { key: 'mediakit', label: 'Media Kit', icon: 'activity' },
     { key: 'campaigns', label: 'Campagne', icon: 'image' },
     { key: 'talent', label: 'Ricerca talent', icon: 'star' },
-    { key: 'backstage', label: 'Backstage atleti', icon: 'eye' },
+    ...(FEATURES.backstage ? [{ key: 'backstage', label: 'Backstage atleti', icon: 'eye' }] : []),
     { key: 'brandcard', label: 'La mia scheda', icon: 'award' },
     { key: 'messages', label: 'Messaggi', icon: 'message' },
   ]},

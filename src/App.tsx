@@ -42,6 +42,7 @@ import BrandCampaigns from './modules/BrandCampaigns'
 import MyTeam from './modules/MyTeam'
 import MyFiles from './modules/MyFiles'
 import Backstage from './modules/Backstage'
+import { FEATURES } from './lib/features'
 import ErrorBoundary from './components/ErrorBoundary'
 import Archivio from './modules/Archivio'
 import TalentSearch from './modules/TalentSearch'
@@ -100,6 +101,8 @@ export default function App() {
   if (isPhysio && !physioAllowed.includes(route)) route = 'physio-home'
   if (isNutri && !nutriAllowed.includes(route)) route = 'nutri-home'
   if (isPartner && !partnerAllowed.includes(route)) route = 'partner-home'
+  // Backstage spento (src/lib/features.ts): eventuali link vecchi tornano alla home
+  if (route === 'backstage' && !FEATURES.backstage) route = home
 
   const view = (() => {
     switch (route) {
