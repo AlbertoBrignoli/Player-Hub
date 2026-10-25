@@ -159,11 +159,11 @@ export default function MediaKitDeckDialog({ player, prof, saveProf, lang, tease
                 <Field label={t('Titolo (seconda riga)')}><Input value={story.title2 || ''} placeholder={t('nella storia')} onChange={e => setStory({ ...story, title2: e.target.value })} /></Field>
               </div>
               <div className="row2">
-                <Field label={t('Data')}><Input value={story.date || ''} placeholder="3 dicembre 2017" onChange={e => setStory({ ...story, date: e.target.value })} /></Field>
-                <Field label={t('Partita / sottotitolo')}><Input value={story.subtitle || ''} placeholder="Benevento-Milan, 2-2." onChange={e => setStory({ ...story, subtitle: e.target.value })} /></Field>
+                <Field label={t('Data')}><Input value={story.date || ''} placeholder={t('Es. 5 aprile 2009')} onChange={e => setStory({ ...story, date: e.target.value })} /></Field>
+                <Field label={t('Partita / sottotitolo')}><Input value={story.subtitle || ''} placeholder={t('Es. la partita o l\'evento')} onChange={e => setStory({ ...story, subtitle: e.target.value })} /></Field>
               </div>
-              <Field label={t('Racconto')}><Textarea rows={5} value={story.text || ''} onChange={e => setStory({ ...story, text: e.target.value })} /></Field>
-              <Field label={t('Fonte')}><Input value={story.source || ''} placeholder="Fonte: ANSA, 3 dicembre 2017." onChange={e => setStory({ ...story, source: e.target.value })} /></Field>
+              <Field label={t('Racconto')}><Textarea rows={5} placeholder={t('Cosa è successo e perché rende speciale il suo percorso.')} value={story.text || ''} onChange={e => setStory({ ...story, text: e.target.value })} /></Field>
+              <Field label={t('Fonte')}><Input value={story.source || ''} placeholder={t('Es. Fonte: testata, data')} onChange={e => setStory({ ...story, source: e.target.value })} /></Field>
             </>)}
           </div>
           <div className="faint" style={{ fontSize: 12 }}>
@@ -178,7 +178,7 @@ export default function MediaKitDeckDialog({ player, prof, saveProf, lang, tease
 function defaultBio(player: any, prof: any, lang: string) {
   const it = lang !== 'en'
   const role = (player?.position || '').toLowerCase()
-  const roleIt: Record<string, string> = { goalkeeper: 'portiere', defender: 'difensore', midfielder: 'centrocampista', attacker: 'attaccante' }
+  const roleIt: Record<string, string> = { goalkeeper: 'portiere', defender: 'difensore', midfielder: 'centrocampista', attacker: 'attaccante', forward: 'attaccante' }
   const quote = prof?.identity?.desired_image
   const base = it
     ? `${player?.name || ''} è un ${roleIt[role] || role || 'calciatore'} del ${player?.team_name || ''}.`

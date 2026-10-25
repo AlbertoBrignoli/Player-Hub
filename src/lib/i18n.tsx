@@ -3405,5 +3405,9 @@ const EN: Record<string, string> = {
   "Facoltativa": "Optional",
   "Foto finale": "Closing photo",
   "Orizzontale": "Landscape",
+  "Es. 5 aprile 2009": "E.g. 5 April 2009",
+  "Es. la partita o l'evento": "E.g. the match or event",
+  "Es. Fonte: testata, data": "E.g. Source: outlet, date",
+  "Cosa è successo e perché rende speciale il suo percorso.": "What happened and why it makes their journey special.",
 }
 
