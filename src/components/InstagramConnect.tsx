@@ -6,7 +6,7 @@ import { supabase } from '../lib/supabase'
 import { toast } from '../lib/toast'
 import { useAuth } from '../auth/AuthContext'
 import { useLang } from '../lib/i18n'
-import { useRouteParam } from '../lib/route'
+import { useRouteParam, goto } from '../lib/route'
 import { fmtDateTime } from '../lib/format'
 import { Field, Input } from './ui'
 import Icon from './Icon'
@@ -25,6 +25,8 @@ export function InstagramConnect({ athleteId, onSynced }: { athleteId: number; o
   const { role, isAdmin } = useAuth()
   const [st, setSt] = useState<Status | null>(null)
   const [busy, setBusy] = useState<'' | 'connect' | 'sync' | 'off'>('')
+  // AUVI: l'app Instagram è configurata? Se no, il riquadro porta alla configurazione
+  const [appReady, setAppReady] = useState(true)
   const igParam = useRouteParam('ig')
   const msgParam = useRouteParam('msg')
   const canManage = role === 'player' || isAdmin || role === 'creator' || role === 'agente'
@@ -35,6 +37,9 @@ export function InstagramConnect({ athleteId, onSynced }: { athleteId: number; o
     setSt((data as Status) || null)
   }
   useEffect(() => { load() }, [athleteId]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (isAdmin) supabase.rpc('crm_ig_app_status').then(({ data }) => setAppReady(!!(data as any)?.app_id && !!(data as any)?.has_secret))
+  }, [isAdmin])
 
   // ritorno da Instagram: #/commercial?tab=profilo&ig=ok|error&msg=…
   useEffect(() => {
@@ -117,7 +122,13 @@ export function InstagramConnect({ athleteId, onSynced }: { athleteId: number; o
           </div>
         ) : (
           <>
-            <button className="ig-btn" disabled={!!busy} onClick={connect}>
+            {isAdmin && !appReady && (
+              <div className="ig-setup">
+                <div><b>{t('Prima configura l\'app Instagram di AUVI')}</b><br />{t('Si fa una volta sola, poi tutti gli atleti possono collegarsi con questo pulsante.')}</div>
+                <button className="btn btn-sm btn-primary" onClick={() => goto('commercial?tab=gestione&sub=impostazioni')}>{t('Configura ora')} →</button>
+              </div>
+            )}
+            <button className="ig-btn" disabled={!!busy || (isAdmin && !appReady)} onClick={connect}>
               <Icon name="instagram" size={18} /> {busy === 'connect' ? t('Apro Instagram…') : t('Collega Instagram')}
             </button>
             <div className="faint" style={{ fontSize: 11.5, lineHeight: 1.5 }}>
@@ -195,6 +206,7 @@ const IG_CSS = `
 .ig-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 13px 16px; border: 0; border-radius: 14px; cursor: pointer;
   font-weight: 800; font-size: 15px; color: #fff; background: linear-gradient(90deg, #f58529, #dd2a7b 45%, #8134af 75%, #515bd4); }
 .ig-btn:disabled { opacity: .6; cursor: default; }
+.ig-setup { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 12px 14px; border-radius: 12px; background: var(--bg-2); border: 1px dashed var(--gold, #c9a227); font-size: 13px; line-height: 1.45; }
 .ig-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .ig-stats div { background: var(--bg-2); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; display: grid; gap: 2px; }
 .ig-stats b { font-size: 18px; font-weight: 900; }

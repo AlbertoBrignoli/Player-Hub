@@ -952,7 +952,10 @@ function Onboarding({ profile, save, onDone, onLater }: any) {
 // ═════════════════════════════════════════════════════════════════════════════
 function AdminPanel({ athleteId, cfg, cats, opps, collabs, perf, userName, reload }: any) {
   const { t: tr } = useLang()
-  const [sub, setSub] = useState<'pipeline' | 'brand' | 'impostazioni'>('pipeline')
+  // #/commercial?tab=gestione&sub=impostazioni (es. dal riquadro "Collega Instagram")
+  const routeSub = useRouteParam('sub')
+  const [sub, setSub] = useState<'pipeline' | 'brand' | 'impostazioni'>(routeSub === 'impostazioni' ? 'impostazioni' : 'pipeline')
+  useEffect(() => { if (routeSub === 'impostazioni') setSub('impostazioni') }, [routeSub])
   return (<>
     <Tabs value={sub} onChange={setSub} tabs={[
       { key: 'pipeline', label: tr('Opportunità e collaborazioni') },

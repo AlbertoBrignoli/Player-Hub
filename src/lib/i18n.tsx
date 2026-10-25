@@ -3273,5 +3273,8 @@ const EN: Record<string, string> = {
   "Collegamento scaduto: riprova": "Connection expired: try again",
   "Autorizzazione annullata": "Authorization cancelled",
   "Il profilo Instagram deve essere professionale (Business o Creator)": "The Instagram profile must be professional (Business or Creator)",
+  "Prima configura l'app Instagram di AUVI": "First set up AUVI's Instagram app",
+  "Si fa una volta sola, poi tutti gli atleti possono collegarsi con questo pulsante.": "You do it once, then every athlete can connect with this button.",
+  "Configura ora": "Set up now",
 }
 
