@@ -3365,5 +3365,7 @@ const EN: Record<string, string> = {
   "Nuova richiesta per il tuo Backstage": "New request for your Backstage",
   "Un brand è interessato": "A brand is interested",
   "Foto aggiornata": "Photo updated",
+  "Trascina per centrare, usa la barra per ingrandire": "Drag to center, use the slider to zoom",
+  "Usa questa foto": "Use this photo",
 }
 

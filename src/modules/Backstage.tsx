@@ -13,6 +13,7 @@ import { useRouteParam, goto } from '../lib/route'
 import { timeAgo, initials } from '../lib/format'
 import { Modal, Spinner, Empty } from '../components/ui'
 import Icon from '../components/Icon'
+import { CropBox, type CropHandle } from '../components/CropBox'
 
 const CATS = ['Dietro le quinte', 'Lifestyle', 'Passioni', 'Allenamento', 'Valori'] as const
 const AUD: Record<string, { l: string; d: string; badge: string }> = {
@@ -148,9 +149,13 @@ function OwnerView({ playerId }: { playerId: number }) {
   const shown = posts.filter(p => cat === 'Tutto' || p.category === cat)
   const name = dir?.name || athletes.find(a => a.api_player_id === playerId)?.name || ''
 
+  const [avFile, setAvFile] = useState<File | null>(null)
+  const avCrop = useRef<CropHandle>(null)
   async function changePhoto(f: File) {
     const path = `${playerId}/avatar-${Date.now()}.jpg`
-    const up = await supabase.storage.from('backstage').upload(path, await shrink(f, true), { contentType: 'image/jpeg' })
+    const blob = (await avCrop.current?.toBlob()) || await shrink(f, true)
+    setAvFile(null)
+    const up = await supabase.storage.from('backstage').upload(path, blob, { contentType: 'image/jpeg' })
     if (up.error) { toast(up.error.message, 'err'); return }
     const old = dir?.avatar_path
     const { error } = await supabase.from('bs_profiles').upsert({ player_id: playerId, avatar_path: path, bio: dir?.bio ?? null, passions: dir?.passions || [], updated_at: new Date().toISOString() })
@@ -169,7 +174,7 @@ function OwnerView({ playerId }: { playerId: number }) {
 
   return (
     <div className="bs-wrap">
-      <Head d={{ ...(dir || {}), name }} photo={photo} onPhoto={changePhoto}
+      <Head d={{ ...(dir || {}), name }} photo={photo} onPhoto={setAvFile}
         actions={<div className="flex gap" style={{ gap: 6 }}>
           <button className="btn btn-sm" onClick={() => setEditing(true)}><Icon name="edit" size={13} /></button>
           <button className="btn btn-sm btn-primary" onClick={() => setComposing(true)}><Icon name="plus" size={13} /> {t('Momento')}</button>
@@ -311,6 +316,15 @@ function OwnerView({ playerId }: { playerId: number }) {
           </div>
         </Modal>
       )}
+      {avFile && (
+        <Modal title={t('Foto profilo')} onClose={() => setAvFile(null)}
+          footer={<><button className="btn" onClick={() => setAvFile(null)}>{t('Annulla')}</button><button className="btn btn-primary" onClick={() => changePhoto(avFile)}>{t('Usa questa foto')}</button></>}>
+          <div className="grid" style={{ gap: 8 }}>
+            <CropBox ref={avCrop} file={avFile} aspect={1} outW={800} round maxW={300} />
+            <div className="bs-mute">{t('Trascina per centrare, usa la barra per ingrandire')}</div>
+          </div>
+        </Modal>
+      )}
       {composing && <Composer playerId={playerId} onClose={() => setComposing(false)} onDone={() => { setComposing(false); setTab('posts'); setCat('Tutto'); load() }} />}
       {editing && <EditProfile playerId={playerId} dir={dir} onClose={() => setEditing(false)} onDone={() => { setEditing(false); load() }} />}
     </div>
@@ -321,19 +335,19 @@ function Composer({ playerId, onClose, onDone }: { playerId: number; onClose: ()
   const { t } = useLang()
   const ref = useRef<HTMLInputElement>(null)
   const [file, setFile] = useState<File | null>(null)
-  const [preview, setPreview] = useState<string | null>(null)
+  const crop = useRef<CropHandle>(null)
   const [caption, setCaption] = useState('')
   const [cat, setCat] = useState<string>('Lifestyle')
   const [aud, setAud] = useState('pro')
   const [busy, setBusy] = useState(false)
-  useEffect(() => { if (!file) { setPreview(null); return } const u = URL.createObjectURL(file); setPreview(u); return () => URL.revokeObjectURL(u) }, [file])
   async function publish() {
     if (!file && !caption.trim()) { toast(t('Aggiungi una foto o un testo'), 'err'); return }
     setBusy(true)
     let path: string | null = null
     if (file) {
       path = `${playerId}/${Date.now()}.jpg`
-      const up = await supabase.storage.from('backstage').upload(path, await shrink(file), { contentType: 'image/jpeg' })
+      const blob = (await crop.current?.toBlob()) || await shrink(file)
+      const up = await supabase.storage.from('backstage').upload(path, blob, { contentType: 'image/jpeg' })
       if (up.error) { setBusy(false); toast(up.error.message, 'err'); return }
     }
     const { error } = await supabase.from('bs_posts').insert({ player_id: playerId, image_path: path, caption: caption.trim() || null, category: cat, audience: aud })
@@ -347,9 +361,14 @@ function Composer({ playerId, onClose, onDone }: { playerId: number; onClose: ()
       footer={<><button className="btn" onClick={onClose}>{t('Annulla')}</button>
         <button className="btn btn-primary" disabled={busy} onClick={publish}>{busy ? t('Pubblico…') : t('Pubblica nel Backstage')}</button></>}>
       <div className="grid" style={{ gap: 12 }}>
-        <button className="bs-pick" onClick={() => ref.current?.click()} style={{ backgroundImage: preview ? `url(${preview})` : undefined }}>
-          {!preview && <span><Icon name="camera" size={22} /><br />{t('Scegli una foto')}</span>}
-        </button>
+        {file ? (<>
+          <CropBox ref={crop} file={file} aspect={4 / 5} outW={1080} />
+          <div className="bs-mute">{t('Trascina per centrare, usa la barra per ingrandire')} · <button className="btn btn-sm btn-ghost" onClick={() => ref.current?.click()}>{t('Cambia foto')}</button></div>
+        </>) : (
+          <button className="bs-pick" onClick={() => ref.current?.click()}>
+            <span><Icon name="camera" size={22} /><br />{t('Scegli una foto')}</span>
+          </button>
+        )}
         <input ref={ref} type="file" accept="image/*" hidden onChange={e => { const f = e.target.files?.[0]; if (f) setFile(f); e.target.value = '' }} />
         <textarea className="textarea" rows={3} value={caption} onChange={e => setCaption(e.target.value)} placeholder={t('Racconta il momento, come lo racconteresti a un amico…')} />
         <div className="bs-cats" style={{ padding: 0 }}>{CATS.map(c => <button key={c} className={cat === c ? 'on' : ''} onClick={() => setCat(c)}>{t(c)}</button>)}</div>
@@ -580,7 +599,7 @@ const BS_CSS = `
 .bs-two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .bs-sec { font-size: 11px; letter-spacing: 1.4px; text-transform: uppercase; font-weight: 800; color: var(--text-faint); margin-top: 6px; }
 .bs-img { width: 100%; border-radius: 16px; max-height: 70vh; object-fit: contain; background: var(--bg-2); }
-.bs-pick { aspect-ratio: 4/5; max-height: 340px; width: 100%; border: 2px dashed var(--border); border-radius: 18px; background: var(--bg) center/cover; cursor: pointer; display: grid; place-items: center; color: var(--text-dim); font-weight: 700; font-size: 13px; }
+.bs-pick { aspect-ratio: 4/5; max-width: 340px; justify-self: center; width: 100%; border: 2px dashed var(--border); border-radius: 18px; background: var(--bg) center/cover; cursor: pointer; display: grid; place-items: center; color: var(--text-dim); font-weight: 700; font-size: 13px; }
 .bs-opt { display: flex; gap: 11px; align-items: flex-start; border: 1px solid var(--border); border-radius: 14px; padding: 11px; cursor: pointer; }
 .bs-opt.on { border-color: var(--text); background: var(--bg); }
 .bs-opt input { margin-top: 3px; accent-color: #0A0A0A; }
