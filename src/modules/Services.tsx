@@ -223,7 +223,7 @@ export default function Services() {
                       background: on ? T.text : 'transparent',
                       color: on ? '#fff' : T.dim, fontWeight: 700, fontSize: 12.5,
                     }}>
-                    {c === 'Tutti' ? t('Tutti') : c}
+                    {t(c)}
                   </button>
                 )
               })}
