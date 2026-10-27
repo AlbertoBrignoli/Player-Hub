@@ -33,6 +33,7 @@ export default function BrandDeals({ compact = false }: { compact?: boolean }) {
   const { athleteId, athletes } = useAthlete()
   const [deals, setDeals] = useState<Deal[]>([])
   const [codes, setCodes] = useState<Record<string, string>>({})
+  const [labels, setLabels] = useState<Record<string, string>>({})
   const [acts, setActs] = useState<Act[]>([])
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState('')
@@ -42,12 +43,17 @@ export default function BrandDeals({ compact = false }: { compact?: boolean }) {
   const canActivate = !!athleteId && (role === 'player' || isAdmin || role === 'creator' || role === 'agente')
 
   async function load() {
-    const [d, c, a] = await Promise.all([
+    const [d, c, a, l] = await Promise.all([
       supabase.from('crm_brand_deals_public').select('*').order('sort'),
       athleteId ? supabase.rpc('crm_brand_deal_codes_for', { p_player: athleteId }) : Promise.resolve({ data: [] as any[] }),
       isAdmin ? supabase.from('crm_brand_deal_activations').select('deal_id, player_id, activated_at, shop_opens') : Promise.resolve({ data: [] as any[] }),
+      athleteId ? supabase.rpc('crm_brand_deal_labels_for', { p_player: athleteId }) : Promise.resolve({ data: [] as any[] }),
     ])
     setDeals((d.data as Deal[]) || [])
+    // sconto personale dell'atleta (es. -15%): solo nel badge, la convenzione resta quella generale
+    const own: Record<string, string> = {}
+    for (const r of ((l as any).data || []) as { deal_id: string; discount_label: string }[]) own[r.deal_id] = r.discount_label
+    setLabels(own)
     const m: Record<string, string> = {}
     for (const r of ((c as any).data || []) as { deal_id: string; code: string }[]) if (r.code) m[r.deal_id] = r.code
     setCodes(m)
@@ -111,7 +117,7 @@ export default function BrandDeals({ compact = false }: { compact?: boolean }) {
                 onClick={e => { e.preventDefault(); openShop(d) }} style={{ background: d.accent_color || '#111' }}>
                 {d.cover_url && <div className="bd-img" style={{ backgroundImage: `url(${d.cover_url})` }} />}
                 <div className="bd-shade" />
-                {d.discount_label && <div className="bd-badge">{d.discount_label}</div>}
+                {(labels[d.id] || d.discount_label) && <div className="bd-badge">{labels[d.id] || d.discount_label}</div>}
                 <div className="bd-head">
                   {d.logo_url
                     ? <img src={d.logo_url} alt={d.brand_name} className="bd-logo" />
