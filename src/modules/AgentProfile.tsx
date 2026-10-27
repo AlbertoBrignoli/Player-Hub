@@ -34,6 +34,7 @@ export default function AgentProfile() {
   const uid = byAdmin ? editId! : session?.user.id
   const isAgent = role === 'agente' || byAdmin
   const [linked, setLinked] = useState<number[]>([])
+  const [joined, setJoined] = useState(true)
 
   useEffect(() => {
     if (!uid) return
@@ -44,8 +45,11 @@ export default function AgentProfile() {
       if (isAgent) q = q.eq('agent_id', uid)
       const { data } = await q.limit(1).maybeSingle()
       if (byAdmin) {
-        const { data: l } = await supabase.from('crm_agent_athletes').select('player_id').eq('agent_id', uid)
-        if (ok) setLinked(((l as any[]) || []).map(x => Number(x.player_id)))
+        const [{ data: l }, { data: acc }] = await Promise.all([
+          supabase.from('crm_agent_athletes').select('player_id').eq('agent_id', uid),
+          supabase.from('crm_profiles').select('id').eq('id', uid).maybeSingle(),
+        ])
+        if (ok) { setLinked(((l as any[]) || []).map(x => Number(x.player_id))); setJoined(!!acc) }
       }
       if (!ok) return
       setP((data as P) || {})
@@ -124,7 +128,7 @@ export default function AgentProfile() {
             : <div style={{ width: 58, height: 58, borderRadius: 15, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 22, color: '#fff' }}>
                 {(p.name || 'A').slice(0, 1)}
               </div>}
-          <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{ minWidth: 0, flex: '1 1 200px' }}>
             <div style={{ ...kicker, color: ACCENT }}>{byAdmin ? t('Procuratore · modifica AUVI') : t('Procuratore')}</div>
             <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: -0.3, marginTop: 2 }}>
               {p.name || t('Il mio profilo')}
@@ -150,7 +154,7 @@ export default function AgentProfile() {
       {byAdmin && (
         <div className="faint" style={{ fontSize: 12.5 }}>
           {t('Segue')}: {linked.map(id => athletes.find(x => x.api_player_id === id)?.name || `#${id}`).join(', ') || '—'}
-          {p.agent_id && !p.email && <> · {t("Non è ancora entrato nell'app: lo stai preparando tu.")}</>}
+          {p.agent_id && !joined && <> · {t("Non è ancora entrato nell'app: lo stai preparando tu.")}</>}
         </div>
       )}
 

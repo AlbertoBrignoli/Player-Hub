@@ -118,8 +118,8 @@ function RefProfile({ r, onClose, onChat, onEdit }: { r: Ref; onClose: () => voi
   return (
     <Modal title={t('Profilo')} onClose={onClose} dismissable
       footer={<div className="flex gap" style={{ width: '100%', gap: 8 }}>
-        {onEdit && <button className="btn" onClick={onEdit}><Icon name="edit" size={14} /> {t('Modifica profilo')}</button>}
-        <button className="btn btn-primary" style={{ flex: 1 }} onClick={onChat}><Icon name="message" size={15} /> {t('Scrivi in chat')}</button>
+        {onEdit && <button className="btn" style={{ flex: '0 0 auto', width: 'auto' }} onClick={onEdit} aria-label={t('Modifica profilo')}><Icon name="edit" size={14} /> {t('Modifica')}</button>}
+        <button className="btn btn-primary" style={{ flex: 1, whiteSpace: 'nowrap' }} onClick={onChat}><Icon name="message" size={15} /> {t('Scrivi in chat')}</button>
       </div>}>
       <div className="ref-prof">
         <div className="ref-prof-head">
