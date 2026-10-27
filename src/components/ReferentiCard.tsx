@@ -6,6 +6,7 @@ import { toast } from '../lib/toast'
 import Icon from '../components/Icon'
 import { telUrl, whatsappUrl } from '../lib/ics'
 import { useLang } from '../lib/i18n'
+import { igUrl } from '../modules/home/HomeContacts'
 
 // I referenti dell'atleta: procuratore, assicuratore, preparatore.
 // Ognuno con la propria scheda e il canale di chat dedicato.
@@ -18,6 +19,7 @@ type Ref = {
   email?: string | null
   phone?: string | null
   photo?: string | null
+  instagram?: string | null
   accent: string
 }
 
@@ -54,7 +56,7 @@ export default function ReferentiCard({ goto }: { goto?: (r: string) => void }) 
           key: 'agente', role: 'agente', label: 'Procuratore',
           name: p.name || 'Procuratore',
           detail: [p.title, p.agency_name].filter(Boolean).join(' · '),
-          email: p.email, phone: p.phone, photo: p.photo_url, accent: C_AGENTE,
+          email: p.email, phone: p.phone, photo: p.photo_url, instagram: igUrl(p.instagram_url), accent: C_AGENTE,
         })
       }
 
@@ -183,6 +185,11 @@ export default function ReferentiCard({ goto }: { goto?: (r: string) => void }) 
                 {r.phone && (
                   <a className="btn btn-ghost btn-sm" href={whatsappUrl(r.phone)} target="_blank" rel="noreferrer">
                     <Icon name="message" size={13} /> WhatsApp
+                  </a>
+                )}
+                {r.instagram && (
+                  <a className="btn btn-ghost btn-sm" href={r.instagram} target="_blank" rel="noreferrer">
+                    <Icon name="instagram" size={13} /> Instagram
                   </a>
                 )}
               </div>

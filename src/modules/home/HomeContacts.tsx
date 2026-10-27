@@ -14,8 +14,17 @@ import Icon from '../../components/Icon'
 type Ref = {
   key: string; id?: string; label: string; name: string; photo?: string | null
   title?: string | null; org?: string | null; orgLogo?: string | null; website?: string | null
-  email?: string | null; phone?: string | null; whatsapp?: string | null
+  email?: string | null; phone?: string | null; whatsapp?: string | null; instagram?: string | null
   facts: { k: string; v: string }[]; bio?: string | null
+}
+
+// "instagram.com/nome", "@nome" o l'URL completo → link al profilo
+export function igUrl(v?: string | null): string | null {
+  const x = (v || '').trim()
+  if (!x) return null
+  if (/^https?:\/\//i.test(x)) return x
+  if (/instagram\.com\//i.test(x)) return 'https://' + x.replace(/^\/+/, '')
+  return 'https://www.instagram.com/' + x.replace(/^@/, '').replace(/\/+$/, '') + '/'
 }
 
 // Profili diversi per ruolo → una forma unica da mostrare
@@ -42,7 +51,7 @@ function normalize(key: string, label: string, p: any): Ref {
   return {
     key, id: p.agent_id, label, name: p.name || label, photo: p.photo_url, title: p.title,
     org: p.agency_name, orgLogo: p.agency_logo_url, website: p.agency_website,
-    email: p.email || p.agency_email, phone: p.phone || p.agency_phone, whatsapp: p.whatsapp,
+    email: p.email || p.agency_email, phone: p.phone || p.agency_phone, whatsapp: p.whatsapp, instagram: p.instagram_url,
     facts, bio: p.notes || null,
   }
 }
@@ -114,6 +123,7 @@ export default function HomeContacts({ goto, title }: { goto: (r: string) => voi
 function RefProfile({ r, onClose, onChat, onEdit }: { r: Ref; onClose: () => void; onChat: () => void; onEdit?: () => void }) {
   const { t } = useLang()
   const wa = r.whatsapp ? (/^https?:/i.test(r.whatsapp) ? r.whatsapp : whatsappUrl(r.whatsapp)) : r.phone ? whatsappUrl(r.phone) : null
+  const ig = igUrl(r.instagram)
   const site = r.website ? (/^https?:/i.test(r.website) ? r.website : `https://${r.website}`) : null
   return (
     <Modal title={t('Profilo')} onClose={onClose} dismissable
@@ -138,12 +148,13 @@ function RefProfile({ r, onClose, onChat, onEdit }: { r: Ref; onClose: () => voi
           </div>
         </div>
 
-        {(r.phone || wa || r.email || site) && (
+        {(r.phone || wa || r.email || site || ig) && (
           <div className="quick-actions" style={{ marginTop: 16 }}>
             {r.phone && <a className="qa" href={telUrl(r.phone)}><span className="qa-ico"><Icon name="smartphone" size={15} /></span>{t('Chiama')}</a>}
             {wa && <a className="qa" href={wa} target="_blank" rel="noreferrer"><span className="qa-ico"><Icon name="message" size={15} /></span>WhatsApp</a>}
             {r.email && <a className="qa" href={mailUrl(r.email)}><span className="qa-ico"><Icon name="mail" size={15} /></span>Email</a>}
             {site && <a className="qa" href={site} target="_blank" rel="noreferrer"><span className="qa-ico"><Icon name="layers" size={15} /></span>{t('Sito')}</a>}
+            {ig && <a className="qa" href={ig} target="_blank" rel="noreferrer"><span className="qa-ico"><Icon name="instagram" size={15} /></span>Instagram</a>}
           </div>
         )}
 

@@ -3471,5 +3471,6 @@ const EN: Record<string, string> = {
   "Segue": "Represents",
   "Procuratore · modifica AUVI": "Agent · edited by AUVI",
   "Non è ancora entrato nell'app: lo stai preparando tu.": "Hasn't joined the app yet: you're preparing it.",
+  "Instagram personale": "Personal Instagram",
 }
 

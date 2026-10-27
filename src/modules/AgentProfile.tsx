@@ -7,6 +7,7 @@ import Icon from '../components/Icon'
 import { ProImages } from '../components/ProImages'
 import { useLang } from '../lib/i18n'
 import { useRouteParam } from '../lib/route'
+import { igUrl } from './home/HomeContacts'
 
 // Profilo del procuratore: contatti personali + agenzia per cui lavora.
 // L'agente lo modifica; l'atleta seguito lo vede in sola lettura.
@@ -112,6 +113,11 @@ export default function AgentProfile() {
           <Info k={t('Telefono')} v={p.phone} href={p.phone ? `tel:${p.phone}` : undefined} />
           <Info k={t('Agenzia')} v={p.agency_name} />
         </div>
+        {igUrl(p.instagram_url) && (
+          <a className="btn btn-ghost btn-sm" style={{ marginTop: 14 }} href={igUrl(p.instagram_url)!} target="_blank" rel="noreferrer">
+            <Icon name="instagram" size={14} /> Instagram
+          </a>
+        )}
       </div>
     )
   }
@@ -137,6 +143,12 @@ export default function AgentProfile() {
               {[p.title, p.agency_name].filter(Boolean).join(' · ') || t('Completa i tuoi dati')}
             </div>
           </div>
+          {igUrl(p.instagram_url) && (
+            <a href={igUrl(p.instagram_url)!} target="_blank" rel="noreferrer" aria-label="Instagram" title="Instagram"
+              style={{ width: 54, height: 54, borderRadius: 12, background: '#fff', color: '#0A0A0A', display: 'grid', placeItems: 'center' }}>
+              <Icon name="instagram" size={26} />
+            </a>
+          )}
           {p.agency_logo_url && (
             <div style={{ background: '#fff', borderRadius: 12, padding: 7, display: 'flex' }}>
               <img src={p.agency_logo_url} alt="" style={{ width: 40, height: 40, objectFit: 'contain' }} />
@@ -168,6 +180,7 @@ export default function AgentProfile() {
           <Field label={t('Telefono')}><Input value={p.phone || ''} onChange={e => set('phone', e.target.value)} /></Field>
           <Field label={t('WhatsApp')}><Input value={p.whatsapp || ''} onChange={e => set('whatsapp', e.target.value)} /></Field>
           <Field label={t('Licenza FIFA')}><Input value={p.licence || ''} onChange={e => set('licence', e.target.value)} placeholder={t('Numero licenza')} /></Field>
+          <Field label={t('Instagram personale')}><Input value={p.instagram_url || ''} onChange={e => set('instagram_url', e.target.value)} placeholder="instagram.com/…" /></Field>
         </div>
         <ProImages uid={uid!} photo={p.photo_url} logo={p.agency_logo_url}
           onPhoto={u => set('photo_url', u)} onLogo={u => set('agency_logo_url', u)}
