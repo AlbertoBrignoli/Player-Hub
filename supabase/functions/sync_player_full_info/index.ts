@@ -1,6 +1,7 @@
 // sync_player_full_info — compila la tabella `player` da API-Football.
 // Nessun body            -> tutti i giocatori della tabella `player`.
 // Body {"player_id":128461,"team_id":500} -> solo quel giocatore.
+// Body {"team_id":497,"search":"Gollini"} -> aggiunge un nuovo atleta (cercato nella rosa) e lo compila.
 // Opzioni body: "season" (default stagione corrente), "force" (true = sovrascrive anche i campi gia' pieni).
 // Default: riempie SOLO i campi vuoti (non tocca i dati inseriti a mano).
 // Accesso: header x-sync-secret (cron), service key (onboard_player) o admin loggato.
@@ -60,6 +61,31 @@ async function resolveTargets(req: Request) {
 
   const season = body && body.season ? Number(body.season) : DEFAULT_SEASON;
   const force = body && body.force === true;
+
+  // Nuovo atleta: {"team_id":497,"search":"Gollini"} -> lo cerca nella rosa della squadra,
+  // crea la riga in `player` se manca e poi la compila come gli altri.
+  if (body && body.search && body.team_id) {
+    const teamId = Number(body.team_id);
+    const q = String(body.search).toLowerCase();
+    let id: number | null = null;
+    const sj = await apiGet(`/players/squads?team=${teamId}`);
+    const hit = (sj.response?.[0]?.players || []).find((x: any) => String(x.name || "").toLowerCase().includes(q));
+    if (hit) id = Number(hit.id);
+    if (!id) {
+      const pj = await apiGet(`/players?search=${encodeURIComponent(String(body.search))}&team=${teamId}&season=${season}`);
+      id = pj.response?.[0]?.player?.id ?? null;
+    }
+    if (!id) return { targets: [], season, force };
+    const { data: exists } = await supabase.from("player").select("api_player_id").eq("api_player_id", id).maybeSingle();
+    if (!exists) {
+      const pj = await apiGet(`/players?id=${id}&season=${season}`);
+      const pl = pj.response?.[0]?.player;
+      const name = [pl?.firstname, pl?.lastname].filter(Boolean).join(" ") || pl?.name || hit?.name;
+      const { error } = await supabase.from("player").insert({ api_player_id: id, name, team_id: teamId });
+      if (error) throw new Error(error.message);
+    }
+    return { targets: [{ api_player_id: id, team_id: teamId }], season, force };
+  }
 
   if (body && body.player_id) {
     return {
