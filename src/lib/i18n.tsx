@@ -3468,5 +3468,8 @@ const EN: Record<string, string> = {
   "Altra città in Grecia": "Another city in Greece",
   "Altro paese": "Another country",
   "Es. prodotti che usi già, orari degli allenamenti, esigenze particolari…": "E.g. products you already use, training times, special needs…",
+  "Segue": "Represents",
+  "Procuratore · modifica AUVI": "Agent · edited by AUVI",
+  "Non è ancora entrato nell'app: lo stai preparando tu.": "Hasn't joined the app yet: you're preparing it.",
 }
 

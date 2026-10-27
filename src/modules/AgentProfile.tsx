@@ -6,9 +6,11 @@ import { Spinner, Field, Input, Textarea } from '../components/ui'
 import Icon from '../components/Icon'
 import { ProImages } from '../components/ProImages'
 import { useLang } from '../lib/i18n'
+import { useRouteParam } from '../lib/route'
 
 // Profilo del procuratore: contatti personali + agenzia per cui lavora.
 // L'agente lo modifica; l'atleta seguito lo vede in sola lettura.
+// AUVI apre agent-profile?id=<agent_id> e lo modifica per lui (anche prima che l'agente entri).
 const ACCENT = '#8A6D00' // oro sobrio: area procura, distinta da brand (rosso) e fitness (verde)
 
 const kicker: React.CSSProperties = {
@@ -18,7 +20,7 @@ const kicker: React.CSSProperties = {
 type P = Record<string, any>
 
 export default function AgentProfile() {
-  const { session, role } = useAuth()
+  const { session, role, isAdmin } = useAuth()
   const { athletes } = useAthlete()
   const { t } = useLang()
   const [p, setP] = useState<P>({})
@@ -26,8 +28,12 @@ export default function AgentProfile() {
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
 
-  const uid = session?.user.id
-  const isAgent = role === 'agente'
+  const editId = useRouteParam('id')
+  const byAdmin = isAdmin && !!editId
+  // profilo che si modifica: il proprio per l'agente, quello scelto per AUVI
+  const uid = byAdmin ? editId! : session?.user.id
+  const isAgent = role === 'agente' || byAdmin
+  const [linked, setLinked] = useState<number[]>([])
 
   useEffect(() => {
     if (!uid) return
@@ -37,12 +43,16 @@ export default function AgentProfile() {
       let q = supabase.from('crm_agent_profile').select('*')
       if (isAgent) q = q.eq('agent_id', uid)
       const { data } = await q.limit(1).maybeSingle()
+      if (byAdmin) {
+        const { data: l } = await supabase.from('crm_agent_athletes').select('player_id').eq('agent_id', uid)
+        if (ok) setLinked(((l as any[]) || []).map(x => Number(x.player_id)))
+      }
       if (!ok) return
       setP((data as P) || {})
       setLoading(false)
     })()
     return () => { ok = false }
-  }, [uid, isAgent])
+  }, [uid, isAgent, byAdmin])
 
   const set = (k: string, v: any) => setP(prev => ({ ...prev, [k]: v }))
 
@@ -66,7 +76,7 @@ export default function AgentProfile() {
 
   async function save() {
     if (!uid) return
-    if (!p.photo_url) { setMsg(t('Carica la tua foto profilo: è obbligatoria.')); return }
+    if (!p.photo_url && !byAdmin) { setMsg(t('Carica la tua foto profilo: è obbligatoria.')); return }
     setBusy(true); setMsg('')
     const { error } = await supabase.from('crm_agent_profile')
       .upsert({ ...p, agent_id: uid, updated_at: new Date().toISOString() })
@@ -115,7 +125,7 @@ export default function AgentProfile() {
                 {(p.name || 'A').slice(0, 1)}
               </div>}
           <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ ...kicker, color: ACCENT }}>{t('Procuratore')}</div>
+            <div style={{ ...kicker, color: ACCENT }}>{byAdmin ? t('Procuratore · modifica AUVI') : t('Procuratore')}</div>
             <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: -0.3, marginTop: 2 }}>
               {p.name || t('Il mio profilo')}
             </div>
@@ -131,11 +141,18 @@ export default function AgentProfile() {
           <div>
             <div style={{ ...kicker, fontSize: 10, color: 'var(--text-dim)' }}>{t('Assistiti')}</div>
             <div style={{ fontSize: 22, fontWeight: 900, borderBottom: `2px solid ${ACCENT}`, display: 'inline-block' }}>
-              {athletes.length}
+              {byAdmin ? linked.length : athletes.length}
             </div>
           </div>
         </div>
       </div>
+
+      {byAdmin && (
+        <div className="faint" style={{ fontSize: 12.5 }}>
+          {t('Segue')}: {linked.map(id => athletes.find(x => x.api_player_id === id)?.name || `#${id}`).join(', ') || '—'}
+          {p.agent_id && !p.email && <> · {t("Non è ancora entrato nell'app: lo stai preparando tu.")}</>}
+        </div>
+      )}
 
       {/* --- dati personali --- */}
       <div className="card">
@@ -170,7 +187,7 @@ export default function AgentProfile() {
           <Field label={t('LinkedIn')}><Input value={p.agency_linkedin || ''} onChange={e => set('agency_linkedin', e.target.value)} /></Field>
         </div>
         <Field label={t('Sede')}><Input value={p.agency_address || ''} onChange={e => set('agency_address', e.target.value)} placeholder={t('Via, città, paese')} /></Field>
-        <Field label={t('Note')}><Textarea rows={2} value={p.notes || ''} onChange={e => set('notes', e.target.value)} /></Field>
+        <Field label={t('Descrizione')}><Textarea rows={5} value={p.notes || ''} onChange={e => set('notes', e.target.value)} /></Field>
       </div>
 
       <div className="flex gap" style={{ alignItems: 'center', gap: 12 }}>

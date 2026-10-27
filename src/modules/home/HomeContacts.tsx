@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAthlete } from '../../lib/athlete'
+import { useAuth } from '../../auth/AuthContext'
 import { useLang } from '../../lib/i18n'
 import { initials } from '../../lib/format'
 import { telUrl, whatsappUrl, mailUrl } from '../../lib/ics'
@@ -11,7 +12,7 @@ import Icon from '../../components/Icon'
 // referente (chi è, studio/agenzia, contatti diretti); la chat è un'azione dentro il profilo.
 // Stessa fonte dati di ReferentiCard (procuratore, assicuratore, commercialista, preparatore).
 type Ref = {
-  key: string; label: string; name: string; photo?: string | null
+  key: string; id?: string; label: string; name: string; photo?: string | null
   title?: string | null; org?: string | null; orgLogo?: string | null; website?: string | null
   email?: string | null; phone?: string | null; whatsapp?: string | null
   facts: { k: string; v: string }[]; bio?: string | null
@@ -39,10 +40,10 @@ function normalize(key: string, label: string, p: any): Ref {
     p.agency_founded && { k: 'Fondata', v: p.agency_founded },
   ].filter(Boolean) as { k: string; v: string }[]
   return {
-    key, label, name: p.name || label, photo: p.photo_url, title: p.title,
+    key, id: p.agent_id, label, name: p.name || label, photo: p.photo_url, title: p.title,
     org: p.agency_name, orgLogo: p.agency_logo_url, website: p.agency_website,
     email: p.email || p.agency_email, phone: p.phone || p.agency_phone, whatsapp: p.whatsapp,
-    facts, bio: null,
+    facts, bio: p.notes || null,
   }
 }
 
@@ -51,6 +52,7 @@ export default function HomeContacts({ goto, title }: { goto: (r: string) => voi
   const { t } = useLang()
   const [refs, setRefs] = useState<Ref[]>([])
   const [openRef, setOpenRef] = useState<Ref | null>(null)
+  const { isAdmin } = useAuth()
 
   useEffect(() => {
     if (!athleteId) { setRefs([]); return }
@@ -102,18 +104,23 @@ export default function HomeContacts({ goto, title }: { goto: (r: string) => voi
           </button>
         ))}
       </div>
-      {openRef && <RefProfile r={openRef} onClose={() => setOpenRef(null)} onChat={() => { setOpenRef(null); chat(openRef.key) }} />}
+      {openRef && <RefProfile r={openRef} onClose={() => setOpenRef(null)} onChat={() => { setOpenRef(null); chat(openRef.key) }}
+        onEdit={isAdmin && openRef.key === 'agente' && openRef.id ? () => { setOpenRef(null); goto(`agent-profile?id=${openRef.id}`) } : undefined} />}
     </section>
   )
 }
 
-function RefProfile({ r, onClose, onChat }: { r: Ref; onClose: () => void; onChat: () => void }) {
+// onEdit: solo AUVI, per sistemare il profilo dell'agente (anche prima che entri lui)
+function RefProfile({ r, onClose, onChat, onEdit }: { r: Ref; onClose: () => void; onChat: () => void; onEdit?: () => void }) {
   const { t } = useLang()
   const wa = r.whatsapp ? (/^https?:/i.test(r.whatsapp) ? r.whatsapp : whatsappUrl(r.whatsapp)) : r.phone ? whatsappUrl(r.phone) : null
   const site = r.website ? (/^https?:/i.test(r.website) ? r.website : `https://${r.website}`) : null
   return (
     <Modal title={t('Profilo')} onClose={onClose} dismissable
-      footer={<button className="btn btn-primary" style={{ width: '100%' }} onClick={onChat}><Icon name="message" size={15} /> {t('Scrivi in chat')}</button>}>
+      footer={<div className="flex gap" style={{ width: '100%', gap: 8 }}>
+        {onEdit && <button className="btn" onClick={onEdit}><Icon name="edit" size={14} /> {t('Modifica profilo')}</button>}
+        <button className="btn btn-primary" style={{ flex: 1 }} onClick={onChat}><Icon name="message" size={15} /> {t('Scrivi in chat')}</button>
+      </div>}>
       <div className="ref-prof">
         <div className="ref-prof-head">
           {r.photo
