@@ -9,7 +9,7 @@ import { toast } from '../lib/toast'
 import { Modal } from './ui'
 import Icon from './Icon'
 
-export const PRO_ROLES_WITH_PROFILE = ['agente', 'assicuratore', 'commercialista', 'preparatore', 'fisioterapista', 'nutrizionista']
+export const PRO_ROLES_WITH_PROFILE = ['agente', 'assicuratore', 'commercialista', 'preparatore', 'fisioterapista', 'nutrizionista', 'wealth']
 // tabella del profilo, colonna id e colonna logo per ruolo
 export const PRO_PROFILE: Record<string, { table: string; idCol: string; logoCol: string }> = {
   agente: { table: 'crm_agent_profile', idCol: 'agent_id', logoCol: 'agency_logo_url' },
@@ -18,6 +18,7 @@ export const PRO_PROFILE: Record<string, { table: string; idCol: string; logoCol
   preparatore: { table: 'fitness_coach_profile', idCol: 'trainer_id', logoCol: 'logo_url' },
   fisioterapista: { table: 'crm_physio_profile', idCol: 'physio_id', logoCol: 'logo_url' },
   nutrizionista: { table: 'crm_nutri_profile', idCol: 'nutri_id', logoCol: 'logo_url' },
+  wealth: { table: 'crm_wealth_profile', idCol: 'advisor_id', logoCol: 'agency_logo_url' },
 }
 
 // foto: quadrata al centro, 800 px, JPEG · logo: lato lungo max 600 px, PNG (trasparenza)

@@ -13,16 +13,16 @@ import Icon from './Icon'
 import { Modal, Field, Input, Tabs, Empty } from './ui'
 
 // Schermate home dei vari ruoli: qui compare l'invito ad attivare le notifiche.
-const HOME_ROUTES = ['dashboard', 'brandhome', 'agent-home', 'insurer-home', 'tax-home', 'physio-home', 'partner-home']
+const HOME_ROUTES = ['dashboard', 'brandhome', 'agent-home', 'insurer-home', 'tax-home', 'physio-home', 'partner-home', 'wealth-home']
 
-export const APP_VERSION = 'v10.7'
+export const APP_VERSION = 'v10.8'
 
 export interface NavDef {
   key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[]
   /** solo se l'atleta selezionato ha la casella di posta AUVI */
   mailbox?: boolean
   /** sezione con schede: le route elencate sono le schede della stessa voce di menu */
-  tabs?: { key: string; label: string; roles?: string[] }[]
+  tabs?: { key: string; label: string; roles?: string[]; wealth?: boolean }[]
 }
 
 // Menu principale (admin / player / creator): 5 gruppi, niente gruppi da una voce,
@@ -48,6 +48,7 @@ export const NAV: { group: string; items: NavDef[] }[] = [
       { key: 'sponsors', label: 'Sponsor' },
       { key: 'contracts', label: 'Contratti' },
       { key: 'documents', label: 'Documenti' },
+      { key: 'wealth', label: 'Patrimonio', roles: ['admin', 'player'], wealth: true },
     ]},
   ]},
   { group: 'Altro', items: [
@@ -82,7 +83,7 @@ export const PARTNER_NAV: { group: string; items: NavDef[] }[] = [
 // ---- Ufficio del professionista: un solo telaio per tutti i ruoli pro ----
 // Principale = Home ufficio, I miei atleti, Agenda/Calendario, Chat + area del ruolo;
 // Altro = il mio profilo e gli extra del ruolo. Cambiano solo le voci dell'area.
-type ProRole = 'agente' | 'assicuratore' | 'commercialista' | 'preparatore' | 'fisioterapista' | 'nutrizionista'
+type ProRole = 'agente' | 'assicuratore' | 'commercialista' | 'preparatore' | 'fisioterapista' | 'nutrizionista' | 'wealth'
 export const PRO_ROLES: Record<ProRole, { home: string; profile: string; area: NavDef[]; extra: NavDef[]; tab: { key: string; label: string; icon: string } }> = {
   agente: {
     home: 'agent-home', profile: 'agent-profile',
@@ -121,6 +122,15 @@ export const PRO_ROLES: Record<ProRole, { home: string; profile: string; area: N
     ],
     extra: [{ key: 'services', label: 'Richieste servizi', icon: 'layers' }],
     tab: { key: 'legaltax', label: 'Fisco', icon: 'briefcase' },
+  },
+  // wealth manager (Delian & Co.): quadro del patrimonio, task e documenti dell'atleta
+  wealth: {
+    home: 'wealth-home', profile: 'wealth-profile',
+    area: [
+      { key: 'wealth', label: 'Patrimonio', icon: 'briefcase' },
+    ],
+    extra: [],
+    tab: { key: 'wealth', label: 'Patrimonio', icon: 'briefcase' },
   },
   preparatore: {
     home: 'dashboard', profile: 'coach-profile',
@@ -225,6 +235,9 @@ const TITLES: Record<string, { t: string; s: string }> = {
   archivio: { t: 'Contratti e Documenti', s: 'Accordi, scadenze e archivio file riservato' },
   'tax-home': { t: 'Home', s: 'La tua scheda e gli atleti seguiti' },
   'tax-profile': { t: 'Il mio profilo', s: 'Contatti e studio' },
+  wealth: { t: 'Patrimonio', s: 'Quadro, task e documenti del wealth manager' },
+  'wealth-home': { t: 'Home', s: 'La tua scheda e gli atleti seguiti' },
+  'wealth-profile': { t: 'Il mio profilo', s: 'Contatti e società' },
   'physio-home': { t: 'Home', s: 'La tua scheda e gli atleti seguiti' },
   'partner-home': { t: 'Area partner', s: 'Richieste degli atleti AUVI per i tuoi servizi' },
   'physio-profile': { t: 'Il mio profilo', s: 'Anagrafica, contatti e biografia' },
@@ -255,6 +268,7 @@ export default function Shell({ route, setRoute, right, children }: {
   const isAgent = role === 'agente'
   const isInsurer = role === 'assicuratore'
   const isTax = role === 'commercialista'
+  const isWealth = role === 'wealth'
   const isPhysio = role === 'fisioterapista'
   const isNutri = role === 'nutrizionista'
 
@@ -286,7 +300,7 @@ export default function Shell({ route, setRoute, right, children }: {
     if (error) { alert(error.message); return }
     window.location.reload()
   }
-  const isPro = isCoach || isAgent || isInsurer || isTax || isPhysio || isNutri
+  const isPro = isCoach || isAgent || isInsurer || isTax || isPhysio || isNutri || isWealth
   const isPartner = role === 'partner'
   const nav = isPartner ? PARTNER_NAV : isBrand ? BRAND_NAV : isPro ? proNav(role as ProRole) : NAV
   // professionista senza atleti: le aree di lavoro non hanno dati da mostrare (evita caricamenti infiniti)
@@ -303,8 +317,15 @@ export default function Shell({ route, setRoute, right, children }: {
     supabase.from('crm_mailboxes').select('player_id').eq('player_id', athleteId).maybeSingle()
       .then(({ data }) => setHasMailbox(!!data))
   }, [athleteId, isAdmin, role])
+  // Patrimonio: la scheda compare solo se l'atleta ha un wealth manager collegato
+  const [hasWealth, setHasWealth] = useState(false)
+  useEffect(() => {
+    if (!athleteId || !(isAdmin || role === 'player')) { setHasWealth(false); return }
+    supabase.from('crm_wealth_athletes').select('player_id').eq('player_id', athleteId).limit(1)
+      .then(({ data }) => setHasWealth(!!data?.length))
+  }, [athleteId, isAdmin, role])
   const visibleItem = (i: NavDef) => (!i.adminOnly || isAdmin) && (!i.roles || (!!role && i.roles.includes(role))) && (!i.mailbox || hasMailbox)
-  const tabsOf = (i: NavDef) => (i.tabs || []).filter(t => !t.roles || (!!role && t.roles.includes(role)))
+  const tabsOf = (i: NavDef) => (i.tabs || []).filter(t => (!t.roles || (!!role && t.roles.includes(role))) && (!t.wealth || hasWealth))
   const allItems = nav.flatMap(g => g.items).filter(visibleItem)
   const hub = allItems.find(i => i.key === route || tabsOf(i).some(t => t.key === route))
   const hubTabs = hub ? tabsOf(hub) : []
@@ -381,7 +402,7 @@ export default function Shell({ route, setRoute, right, children }: {
             <div className="avatar">{initials(agentName || profile?.full_name || profile?.email)}</div>
             <div className="user-meta">
               <div className="user-name">{agentName || profile?.full_name || profile?.email}</div>
-              <div className="user-role">{tr(role === 'admin' ? 'AUVI · Advisor' : role === 'creator' ? 'Team · Creator' : role === 'preparatore' ? 'Preparatore Atletico' : role === 'brand' ? 'Brand · Partner' : role === 'agente' ? 'Procuratore' : role === 'assicuratore' ? 'Assicuratore' : role === 'commercialista' ? 'Commercialista' : role === 'fisioterapista' ? 'Fisioterapista' : role === 'nutrizionista' ? 'Nutrizionista' : role === 'partner' ? 'Partner servizi' : 'Giocatore')}</div>
+              <div className="user-role">{tr(role === 'admin' ? 'AUVI · Advisor' : role === 'creator' ? 'Team · Creator' : role === 'preparatore' ? 'Preparatore Atletico' : role === 'brand' ? 'Brand · Partner' : role === 'agente' ? 'Procuratore' : role === 'assicuratore' ? 'Assicuratore' : role === 'commercialista' ? 'Commercialista' : role === 'fisioterapista' ? 'Fisioterapista' : role === 'nutrizionista' ? 'Nutrizionista' : role === 'wealth' ? 'Wealth manager' : role === 'partner' ? 'Partner servizi' : 'Giocatore')}</div>
             </div>
             <span style={{ marginLeft: 'auto', color: 'var(--text-faint)', display: 'grid' }}><Icon name="sliders" size={16} /></span>
           </button>

@@ -49,7 +49,7 @@ function normalize(key: string, label: string, p: any): Ref {
     p.agency_founded && { k: 'Fondata', v: p.agency_founded },
   ].filter(Boolean) as { k: string; v: string }[]
   return {
-    key, id: p.agent_id, label, name: p.name || label, photo: p.photo_url, title: p.title,
+    key, id: p.agent_id || p.advisor_id, label, name: p.name || label, photo: p.photo_url, title: p.title,
     org: p.agency_name, orgLogo: p.agency_logo_url, website: p.agency_website,
     email: p.email || p.agency_email, phone: p.phone || p.agency_phone, whatsapp: p.whatsapp, instagram: p.instagram_url,
     facts, bio: p.notes || null,
@@ -74,17 +74,19 @@ export default function HomeContacts({ goto, title }: { goto: (r: string) => voi
         const { data: p } = await supabase.from(profile).select('*').eq(profCol, id).maybeSingle()
         return p as any
       }
-      const [ag, ins, tx, tr] = await Promise.all([
+      const [ag, ins, tx, tr, wl] = await Promise.all([
         pick('crm_agent_athletes', 'agent_id', 'crm_agent_profile', 'agent_id'),
         pick('crm_insurer_athletes', 'insurer_id', 'crm_insurer_profile', 'insurer_id'),
         pick('crm_tax_athletes', 'advisor_id', 'crm_tax_profile', 'advisor_id'),
         pick('fitness_trainer_athletes', 'trainer_id', 'fitness_coach_profile', 'trainer_id'),
+        pick('crm_wealth_athletes', 'advisor_id', 'crm_wealth_profile', 'advisor_id'),
       ])
       const out: Ref[] = []
       if (ag) out.push(normalize('agente', 'Procuratore', ag))
       if (ins) out.push(normalize('assicuratore', 'Assicuratore', ins))
       if (tx) out.push(normalize('commercialista', 'Commercialista', tx))
       if (tr) out.push(normalize('fitness', 'Preparatore', tr))
+      if (wl) out.push(normalize('wealth', 'Wealth manager', wl))
       if (ok) setRefs(out)
     })()
     return () => { ok = false }
@@ -114,7 +116,8 @@ export default function HomeContacts({ goto, title }: { goto: (r: string) => voi
         ))}
       </div>
       {openRef && <RefProfile r={openRef} onClose={() => setOpenRef(null)} onChat={() => { setOpenRef(null); chat(openRef.key) }}
-        onEdit={isAdmin && openRef.key === 'agente' && openRef.id ? () => { setOpenRef(null); goto(`agent-profile?id=${openRef.id}`) } : undefined} />}
+        onEdit={isAdmin && (openRef.key === 'agente' || openRef.key === 'wealth') && openRef.id
+          ? () => { setOpenRef(null); goto(`${openRef.key === 'wealth' ? 'wealth-profile' : 'agent-profile'}?id=${openRef.id}`) } : undefined} />}
     </section>
   )
 }

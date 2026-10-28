@@ -7,12 +7,12 @@ import Icon from '../components/Icon'
 import { fmtMatchTime } from '../lib/format'
 
 /* Ufficio del professionista: UNA Home per agente, assicuratore, commercialista,
-   preparatore, fisioterapista e nutrizionista. Tutti gli atleti insieme (non uno alla volta):
+   preparatore, fisioterapista, nutrizionista e wealth manager. Tutti gli atleti insieme (non uno alla volta):
    chi seguo, cosa scade, cosa succede questa settimana.
    RLS: ogni tabella è già ristretta agli atleti del professionista, quindi le
    query trasversali sono semplici .in('player_id', ids), tutte in parallelo. */
 
-type ProRole = 'agente' | 'assicuratore' | 'commercialista' | 'preparatore' | 'fisioterapista' | 'nutrizionista'
+type ProRole = 'agente' | 'assicuratore' | 'commercialista' | 'preparatore' | 'fisioterapista' | 'nutrizionista' | 'wealth'
 
 type RoleCfg = {
   label: string
@@ -45,6 +45,13 @@ const ROLES: Record<ProRole, RoleCfg> = {
     profileRoute: 'tax-profile', mainRoute: 'legaltax',
     action: { label: 'Fisco', icon: 'briefcase', route: 'legaltax' },
     fields: ['name', 'photo_url', 'title', 'phone', 'email', 'licence', 'agency_name', 'agency_logo_url'],
+    nameField: 'name',
+  },
+  wealth: {
+    label: 'Wealth manager', table: 'crm_wealth_profile', idCol: 'advisor_id',
+    profileRoute: 'wealth-profile', mainRoute: 'wealth',
+    action: { label: 'Patrimonio', icon: 'briefcase', route: 'wealth' },
+    fields: ['name', 'photo_url', 'title', 'phone', 'email', 'agency_name', 'agency_logo_url', 'notes'],
     nameField: 'name',
   },
   preparatore: {
@@ -152,7 +159,7 @@ export default function ProHome({ goto }: { goto: (r: string) => void }) {
           .in('player_id', ids)
           .gte('start_at', today.toISOString()).lt('start_at', weekEnd.toISOString())
           .order('start_at').limit(200)
-        if (pro === 'assicuratore' || pro === 'commercialista') q = q.eq('created_by', uid)
+        if (pro === 'assicuratore' || pro === 'commercialista' || pro === 'wealth') q = q.eq('created_by', uid)
         evQ = q
       }
 
@@ -172,6 +179,11 @@ export default function ProHome({ goto }: { goto: (r: string) => void }) {
             .in('player_id', ids).eq('status', 'aperto')
             .not('due_date', 'is', null).lte('due_date', plus(30))
             .order('due_date')
+        } else if (pro === 'wealth') {
+          roleQ = supabase.from('crm_wealth_items')
+            .select('id, player_id, title, kind, due_date, status')
+            .in('player_id', ids).eq('status', 'aperto').in('kind', ['task', 'richiesta', 'scadenza'])
+            .order('due_date', { nullsFirst: false })
         } else if (pro === 'agente') {
           roleQ = supabase.from('crm_contracts')
             .select('id, player_id, title, counterpart, end_date, status')
@@ -236,6 +248,13 @@ export default function ProHome({ goto }: { goto: (r: string) => void }) {
           title: i.title || (i.kind === 'pagamento' ? t('Pagamento') : t('Richiesta')),
           sub: pname(i.player_id),
           days: dayDiff(i.due_date), route: 'legaltax',
+        }))
+      } else if (pro === 'wealth') {
+        rows.forEach(i => list.push({
+          key: 'wl' + i.id, pid: i.player_id, icon: 'briefcase',
+          title: i.title || t('Da fare'),
+          sub: pname(i.player_id),
+          days: i.due_date ? dayDiff(i.due_date) : null, route: 'wealth',
         }))
       } else if (pro === 'agente') {
         const withContract = new Set<number>()

@@ -35,6 +35,8 @@ import AccessRequests from './modules/AccessRequests'
 import LegalTax from './modules/LegalTax'
 import Services from './modules/Services'
 import TaxAdvisorProfile from './modules/TaxAdvisorProfile'
+import Wealth from './modules/Wealth'
+import WealthProfile from './modules/WealthProfile'
 import PhysioProfile from './modules/PhysioProfile'
 import PhysioOffice from './modules/PhysioOffice'
 import NutriProfile from './modules/NutriProfile'
@@ -89,10 +91,13 @@ export default function App() {
   // Il nutrizionista lavora sul calendario dell'atleta: piano alimentare e integratori.
   const nutriAllowed = ['agenda', 'my-athletes', 'settings', 'nutri-home', 'nutri-profile', 'nutri-menu', 'messages', 'access-requests', 'my-team', 'my-files']
   const isNutri = profile.role === 'nutrizionista'
+  // Il wealth manager (Delian & Co.) vede il patrimonio dei suoi atleti, agenda e chat.
+  const wealthAllowed = ['my-athletes', 'settings', 'wealth-home', 'wealth', 'wealth-profile', 'agenda', 'messages', 'access-requests', 'my-team', 'my-files']
+  const isWealth = profile.role === 'wealth'
   // Il partner dei servizi (es. Scouting Department) vede solo la sua area di lavoro.
   const partnerAllowed = ['partner-home', 'settings']
   const isPartner = profile.role === 'partner'
-  const home = isPartner ? 'partner-home' : isBrand ? 'brandhome' : isAgent ? 'agent-home' : isInsurer ? 'insurer-home' : isTax ? 'tax-home' : isPhysio ? 'physio-home' : isNutri ? 'nutri-home' : 'dashboard'
+  const home = isPartner ? 'partner-home' : isBrand ? 'brandhome' : isAgent ? 'agent-home' : isInsurer ? 'insurer-home' : isTax ? 'tax-home' : isPhysio ? 'physio-home' : isNutri ? 'nutri-home' : isWealth ? 'wealth-home' : 'dashboard'
   let route = routeState ?? home
   if (isBrand && !brandAllowed.includes(route)) route = 'brandhome'
   if (isCoach && !coachAllowed.includes(route)) route = 'dashboard'
@@ -101,6 +106,7 @@ export default function App() {
   if (isTax && !taxAllowed.includes(route)) route = 'tax-home'
   if (isPhysio && !physioAllowed.includes(route)) route = 'physio-home'
   if (isNutri && !nutriAllowed.includes(route)) route = 'nutri-home'
+  if (isWealth && !wealthAllowed.includes(route)) route = 'wealth-home'
   if (isPartner && !partnerAllowed.includes(route)) route = 'partner-home'
   // Backstage spento (src/lib/features.ts): eventuali link vecchi tornano alla home
   if (route === 'backstage' && !FEATURES.backstage) route = home
@@ -134,6 +140,9 @@ export default function App() {
       case 'archivio': return <Archivio />
       case 'tax-home': return <ProHome goto={setRoute} />
       case 'tax-profile': return <TaxAdvisorProfile />
+      case 'wealth': return <Wealth />
+      case 'wealth-home': return <ProHome goto={setRoute} />
+      case 'wealth-profile': return <WealthProfile />
       case 'physio-home': return <ProHome goto={setRoute} />
       case 'partner-home': return <PartnerHome />
       case 'physio-profile': return <PhysioProfile />

@@ -21,7 +21,7 @@ type Pro = { pro_id: string; role: string; name: string | null; photo_url: strin
 
 export const STAFF_ROLE: Record<string, string> = {
   admin: 'AUVI', creator: 'AUVI', agente: 'Procuratore', preparatore: 'Preparatore', assicuratore: 'Assicuratore',
-  commercialista: 'Commercialista', fisioterapista: 'Fisioterapista', nutrizionista: 'Nutrizionista',
+  commercialista: 'Commercialista', fisioterapista: 'Fisioterapista', nutrizionista: 'Nutrizionista', wealth: 'Wealth manager',
 }
 
 export default function StaffChat({ openThread }: { openThread?: string | null }) {

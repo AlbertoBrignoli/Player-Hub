@@ -28,12 +28,13 @@ const ROLE: Record<string, { label: string; icon: string; area?: Area }> = {
   assicuratore:   { label: 'Assicuratore',         icon: 'lock',      area: { route: 'insurance', label: 'Polizze e coperture' } },
   commercialista: { label: 'Commercialista',       icon: 'briefcase', area: { route: 'legaltax', label: 'Legal & Tax' } },
   nutrizionista:  { label: 'Nutrizionista',        icon: 'layers',    area: { route: 'agenda', label: 'Piano alimentare' } },
+  wealth:         { label: 'Wealth manager',       icon: 'briefcase', area: { route: 'wealth', label: 'Patrimonio' } },
 }
 
-const PRO = ['preparatore', 'agente', 'assicuratore', 'commercialista', 'brand']
+const PRO = ['preparatore', 'agente', 'assicuratore', 'commercialista', 'wealth', 'brand']
 // Un professionista in "Il mio team" vede i GIOCATORI che segue (non altri professionisti).
-const ROSTER_ROLES = ['agente', 'assicuratore', 'commercialista']
-const AREA_FOR: Record<string, string> = { agente: 'profile', assicuratore: 'insurance', commercialista: 'legaltax' }
+const ROSTER_ROLES = ['agente', 'assicuratore', 'commercialista', 'wealth']
+const AREA_FOR: Record<string, string> = { agente: 'profile', assicuratore: 'insurance', commercialista: 'legaltax', wealth: 'wealth' }
 
 export default function MyTeam({ goto }: { goto?: (r: string) => void }) {
   const { athletes, athleteId, setAthleteId } = useAthlete()

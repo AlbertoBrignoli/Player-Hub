@@ -86,6 +86,8 @@ Deno.serve(async (req: Request) => {
         assicuratore: ['crm_insurer_athletes', 'insurer_id'],
         commercialista: ['crm_tax_athletes', 'advisor_id'],
         fisioterapista: ['crm_physio_athletes', 'physio_id'],
+        nutrizionista: ['crm_nutri_athletes', 'nutri_id'],
+        wealth: ['crm_wealth_athletes', 'advisor_id'],
       }
       const link = PRO_LINKS[roles[0]]
       if (link) {
@@ -94,7 +96,7 @@ Deno.serve(async (req: Request) => {
         targets = targets.filter((s: any) => ok.has(s.user_id))
       }
     }
-  } else if (['preparatore', 'agente', 'assicuratore', 'commercialista', 'fisioterapista'].includes(roles[0])) {
+  } else if (['preparatore', 'agente', 'assicuratore', 'commercialista', 'fisioterapista', 'nutrizionista', 'wealth'].includes(roles[0])) {
     // notifica per un professionista senza atleta: non si manda a tutti quelli del ruolo
     targets = []
   }

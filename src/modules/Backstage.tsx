@@ -24,7 +24,7 @@ const AUD: Record<string, { l: string; d: string; badge: string }> = {
 const REASONS = ['Campagna o collaborazione', 'Prodotto in regalo / seeding', 'Evento o presenza', 'Scouting', 'Altro']
 const ROLE_L: Record<string, string> = {
   brand: 'Brand', agente: 'Procuratore', partner: 'Partner', preparatore: 'Preparatore', assicuratore: 'Assicuratore',
-  commercialista: 'Commercialista', fisioterapista: 'Fisioterapista', nutrizionista: 'Nutrizionista', admin: 'AUVI', creator: 'AUVI',
+  commercialista: 'Commercialista', fisioterapista: 'Fisioterapista', nutrizionista: 'Nutrizionista', wealth: 'Wealth manager', admin: 'AUVI', creator: 'AUVI',
 }
 
 type Post = { id: string; player_id: number; image_path: string | null; caption: string | null; category: string; audience: string; created_at: string }

@@ -59,6 +59,7 @@ function DirectChat() {
   const [taxName, setTaxName] = useState<string | null>(null)
   const [physioName, setPhysioName] = useState<string | null>(null)
   const [nutriName, setNutriName] = useState<string | null>(null)
+  const [wealthName, setWealthName] = useState<string | null>(null)
   const [chan, setChan] = useState<string>('team')
   const [loading, setLoading] = useState(true)
   const [text, setText] = useState('')
@@ -74,6 +75,7 @@ function DirectChat() {
   const isTax = role === 'commercialista'
   const isPhysio = role === 'fisioterapista'
   const isNutri = role === 'nutrizionista'
+  const isWealth = role === 'wealth'
 
   // Canali disponibili in base al ruolo e all'atleta attivo.
   const chans: Chan[] = isBrand
@@ -90,6 +92,8 @@ function DirectChat() {
       ? [{ key: 'fisioterapista', label: tr('Fisioterapia'), sub: tr('Trattamenti e recupero'), icon: 'activity' }]
     : isNutri
       ? [{ key: 'nutrizionista', label: tr('Alimentazione'), sub: tr('Piano alimentare e integrazione'), icon: 'layers' }]
+    : isWealth
+      ? [{ key: 'wealth', label: tr('Patrimonio'), sub: tr('Wealth management'), icon: 'briefcase' }]
       : [
           { key: 'team', label: tr('Alberto · Management'), sub: tr('AUVI Agency'), icon: 'briefcase' },
           ...(agentName ? [{ key: 'agente', label: agentName, sub: tr('Procuratore'), icon: 'briefcase' }] : []),
@@ -97,6 +101,7 @@ function DirectChat() {
           ...(taxName ? [{ key: 'commercialista', label: taxName, sub: tr('Commercialista'), icon: 'briefcase' }] : []),
           ...(physioName ? [{ key: 'fisioterapista', label: physioName, sub: tr('Fisioterapista'), icon: 'activity' }] : []),
           ...(nutriName ? [{ key: 'nutrizionista', label: nutriName, sub: tr('Nutrizionista'), icon: 'layers' }] : []),
+          ...(wealthName ? [{ key: 'wealth', label: wealthName, sub: tr('Wealth manager'), icon: 'briefcase' }] : []),
           ...(hasCoach ? [{ key: 'fitness', label: coachName || tr('Preparatore'), sub: tr('Preparazione atletica'), icon: 'dumbbell' }] : []),
           ...brands.map(b => ({ key: `brand:${b.id}`, label: b.name, sub: tr('Partner ufficiale'), icon: 'award', accent: b.accent_color, logo: b.logo_url })),
         ]
@@ -164,8 +169,8 @@ function DirectChat() {
   useEffect(() => {
     let ok = true
     ;(async () => {
-      if (!athleteId || isBrand || isCoach || isAgent || isInsurer || isTax || isPhysio || isNutri) {
-        setAgentName(null); setInsurerName(null); setTaxName(null); setPhysioName(null); setNutriName(null); return
+      if (!athleteId || isBrand || isCoach || isAgent || isInsurer || isTax || isPhysio || isNutri || isWealth) {
+        setAgentName(null); setInsurerName(null); setTaxName(null); setPhysioName(null); setNutriName(null); setWealthName(null); return
       }
       const { data } = await supabase.from('crm_athlete_team').select('role, name').eq('player_id', athleteId)
       if (!ok) return
@@ -176,9 +181,10 @@ function DirectChat() {
       setTaxName(byRole('commercialista'))
       setPhysioName(byRole('fisioterapista'))
       setNutriName(byRole('nutrizionista'))
+      setWealthName(byRole('wealth'))
     })()
     return () => { ok = false }
-  }, [athleteId, isBrand, isCoach, isAgent, isInsurer, isTax, isPhysio, isNutri])
+  }, [athleteId, isBrand, isCoach, isAgent, isInsurer, isTax, isPhysio, isNutri, isWealth])
 
   async function load() {
     if (!athleteId) { setRows([]); setLoading(false); return }
@@ -222,7 +228,7 @@ function DirectChat() {
   const active = chans.find(c => c.key === chan)
   // Chi scrive al giocatore (management, preparatore, brand) deve vedere SEMPRE
   // e in chiaro a quale atleta sta scrivendo: il selettore in alto è troppo defilato.
-  const toAthlete = isAdmin || isCoach || isBrand || isAgent || isInsurer || isTax || isPhysio || isNutri
+  const toAthlete = isAdmin || isCoach || isBrand || isAgent || isInsurer || isTax || isPhysio || isNutri || isWealth
   const athlete = athletes.find(a => a.api_player_id === athleteId)
   const placeholder = tr('Scrivi a {name}…').replace('{name}', toAthlete
     ? (athlete?.name || tr('giocatore'))

@@ -27,6 +27,7 @@ const C_AGENTE = '#8A6D00'
 const C_ASSIC = '#1F6FEB'
 const C_COACH = '#3F7F00'
 const C_TAX = '#9A5530'
+const C_WEALTH = '#1F4E79'
 
 const kicker: React.CSSProperties = {
   fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase', fontWeight: 800,
@@ -85,6 +86,21 @@ export default function ReferentiCard({ goto }: { goto?: (r: string) => void }) 
           name: p.name || 'Commercialista',
           detail: [p.title, p.agency_name].filter(Boolean).join(' · '),
           email: p.email, phone: p.phone, photo: p.photo_url, accent: C_TAX,
+        })
+      }
+
+      // Wealth manager
+      const { data: wl } = await supabase.from('crm_wealth_athletes')
+        .select('advisor_id').eq('player_id', athleteId).limit(1).maybeSingle()
+      if (wl?.advisor_id) {
+        const { data: p } = await supabase.from('crm_wealth_profile')
+          .select('*').eq('advisor_id', wl.advisor_id).maybeSingle()
+        if (p) out.push({
+          key: 'wealth', role: 'wealth', label: 'Wealth manager',
+          name: p.name || 'Wealth manager',
+          detail: [p.title, p.agency_name !== p.name ? p.agency_name : null].filter(Boolean).join(' · '),
+          email: p.email || p.agency_email, phone: p.phone || p.agency_phone, photo: p.photo_url,
+          instagram: igUrl(p.instagram_url), accent: C_WEALTH,
         })
       }
 

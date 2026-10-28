@@ -58,7 +58,7 @@ const ATHLETE_PALETTE = ['#1F6FEB', '#12A150', '#DD0088', '#FF6700', '#0A0A0A', 
 type Tag = { name: string; color: string }
 type TagOf = ((pid: number) => Tag | null) | null
 
-const PRO_ROLES = ['agente', 'assicuratore', 'commercialista', 'preparatore', 'fisioterapista', 'nutrizionista']
+const PRO_ROLES = ['agente', 'assicuratore', 'commercialista', 'preparatore', 'fisioterapista', 'nutrizionista', 'wealth']
 // Ruoli che hanno accesso a Performance: solo per loro la partita e' toccabile.
 const PERF_ROLES = ['admin', 'creator', 'player', 'agente', 'preparatore']
 const ADMIN_TYPES = ['partita', 'commerciale', 'sponsor', 'personale', 'medico', 'viaggio', 'scadenza', 'call', 'visita', 'nutrizione']
@@ -71,10 +71,11 @@ const TEAM_TYPES: Record<string, string[]> = {
   agente: ['call', 'commerciale', 'viaggio', 'personale'],
   assicuratore: ['call', 'scadenza', 'personale'],
   commercialista: ['call', 'scadenza', 'personale'],
+  wealth: ['call', 'scadenza', 'personale'],
 }
 const ROLE_LABEL: Record<string, string> = {
   preparatore: 'Preparatore', fisioterapista: 'Fisioterapista', nutrizionista: 'Nutrizionista', agente: 'Procuratore',
-  assicuratore: 'Assicuratore', commercialista: 'Commercialista',
+  assicuratore: 'Assicuratore', commercialista: 'Commercialista', wealth: 'Wealth manager',
   player: 'Atleta', admin: 'AUVI', creator: 'AUVI', partner: 'Partner AUVI',
 }
 // stati in cui chi ha proposto puo' ancora correggere o ritirare la proposta

@@ -30,6 +30,12 @@ const CFG: Record<string, Cfg> = {
     place: [['agency_name', 'Studio'], ['agency_address', 'Sede'], ['agency_email', 'Email studio'], ['agency_phone', 'Telefono studio']],
     links: [['agency_website', 'Sito web']],
   },
+  wealth: {
+    table: 'crm_wealth_profile', idCol: 'advisor_id', title: 'title', logo: 'agency_logo_url',
+    about: [['notes', 'Presentazione'], ['licence', 'Abilitazione']],
+    place: [['agency_name', 'Società'], ['agency_address', 'Sede'], ['agency_email', 'Email società'], ['agency_phone', 'Telefono società']],
+    links: [['agency_website', 'Sito web'], ['instagram_url', 'Instagram']],
+  },
   preparatore: {
     table: 'fitness_coach_profile', idCol: 'trainer_id', title: 'headline', logo: 'logo_url',
     about: [['experience', 'Esperienza'], ['bio_method', 'Metodo'], ['bio_philosophy', 'Filosofia'], ['education', 'Formazione'],
