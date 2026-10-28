@@ -15,10 +15,12 @@ import { Modal, Field, Input, Tabs, Empty } from './ui'
 // Schermate home dei vari ruoli: qui compare l'invito ad attivare le notifiche.
 const HOME_ROUTES = ['dashboard', 'brandhome', 'agent-home', 'insurer-home', 'tax-home', 'physio-home', 'partner-home']
 
-export const APP_VERSION = 'v10.6'
+export const APP_VERSION = 'v10.7'
 
 export interface NavDef {
   key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[]
+  /** solo se l'atleta selezionato ha la casella di posta AUVI */
+  mailbox?: boolean
   /** sezione con schede: le route elencate sono le schede della stessa voce di menu */
   tabs?: { key: string; label: string; roles?: string[] }[]
 }
@@ -51,6 +53,7 @@ export const NAV: { group: string; items: NavDef[] }[] = [
   { group: 'Altro', items: [
     { key: 'my-team', label: 'Il mio team', icon: 'users' },
     { key: 'messages', label: 'Chat', icon: 'message' },
+    { key: 'mail', label: 'Posta', icon: 'mail', mailbox: true },
     { key: 'my-files', label: 'I miei file', icon: 'folder', adminOnly: true },
     { key: 'access-requests', label: 'Collegamenti', icon: 'key' },
   ]},
@@ -202,6 +205,7 @@ const TITLES: Record<string, { t: string; s: string }> = {
   agenda: { t: 'Agenda', s: 'Extra campo · impegni, prenotazioni, call, viaggi' },
   tasks: { t: 'Task', s: 'Attività condivise' },
   messages: { t: 'Messaggi', s: 'Comunicazione diretta' },
+  mail: { t: 'Posta', s: 'Tutte le mail della gestione, in un solo indirizzo' },
   settings: { t: 'Impostazioni', s: 'Password, accessi e configurazione' },
   brandhome: { t: 'Home', s: 'La tua scheda e gli atleti in partnership' },
   'coach-office': { t: 'Il mio ufficio', s: 'Agenda personale, clienti e cassa · area privata' },
@@ -292,7 +296,14 @@ export default function Shell({ route, setRoute, right, children }: {
   // Sezioni con schede: una voce di menu raggruppa più schermate (es. Calendario =
   // Editoriale · Impegni · Task). La voce resta attiva su tutte le sue schede e,
   // quando la riapri, torna all'ultima scheda che stavi guardando.
-  const visibleItem = (i: NavDef) => (!i.adminOnly || isAdmin) && (!i.roles || (!!role && i.roles.includes(role)))
+  // Casella di posta AUVI: la voce compare solo se l'atleta selezionato ne ha una
+  const [hasMailbox, setHasMailbox] = useState(false)
+  useEffect(() => {
+    if (!athleteId || !(isAdmin || role === 'player')) { setHasMailbox(false); return }
+    supabase.from('crm_mailboxes').select('player_id').eq('player_id', athleteId).maybeSingle()
+      .then(({ data }) => setHasMailbox(!!data))
+  }, [athleteId, isAdmin, role])
+  const visibleItem = (i: NavDef) => (!i.adminOnly || isAdmin) && (!i.roles || (!!role && i.roles.includes(role))) && (!i.mailbox || hasMailbox)
   const tabsOf = (i: NavDef) => (i.tabs || []).filter(t => !t.roles || (!!role && t.roles.includes(role)))
   const allItems = nav.flatMap(g => g.items).filter(visibleItem)
   const hub = allItems.find(i => i.key === route || tabsOf(i).some(t => t.key === route))

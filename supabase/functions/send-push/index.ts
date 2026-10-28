@@ -99,8 +99,9 @@ Deno.serve(async (req: Request) => {
     targets = []
   }
 
-  // Agente/procuratore: riceve le notifiche dei soli atleti che segue.
-  if (record.player_id) {
+  // Agente/procuratore: riceve le notifiche dei soli atleti che segue
+  // (non quelle della casella di posta dell'atleta, riservata ad atleta e AUVI).
+  if (record.player_id && !String(record.route || '').startsWith('mail')) {
     const { data: agentSubs } = await supa.from('crm_push_subscriptions').select('*').eq('role', 'agente')
     if (agentSubs?.length) {
       const { data: assigned } = await supa.from('crm_agent_athletes')

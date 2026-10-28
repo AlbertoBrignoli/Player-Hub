@@ -20,6 +20,7 @@ import Commercial from './modules/Commercial'
 import Agenda from './modules/Agenda'
 import Tasks from './modules/Tasks'
 import Messages from './modules/Messages'
+import Mail from './modules/Mail'
 import Settings from './modules/Settings'
 import PasswordSetup from './components/PasswordSetup'
 import { ProPhotoGate } from './components/ProImages'
@@ -141,6 +142,7 @@ export default function App() {
       case 'nutri-profile': return <NutriProfile />
       case 'nutri-menu': return <NutriMenu />
       case 'agent-profile': return <AgentProfile />
+      case 'mail': return <Mail />
       case 'contracts': return <Contracts />
       case 'documents': return isInsurer ? <InsuranceDocuments /> : <Documents />
       case 'editorial': return <Editorial />
