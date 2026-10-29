@@ -4,6 +4,8 @@ import { useAthlete } from '../lib/athlete'
 import { useLang } from '../lib/i18n'
 import { Spinner, Field, Input, Select, Empty } from '../components/ui'
 import Icon from '../components/Icon'
+import AthleteCard from '../components/AthleteCard'
+import { useAuth } from '../auth/AuthContext'
 import { fmtDate } from '../lib/format'
 import type { Player, ShippingInfo, EquipmentInfo, ClubContacts } from '../lib/types'
 
@@ -24,6 +26,16 @@ export default function Profile() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [showPw, setShowPw] = useState(false)
+  // casella AUVI dell'atleta: dove il team manda documenti e comunicazioni
+  const [mailbox, setMailbox] = useState<string | null>(null)
+  const { role } = useAuth()
+  const isTeam = role !== 'admin' && role !== 'player'
+  useEffect(() => { if (isTeam && tab === 'spedizioni') setTab('equipment') }, [isTeam]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!athleteId) return
+    supabase.rpc('crm_athlete_mail_addresses', { p_players: [athleteId] })
+      .then(({ data }) => setMailbox((data as any[])?.[0]?.address || null))
+  }, [athleteId])
 
   useEffect(() => {
     if (!athleteId) return
@@ -61,8 +73,9 @@ export default function Profile() {
   const setE = (k: keyof EquipmentInfo, v: string) => setEquipment({ ...equipment, [k]: v })
   const setC = (k: keyof ClubContacts, v: string) => setContacts({ ...contacts, [k]: v })
 
+  // l'indirizzo di casa (spedizioni) lo vedono solo l'atleta e AUVI, non il resto del team
   const tabs: { key: Tab; label: string; icon: string }[] = [
-    { key: 'spedizioni', label: t("Spedizioni"), icon: 'inbox' },
+    ...(isTeam ? [] : [{ key: 'spedizioni' as Tab, label: t("Spedizioni"), icon: 'inbox' }]),
     { key: 'equipment', label: t("Equipment"), icon: 'ball' },
     { key: 'contatti', label: t("Contatti"), icon: 'smartphone' },
   ]
@@ -81,6 +94,10 @@ export default function Profile() {
           </div>
         </div>
       </div>
+
+      {mailbox && (
+        <AthleteCard d={{ name: player.name || '', position: player.position, team: player.team_name, photo: player.photo_url, email: mailbox }} />
+      )}
 
       {/* Contratto + link esterni */}
       {(player.contract_expiry || player.transfermarkt_url || player.sofascore_url) && (

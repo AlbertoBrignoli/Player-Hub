@@ -3578,5 +3578,12 @@ const EN: Record<string, string> = {
   "Apri nell'area": "Open in its area",
   "Voce condivisa": "Shared item",
   "Persone coinvolte e conversazione": "People involved and conversation",
+  "Manda documenti e comunicazioni a": "Send documents and communications to",
+  "La casella AUVI dell'atleta: arriva a lui e ad AUVI, dentro l'app.": "The athlete's AUVI mailbox: it reaches him and AUVI, inside the app.",
+  "Biglietto da visita": "Business card",
+  "Scarica contatto": "Download contact",
+  "Scarica immagine": "Download image",
+  "Biglietto copiato": "Card copied",
+  "Immagine non disponibile": "Image not available",
 }
 

@@ -94,6 +94,8 @@ const STYLE = `
   letter-spacing:3px; color: var(--ink); background: var(--yellow-soft); border-radius: var(--radius-sm); padding:20px 10px; margin:6px 0 14px; }
 .ma-share { display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; }
 .ma-section { display:grid; gap:10px; }
+.ma-mail { flex-basis:100%; display:flex; align-items:center; gap:8px; border-top:1px solid var(--border); padding-top:10px; margin-top:2px; min-width:0; }
+.ma-mail-a { font-size:13px; font-weight:700; color: var(--text); text-decoration:none; word-break:break-all; min-width:0; }
 @media (max-width: 520px) {
   .ma-card-btns .ma-lbl { display:none; }
 }
@@ -123,6 +125,15 @@ export function MyAthletes() {
   const [loading, setLoading] = useState(true)
   const [inviteOpen, setInviteOpen] = useState(false)
   const [codeOpen, setCodeOpen] = useState(false)
+  // casella AUVI dell'atleta: l'indirizzo a cui il team manda documenti e comunicazioni
+  const [mail, setMail] = useState<Record<number, string>>({})
+  useEffect(() => {
+    const ids = roster.map(a => a.api_player_id)
+    if (!ids.length) return
+    supabase.rpc('crm_athlete_mail_addresses', { p_players: ids }).then(({ data }) => {
+      setMail(Object.fromEntries(((data as any[]) || []).map(r => [Number(r.player_id), r.address])))
+    })
+  }, [roster.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function load() {
     const [pl, inv, rq] = await Promise.all([
@@ -187,7 +198,7 @@ export function MyAthletes() {
         <Section title="Atleti" count={roster.length}>
           <div className="ma-roster">
             {roster.map(a => (
-              <div key={a.api_player_id} className="ma-card">
+              <div key={a.api_player_id} className="ma-card" style={{ flexWrap: 'wrap' }}>
                 {a.photo_url
                   ? <img className="ma-av" src={a.photo_url} alt="" />
                   : <div className="ma-ini">{initials(a.name)}</div>}
@@ -203,6 +214,18 @@ export function MyAthletes() {
                     {t('Apri area')} <Icon name="chevron-right" size={13} />
                   </button>
                 </div>
+                {mail[a.api_player_id] && (
+                  <div className="ma-mail">
+                    <Icon name="mail" size={15} />
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div className="faint" style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase' }}>{t('Manda documenti e comunicazioni a')}</div>
+                      <a className="ma-mail-a" href={`mailto:${mail[a.api_player_id]}`} style={{ display: 'block' }}>{mail[a.api_player_id]}</a>
+                    </div>
+                    <button className="btn btn-ghost btn-sm" title={t('Copia')} onClick={() => copyText(mail[a.api_player_id], t('Indirizzo copiato'), t)}>
+                      <Icon name="copy" size={13} />
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
