@@ -3558,5 +3558,17 @@ const EN: Record<string, string> = {
   "Aggressivo": "Aggressive",
   "Quadro, task e documenti del wealth manager": "Overview, tasks and documents from the wealth manager",
   "Contatti e società": "Contacts and company",
+  "Voci del patrimonio dell'atleta in cui sei stato coinvolto.": "Items from the athlete's wealth area you have been involved in.",
+  "Nessuna voce": "No items",
+  "Quando il wealth manager o l'atleta ti coinvolgono in una voce, la trovi qui.": "When the wealth manager or the athlete involves you in an item, you will find it here.",
+  "Coinvolti": "Involved",
+  "Coinvolto: riceve la notifica": "Involved: they will be notified",
+  "Persone coinvolte": "People involved",
+  "Solo l'atleta e il wealth manager.": "Only the athlete and the wealth manager.",
+  "Coinvolgi qualcuno del team…": "Involve someone from the team…",
+  "Coinvolgi": "Involve",
+  "Conversazione": "Conversation",
+  "Nessun messaggio. Scrivi qui per aggiornare tutti i coinvolti.": "No messages yet. Write here to update everyone involved.",
+  "Scrivi un aggiornamento o allega un documento…": "Write an update or attach a document…",
 }
 

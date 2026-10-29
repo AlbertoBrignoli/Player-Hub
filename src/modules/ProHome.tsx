@@ -309,6 +309,17 @@ export default function ProHome({ goto }: { goto: (r: string) => void }) {
           days: null, route: 'physio-office',
         }))
       }
+      // voci del patrimonio in cui il professionista è stato coinvolto (taggato)
+      if (has && pro !== 'wealth') {
+        const { data: tagged } = await supabase.from('crm_wealth_items')
+          .select('id, player_id, title, due_date').in('player_id', ids).eq('status', 'aperto')
+        if (!ok) return
+        ;((tagged as any[]) || []).forEach(i => list.push({
+          key: 'wt' + i.id, pid: i.player_id, icon: 'users',
+          title: i.title, sub: pname(i.player_id) + ' · ' + t('Patrimonio'),
+          days: i.due_date ? dayDiff(i.due_date) : null, route: 'wealth?item=' + i.id,
+        }))
+      }
       const pending = ((acc.data as any[]) || []).length
       if (pending > 0) list.push({
         key: 'acc', pid: null, icon: 'send',
