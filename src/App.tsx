@@ -36,6 +36,7 @@ import LegalTax from './modules/LegalTax'
 import Services from './modules/Services'
 import TaxAdvisorProfile from './modules/TaxAdvisorProfile'
 import Wealth from './modules/Wealth'
+import ItemPage from './modules/ItemPage'
 import WealthProfile from './modules/WealthProfile'
 import PhysioProfile from './modules/PhysioProfile'
 import PhysioOffice from './modules/PhysioOffice'
@@ -72,27 +73,27 @@ export default function App() {
   const isBrand = profile.role === 'brand'
   const brandAllowed = ['settings', 'brandhome', 'mediakit', 'campaigns', 'brandcard', 'talent', 'messages', 'backstage']
   // Il preparatore vede solo fitness, performance dell'atleta e chat.
-  const coachAllowed = ['training-builder', 'exercise-library', 'my-athletes', 'settings', 'dashboard', 'fitness', 'coach-profile', 'coach-office', 'performance', 'agenda', 'messages', 'access-requests', 'my-team', 'my-files', 'wealth']
+  const coachAllowed = ['training-builder', 'exercise-library', 'my-athletes', 'settings', 'dashboard', 'fitness', 'coach-profile', 'coach-office', 'performance', 'agenda', 'messages', 'access-requests', 'my-team', 'my-files', 'wealth', 'item']
   const isCoach = profile.role === 'preparatore'
   // L'agente vede solo le competenze del procuratore.
   const agentAllowed = ['my-athletes', 'settings', 'agent-home', 'dashboard', 'performance', 'profile', 'editorial', 'media',
                         'contracts', 'documents', 'sponsors', 'commercial', 'fitness',
-                        'agenda', 'tasks', 'messages', 'agent-profile', 'insurance', 'legaltax', 'services', 'access-requests', 'my-team', 'archivio', 'my-files', 'wealth']
+                        'agenda', 'tasks', 'messages', 'agent-profile', 'insurance', 'legaltax', 'services', 'access-requests', 'my-team', 'archivio', 'my-files', 'wealth', 'item']
   const isAgent = profile.role === 'agente'
   // L'assicuratore vede solo la sua area: polizze, scadenze e chat.
-  const insurerAllowed = ['my-athletes', 'settings', 'insurer-home', 'insurance', 'insurer-profile', 'documents', 'agenda', 'messages', 'access-requests', 'my-team', 'my-files', 'wealth']
+  const insurerAllowed = ['my-athletes', 'settings', 'insurer-home', 'insurance', 'insurer-profile', 'documents', 'agenda', 'messages', 'access-requests', 'my-team', 'my-files', 'wealth', 'item']
   const isInsurer = profile.role === 'assicuratore'
   // Il commercialista vede solo la sua area.
-  const taxAllowed = ['my-athletes', 'settings', 'tax-home', 'legaltax', 'tax-profile', 'services', 'documents', 'agenda', 'messages', 'access-requests', 'my-team', 'my-files', 'wealth']
+  const taxAllowed = ['my-athletes', 'settings', 'tax-home', 'legaltax', 'tax-profile', 'services', 'documents', 'agenda', 'messages', 'access-requests', 'my-team', 'my-files', 'wealth', 'item']
   const isTax = profile.role === 'commercialista'
   // Il fisioterapista vede la sua area: home, profilo, chat e collegamenti.
-  const physioAllowed = ['agenda', 'my-athletes', 'settings', 'physio-home', 'physio-profile', 'physio-office', 'messages', 'access-requests', 'my-team', 'my-files', 'wealth']
+  const physioAllowed = ['agenda', 'my-athletes', 'settings', 'physio-home', 'physio-profile', 'physio-office', 'messages', 'access-requests', 'my-team', 'my-files', 'wealth', 'item']
   const isPhysio = profile.role === 'fisioterapista'
   // Il nutrizionista lavora sul calendario dell'atleta: piano alimentare e integratori.
-  const nutriAllowed = ['agenda', 'my-athletes', 'settings', 'nutri-home', 'nutri-profile', 'nutri-menu', 'messages', 'access-requests', 'my-team', 'my-files', 'wealth']
+  const nutriAllowed = ['agenda', 'my-athletes', 'settings', 'nutri-home', 'nutri-profile', 'nutri-menu', 'messages', 'access-requests', 'my-team', 'my-files', 'wealth', 'item']
   const isNutri = profile.role === 'nutrizionista'
   // Il wealth manager (Delian & Co.) vede il patrimonio dei suoi atleti, agenda e chat.
-  const wealthAllowed = ['my-athletes', 'settings', 'wealth-home', 'wealth', 'wealth-profile', 'agenda', 'messages', 'access-requests', 'my-team', 'my-files']
+  const wealthAllowed = ['my-athletes', 'settings', 'wealth-home', 'wealth', 'wealth-profile', 'agenda', 'messages', 'access-requests', 'my-team', 'my-files', 'item']
   const isWealth = profile.role === 'wealth'
   // Il partner dei servizi (es. Scouting Department) vede solo la sua area di lavoro.
   const partnerAllowed = ['partner-home', 'settings']
@@ -141,6 +142,7 @@ export default function App() {
       case 'tax-home': return <ProHome goto={setRoute} />
       case 'tax-profile': return <TaxAdvisorProfile />
       case 'wealth': return <Wealth />
+      case 'item': return <ItemPage />
       case 'wealth-home': return <ProHome goto={setRoute} />
       case 'wealth-profile': return <WealthProfile />
       case 'physio-home': return <ProHome goto={setRoute} />

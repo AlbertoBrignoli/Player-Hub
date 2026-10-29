@@ -9,6 +9,7 @@ import { Modal, Field, Input, Textarea, Select, Empty, Spinner, ConfirmButton } 
 import Icon from '../components/Icon'
 import { OffersTab, EditorialTab, EDITORIAL_DEFAULTS } from './InsuranceStore'
 import { fmtDate, fmtMoney } from '../lib/format'
+import { useItemPeople, PeopleRow, ItemPeopleModal } from '../components/ItemPeople'
 
 // Area assicurativa dell'atleta: due mondi distinti (sport e personale),
 // ciascuno con la propria dashboard. I documenti li carica l'assicuratore.
@@ -127,6 +128,8 @@ export default function Insurance() {
     match: athleteId ? { player_id: athleteId } : undefined,
   })
   const [payFor, setPayFor] = useState<Policy | null>(null)
+  const { people, reload: reloadPeople } = useItemPeople('insurance', rows.map(r => r.id))
+  const [thread, setThread] = useState<Policy | null>(null)
   const quickRef = useRef<HTMLInputElement>(null)
   const [quickBusy, setQuickBusy] = useState(false)
 
@@ -325,6 +328,7 @@ export default function Insurance() {
                     )}
 
                     {p.notes && <div className="faint" style={{ fontSize: 12.5, marginTop: 11 }}>{p.notes}</div>}
+                    <PeopleRow people={people[p.id] || []} onOpen={() => setThread(p)} />
 
                     {canManage && (
                       <div className="flex gap" style={{ marginTop: 13, flexWrap: 'wrap' }}>
@@ -350,6 +354,11 @@ export default function Insurance() {
           onClose={() => setPayFor(null)} onSaved={() => { setPayFor(null); reloadPays() }} />
       )}
 
+      {thread && athleteId && (
+        <ItemPeopleModal kind="insurance" itemId={thread.id} playerId={athleteId} title={thread.title}
+          sub={[thread.category && tr(thread.category), thread.company].filter(Boolean).join(' · ')}
+          people={people[thread.id] || []} onPeople={reloadPeople} onClose={() => setThread(null)} />
+      )}
       {edit && athleteId && (
         <PolicyForm value={edit} playerId={athleteId}
           onClose={() => setEdit(null)} onSaved={() => { setEdit(null); reload() }} />

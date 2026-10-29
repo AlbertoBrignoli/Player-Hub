@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { toast } from '../lib/toast'
 import { useAuth } from '../auth/AuthContext'
@@ -8,6 +8,8 @@ import { Modal, Field, Input, Textarea, Select, Empty, Spinner, ConfirmButton } 
 import Icon from '../components/Icon'
 import { fmtDate, fmtMoney } from '../lib/format'
 import { useLang } from '../lib/i18n'
+import { useItemPeople, PeopleRow, ItemPeopleModal } from '../components/ItemPeople'
+import { useRouteParam } from '../lib/route'
 
 // Area legale e fiscale: pagamenti, documenti del commercialista
 // e sue richieste che l'atleta deve smarcare.
@@ -93,6 +95,13 @@ export default function LegalTax() {
     match: athleteId ? { player_id: athleteId } : undefined,
   })
 
+  const { people, reload: reloadPeople } = useItemPeople('tax', rows.map(r => r.id))
+  const [thread, setThread] = useState<TaxItem | null>(null)
+  const itemParam = useRouteParam('item')
+  useEffect(() => {
+    const it = itemParam ? rows.find(r => r.id === itemParam) : null
+    if (it) { setTab(it.area); setThread(it) }
+  }, [itemParam, rows.length]) // eslint-disable-line react-hooks/exhaustive-deps
   const ofArea = useMemo(() => rows.filter(i => i.area === tab), [rows, tab])
   const aperte = useMemo(() => rows.filter(i => i.kind === 'richiesta' && i.status === 'aperto'), [rows])
 
@@ -236,6 +245,7 @@ export default function LegalTax() {
                         </div>
                       )}
 
+                      <PeopleRow people={people[i.id] || []} onOpen={() => setThread(i)} />
                       <div className="flex gap" style={{ marginTop: 13, flexWrap: 'wrap' }}>
                         {i.kind === 'pagamento' && i.status === 'aperto' && (
                           <button className="btn btn-sm" style={{ background: OK, color: '#fff', fontWeight: 800, border: 'none' }}
@@ -261,6 +271,13 @@ export default function LegalTax() {
       {edit && athleteId && (
         <ItemForm value={edit} playerId={athleteId}
           onClose={() => setEdit(null)} onSaved={() => { setEdit(null); reload() }} />
+      )}
+      {thread && athleteId && (
+        <ItemPeopleModal kind="tax" itemId={thread.id} playerId={athleteId} title={thread.title}
+          sub={tr(KINDS.find(k => k.k === thread.kind)?.l || '') + (thread.due_date ? ' · ' + fmtDate(thread.due_date) : '')}
+          people={people[thread.id] || []} onPeople={reloadPeople} onClose={() => setThread(null)}>
+          {thread.description && <div style={{ fontSize: 13.5, whiteSpace: 'pre-wrap' }}>{thread.description}</div>}
+        </ItemPeopleModal>
       )}
       {respond && athleteId && (
         <RespondForm item={respond} playerId={athleteId}

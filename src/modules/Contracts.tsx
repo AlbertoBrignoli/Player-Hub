@@ -7,6 +7,7 @@ import Icon from '../components/Icon'
 import { fmtMoney, fmtDate, daysUntil } from '../lib/format'
 import type { Contract } from '../lib/types'
 import { useLang } from '../lib/i18n'
+import { useItemPeople, PeopleRow, ItemPeopleModal } from '../components/ItemPeople'
 
 const empty = (): Partial<Contract> => ({ title: '', counterpart: '', type: 'sportivo', currency: 'EUR', status: 'active', clauses: [] })
 
@@ -16,6 +17,8 @@ export default function Contracts() {
   const { t } = useLang()
   const { rows, loading, reload } = useCollection<Contract>('crm_contracts', { orderBy: 'created_at', match: { player_id: athleteId } })
   const [edit, setEdit] = useState<Partial<Contract> | null>(null)
+  const { people, reload: reloadPeople } = useItemPeople('contract', rows.map(r => r.id))
+  const [thread, setThread] = useState<Contract | null>(null)
 
   if (loading) return <Spinner />
 
@@ -60,6 +63,7 @@ export default function Contracts() {
                   </div>
                 )}
                 {c.notes && <div className="faint" style={{ fontSize: 12.5, marginTop: 10 }}>{c.notes}</div>}
+                <PeopleRow people={people[c.id] || []} onOpen={() => setThread(c)} />
                 {isAdmin && (
                   <div className="flex gap" style={{ marginTop: 14 }}>
                     <button className="btn btn-sm" onClick={() => setEdit(c)}>{t('Modifica')}</button>
@@ -72,6 +76,11 @@ export default function Contracts() {
         </div>
       )}
 
+      {thread && athleteId && (
+        <ItemPeopleModal kind="contract" itemId={thread.id} playerId={athleteId} title={thread.title}
+          sub={[thread.counterpart, t(typeLabel(thread.type))].filter(Boolean).join(' · ')}
+          people={people[thread.id] || []} onPeople={reloadPeople} onClose={() => setThread(null)} />
+      )}
       {edit && <ContractForm value={edit} onClose={() => setEdit(null)} onSaved={() => { setEdit(null); reload() }} />}
     </div>
   )

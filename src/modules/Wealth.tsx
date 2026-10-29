@@ -9,7 +9,7 @@ import Icon from '../components/Icon'
 import { fmtDate, fmtMoney } from '../lib/format'
 import { useLang } from '../lib/i18n'
 import { useRouteParam } from '../lib/route'
-import { fmtDateTime, initials } from '../lib/format'
+import { useItemPeople, PeopleRow, ItemPeopleModal, type Person } from '../components/ItemPeople'
 import { WEALTH_ACCENT as ACCENT } from './WealthProfile'
 
 // Area patrimonio del wealth manager (es. Delian & Co.), sul modello di "Fisco e legale":
@@ -46,13 +46,6 @@ export type WealthItem = {
   amount: number | null; due_date: string | null; period: string | null; status: string
   attachments: File_[] | null; response_attachments: File_[] | null; response_note: string | null
   created_at: string
-}
-type Person = { id: string; item_id: string; user_id: string | null; role: string; name: string | null }
-type Comment = { id: string; item_id: string; author_id: string; author_name: string | null; author_role: string | null
-  body: string | null; attachments: File_[]; created_at: string }
-const ROLE_L: Record<string, string> = {
-  admin: 'AUVI', player: 'Atleta', agente: 'Procuratore', assicuratore: 'Assicuratore', commercialista: 'Commercialista',
-  preparatore: 'Preparatore', fisioterapista: 'Fisioterapista', nutrizionista: 'Nutrizionista', wealth: 'Wealth manager',
 }
 type Overview = {
   player_id: number; total_assets: number | null; liquidity: number | null; invested: number | null
@@ -107,7 +100,6 @@ export default function Wealth() {
   const isGuest = !canManage && !isPlayer
   const itemParam = useRouteParam('item')
   const [detail, setDetail] = useState<WealthItem | null>(null)
-  const [people, setPeople] = useState<Record<string, Person[]>>({})
 
   const { rows, loading, reload } = useCollection<WealthItem>('crm_wealth_items', {
     orderBy: 'due_date', ascending: true,
@@ -130,14 +122,7 @@ export default function Wealth() {
   useEffect(() => { if (!isGuest) loadOv() }, [athleteId, isGuest]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const idsKey = rows.map(r => r.id).join(',')
-  async function loadPeople() {
-    if (!rows.length) { setPeople({}); return }
-    const { data } = await supabase.from('crm_wealth_item_people').select('*').in('item_id', rows.map(r => r.id))
-    const by: Record<string, Person[]> = {}
-    for (const x of (data as Person[]) || []) (by[x.item_id] ||= []).push(x)
-    setPeople(by)
-  }
-  useEffect(() => { loadPeople() }, [idsKey]) // eslint-disable-line react-hooks/exhaustive-deps
+  const { people, reload: loadPeople } = useItemPeople('wealth', rows.map(r => r.id))
 
   // apertura diretta da una notifica (wealth?item=<id>)
   useEffect(() => {
@@ -159,8 +144,21 @@ export default function Wealth() {
   if (loading) return <Spinner />
 
   const detailModal = detail && athleteId && (
-    <ItemDetail item={detail} playerId={athleteId} people={people[detail.id] || []} canTag={canManage || isPlayer}
-      onClose={() => setDetail(null)} onPeople={loadPeople} />
+    <ItemPeopleModal kind="wealth" itemId={detail.id} playerId={athleteId} title={detail.title}
+      sub={tr(KINDS.find(k => k.k === detail.kind)?.l || '') + (detail.category ? ` · ${tr(detail.category)}` : '')
+        + (detail.due_date ? ' · ' + tr('entro il {date}').replace('{date}', fmtDate(detail.due_date)) : '')}
+      people={people[detail.id] || []} onPeople={loadPeople} onClose={() => setDetail(null)}>
+      {detail.description && <div style={{ fontSize: 13.5, whiteSpace: 'pre-wrap' }}>{detail.description}</div>}
+      {(detail.attachments || []).length > 0 && (
+        <div className="flex gap" style={{ marginTop: 10, flexWrap: 'wrap' }}>
+          {(detail.attachments || []).map(a => (
+            <button key={a.path} className="btn btn-sm" onClick={() => openDoc(a.path, tr('Impossibile aprire il documento'))}>
+              <Icon name="download" size={13} /> {a.name}
+            </button>
+          ))}
+        </div>
+      )}
+    </ItemPeopleModal>
   )
 
   if (isGuest) {
@@ -452,14 +450,8 @@ function ItemCard({ i, canManage, isPlayer, people, onOpen, onEdit, onRespond, o
             {i.response_note && <div className="faint" style={{ fontSize: 12, marginTop: 6 }}>{i.response_note}</div>}
           </div>
         )}
-        {people.length > 0 && (
-          <div className="flex gap" style={{ marginTop: 11, gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-            <span className="faint" style={{ fontSize: 11 }}>{tr('Coinvolti')}:</span>
-            {people.map(p => <PersonChip key={p.id} p={p} />)}
-          </div>
-        )}
+        <PeopleRow people={people} onOpen={onOpen} />
         <div className="flex gap" style={{ marginTop: 13, flexWrap: 'wrap' }}>
-          <button className="btn btn-sm" onClick={onOpen}><Icon name="message" size={12} /> {tr('Apri')}</button>
           {isPlayer && i.status === 'aperto' && ['task', 'richiesta'].includes(i.kind) && (
             <button className="btn btn-sm" onClick={onRespond}>
               <Icon name={i.kind === 'richiesta' ? 'upload' : 'check'} size={12} /> {i.kind === 'richiesta' ? tr('Rispondi') : tr('Fatto')}
@@ -696,179 +688,3 @@ function OverviewForm({ value, playerId, onClose, onSaved }: {
   )
 }
 
-function PersonChip({ p, onRemove }: { p: Person; onRemove?: () => void }) {
-  const { t: tr } = useLang()
-  return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 8px 3px 3px', borderRadius: 999,
-      border: '1px solid var(--border)', background: 'var(--bg-2)', fontSize: 12 }}>
-      <span style={{ width: 20, height: 20, borderRadius: 10, background: ACCENT, color: '#fff', display: 'grid', placeItems: 'center', fontSize: 9, fontWeight: 800 }}>
-        {initials(p.name || ROLE_L[p.role] || '?')}
-      </span>
-      <b style={{ fontWeight: 700 }}>{p.name || tr(ROLE_L[p.role] || p.role)}</b>
-      {p.name && <span className="faint">{tr(ROLE_L[p.role] || p.role)}</span>}
-      {onRemove && <button onClick={onRemove} aria-label={tr('Rimuovi')}
-        style={{ border: 0, background: 'none', cursor: 'pointer', color: 'inherit', padding: 0, display: 'flex' }}><Icon name="x" size={12} /></button>}
-    </span>
-  )
-}
-
-// Dettaglio di una voce: persone coinvolte (tag) e conversazione con documenti.
-// Taggare = notifica alla persona, che da quel momento vede SOLO questa voce e può rispondere qui.
-function ItemDetail({ item, playerId, people, canTag, onClose, onPeople }: {
-  item: WealthItem; playerId: number; people: Person[]; canTag: boolean; onClose: () => void; onPeople: () => void
-}) {
-  const { t: tr } = useLang()
-  const { session, profile, role } = useAuth()
-  const [comments, setComments] = useState<Comment[]>([])
-  const [team, setTeam] = useState<{ pro_id: string | null; role: string; name: string | null }[]>([])
-  const [pick, setPick] = useState('')
-  const [text, setText] = useState('')
-  const [files, setFiles] = useState<File_[]>([])
-  const [busy, setBusy] = useState(false)
-  const [uploading, setUploading] = useState(false)
-  const fileRef = useRef<HTMLInputElement>(null)
-
-  async function loadComments() {
-    const { data } = await supabase.from('crm_wealth_item_comments').select('*').eq('item_id', item.id).order('created_at')
-    setComments((data as Comment[]) || [])
-  }
-  useEffect(() => { loadComments() }, [item.id]) // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    if (!canTag) return
-    supabase.from('crm_athlete_team').select('pro_id, role, name').eq('player_id', playerId)
-      .then(({ data }) => setTeam(((data as any[]) || []).filter(x => x.role !== 'wealth')))
-  }, [playerId, canTag])
-
-  const key = (r: string, u: string | null) => `${r}|${u || ''}`
-  const taken = new Set(people.map(p => key(p.role, p.user_id)))
-  const candidates = [
-    ...(role !== 'admin' ? [{ pro_id: null, role: 'admin', name: 'AUVI' }] : []),
-    ...team,
-  ].filter(c => !taken.has(key(c.role, c.pro_id)))
-
-  async function tag() {
-    const c = candidates.find(x => key(x.role, x.pro_id) === pick)
-    if (!c) return
-    const { error } = await supabase.from('crm_wealth_item_people').insert({
-      item_id: item.id, user_id: c.pro_id, role: c.role, name: c.name,
-    })
-    if (error) { toast(error.message, 'err'); return }
-    setPick(''); toast(tr('Coinvolto: riceve la notifica')); onPeople()
-  }
-  async function untag(p: Person) {
-    await supabase.from('crm_wealth_item_people').delete().eq('id', p.id)
-    onPeople()
-  }
-
-  async function send() {
-    if (!text.trim() && !files.length) return
-    setBusy(true)
-    const { error } = await supabase.from('crm_wealth_item_comments').insert({
-      item_id: item.id, author_id: session?.user.id,
-      author_name: profile?.full_name || profile?.email, author_role: role,
-      body: text.trim() || null, attachments: files,
-    })
-    setBusy(false)
-    if (error) { toast(error.message, 'err'); return }
-    setText(''); setFiles([]); loadComments()
-  }
-
-  return (
-    <Modal title={item.title} onClose={onClose} wide>
-      <div style={{ ...kicker, fontSize: 9.5, color: ACCENT }}>
-        {tr(KINDS.find(k => k.k === item.kind)?.l || '')}{item.category ? ` · ${tr(item.category)}` : ''}
-        {item.due_date ? ' · ' + tr('entro il {date}').replace('{date}', fmtDate(item.due_date)) : ''}
-      </div>
-      {item.description && <div style={{ fontSize: 13.5, marginTop: 8, whiteSpace: 'pre-wrap' }}>{item.description}</div>}
-      {(item.attachments || []).length > 0 && (
-        <div className="flex gap" style={{ marginTop: 10, flexWrap: 'wrap' }}>
-          {(item.attachments || []).map(a => (
-            <button key={a.path} className="btn btn-sm" onClick={() => openDoc(a.path, tr('Impossibile aprire il documento'))}>
-              <Icon name="download" size={13} /> {a.name}
-            </button>
-          ))}
-        </div>
-      )}
-
-      <div style={{ marginTop: 18 }}>
-        <div style={{ ...kicker, color: 'var(--text-dim)', marginBottom: 8 }}>{tr('Persone coinvolte')}</div>
-        <div className="flex gap" style={{ gap: 6, flexWrap: 'wrap' }}>
-          {people.length === 0 && <span className="faint" style={{ fontSize: 12.5 }}>{tr("Solo l'atleta e il wealth manager.")}</span>}
-          {people.map(p => <PersonChip key={p.id} p={p} onRemove={canTag ? () => untag(p) : undefined} />)}
-        </div>
-        {canTag && candidates.length > 0 && (
-          <div className="flex gap" style={{ gap: 8, marginTop: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-            <div style={{ flex: '1 1 220px' }}>
-              <Select value={pick} onChange={e => setPick(e.target.value)}>
-                <option value="">{tr('Coinvolgi qualcuno del team…')}</option>
-                {candidates.map(c => (
-                  <option key={key(c.role, c.pro_id)} value={key(c.role, c.pro_id)}>
-                    {c.name || tr(ROLE_L[c.role] || c.role)}{c.name ? ` · ${tr(ROLE_L[c.role] || c.role)}` : ''}
-                  </option>
-                ))}
-              </Select>
-            </div>
-            <button className="btn btn-sm" style={{ background: ACCENT, color: '#fff', fontWeight: 800, border: 'none' }} disabled={!pick} onClick={tag}>
-              <Icon name="plus" size={13} /> {tr('Coinvolgi')}
-            </button>
-          </div>
-        )}
-      </div>
-
-      <div style={{ marginTop: 18 }}>
-        <div style={{ ...kicker, color: 'var(--text-dim)', marginBottom: 8 }}>{tr('Conversazione')}</div>
-        {comments.length === 0
-          ? <div className="faint" style={{ fontSize: 12.5 }}>{tr('Nessun messaggio. Scrivi qui per aggiornare tutti i coinvolti.')}</div>
-          : <div className="grid" style={{ gap: 10 }}>
-              {comments.map(c => {
-                const mine = c.author_id === session?.user.id
-                return (
-                  <div key={c.id} style={{ padding: '10px 12px', borderRadius: 12, background: mine ? 'var(--bg-2)' : 'transparent', border: '1px solid var(--border)' }}>
-                    <div className="flex gap" style={{ gap: 8, alignItems: 'baseline', flexWrap: 'wrap' }}>
-                      <b style={{ fontSize: 13 }}>{mine ? tr('Tu') : (c.author_name || tr(ROLE_L[c.author_role || ''] || ''))}</b>
-                      {!mine && c.author_role && <span className="faint" style={{ fontSize: 11.5 }}>{tr(ROLE_L[c.author_role] || c.author_role)}</span>}
-                      <span style={{ flex: 1 }} />
-                      <span className="faint" style={{ fontSize: 11 }}>{fmtDateTime(c.created_at)}</span>
-                    </div>
-                    {c.body && <div style={{ fontSize: 13.5, marginTop: 4, whiteSpace: 'pre-wrap' }}>{c.body}</div>}
-                    {c.attachments?.length > 0 && (
-                      <div className="flex gap" style={{ marginTop: 8, flexWrap: 'wrap' }}>
-                        {c.attachments.map(a => (
-                          <button key={a.path} className="btn btn-ghost btn-sm" onClick={() => openDoc(a.path, tr('Impossibile aprire il documento'))}>
-                            <Icon name="download" size={12} /> {a.name}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
-            </div>}
-        <div style={{ marginTop: 12 }}>
-          <FileList files={files} onRemove={p => setFiles(prev => prev.filter(x => x.path !== p))} />
-          <Textarea rows={2} value={text} onChange={e => setText(e.target.value)} placeholder={tr('Scrivi un aggiornamento o allega un documento…')} />
-          <div className="flex gap" style={{ gap: 8, marginTop: 8 }}>
-            <button className="btn btn-sm" disabled={uploading} onClick={() => fileRef.current?.click()}>
-              <Icon name="paperclip" size={13} /> {uploading ? tr('Carico…') : tr('Allega')}
-            </button>
-            <span style={{ flex: 1 }} />
-            <button className="btn btn-primary btn-sm" disabled={busy || (!text.trim() && !files.length)} onClick={send}>
-              <Icon name="send" size={13} /> {busy ? tr('Invio…') : tr('Invia')}
-            </button>
-          </div>
-          <input ref={fileRef} type="file" multiple hidden onChange={async e => {
-            setUploading(true)
-            const out: File_[] = []
-            for (const file of Array.from(e.target.files || [])) {
-              const path = `${playerId}/${item.id}/${Date.now()}-${file.name.replace(/[^\w.\-]/g, '_')}`
-              const up = await supabase.storage.from(BUCKET).upload(path, file, { upsert: false })
-              if (up.error) { toast(up.error.message, 'err'); continue }
-              out.push({ name: file.name, path })
-            }
-            setFiles(p => [...p, ...out]); setUploading(false); e.target.value = ''
-          }} />
-        </div>
-      </div>
-    </Modal>
-  )
-}

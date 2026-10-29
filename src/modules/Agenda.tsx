@@ -7,6 +7,7 @@ import { useLang } from '../lib/i18n'
 import { insertRow, updateRow, deleteRow } from '../lib/useData'
 import { Modal, Field, Input, Textarea, Select, Empty, Spinner, Tabs } from '../components/ui'
 import Icon from '../components/Icon'
+import { useItemPeople, ItemThread } from '../components/ItemPeople'
 import LuogoAutocomplete from '../components/LuogoAutocomplete'
 import type { EventItem, EventAttachment, EventComment, EventNutrition } from '../lib/types'
 import { downloadIcs, mapsUrl } from '../lib/ics'
@@ -615,7 +616,18 @@ export function EvCard({ e, focus, canEdit, onEdit, onDel, canConfirm, onConfirm
           {canEdit && <button className="ev-ic ev-ic-danger" onClick={onDel} title={tr('Elimina')} aria-label={tr('Elimina')}><Icon name="trash" size={16} /></button>}
         </div>
         {open && !e._match && <Thread eventId={e.id} uid={uid} mainIsChange={!canEdit} onCount={onCount} />}
+        {open && !e._match && e.player_id && <EventPeople eventId={e.id} playerId={e.player_id} />}
       </div>
+    </div>
+  )
+}
+
+// Persone del team coinvolte nell'impegno: ricevono la notifica e partecipano ai commenti qui sopra.
+function EventPeople({ eventId, playerId }: { eventId: string; playerId: number }) {
+  const { people, reload } = useItemPeople('event', [eventId])
+  return (
+    <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
+      <ItemThread kind="event" itemId={eventId} playerId={playerId} people={people[eventId] || []} onPeople={reload} hideThread />
     </div>
   )
 }

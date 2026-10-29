@@ -15,7 +15,7 @@ import { Modal, Field, Input, Tabs, Empty } from './ui'
 // Schermate home dei vari ruoli: qui compare l'invito ad attivare le notifiche.
 const HOME_ROUTES = ['dashboard', 'brandhome', 'agent-home', 'insurer-home', 'tax-home', 'physio-home', 'partner-home', 'wealth-home']
 
-export const APP_VERSION = 'v10.9'
+export const APP_VERSION = 'v11.0'
 
 export interface NavDef {
   key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[]
@@ -235,6 +235,7 @@ const TITLES: Record<string, { t: string; s: string }> = {
   archivio: { t: 'Contratti e Documenti', s: 'Accordi, scadenze e archivio file riservato' },
   'tax-home': { t: 'Home', s: 'La tua scheda e gli atleti seguiti' },
   'tax-profile': { t: 'Il mio profilo', s: 'Contatti e studio' },
+  item: { t: 'Voce condivisa', s: 'Persone coinvolte e conversazione' },
   wealth: { t: 'Patrimonio', s: 'Quadro, task e documenti del wealth manager' },
   'wealth-home': { t: 'Home', s: 'La tua scheda e gli atleti seguiti' },
   'wealth-profile': { t: 'Il mio profilo', s: 'Contatti e società' },

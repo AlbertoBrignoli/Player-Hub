@@ -3570,5 +3570,13 @@ const EN: Record<string, string> = {
   "Conversazione": "Conversation",
   "Nessun messaggio. Scrivi qui per aggiornare tutti i coinvolti.": "No messages yet. Write here to update everyone involved.",
   "Scrivi un aggiornamento o allega un documento…": "Write an update or attach a document…",
+  "Coinvolgi / conversazione": "Involve / conversation",
+  "Nessuno oltre a chi segue già questa voce.": "No one besides those already following this item.",
+  "Scrivi un aggiornamento…": "Write an update…",
+  "Voce non disponibile": "Item not available",
+  "Non sei più coinvolto in questa voce, oppure è stata eliminata.": "You are no longer involved in this item, or it has been deleted.",
+  "Apri nell'area": "Open in its area",
+  "Voce condivisa": "Shared item",
+  "Persone coinvolte e conversazione": "People involved and conversation",
 }
 
