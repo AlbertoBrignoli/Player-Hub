@@ -9,8 +9,8 @@ import { Empty, Spinner } from '../components/ui'
 import ProProfileModal from '../components/ProProfile'
 
 // "Il mio team" (My Club): le persone che lavorano attorno a un atleta.
-// Ogni professionista è una card che apre la SUA area (polizze, fisco, fitness,
-// contratti): la persona sta qui, il suo lavoro si apre da qui.
+// Ogni professionista è una casella: toccandola si apre la SUA area (polizze, fisco,
+// fitness, contratti); dalla casella si apre anche il suo profilo o lo si contatta.
 // Dati reali dalla view crm_athlete_team (gate di visibilità lato DB).
 
 type Member = {
@@ -125,8 +125,10 @@ export default function MyTeam({ goto }: { goto?: (r: string) => void }) {
       {/* AUVI Agency: l'advisor è sempre presente */}
       <div>
         <div className="nav-label" style={{ paddingLeft: 2 }}>{t('Advisor')}</div>
-        <MemberCard name="AUVI Agency" roleLabel={t("Il tuo advisor · gestione a 360°")}
-          icon="star" email="info@auviagency.com" accent="var(--ink)" />
+        <div style={TILES}>
+          <MemberCard name="AUVI Agency" roleLabel={t("Il tuo advisor · gestione a 360°")}
+            icon="star" email="info@auviagency.com" accent="var(--ink)" />
+        </div>
       </div>
 
       {/* professionisti collegati */}
@@ -146,7 +148,7 @@ export default function MyTeam({ goto }: { goto?: (r: string) => void }) {
       ) : (
         <div>
           <div className="nav-label" style={{ paddingLeft: 2 }}>{t('Il team')}</div>
-          <div className="grid" style={{ gap: 10 }}>
+          <div style={TILES}>
             {rows.map((m, i) => {
               const r = ROLE[m.role] || { label: m.role, icon: 'user' as string, area: undefined }
               const showArea = !!r.area && (canOpenAll || role === m.role)
@@ -185,64 +187,56 @@ function MemberCard({ name, roleLabel, icon, title, agency, photo, logo, email, 
 }) {
   const { t } = useLang()
   const sub = [title, agency].filter(Boolean).join(' · ')
+  // toccando la casella si entra nell'area del professionista; senza area, nel suo profilo
+  const main = onArea || onOpen
+  const stop = (e: React.MouseEvent) => e.stopPropagation()
   return (
-    <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden' }}>
-      <div className="flex between" style={{ gap: 12, alignItems: 'center', padding: 14 }}>
-        <div className="flex gap" role={onOpen ? 'button' : undefined} tabIndex={onOpen ? 0 : undefined}
-          onClick={onOpen} onKeyDown={onOpen ? e => { if (e.key === 'Enter') onOpen() } : undefined}
-          title={onOpen ? t('Apri il profilo') : undefined}
-          style={{ alignItems: 'center', gap: 12, minWidth: 0, flex: 1, cursor: onOpen ? 'pointer' : undefined }}>
-          {photo ? (
-            <img src={photo} alt={name || ''} style={{ width: 46, height: 46, borderRadius: 12, objectFit: 'cover', flexShrink: 0 }} />
-          ) : (
-            <div style={{ width: 46, height: 46, borderRadius: 12, flexShrink: 0, display: 'flex',
-              alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 15,
-              background: accent ? 'var(--yellow)' : 'var(--bg-2)',
-              color: accent || 'var(--text)', border: '1px solid var(--border)' }}>
-              {name ? initials(name) : <Icon name={icon} size={20} />}
-            </div>
-          )}
-          <div style={{ minWidth: 0 }}>
-            <div className="flex gap" style={{ alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 15, fontWeight: 800 }}>{name || '—'}</span>
-              {logo && <img src={logo} alt="" style={{ height: 22, maxWidth: 70, objectFit: 'contain', flexShrink: 0 }} />}
-            </div>
-            <div className="flex gap" style={{ alignItems: 'center', gap: 6, marginTop: 2 }}>
-              <span style={{ color: 'var(--text-dim)', display: 'inline-flex' }}><Icon name={icon} size={12} /></span>
-              <span style={{ fontSize: 12, color: 'var(--text-dim)',
-                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {roleLabel}{sub ? ` · ${sub}` : ''}
-              </span>
-            </div>
-            {onOpen && <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text-dim)', marginTop: 3 }}>{t('Vedi profilo')} →</div>}
+    <div role={main ? 'button' : undefined} tabIndex={main ? 0 : undefined} className="mt-tile"
+      onClick={main} onKeyDown={main ? e => { if (e.key === 'Enter') main() } : undefined}
+      style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: 16,
+        display: 'flex', flexDirection: 'column', gap: 12, cursor: main ? 'pointer' : undefined, minWidth: 0 }}>
+      <div className="flex between" style={{ alignItems: 'flex-start', gap: 10 }}>
+        {photo ? (
+          <img src={photo} alt={name || ''} style={{ width: 56, height: 56, borderRadius: 14, objectFit: 'cover', flexShrink: 0 }} />
+        ) : (
+          <div style={{ width: 56, height: 56, borderRadius: 14, flexShrink: 0, display: 'flex',
+            alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 18,
+            background: accent ? 'var(--yellow)' : 'var(--bg-2)',
+            color: accent || 'var(--text)', border: '1px solid var(--border)' }}>
+            {name ? initials(name) : <Icon name={icon} size={22} />}
           </div>
-        </div>
-        <div className="flex gap" style={{ gap: 6, flexShrink: 0 }}>
-          {email && <a className="btn-ghost" style={ico} title={email} href={`mailto:${email}`}><Icon name="mail" size={16} /></a>}
-          {phone && <a className="btn-ghost" style={ico} title={phone} href={`tel:${phone.replace(/\s/g, '')}`}><Icon name="smartphone" size={16} /></a>}
-          {whatsapp && <a className="btn-ghost" style={ico} title="WhatsApp" target="_blank" rel="noreferrer"
-            href={`https://wa.me/${whatsapp.replace(/[^0-9]/g, '')}`}><Icon name="message" size={16} /></a>}
-        </div>
+        )}
+        {logo && <img src={logo} alt="" style={{ height: 26, maxWidth: 80, objectFit: 'contain' }} />}
       </div>
-
-      {/* apri l'area del professionista (le voci che prima stavano nel menu generale) */}
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <div className="flex gap" style={{ alignItems: 'center', gap: 6, color: 'var(--text-dim)' }}>
+          <Icon name={icon} size={12} />
+          <span style={{ fontSize: 10.5, letterSpacing: 1.2, textTransform: 'uppercase', fontWeight: 800 }}>{roleLabel}</span>
+        </div>
+        <div style={{ fontSize: 16, fontWeight: 900, marginTop: 3, lineHeight: 1.2 }}>{name || '—'}</div>
+        {sub && <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sub}</div>}
+      </div>
       {area && onArea && (
-        <button onClick={onArea} className="flex between"
-          style={{ width: '100%', cursor: 'pointer', gap: 10, alignItems: 'center', textAlign: 'left',
-            padding: '11px 14px', border: 'none', borderTop: '1px solid var(--border)',
-            background: 'var(--surface-2)', color: 'var(--text)' }}>
-          <span className="flex gap" style={{ alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 700 }}>
-            <span style={{ color: 'var(--text-dim)', display: 'inline-flex' }}><Icon name="folder" size={15} /></span>
-            {t(area.label)}
-          </span>
-          <span style={{ color: 'var(--text-dim)', display: 'inline-flex' }}><Icon name="chevron-right" size={18} /></span>
-        </button>
+        <div className="flex between" style={{ marginTop: 'auto', alignItems: 'center', gap: 8, padding: '9px 11px', borderRadius: 11,
+          background: 'var(--surface-2)', fontSize: 13, fontWeight: 800 }}>
+          <span className="flex gap" style={{ alignItems: 'center', gap: 7 }}><Icon name="folder" size={15} /> {t(area.label)}</span>
+          <Icon name="chevron-right" size={16} />
+        </div>
       )}
+      <div className="flex gap" style={{ gap: 5, alignItems: 'center', flexWrap: 'nowrap', marginTop: area && onArea ? 0 : 'auto' }}>
+        {onOpen && <button className="btn btn-sm btn-ghost" style={{ paddingLeft: 0, whiteSpace: 'nowrap' }} onClick={e => { stop(e); onOpen() }}>{t('Vedi profilo')} →</button>}
+        <span style={{ flex: 1 }} />
+        {email && <a className="btn-ghost" style={ico} title={email} href={`mailto:${email}`} onClick={stop}><Icon name="mail" size={15} /></a>}
+        {phone && <a className="btn-ghost" style={ico} title={phone} href={`tel:${phone.replace(/\s/g, '')}`} onClick={stop}><Icon name="smartphone" size={15} /></a>}
+        {whatsapp && <a className="btn-ghost" style={ico} title="WhatsApp" target="_blank" rel="noreferrer" onClick={stop}
+          href={`https://wa.me/${whatsapp.replace(/[^0-9]/g, '')}`}><Icon name="message" size={15} /></a>}
+      </div>
     </div>
   )
 }
 
+const TILES: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 12 }
 const ico: React.CSSProperties = {
-  width: 38, height: 38, borderRadius: 10, display: 'inline-flex', alignItems: 'center',
+  width: 30, height: 30, flexShrink: 0, borderRadius: 10, display: 'inline-flex', alignItems: 'center',
   justifyContent: 'center', color: 'var(--text-dim)', border: '1px solid var(--border)',
 }
