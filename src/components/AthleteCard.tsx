@@ -8,6 +8,10 @@ import { toast } from '../lib/toast'
 import { useLang } from '../lib/i18n'
 import { initials } from '../lib/format'
 import Icon from './Icon'
+import { Modal, Spinner, Empty } from './ui'
+import { supabase } from '../lib/supabase'
+import { useAthlete } from '../lib/athlete'
+import { isImageFile } from '../lib/format'
 
 export type CardData = { name: string; position?: string | null; team?: string | null; photo?: string | null; email: string }
 
@@ -152,7 +156,8 @@ export default function AthleteCard({ d }: { d: CardData }) {
   const bgRef = useRef<HTMLInputElement>(null)
 
   // le immagini scelte si leggono in locale (lato lungo max 1600 px), non si caricano da nessuna parte
-  async function pick(f: File | undefined, key: 'photo' | 'bg') {
+  const [library, setLibrary] = useState<'photo' | 'bg' | null>(null)
+  async function pick(f: Blob | undefined, key: 'photo' | 'bg') {
     if (!f) return
     try {
       const bmp = await createImageBitmap(f)
@@ -204,12 +209,14 @@ export default function AthleteCard({ d }: { d: CardData }) {
         <div className="card" style={{ marginTop: 10, display: 'grid', gap: 12 }}>
           <div className="flex gap" style={{ alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <span style={{ fontWeight: 800, fontSize: 13, width: 96 }}>{t('Foto')}</span>
-            <button className="btn btn-sm" onClick={() => photoRef.current?.click()}><Icon name="camera" size={13} /> {t('Scegli foto')}</button>
+            <button className="btn btn-sm btn-primary" onClick={() => setLibrary('photo')}><Icon name="image" size={13} /> {t('Da Player Hub')}</button>
+            <button className="btn btn-sm" onClick={() => photoRef.current?.click()}><Icon name="camera" size={13} /> {t('Dal dispositivo')}</button>
             {look.photo && <button className="btn btn-sm btn-ghost" onClick={() => setLook(l => ({ ...l, photo: null }))}>{t('Usa la foto del profilo')}</button>}
           </div>
           <div className="flex gap" style={{ alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <span style={{ fontWeight: 800, fontSize: 13, width: 96 }}>{t('Sfondo')}</span>
-            <button className="btn btn-sm" onClick={() => bgRef.current?.click()}><Icon name="image" size={13} /> {t('Scegli una foto di sfondo')}</button>
+            <button className="btn btn-sm btn-primary" onClick={() => setLibrary('bg')}><Icon name="image" size={13} /> {t('Da Player Hub')}</button>
+            <button className="btn btn-sm" onClick={() => bgRef.current?.click()}><Icon name="camera" size={13} /> {t('Dal dispositivo')}</button>
             {look.bg && <button className="btn btn-sm btn-ghost" onClick={() => setLook(l => ({ ...l, bg: null }))}>{t('Torna a Player Hub')}</button>}
           </div>
           {look.bg && (
@@ -222,9 +229,77 @@ export default function AthleteCard({ d }: { d: CardData }) {
           )}
           <div className="faint" style={{ fontSize: 11.5 }}>{t('Le foto scelte restano sul tuo dispositivo e servono solo a creare il biglietto.')}</div>
           <input ref={photoRef} type="file" accept="image/*" hidden onChange={e => { pick(e.target.files?.[0], 'photo'); e.target.value = '' }} />
+          {library && <MediaPicker title={library === 'photo' ? t('Scegli la foto') : t('Scegli lo sfondo')}
+            onClose={() => setLibrary(null)} onPick={b => { pick(b, library); setLibrary(null) }} />}
           <input ref={bgRef} type="file" accept="image/*" hidden onChange={e => { pick(e.target.files?.[0], 'bg'); e.target.value = '' }} />
         </div>
       )}
     </div>
+  )
+}
+
+// Le foto dell'atleta già in Player Hub (Media), divise per cartella: si sceglie con un tocco.
+type Med = { id: string; storage_path: string; file_name: string | null; folder: string | null; created_at: string }
+function MediaPicker({ title, onClose, onPick }: { title: string; onClose: () => void; onPick: (b: Blob) => void }) {
+  const { t } = useLang()
+  const { athleteId } = useAthlete()
+  const [rows, setRows] = useState<Med[] | null>(null)
+  const [urls, setUrls] = useState<Record<string, string>>({})
+  const [folder, setFolder] = useState<string>('')
+  const [busy, setBusy] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!athleteId) { setRows([]); return }
+    let ok = true
+    ;(async () => {
+      const { data } = await supabase.from('crm_media').select('id, storage_path, file_name, folder, created_at')
+        .eq('player_id', athleteId).neq('status', 'scartata').order('created_at', { ascending: false }).limit(400)
+      const list = ((data as Med[]) || []).filter(m => isImageFile(m.file_name || m.storage_path))
+      if (!ok) return
+      setRows(list)
+      for (let i = 0; i < list.length; i += 60) {
+        const { data: su } = await supabase.storage.from('crm-media').createSignedUrls(list.slice(i, i + 60).map(m => m.storage_path), 3600)
+        if (!ok || !su) continue
+        const next: Record<string, string> = {}
+        su.forEach(d => { if (d.signedUrl && d.path) next[d.path] = d.signedUrl })
+        setUrls(u => ({ ...u, ...next }))
+      }
+    })()
+    return () => { ok = false }
+  }, [athleteId])
+
+  const folders = [...new Set((rows || []).map(m => m.folder || ''))]
+  const shown = (rows || []).filter(m => !folder || (m.folder || '') === folder)
+
+  async function choose(m: Med) {
+    const u = urls[m.storage_path]; if (!u) return
+    setBusy(m.id)
+    try { onPick(await (await fetch(u)).blob()) }
+    catch { toast(t('Immagine non disponibile'), 'err') }
+    finally { setBusy(null) }
+  }
+
+  return (
+    <Modal title={title} onClose={onClose} wide dismissable>
+      {rows === null ? <Spinner /> : rows.length === 0
+        ? <Empty icon={<Icon name="image" size={30} strokeWidth={1.4} />} title={t('Nessuna foto')} hint={t('Le foto caricate in Media compaiono qui.')} />
+        : <div className="grid" style={{ gap: 12 }}>
+            {folders.length > 1 && (
+              <div className="pill-tabs wrap" style={{ alignSelf: 'start' }}>
+                <button className={`pill-tab ${!folder ? 'active' : ''}`} onClick={() => setFolder('')}>{t('Tutte')}</button>
+                {folders.map(f => <button key={f || '-'} className={`pill-tab ${folder === f && f ? 'active' : ''}`} onClick={() => setFolder(f)}>{f || t('Senza cartella')}</button>)}
+              </div>
+            )}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: 8, maxHeight: '60vh', overflowY: 'auto' }}>
+              {shown.map(m => (
+                <button key={m.id} onClick={() => choose(m)} disabled={!!busy}
+                  style={{ aspectRatio: '1', padding: 0, border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden', cursor: 'pointer', background: 'var(--bg-2)', position: 'relative' }}>
+                  {urls[m.storage_path] && <img src={urls[m.storage_path]} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />}
+                  {busy === m.id && <span style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', background: 'rgba(0,0,0,.4)' }}><Spinner /></span>}
+                </button>
+              ))}
+            </div>
+          </div>}
+    </Modal>
   )
 }

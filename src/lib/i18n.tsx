@@ -3615,5 +3615,10 @@ const EN: Record<string, string> = {
   "Trasparenza": "Opacity",
   "Le foto scelte restano sul tuo dispositivo e servono solo a creare il biglietto.": "The photos you choose stay on your device and are only used to create the card.",
   "Sfondo": "Background",
+  "Da Player Hub": "From Player Hub",
+  "Dal dispositivo": "From device",
+  "Scegli la foto": "Choose the photo",
+  "Scegli lo sfondo": "Choose the background",
+  "Le foto caricate in Media compaiono qui.": "Photos uploaded in Media appear here.",
 }
 
