@@ -6,6 +6,7 @@ import { useAthlete } from '../lib/athlete'
 import { useCollection, insertRow, updateRow, deleteRow } from '../lib/useData'
 import { Modal, Field, Input, Textarea, Select, Empty, Spinner, ConfirmButton } from '../components/ui'
 import Icon from '../components/Icon'
+import ChatDocs from '../components/ChatDocs'
 import { fmtDate, fmtMoney } from '../lib/format'
 import { useLang } from '../lib/i18n'
 import { useRouteParam } from '../lib/route'
@@ -262,6 +263,7 @@ export default function Wealth() {
                   onDelete={async () => { await deleteRow('crm_wealth_items', i.id); reload() }} />)}
               </div>
             )}
+            {tab === 'docs' && <div style={{ marginTop: 12 }}><ChatDocs channel="wealth" accent={ACCENT} /></div>}
           </div>
         )}
 

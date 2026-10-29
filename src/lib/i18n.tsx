@@ -3590,5 +3590,10 @@ const EN: Record<string, string> = {
   "Scarica Player Hub e collegati": "Download Player Hub and connect",
   "Inquadra il QR con la fotocamera": "Scan the QR code with your camera",
   "Preparo il biglietto…": "Preparing the card…",
+  "Dalla chat": "From the chat",
+  "Apri la chat": "Open the chat",
+  "Documenti delle voci": "Item documents",
+  "I file allegati alle voci fiscali e legali compaiono qui.": "Files attached to tax and legal items appear here.",
+  "Allegati e file mandati in chat": "Attachments and files sent in chat",
 }
 

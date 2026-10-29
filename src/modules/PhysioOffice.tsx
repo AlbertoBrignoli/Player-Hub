@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../auth/AuthContext'
 import { Modal, Field, Input, Textarea, Select, Empty, Spinner, ConfirmButton } from '../components/ui'
 import Icon from '../components/Icon'
+import ChatDocs from '../components/ChatDocs'
 import { useLang } from '../lib/i18n'
 
 // Il mio ufficio del fisioterapista: atleti collegati + spazio clinico
@@ -123,6 +124,8 @@ function Workspace({ physioId, athlete, onBack }: { physioId: string; athlete: A
           {rows.map(r => <RecordCard key={r.id} tab={tab} r={r} onEdit={() => setEdit(r)} onDel={() => remove(r.id)} />)}
         </div>
       )}
+
+      <ChatDocs channel="fisioterapista" playerId={athlete.player_id} accent={ACCENT} />
 
       {edit && <EditModal tab={tab} rec={edit} onClose={() => setEdit(null)} onSave={save} />}
     </div>

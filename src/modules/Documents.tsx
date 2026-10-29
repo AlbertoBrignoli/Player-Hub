@@ -6,6 +6,7 @@ import { useCollection, insertRow, deleteRow } from '../lib/useData'
 import { toast } from '../lib/toast'
 import { Empty, Spinner, Badge, Select, ConfirmButton } from '../components/ui'
 import Icon from '../components/Icon'
+import ChatDocs from '../components/ChatDocs'
 import { fmtDate } from '../lib/format'
 import type { Doc } from '../lib/types'
 import { useLang } from '../lib/i18n'
@@ -100,6 +101,8 @@ export default function Documents() {
           </div>
         )}
       </div>
+
+      <ChatDocs />
     </div>
   )
 }

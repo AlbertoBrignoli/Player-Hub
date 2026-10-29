@@ -6,6 +6,7 @@ import { useAthlete } from '../lib/athlete'
 import { useCollection, insertRow, updateRow, deleteRow } from '../lib/useData'
 import { Modal, Field, Input, Textarea, Select, Empty, Spinner, ConfirmButton } from '../components/ui'
 import Icon from '../components/Icon'
+import ChatDocs from '../components/ChatDocs'
 import { fmtDate, fmtMoney } from '../lib/format'
 import { useLang } from '../lib/i18n'
 import { useItemPeople, PeopleRow, ItemPeopleModal } from '../components/ItemPeople'
@@ -27,6 +28,7 @@ const TABS = [
   { k: 'riepilogo', l: 'Riepilogo', icon: 'activity', hint: 'Spese, scadenze e richieste aperte' },
   { k: 'fiscale', l: 'Fiscale', icon: 'briefcase', hint: 'Imposte, contributi, dichiarazioni' },
   { k: 'legale', l: 'Legale', icon: 'archive', hint: 'Contratti, atti, contenziosi' },
+  { k: 'documenti', l: 'Documenti', icon: 'file', hint: 'Allegati e file mandati in chat' },
 ] as const
 
 const CATEGORIES: Record<string, string[]> = {
@@ -152,7 +154,7 @@ export default function LegalTax() {
         </div>
       )}
 
-      {tab === 'riepilogo' ? <Overview rows={rows} /> : <>
+      {tab === 'documenti' ? <LegalDocs rows={rows} /> : tab === 'riepilogo' ? <Overview rows={rows} /> : <>
         <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 18,
                       background: 'var(--bg-2)', border: '1px solid var(--border)', padding: '22px' }}>
           <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 5, background: ACCENT }} />
@@ -283,6 +285,43 @@ export default function LegalTax() {
         <RespondForm item={respond} playerId={athleteId}
           onClose={() => setRespond(null)} onSaved={() => { setRespond(null); reload() }} />
       )}
+    </div>
+  )
+}
+
+// Tab Documenti: i file delle voci (caricati dal commercialista o in risposta dall'atleta)
+// e, sotto, quelli mandati nella chat con il commercialista.
+function LegalDocs({ rows }: { rows: TaxItem[] }) {
+  const { t: tr } = useLang()
+  const files = rows.flatMap(i => [
+    ...(i.attachments || []).map(a => ({ ...a, item: i, reply: false })),
+    ...(i.response_attachments || []).map(a => ({ ...a, item: i, reply: true })),
+  ]).filter(f => f.path)
+  return (
+    <div className="grid" style={{ gap: 12 }}>
+      <div className="card">
+        <div className="flex gap" style={{ alignItems: 'center', gap: 9, marginBottom: 10 }}>
+          <span style={{ width: 3, height: 15, background: ACCENT, borderRadius: 2 }} />
+          <span style={{ ...kicker, color: 'var(--text)' }}>{tr('Documenti delle voci')}</span>
+          <span className="faint" style={{ fontSize: 12 }}>{files.length}</span>
+        </div>
+        {files.length === 0
+          ? <Empty icon={<Icon name="archive" size={30} strokeWidth={1.4} />} title={tr('Nessun documento')}
+              hint={tr('I file allegati alle voci fiscali e legali compaiono qui.')} />
+          : <div className="list">
+              {files.map(f => (
+                <div className="row" key={f.path}>
+                  <span style={{ display: 'inline-flex', color: ACCENT }}><Icon name="file" size={18} /></span>
+                  <div className="row-main">
+                    <div className="row-title" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</div>
+                    <div className="row-sub">{f.item.title}{f.reply ? ' · ' + tr("Risposta dell'atleta") : ''}</div>
+                  </div>
+                  <button className="btn btn-sm" onClick={() => openDoc(f.path)}>{tr('Apri')}</button>
+                </div>
+              ))}
+            </div>}
+      </div>
+      <ChatDocs channel="commercialista" accent={ACCENT} />
     </div>
   )
 }

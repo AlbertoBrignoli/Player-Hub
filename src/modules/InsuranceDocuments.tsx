@@ -6,6 +6,7 @@ import { useLang } from '../lib/i18n'
 import { toast } from '../lib/toast'
 import { Modal, Field, Input, Empty, Spinner, ConfirmButton } from '../components/ui'
 import Icon from '../components/Icon'
+import ChatDocs from '../components/ChatDocs'
 import { fmtDate, initials } from '../lib/format'
 
 const BUCKET = 'crm-documents'
@@ -157,6 +158,8 @@ export default function InsuranceDocuments() {
           </div>
         </div>
       )}
+
+      {stack.length === 0 && <ChatDocs channel="assicuratore" playerId={atleta.api_player_id} accent={ACCENT} />}
 
       {newFolderOpen && <NewFolder onClose={() => setNewFolderOpen(false)} onCreate={async (name) => {
         const { error } = await supabase.from('crm_doc_folders').insert({ player_id: atleta.api_player_id, parent_id: currentFolderId, name })
