@@ -3607,6 +3607,5 @@ const EN: Record<string, string> = {
   "riceveranno una notifica": "they'll get a notification",
   "Tagga una persona": "Tag someone",
   "Scrivi allo staff… (@ per taggare)": "Write to the staff… (@ to tag)",
-  "Atleta": "Athlete",
 }
 
