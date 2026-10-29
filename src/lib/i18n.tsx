@@ -3595,5 +3595,18 @@ const EN: Record<string, string> = {
   "Documenti delle voci": "Item documents",
   "I file allegati alle voci fiscali e legali compaiono qui.": "Files attached to tax and legal items appear here.",
   "Allegati e file mandati in chat": "Attachments and files sent in chat",
+  "I documenti caricati da questo professionista o mandati nella vostra chat compaiono qui.": "Documents uploaded by this professional or sent in your chat appear here.",
+  "I tuoi documenti": "Your documents",
+  "Caricato da lui": "Uploaded by them",
+  "AUVI · Management": "AUVI · Management",
+  "Taggati: {names}": "Tagged: {names}",
+  "Qui i tuoi professionisti si coordinano tra loro. Puoi scrivere anche tu e taggare chi deve occuparsene.": "Here your professionals coordinate with each other. You can write too and tag whoever should handle it.",
+  "Apri una conversazione con il tuo staff con «Nuova».": "Start a conversation with your staff with “New”.",
+  "Ti ha taggato": "Tagged you",
+  "Stai taggando": "You're tagging",
+  "riceveranno una notifica": "they'll get a notification",
+  "Tagga una persona": "Tag someone",
+  "Scrivi allo staff… (@ per taggare)": "Write to the staff… (@ to tag)",
+  "Atleta": "Athlete",
 }
 

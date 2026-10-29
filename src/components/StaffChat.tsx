@@ -1,6 +1,7 @@
 // Chat dello staff: i professionisti dello stesso atleta si scrivono tra loro, a due o in gruppo.
-// Ogni conversazione la leggono solo i partecipanti (più AUVI). L'atleta può leggerle tutte
-// (trasparenza) ma non scrive, e sceglie lui se ricevere le notifiche (spente di base).
+// Ogni conversazione la leggono solo i partecipanti (più AUVI). L'atleta le legge tutte, ci scrive
+// e ne apre di nuove; sceglie lui se ricevere le notifiche (spente di base). In ogni messaggio si
+// possono taggare persone del team: entrano nella conversazione e ricevono la notifica.
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { toast } from '../lib/toast'
@@ -16,13 +17,17 @@ import { ChatAttachment, useAttach } from './ChatAttachment'
 type Member = { user_id: string; role: string | null; name: string | null }
 type Thread = { id: string; player_id: number; title: string | null; created_by: string; last_at: string; crm_staff_members: Member[] }
 type Msg = { id: string; thread_id: string; sender_id: string; sender_name: string | null; sender_role: string | null; body: string; created_at: string
-  file_path?: string | null; file_name?: string | null; file_mime?: string | null; file_size?: number | null }
+  file_path?: string | null; file_name?: string | null; file_mime?: string | null; file_size?: number | null
+  mentions?: string[] | null; mention_auvi?: boolean | null }
 type Pro = { pro_id: string; role: string; name: string | null; photo_url: string | null }
 
 export const STAFF_ROLE: Record<string, string> = {
   admin: 'AUVI', creator: 'AUVI', agente: 'Procuratore', preparatore: 'Preparatore', assicuratore: 'Assicuratore',
   commercialista: 'Commercialista', fisioterapista: 'Fisioterapista', nutrizionista: 'Nutrizionista', wealth: 'Wealth manager',
+  player: 'Atleta',
 }
+const AUVI_TAG = 'auvi'
+const TAG_C = '#FFE600'
 
 export default function StaffChat({ openThread }: { openThread?: string | null }) {
   const { t } = useLang()
@@ -44,6 +49,8 @@ export default function StaffChat({ openThread }: { openThread?: string | null }
   const athlete = athletes.find(a => a.api_player_id === athleteId)
   const photoOf = useChatPhotos()
   const attach = useAttach(me)
+  const [tags, setTags] = useState<string[]>([])     // pro_id taggati (o AUVI_TAG)
+  const [picking, setPicking] = useState(false)
 
   async function loadThreads() {
     if (!athleteId) { setThreads([]); setLoading(false); return }
@@ -82,7 +89,14 @@ export default function StaffChat({ openThread }: { openThread?: string | null }
 
   const thread = threads.find(x => x.id === active) || null
   const isMember = (th: Thread) => th.crm_staff_members.some(m => m.user_id === me)
-  const canWrite = !!thread && (isMember(thread) || isAdmin)
+  const canWrite = !!thread && (isMember(thread) || isAdmin || isPlayer)
+  // chi si può taggare: il team dell'atleta, più AUVI per chi non è AUVI
+  const tagOpts = [
+    ...(isTeam ? [] : [{ id: AUVI_TAG, name: 'AUVI', role: 'admin' }]),
+    ...team.map(p => ({ id: p.pro_id, name: p.name || t(STAFF_ROLE[p.role] || p.role), role: p.role })),
+  ]
+  const nameOf = (uid: string) => team.find(p => p.pro_id === uid)?.name
+    || thread?.crm_staff_members.find(m => m.user_id === uid)?.name || t('Professionista')
   const others = (th: Thread) => th.crm_staff_members.filter(m => isMember(th) ? m.user_id !== me : true)
   const titleOf = (th: Thread) => th.title || others(th).map(m => m.name || t(STAFF_ROLE[m.role || ''] || 'Professionista')).join(' · ')
   const subOf = (th: Thread) => others(th).map(m => t(STAFF_ROLE[m.role || ''] || 'Professionista')).join(' · ')
@@ -96,11 +110,13 @@ export default function StaffChat({ openThread }: { openThread?: string | null }
     const { error } = await supabase.from('crm_staff_messages').insert({
       thread_id: thread.id, sender_id: me, sender_role: role,
       sender_name: isTeam ? `AUVI · ${name}` : name, body: text.trim() || att?.file_name || '',
+      mentions: tags.filter(x => x !== AUVI_TAG), mention_auvi: tags.includes(AUVI_TAG),
       ...(att || {}),
     })
     setBusy(false)
     if (error) { toast(error.message, 'err'); return }
-    setText(''); loadMsgs(thread.id); loadThreads()
+    if (tags.length) toast(t('Taggati: {names}').replace('{names}', tags.map(x => x === AUVI_TAG ? 'AUVI' : nameOf(x)).join(', ')))
+    setText(''); setTags([]); loadMsgs(thread.id); loadThreads()
   }
 
   async function toggleNotify() {
@@ -115,7 +131,7 @@ export default function StaffChat({ openThread }: { openThread?: string | null }
   if (!athleteId) return <div className="card"><Empty icon={<Icon name="users" size={30} strokeWidth={1.4} />} title={t('Scegli un atleta')} hint="" /></div>
   if (loading) return <Spinner />
 
-  const canCreate = !isPlayer && (isTeam || team.length > 0)
+  const canCreate = isTeam || team.length > 0
 
   return (
     <div className={`sc ${thread ? 'sc-open' : ''}`}>
@@ -125,9 +141,12 @@ export default function StaffChat({ openThread }: { openThread?: string | null }
       <div className="sc-list card">
         {isPlayer ? (
           <div className="sc-note">
-            <div style={{ fontWeight: 800, fontSize: 14 }}>{t('Il tuo staff')}</div>
+            <div className="flex between" style={{ alignItems: 'center', gap: 8 }}>
+              <div style={{ fontWeight: 800, fontSize: 14 }}>{t('Il tuo staff')}</div>
+              {canCreate && <button className="btn btn-sm btn-primary" onClick={() => setCreating(true)}><Icon name="plus" size={13} /> {t('Nuova')}</button>}
+            </div>
             <div className="faint" style={{ fontSize: 12.5, lineHeight: 1.45 }}>
-              {t('Qui i tuoi professionisti si coordinano tra loro. Puoi leggere tutto, senza dover rispondere.')}
+              {t('Qui i tuoi professionisti si coordinano tra loro. Puoi scrivere anche tu e taggare chi deve occuparsene.')}
             </div>
             <button className={`sc-toggle ${notify ? 'on' : ''}`} onClick={toggleNotify}>
               <span className="sc-knob" /> {notify ? t('Notifiche attive') : t('Notifiche spente')}
@@ -153,7 +172,7 @@ export default function StaffChat({ openThread }: { openThread?: string | null }
         {threads.length === 0 ? (
           <div style={{ padding: 18 }}>
             <Empty icon={<Icon name="message" size={28} strokeWidth={1.4} />} title={t('Nessuna conversazione')}
-              hint={isPlayer ? t('Quando il tuo staff si scrive, le conversazioni compaiono qui.') : t('Scrivi a un collega o crea un gruppo con chi segue l\'atleta.')} />
+              hint={isPlayer ? t('Apri una conversazione con il tuo staff con «Nuova».') : t('Scrivi a un collega o crea un gruppo con chi segue l\'atleta.')} />
           </div>
         ) : threads.map(th => (
           <button key={th.id} className={`sc-item ${active === th.id ? 'on' : ''}`} onClick={() => setActive(th.id)}>
@@ -193,13 +212,20 @@ export default function StaffChat({ openThread }: { openThread?: string | null }
                 <div className="chat">
                   {msgs.map(m => {
                     const mine = m.sender_id === me
+                    const tagged = (m.mentions || []).map(nameOf).concat(m.mention_auvi ? ['AUVI'] : [])
+                    const meTagged = !!me && ((m.mentions || []).includes(me) || (!!m.mention_auvi && isTeam))
                     return (
                       <div key={m.id} style={{ display: 'flex', flexDirection: 'column', alignItems: mine ? 'flex-end' : 'flex-start' }}>
                         {!mine && <div className="flex gap" style={{ marginBottom: 4, gap: 7, alignItems: 'center' }}>
                           <ChatAvatar name={m.sender_name} role={m.sender_role} photo={photoOf(m.sender_id, m.sender_role)} />
                           <span className="faint" style={{ fontSize: 11 }}>{m.sender_name} · {t(STAFF_ROLE[m.sender_role || ''] || 'Professionista')}</span>
                         </div>}
-                        <div className={`bubble ${mine ? 'bubble-out' : 'bubble-in'}`} style={{ whiteSpace: 'pre-wrap' }}>
+                        <div className={`bubble ${mine ? 'bubble-out' : 'bubble-in'}`}
+                          style={{ whiteSpace: 'pre-wrap', ...(meTagged ? { boxShadow: `0 0 0 2px ${TAG_C}` } : {}) }}>
+                          {tagged.length > 0 && <div className="sc-tagrow">
+                            {meTagged && <span className="sc-tag me">{t('Ti ha taggato')}</span>}
+                            {tagged.map((n, i) => <span key={i} className="sc-tag">@{n}</span>)}
+                          </div>}
                           {m.file_path && <ChatAttachment path={m.file_path} name={m.file_name} mime={m.file_mime} size={m.file_size} mine={mine} />}
                           {(!m.file_path || m.body !== m.file_name) && m.body}
                           <div className="bubble-meta">{fmtDateTime(m.created_at)}</div>
@@ -212,12 +238,50 @@ export default function StaffChat({ openThread }: { openThread?: string | null }
               )}
             </div>
             {canWrite ? (
-              <div style={{ borderTop: '1px solid var(--border)' }}>
+              <div style={{ borderTop: '1px solid var(--border)', position: 'relative' }}>
                 {attach.chip}
+                {tags.length > 0 && (
+                  <div className="sc-tagbar">
+                    <Icon name="at-sign" size={14} />
+                    <span style={{ fontWeight: 800 }}>{t('Stai taggando')}:</span>
+                    {tags.map(x => (
+                      <span key={x} className="sc-tag big">
+                        @{x === AUVI_TAG ? 'AUVI' : nameOf(x)}
+                        <button onClick={() => setTags(ts => ts.filter(y => y !== x))} aria-label={t('Rimuovi')}><Icon name="x" size={11} /></button>
+                      </span>
+                    ))}
+                    <span className="faint" style={{ fontSize: 11.5 }}>{t('riceveranno una notifica')}</span>
+                  </div>
+                )}
+                {picking && (
+                  <div className="sc-picker">
+                    <div style={{ fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', fontWeight: 800, padding: '4px 8px 6px' }}>{t('Tagga una persona')}</div>
+                    {tagOpts.length === 0 && <div className="faint" style={{ padding: 8, fontSize: 12.5 }}>{t('Nessun altro professionista collegato a questo atleta.')}</div>}
+                    {tagOpts.map(o => {
+                      const on = tags.includes(o.id)
+                      return (
+                        <button key={o.id} className={`sc-opt ${on ? 'on' : ''}`}
+                          onClick={() => { setTags(ts => on ? ts.filter(y => y !== o.id) : [...ts, o.id]); setText(x => x.replace(/@$/, '')); setPicking(false) }}>
+                          <span className="sc-av" style={{ width: 28, height: 28, fontSize: 11 }}>{initials(o.name)}</span>
+                          <span style={{ minWidth: 0, flex: 1 }}>
+                            <span style={{ display: 'block', fontWeight: 800, fontSize: 13 }}>{o.name}</span>
+                            <span className="faint" style={{ display: 'block', fontSize: 11 }}>{t(STAFF_ROLE[o.role] || o.role)}</span>
+                          </span>
+                          {on && <Icon name="check" size={14} />}
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
                 <div className="flex gap" style={{ padding: 12, gap: 6 }}>
                   {attach.button}
-                  <input className="input" placeholder={t('Scrivi allo staff…')} value={text}
-                    onChange={e => setText(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }} />
+                  <button type="button" className={`btn ${tags.length ? '' : 'btn-ghost'}`} title={t('Tagga una persona')} onClick={() => setPicking(v => !v)}
+                    style={{ padding: '0 10px', flexShrink: 0, fontWeight: 800, ...(tags.length ? { background: TAG_C, color: '#0A0A0A', borderColor: TAG_C } : {}) }}>
+                    <Icon name="at-sign" size={17} />{tags.length > 0 && <span style={{ marginLeft: 3 }}>{tags.length}</span>}
+                  </button>
+                  <input className="input" placeholder={t('Scrivi allo staff… (@ per taggare)')} value={text}
+                    onChange={e => { const v = e.target.value; setText(v); if (v.endsWith('@') && !picking) setPicking(true) }}
+                    onKeyDown={e => { if (e.key === 'Escape') setPicking(false); if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }} />
                   <button className="btn btn-primary" disabled={busy || (!text.trim() && !attach.pending)} onClick={send}>{busy && attach.uploading ? t('Carico…') : t('Invia')}</button>
                 </div>
               </div>
@@ -299,6 +363,15 @@ const SC_CSS = `
 .sc-toggle.on { color: var(--text); }
 .sc-toggle.on .sc-knob { background: var(--green, #1a9e55); }
 .sc-toggle.on .sc-knob::after { transform: translateX(12px); }
+.sc-tagrow { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
+.sc-tag { display: inline-flex; align-items: center; gap: 4px; background: #FFE600; color: #0A0A0A; border-radius: 999px; padding: 2px 8px; font-size: 11.5px; font-weight: 800; white-space: nowrap; }
+.sc-tag.me { background: #0A0A0A; color: #FFE600; }
+.sc-tag.big { font-size: 12.5px; padding: 3px 6px 3px 10px; }
+.sc-tag button { border: 0; background: rgba(0,0,0,.12); color: inherit; border-radius: 50%; width: 17px; height: 17px; display: grid; place-items: center; cursor: pointer; padding: 0; }
+.sc-tagbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 10px 14px 0; font-size: 12.5px; }
+.sc-picker { position: absolute; bottom: 100%; left: 12px; margin-bottom: 6px; width: 280px; max-height: 300px; overflow-y: auto; background: var(--card, #fff); border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 12px 32px rgba(0,0,0,.16); padding: 6px; z-index: 5; }
+.sc-opt { display: flex; align-items: center; gap: 9px; width: 100%; border: 0; background: transparent; color: var(--text); text-align: left; padding: 7px 8px; border-radius: 10px; cursor: pointer; }
+.sc-opt:hover, .sc-opt.on { background: var(--bg-2); }
 .sc-pick { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; cursor: pointer; }
 .sc-pick.on { border-color: var(--text); background: var(--bg-2); }
 .sc-pick img { width: 34px; height: 34px; border-radius: 10px; object-fit: cover; }
