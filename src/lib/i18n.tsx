@@ -3585,5 +3585,10 @@ const EN: Record<string, string> = {
   "Scarica immagine": "Download image",
   "Biglietto copiato": "Card copied",
   "Immagine non disponibile": "Image not available",
+  "Il team di": "The team of",
+  "Unisciti al team": "Join the team",
+  "Scarica Player Hub e collegati": "Download Player Hub and connect",
+  "Inquadra il QR con la fotocamera": "Scan the QR code with your camera",
+  "Preparo il biglietto…": "Preparing the card…",
 }
 
