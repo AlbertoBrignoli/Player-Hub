@@ -5,9 +5,9 @@ export const SUPERCUP_LOGO = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD
 
 // Stemmi aggiornati per id squadra API-Football: l'API a volte è indietro col crest ufficiale.
 // 553 Olympiacos: dal 2024-25 lo stemma ha 5 stelle (la 5ª, più grande, per la Conference League);
-// API-Football ha ancora quello con 4. File da Wikimedia (Olympiacos_FC_crest.svg).
+// API-Football ha ancora quello con 4. File fornito da AUVI (?v=2 per superare la cache).
 const TEAM_LOGO_BY_ID: Record<number, string> = {
-  553: '/loghi/olympiacos.png',
+  553: '/loghi/olympiacos.png?v=2',
 }
 
 // Corregge un URL logo di API-Football (…/football/teams/<id>.png) se abbiamo lo stemma aggiornato.
