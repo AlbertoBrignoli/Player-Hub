@@ -63,7 +63,7 @@ export default function Documents() {
   }
 
   const [sel, setSel] = useState('archivio')
-  const { archive, files, groups } = useProFiles(athleteId, rows)
+  const { files, groups, move, nameOf } = useProFiles(athleteId, rows)
 
   if (loading) return <Spinner />
 
@@ -88,55 +88,50 @@ export default function Documents() {
 
       <ProBoxes groups={groups} sel={sel} onSel={setSel} />
 
-      {sel === 'archivio' ? (
-        <div className="card">
-          {archive.length === 0 ? <Empty icon={<Icon name="archive" size={30} strokeWidth={1.4} />} title={t('Archivio vuoto')} hint={t("Carica contratti, documenti d'identità, referti medici…")} /> : (
-            <div className="list">
-              {archive.map(d => (
-                <div className="row" key={d.id}>
-                  <div style={{ width: 38, height: 38, borderRadius: 9, background: 'var(--surface-2)', display: 'grid', placeItems: 'center', fontSize: 17 }}>{fileIcon(d.mime)}</div>
-                  <div className="row-main">
-                    <div className="row-title">{d.name}</div>
-                    <div className="row-sub">{humanSize(d.size)} · {t('caricato {date}').replace('{date}', fmtDate(d.created_at))}</div>
+      <div className="card">
+        {(files[sel] || []).length === 0
+          ? (sel === 'archivio'
+              ? <Empty icon={<Icon name="archive" size={30} strokeWidth={1.4} />} title={t('Archivio vuoto')} hint={t("Carica contratti, documenti d'identità, referti medici…")} />
+              : <Empty icon={<Icon name="folder" size={30} strokeWidth={1.4} />} title={t('Nessun documento')}
+                  hint={t('I documenti caricati da questo professionista o mandati nella vostra chat compaiono qui.')} />)
+          : <div className="list">
+              {files[sel].map(f => (
+                <div className="row" key={f.key} style={{ flexWrap: 'wrap' }}>
+                  <div style={{ width: 38, height: 38, borderRadius: 9, background: 'var(--surface-2)', display: 'grid', placeItems: 'center', fontSize: 17 }}>{fileIcon(f.mime || null)}</div>
+                  <div className="row-main" style={{ minWidth: 160 }}>
+                    <div className="row-title" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</div>
+                    <div className="row-sub">{[f.sub && t(f.sub), f.date && fmtDate(f.date), f.size ? humanSize(f.size) : null,
+                      f.movedFrom ? t('spostato da {from}').replace('{from}', t(PRO[f.movedFrom]?.l || f.movedFrom)) : null].filter(Boolean).join(' · ')}</div>
                   </div>
-                  <Badge>{CATS[d.category] ? t(CATS[d.category]) : d.category}</Badge>
-                  <button className="btn btn-sm" onClick={() => open(d)}>{t('Apri')}</button>
-                  {canDelete(d) && <ConfirmButton onConfirm={() => remove(d)}>{t('Elimina')}</ConfirmButton>}
+                  {f.doc && <Badge>{CATS[f.doc.category] ? t(CATS[f.doc.category]) : f.doc.category}</Badge>}
+                  <Select value="" title={t('Sposta in un\'altra casella')} style={{ width: 'auto', maxWidth: 190 }}
+                    onChange={async e => {
+                      const to = e.target.value; if (!to) return
+                      if (await move(f, to)) toast(t('Spostato in {box}').replace('{box}', nameOf(to) || t(PRO[to].l)))
+                    }}>
+                    <option value="">{t('Sposta in…')}</option>
+                    {Object.keys(PRO).filter(k => k !== sel).map(k => (
+                      <option key={k} value={k}>{t(PRO[k].l)}{nameOf(k) ? ` · ${nameOf(k)}` : ''}</option>
+                    ))}
+                  </Select>
+                  <button className="btn btn-sm" onClick={() => openIn(f.bucket, f.path)}>{t('Apri')}</button>
+                  {f.doc && canDelete(f.doc) && <ConfirmButton onConfirm={() => remove(f.doc!)}>{t('Elimina')}</ConfirmButton>}
                 </div>
               ))}
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="card">
-          {(files[sel] || []).length === 0
-            ? <Empty icon={<Icon name="folder" size={30} strokeWidth={1.4} />} title={t('Nessun documento')}
-                hint={t('I documenti caricati da questo professionista o mandati nella vostra chat compaiono qui.')} />
-            : <div className="list">
-                {files[sel].map(f => (
-                  <div className="row" key={f.key}>
-                    <div style={{ width: 38, height: 38, borderRadius: 9, background: 'var(--surface-2)', display: 'grid', placeItems: 'center', fontSize: 17 }}>{fileIcon(f.mime || null)}</div>
-                    <div className="row-main">
-                      <div className="row-title" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</div>
-                      <div className="row-sub">{[f.sub && t(f.sub), f.date && fmtDate(f.date), f.size ? humanSize(f.size) : null].filter(Boolean).join(' · ')}</div>
-                    </div>
-                    <button className="btn btn-sm" onClick={() => openIn(f.bucket, f.path)}>{t('Apri')}</button>
-                  </div>
-                ))}
-              </div>}
-          {CHAT_OF[sel] && <div style={{ marginTop: 10 }}>
-            <button className="btn btn-sm btn-ghost" onClick={() => { try { sessionStorage.setItem('chat_channel', CHAT_OF[sel]) } catch { /* no-op */ } goto('messages') }}>
-              <Icon name="message" size={13} /> {t('Apri la chat')}
-            </button>
-          </div>}
-        </div>
-      )}
+            </div>}
+        {CHAT_OF[sel] && <div style={{ marginTop: 10 }}>
+          <button className="btn btn-sm btn-ghost" onClick={() => { try { sessionStorage.setItem('chat_channel', CHAT_OF[sel]) } catch { /* no-op */ } goto('messages') }}>
+            <Icon name="message" size={13} /> {t('Apri la chat')}
+          </button>
+        </div>}
+      </div>
     </div>
   )
 }
 
 // ---------- archivio diviso per professionista ----------
-type PFile = { key: string; name: string; sub?: string; date?: string | null; size?: number | null; mime?: string | null; bucket: string; path: string }
+type PFile = { key: string; name: string; sub?: string; date?: string | null; size?: number | null; mime?: string | null; bucket: string; path: string
+  doc?: Doc; movedFrom?: string }
 type Group = { key: string; label: string; name?: string | null; icon: string; count: number }
 
 const PRO: Record<string, { l: string; icon: string }> = {
@@ -169,18 +164,20 @@ function useProFiles(playerId: number | null, docs: Doc[]) {
   const [roles, setRoles] = useState<Record<string, string | null>>({})
   const [byGroup, setByGroup] = useState<Record<string, PFile[]>>({})
   const [team, setTeam] = useState<{ role: string; name: string | null }[]>([])
+  const [place, setPlace] = useState<Record<string, string>>({})
 
   useEffect(() => {
     if (!playerId) return
     let ok = true
     ;(async () => {
-      const [r, chat, w, tx, tm] = await Promise.all([
+      const [r, chat, w, tx, tm, pl] = await Promise.all([
         supabase.rpc('crm_doc_uploader_roles', { p_player: playerId }),
         supabase.from('crm_messages').select('id, channel, sender_name, created_at, file_path, file_name, file_mime, file_size')
           .eq('player_id', playerId).not('file_path', 'is', null).order('created_at', { ascending: false }),
         supabase.from('crm_wealth_items').select('id, title, created_at, attachments, response_attachments').eq('player_id', playerId),
         supabase.from('crm_tax_items').select('id, title, created_at, attachments, response_attachments').eq('player_id', playerId),
         supabase.from('crm_athlete_team').select('role, name').eq('player_id', playerId),
+        supabase.from('crm_doc_placements').select('file_path, group_key').eq('player_id', playerId),
       ])
       if (!ok) return
       const g: Record<string, PFile[]> = {}
@@ -189,14 +186,15 @@ function useProFiles(playerId: number | null, docs: Doc[]) {
         push(chanGroup(m.channel), { key: 'm' + m.id, name: m.file_name || 'file', sub: m.sender_name ? `${m.sender_name} · chat` : 'Chat',
           date: m.created_at, size: m.file_size, mime: m.file_mime, bucket: 'chat-files', path: m.file_path })
       const items = (k: string, bucket: string, rows: any[]) => rows.forEach(i => {
-        for (const a of i.attachments || []) if (a?.path) push(k, { key: a.path, name: a.name, sub: i.title, date: i.created_at, bucket, path: a.path })
-        for (const a of i.response_attachments || []) if (a?.path) push(k, { key: a.path, name: a.name, sub: i.title, date: i.created_at, bucket, path: a.path })
+        for (const a of [...(i.attachments || []), ...(i.response_attachments || [])])
+          if (a?.path) push(k, { key: a.path, name: a.name, sub: i.title, date: i.created_at, bucket, path: a.path })
       })
       items('wealth', 'wealth-docs', (w.data as any[]) || [])
       items('commercialista', 'tax-docs', (tx.data as any[]) || [])
       setByGroup(g)
       setRoles(Object.fromEntries(((r.data as any[]) || []).map(x => [x.id, x.role])))
       setTeam((tm.data as any[]) || [])
+      setPlace(Object.fromEntries(((pl.data as any[]) || []).map(x => [x.file_path, x.group_key])))
     })()
     return () => { ok = false }
   }, [playerId])
@@ -206,22 +204,38 @@ function useProFiles(playerId: number | null, docs: Doc[]) {
     const r = roles[d.id]
     return !r || r === 'admin' || r === 'player' ? 'archivio' : r
   }
-  const archive = docs.filter(d => docGroup(d) === 'archivio')
-  const files: Record<string, PFile[]> = { ...byGroup }
-  for (const d of docs) {
-    const k = docGroup(d)
-    if (k === 'archivio' || !d.file_path) continue
-    files[k] = [{ key: 'd' + d.id, name: d.name, sub: 'Caricato da lui', date: d.created_at, size: d.size, mime: d.mime, bucket: BUCKET, path: d.file_path }, ...(files[k] || [])]
+  // origine di ogni file, poi lo spostamento scelto dall'atleta o da AUVI
+  const all: { f: PFile; from: string }[] = [
+    ...docs.filter(d => d.file_path).map(d => ({ from: docGroup(d), f: {
+      key: 'd' + d.id, name: d.name, sub: docGroup(d) === 'archivio' ? undefined : 'Caricato da lui',
+      date: d.created_at, size: d.size, mime: d.mime, bucket: BUCKET, path: d.file_path!, doc: d } as PFile })),
+    ...Object.entries(byGroup).flatMap(([k, list]) => list.map(f => ({ f, from: k }))),
+  ]
+  const files: Record<string, PFile[]> = {}
+  for (const { f, from } of all) {
+    const k = place[f.path] && PRO[place[f.path]] ? place[f.path] : from
+    ;(files[k] ||= []).push({ ...f, movedFrom: k !== from ? from : undefined })
   }
+  const nameOf = (k: string) => team.find(x => x.role === k)?.name || null
   const keys = new Set<string>([...team.map(x => x.role), ...Object.keys(files)].filter(k => PRO[k]))
   const groups: Group[] = [
-    { key: 'archivio', label: PRO.archivio.l, icon: PRO.archivio.icon, count: archive.length },
+    { key: 'archivio', label: PRO.archivio.l, icon: PRO.archivio.icon, count: (files.archivio || []).length },
     ...Object.keys(PRO).filter(k => k !== 'archivio' && keys.has(k)).map(k => ({
-      key: k, label: PRO[k].l, icon: PRO[k].icon, count: (files[k] || []).length,
-      name: team.find(x => x.role === k)?.name || null,
+      key: k, label: PRO[k].l, icon: PRO[k].icon, count: (files[k] || []).length, name: nameOf(k),
     })),
   ]
-  return { archive, files, groups }
+
+  async function move(f: PFile, to: string) {
+    if (!playerId) return
+    const origin = f.movedFrom || Object.keys(files).find(k => files[k].some(x => x.key === f.key)) || 'archivio'
+    const res = to === origin
+      ? await supabase.from('crm_doc_placements').delete().eq('player_id', playerId).eq('file_path', f.path)
+      : await supabase.from('crm_doc_placements').upsert({ player_id: playerId, file_path: f.path, group_key: to, updated_at: new Date().toISOString() })
+    if (res.error) { toast(res.error.message, 'err'); return false }
+    setPlace(p => { const n = { ...p }; if (to === origin) delete n[f.path]; else n[f.path] = to; return n })
+    return true
+  }
+  return { files, groups, move, nameOf }
 }
 
 function ProBoxes({ groups, sel, onSel }: { groups: Group[]; sel: string; onSel: (k: string) => void }) {

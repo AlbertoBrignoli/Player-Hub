@@ -3620,5 +3620,9 @@ const EN: Record<string, string> = {
   "Scegli la foto": "Choose the photo",
   "Scegli lo sfondo": "Choose the background",
   "Le foto caricate in Media compaiono qui.": "Photos uploaded in Media appear here.",
+  "spostato da {from}": "moved from {from}",
+  "Sposta in un'altra casella": "Move to another box",
+  "Spostato in {box}": "Moved to {box}",
+  "Sposta in…": "Move to…",
 }
 
