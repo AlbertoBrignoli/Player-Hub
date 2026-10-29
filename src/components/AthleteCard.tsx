@@ -1,7 +1,8 @@
 // Biglietto da visita dell'atleta: sullo sfondo l'anteprima di Player Hub, con foto, nome,
 // squadra, la casella AUVI a cui mandare documenti e comunicazioni e il QR per scaricare l'app
 // e unirsi al team. Lo stesso disegno si vede, si scarica (.png, o .vcf come contatto) e si condivide.
-import { useEffect, useState } from 'react'
+// Si può cambiare la foto e mettere come sfondo una propria immagine in trasparenza (resta sul dispositivo).
+import { useEffect, useRef, useState } from 'react'
 import QRCode from 'qrcode'
 import { toast } from '../lib/toast'
 import { useLang } from '../lib/i18n'
@@ -45,25 +46,39 @@ const loadImg = (src: string, cors = false) => new Promise<HTMLImageElement | nu
 })
 
 type Labels = { team: string; send: string; join: string; joinSub: string; scan: string }
+export type Look = { photo?: string | null; bg?: string | null; alpha: number }
+
+// immagine che riempie il riquadro tagliando i bordi (come object-fit: cover)
+function cover(g: CanvasRenderingContext2D, im: HTMLImageElement, x: number, y: number, w: number, h: number) {
+  const k = Math.max(w / im.width, h / im.height)
+  const sw = w / k, sh = h / k
+  g.drawImage(im, (im.width - sw) / 2, (im.height - sh) / 2, sw, sh, x, y, w, h)
+}
 
 // 1200×630 (stesso formato dell'anteprima dell'app), disegnato a 2x per essere nitido
-async function render(d: CardData, L: Labels, en: boolean): Promise<Blob> {
+async function render(d: CardData, L: Labels, en: boolean, look: Look): Promise<Blob> {
   const W = 1200, H = 630, S = 2
   const c = document.createElement('canvas'); c.width = W * S; c.height = H * S
   const g = c.getContext('2d')!
   g.scale(S, S)
   const joinUrl = `${APP}/${en ? 'download' : 'scarica'}`
+  const photoSrc = look.photo || d.photo
   const [bg, logo, photo, qr] = await Promise.all([
-    loadImg(en ? '/og-player-hub-en.jpg' : '/og-player-hub.jpg'),
+    loadImg(look.bg || (en ? '/og-player-hub-en.jpg' : '/og-player-hub.jpg')),
     loadImg('/brand/auvi-wordmark-white.svg'),
-    d.photo ? loadImg(d.photo, true) : Promise.resolve(null),
+    photoSrc ? loadImg(photoSrc, !photoSrc.startsWith('data:')) : Promise.resolve(null),
     QRCode.toDataURL(joinUrl, { width: 600, margin: 1, errorCorrectionLevel: 'M', color: { dark: '#0A0A0A', light: '#FFFFFF' } }).then(u => loadImg(u)),
   ])
   g.fillStyle = '#0A0A0A'; g.fillRect(0, 0, W, H)
-  if (bg) g.drawImage(bg, 0, 0, W, H)
+  if (bg && look.bg) { g.globalAlpha = look.alpha; cover(g, bg, 0, 0, W, H); g.globalAlpha = 1 }
+  else if (bg) g.drawImage(bg, 0, 0, W, H)
   // velo scuro a sinistra: si legge il biglietto, a destra resta il telefono con l'app
   const grad = g.createLinearGradient(0, 0, 860, 0)
-  grad.addColorStop(0, 'rgba(10,10,10,1)'); grad.addColorStop(0.8, 'rgba(10,10,10,1)'); grad.addColorStop(0.9, 'rgba(10,10,10,.75)'); grad.addColorStop(1, 'rgba(10,10,10,0)')
+  if (look.bg) {   // con la foto scelta il velo è più leggero, perché la foto si veda
+    grad.addColorStop(0, 'rgba(10,10,10,.82)'); grad.addColorStop(0.65, 'rgba(10,10,10,.55)'); grad.addColorStop(1, 'rgba(10,10,10,0)')
+  } else {
+    grad.addColorStop(0, 'rgba(10,10,10,1)'); grad.addColorStop(0.8, 'rgba(10,10,10,1)'); grad.addColorStop(0.9, 'rgba(10,10,10,.75)'); grad.addColorStop(1, 'rgba(10,10,10,0)')
+  }
   g.fillStyle = grad; g.fillRect(0, 0, W, H)
   g.fillStyle = '#FFE600'; g.fillRect(0, 0, 8, H)
 
@@ -82,7 +97,7 @@ async function render(d: CardData, L: Labels, en: boolean): Promise<Blob> {
   // foto e nome
   const px = 64, py = 104, ps = 124
   g.save(); g.beginPath(); g.arc(px + ps / 2, py + ps / 2, ps / 2, 0, Math.PI * 2); g.clip()
-  if (photo) { g.fillStyle = '#fff'; g.fillRect(px, py, ps, ps); g.drawImage(photo, px, py, ps, ps) }
+  if (photo) { g.fillStyle = '#fff'; g.fillRect(px, py, ps, ps); cover(g, photo, px, py, ps, ps) }
   else {
     g.fillStyle = '#FFE600'; g.fillRect(px, py, ps, ps)
     g.fillStyle = '#0A0A0A'; g.font = `900 46px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'
@@ -131,13 +146,30 @@ export default function AthleteCard({ d }: { d: CardData }) {
   }
   const [blob, setBlob] = useState<Blob | null>(null)
   const [url, setUrl] = useState<string | null>(null)
+  const [look, setLook] = useState<Look>({ alpha: 0.55 })
+  const [editing, setEditing] = useState(false)
+  const photoRef = useRef<HTMLInputElement>(null)
+  const bgRef = useRef<HTMLInputElement>(null)
+
+  // le immagini scelte si leggono in locale (lato lungo max 1600 px), non si caricano da nessuna parte
+  async function pick(f: File | undefined, key: 'photo' | 'bg') {
+    if (!f) return
+    try {
+      const bmp = await createImageBitmap(f)
+      const k = Math.min(1, 1600 / Math.max(bmp.width, bmp.height))
+      const c = document.createElement('canvas'); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k)
+      c.getContext('2d')!.drawImage(bmp, 0, 0, c.width, c.height)
+      const src = c.toDataURL('image/jpeg', 0.88)
+      setLook(l => ({ ...l, [key]: src }))
+    } catch { toast(t('Immagine non disponibile'), 'err') }
+  }
 
   useEffect(() => {
     let ok = true, u: string | null = null
-    render(d, L, en).then(b => { if (!ok) return; u = URL.createObjectURL(b); setBlob(b); setUrl(u) })
+    render(d, L, en, look).then(b => { if (!ok) return; u = URL.createObjectURL(b); setBlob(b); setUrl(u) })
       .catch(() => { if (ok) setUrl(null) })
     return () => { ok = false; if (u) URL.revokeObjectURL(u) }
-  }, [d.name, d.email, d.photo, d.team, d.position, lang]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [d.name, d.email, d.photo, d.team, d.position, lang, look]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const file = `${safe(d.name)}-player-hub`
   function savePng() { if (blob) download(blob, `${file}.png`); else toast(t('Immagine non disponibile'), 'err') }
@@ -165,8 +197,34 @@ export default function AthleteCard({ d }: { d: CardData }) {
         <button className="btn btn-sm btn-primary" onClick={share}><Icon name="send" size={13} /> {t('Condividi')}</button>
         <button className="btn btn-sm" onClick={savePng}><Icon name="image" size={13} /> {t('Scarica immagine')}</button>
         <button className="btn btn-sm" onClick={saveVcf}><Icon name="download" size={13} /> {t('Scarica contatto')}</button>
+        <button className={`btn btn-sm ${editing ? 'btn-primary' : ''}`} onClick={() => setEditing(v => !v)}><Icon name="sliders" size={13} /> {t('Personalizza')}</button>
         <a className="btn btn-sm btn-ghost" href={`mailto:${d.email}`}><Icon name="mail" size={13} /> {d.email}</a>
       </div>
+      {editing && (
+        <div className="card" style={{ marginTop: 10, display: 'grid', gap: 12 }}>
+          <div className="flex gap" style={{ alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <span style={{ fontWeight: 800, fontSize: 13, width: 96 }}>{t('Foto')}</span>
+            <button className="btn btn-sm" onClick={() => photoRef.current?.click()}><Icon name="camera" size={13} /> {t('Scegli foto')}</button>
+            {look.photo && <button className="btn btn-sm btn-ghost" onClick={() => setLook(l => ({ ...l, photo: null }))}>{t('Usa la foto del profilo')}</button>}
+          </div>
+          <div className="flex gap" style={{ alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <span style={{ fontWeight: 800, fontSize: 13, width: 96 }}>{t('Sfondo')}</span>
+            <button className="btn btn-sm" onClick={() => bgRef.current?.click()}><Icon name="image" size={13} /> {t('Scegli una foto di sfondo')}</button>
+            {look.bg && <button className="btn btn-sm btn-ghost" onClick={() => setLook(l => ({ ...l, bg: null }))}>{t('Torna a Player Hub')}</button>}
+          </div>
+          {look.bg && (
+            <label className="flex gap" style={{ alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <span style={{ fontWeight: 800, fontSize: 13, width: 96 }}>{t('Trasparenza')}</span>
+              <input type="range" min={15} max={100} value={Math.round(look.alpha * 100)} style={{ flex: 1, minWidth: 160 }}
+                onChange={e => setLook(l => ({ ...l, alpha: Number(e.target.value) / 100 }))} />
+              <span className="faint" style={{ fontSize: 12, width: 38, textAlign: 'right' }}>{Math.round(look.alpha * 100)}%</span>
+            </label>
+          )}
+          <div className="faint" style={{ fontSize: 11.5 }}>{t('Le foto scelte restano sul tuo dispositivo e servono solo a creare il biglietto.')}</div>
+          <input ref={photoRef} type="file" accept="image/*" hidden onChange={e => { pick(e.target.files?.[0], 'photo'); e.target.value = '' }} />
+          <input ref={bgRef} type="file" accept="image/*" hidden onChange={e => { pick(e.target.files?.[0], 'bg'); e.target.value = '' }} />
+        </div>
+      )}
     </div>
   )
 }

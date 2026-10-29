@@ -3607,5 +3607,13 @@ const EN: Record<string, string> = {
   "riceveranno una notifica": "they'll get a notification",
   "Tagga una persona": "Tag someone",
   "Scrivi allo staff… (@ per taggare)": "Write to the staff… (@ to tag)",
+  "Personalizza": "Customize",
+  "Scegli foto": "Choose photo",
+  "Usa la foto del profilo": "Use profile photo",
+  "Scegli una foto di sfondo": "Choose a background photo",
+  "Torna a Player Hub": "Back to Player Hub",
+  "Trasparenza": "Opacity",
+  "Le foto scelte restano sul tuo dispositivo e servono solo a creare il biglietto.": "The photos you choose stay on your device and are only used to create the card.",
+  "Sfondo": "Background",
 }
 
