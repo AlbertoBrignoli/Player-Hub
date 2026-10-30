@@ -60,7 +60,8 @@ export interface Player {
 }
 
 export interface ShippingInfo {
-  country?: string; city?: string; cap?: string; address?: string; phone?: string; email?: string
+  recipient_name?: string; address?: string; address2?: string; cap?: string; city?: string; province?: string
+  country?: string; phone?: string; email?: string; delivery_notes?: string
   ref_name?: string; ref_relation?: string; ref_phone?: string; ref_email?: string
 }
 export interface EquipmentInfo {

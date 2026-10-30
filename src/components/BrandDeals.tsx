@@ -11,6 +11,8 @@ import { useAthlete } from '../lib/athlete'
 import { useLang } from '../lib/i18n'
 import { Modal, Field, Input, Textarea, Spinner, Empty } from './ui'
 import Icon from './Icon'
+import { useGiftOffers, giftRoute, isExpired } from './BrandGifting'
+import { goto } from '../lib/route'
 
 type Deal = {
   id: string; brand_name: string; tagline: string | null; description: string | null
@@ -38,6 +40,9 @@ export default function BrandDeals({ compact = false }: { compact?: boolean }) {
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState('')
   const [edit, setEdit] = useState<Partial<Deal> | null>(null)
+  // gifting dedicato: lo vedono solo i giocatori destinatari e AUVI (RLS)
+  const gifts = useGiftOffers()
+  const giftFor = (d: Deal) => gifts.find(g => g.deal_id === d.id && g.active)
 
   // chi può attivare per l'atleta: l'atleta stesso, AUVI, creator e procuratore
   const canActivate = !!athleteId && (role === 'player' || isAdmin || role === 'creator' || role === 'agente')
@@ -111,10 +116,11 @@ export default function BrandDeals({ compact = false }: { compact?: boolean }) {
         {deals.map(d => {
           const code = codes[d.id]
           const dActs = acts.filter(a => a.deal_id === d.id)
+          const gift = giftFor(d)
           return (
             <div key={d.id} className="bd-card" style={{ opacity: d.active ? 1 : 0.55 }}>
               <a className="bd-cover" href={d.shop_url} target="_blank" rel="noopener noreferrer"
-                onClick={e => { e.preventDefault(); openShop(d) }} style={{ background: d.accent_color || '#111' }}>
+                onClick={e => { e.preventDefault(); if (gift) goto(giftRoute(gift.id)); else openShop(d) }} style={{ background: d.accent_color || '#111' }}>
                 {d.cover_url && <div className="bd-img" style={{ backgroundImage: `url(${d.cover_url})` }} />}
                 <div className="bd-shade" />
                 {(labels[d.id] || d.discount_label) && <div className="bd-badge">{labels[d.id] || d.discount_label}</div>}
@@ -124,10 +130,17 @@ export default function BrandDeals({ compact = false }: { compact?: boolean }) {
                     : <div className="bd-name">{d.brand_name}</div>}
                   {tx(d, 'tagline', lang) && <div className="bd-tag">{tx(d, 'tagline', lang)}</div>}
                 </div>
-                <span className="bd-go">{t('Vai allo shop')} ↗</span>
+                <span className="bd-go">{gift ? t('Gifting dedicato') + ' →' : t('Vai allo shop') + ' ↗'}</span>
               </a>
 
               <div className="bd-body">
+                {gift && (
+                  <button className="bd-gift" onClick={() => goto(giftRoute(gift.id))}>
+                    <span className="bd-gift-k">{isExpired(gift) ? t('Offerta scaduta') : isAdmin ? t('Riservato ai destinatari') : t('Riservato a te')}</span>
+                    <span className="bd-gift-t">{t(gift.title)}</span>
+                    <span className="bd-gift-s">{t('Scopri la selezione, scegli i capi e indica le taglie')} →</span>
+                  </button>
+                )}
                 {tx(d, 'description', lang) && <div className="bd-desc">{tx(d, 'description', lang)}</div>}
 
                 {code ? (
@@ -322,6 +335,10 @@ a.bd-cta { text-decoration: none; display: inline-flex; align-items: center; }
 .bd-name { font-size: 24px; font-weight: 900; letter-spacing: -.5px; }
 .bd-tag { font-size: 13px; opacity: .9; }
 .bd-body { padding: 14px 16px 16px; display: grid; gap: 12px; }
+.bd-gift { display: grid; gap: 3px; text-align: left; cursor: pointer; padding: 14px; border-radius: 14px; border: 0; background: #111; color: #fff; }
+.bd-gift-k { font-size: 10.5px; letter-spacing: 1.4px; text-transform: uppercase; font-weight: 800; color: var(--yellow, #F5D400); }
+.bd-gift-t { font-size: 17px; font-weight: 900; letter-spacing: -.3px; }
+.bd-gift-s { font-size: 12.5px; opacity: .8; font-weight: 600; }
 .bd-desc { font-size: 13.5px; line-height: 1.5; color: var(--text-dim); }
 .bd-cta { width: 100%; justify-content: center; padding: 13px 16px; font-size: 15px; }
 .bd-code { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 2px 10px; text-align: left; cursor: pointer; padding: 12px 14px; border-radius: 14px; border: 2px dashed var(--text); background: var(--bg-2); color: var(--text); animation: bdIn .35s ease; }

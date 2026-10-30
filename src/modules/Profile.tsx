@@ -7,6 +7,8 @@ import Icon from '../components/Icon'
 import AthleteCard from '../components/AthleteCard'
 import { useAuth } from '../auth/AuthContext'
 import { fmtDate } from '../lib/format'
+import { useRouteParam, goto } from '../lib/route'
+import { missingAddress, GiftRequestsList } from '../components/BrandGifting'
 import type { Player, ShippingInfo, EquipmentInfo, ClubContacts } from '../lib/types'
 
 type Tab = 'spedizioni' | 'equipment' | 'contatti'
@@ -19,16 +21,20 @@ export default function Profile() {
   const { t } = useLang()
   const [player, setPlayer] = useState<Player | null>(null)
   const [loading, setLoading] = useState(true)
-  const [tab, setTab] = useState<Tab>('spedizioni')
+  // dall'offerta gifting: #/profile?tab=spedizioni&back=<route dell'offerta>
+  const wantTab = useRouteParam('tab') as Tab | null
+  const back = useRouteParam('back')
+  const [tab, setTab] = useState<Tab>(wantTab || 'spedizioni')
+  useEffect(() => { if (wantTab) setTab(wantTab) }, [wantTab])
   const [shipping, setShipping] = useState<ShippingInfo>({})
   const [equipment, setEquipment] = useState<EquipmentInfo>({})
   const [contacts, setContacts] = useState<ClubContacts>({})
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
-  const [showPw, setShowPw] = useState(false)
+    const [showPw, setShowPw] = useState(false)
   // casella AUVI dell'atleta: dove il team manda documenti e comunicazioni
   const [mailbox, setMailbox] = useState<string | null>(null)
-  const { role } = useAuth()
+  const { role, isAdmin } = useAuth()
   const isTeam = role !== 'admin' && role !== 'player'
   useEffect(() => { if (isTeam && tab === 'spedizioni') setTab('equipment') }, [isTeam]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
@@ -99,6 +105,9 @@ export default function Profile() {
         <AthleteCard d={{ name: player.name || '', position: player.position, team: player.team_name, photo: player.photo_url, email: mailbox }} />
       )}
 
+      {/* richieste brand dell'atleta (gifting): le vede il suo AUVI Advisor */}
+      {isAdmin && athleteId && <div style={{ marginBottom: 18 }}><GiftRequestsList playerId={athleteId} /></div>}
+
       {/* Contratto + link esterni */}
       {(player.contract_expiry || player.transfermarkt_url || player.sofascore_url) && (
         <div className="card" style={{ padding: 18, marginBottom: 18 }}>
@@ -136,15 +145,25 @@ export default function Profile() {
       <div className="card" style={{ padding: 20 }}>
         {tab === 'spedizioni' && (
           <>
-            <div style={section}>{t("Indirizzo principale")}</div>
+            {back && (
+              <div style={{ padding: '10px 12px', borderRadius: 12, background: 'var(--bg-2)', border: '1px solid var(--border)', fontSize: 13, lineHeight: 1.5 }}>
+                {t('Inserisci o verifica qui il tuo indirizzo di spedizione e salva: poi torna all\'offerta per completare la richiesta. La tua selezione resta salvata.')}
+              </div>
+            )}
+            <div style={section}>{t("Indirizzo di spedizione")}</div>
             <div style={grid}>
-              <Field label={t("Paese")}><Input value={s('country')} onChange={ev => setS('country', ev.target.value)} placeholder={t("Italia")} /></Field>
-              <Field label={t("Città")}><Input value={s('city')} onChange={ev => setS('city', ev.target.value)} /></Field>
-              <Field label={t("CAP")}><Input value={s('cap')} onChange={ev => setS('cap', ev.target.value)} /></Field>
-              <Field label={t("Indirizzo")}><Input value={s('address')} onChange={ev => setS('address', ev.target.value)} /></Field>
-              <Field label={t("Telefono")}><Input value={s('phone')} onChange={ev => setS('phone', ev.target.value)} placeholder="+39…" /></Field>
+              <Field label={t("Nome e cognome del destinatario") + ' *'}><Input value={s('recipient_name')} onChange={ev => setS('recipient_name', ev.target.value)} placeholder={player.name || ''} /></Field>
+              <Field label={t("Via e numero civico") + ' *'}><Input value={s('address')} onChange={ev => setS('address', ev.target.value)} /></Field>
+              <Field label={t("Interno, scala o presso")}><Input value={s('address2')} onChange={ev => setS('address2', ev.target.value)} placeholder={t("Es. scala B, int. 4 · presso …")} /></Field>
+              <Field label={t("CAP") + ' *'}><Input value={s('cap')} onChange={ev => setS('cap', ev.target.value)} /></Field>
+              <Field label={t("Città") + ' *'}><Input value={s('city')} onChange={ev => setS('city', ev.target.value)} /></Field>
+              <Field label={t("Provincia o regione")}><Input value={s('province')} onChange={ev => setS('province', ev.target.value)} placeholder={t("Es. MI (obbligatoria in Italia)")} /></Field>
+              <Field label={t("Paese") + ' *'}><Input value={s('country')} onChange={ev => setS('country', ev.target.value)} placeholder={t("Italia")} /></Field>
+              <Field label={t("Telefono per la consegna") + ' *'}><Input value={s('phone')} onChange={ev => setS('phone', ev.target.value)} placeholder="+39…" /></Field>
               <Field label="Email"><Input value={s('email')} onChange={ev => setS('email', ev.target.value)} placeholder="email@…" /></Field>
+              <Field label={t("Note di consegna")}><Input value={s('delivery_notes')} onChange={ev => setS('delivery_notes', ev.target.value)} placeholder={t("Es. citofono, orari, portineria")} /></Field>
             </div>
+            <div className="faint" style={{ fontSize: 11.5, marginTop: 8 }}>{t('* necessario per le spedizioni dei brand')}</div>
             <div style={section}>{t("Persona di riferimento")}</div>
             <div style={grid}>
               <Field label={t("Nome")}><Input value={s('ref_name')} onChange={ev => setS('ref_name', ev.target.value)} /></Field>
@@ -222,11 +241,19 @@ export default function Profile() {
           </>
         )}
 
-        <div className="flex gap" style={{ marginTop: 22, alignItems: 'center' }}>
+        <div className="flex gap" style={{ marginTop: 22, alignItems: 'center', flexWrap: 'wrap' }}>
           <button className="btn btn-primary" onClick={save} disabled={saving}>
             {saving ? t("Salvo…") : t("Salva")}
           </button>
           {saved && <span className="faint" style={{ color: 'var(--green)', fontSize: 13 }}>{t("Salvato ✓")}</span>}
+          {back && tab === 'spedizioni' && missingAddress(shipping).length > 0 && (
+            <span className="faint" style={{ fontSize: 12, flexBasis: '100%' }}>{t('Mancano')}: {missingAddress(shipping).map(m => t(m)).join(', ')}</span>
+          )}
+          {back && tab === 'spedizioni' && (
+            <button className="btn" style={{ marginLeft: 'auto' }} onClick={async () => { await save(); goto(back) }}>
+              {t("Salva e torna all'offerta")} →
+            </button>
+          )}
         </div>
       </div>
     </div>

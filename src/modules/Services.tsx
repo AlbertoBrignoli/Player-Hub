@@ -7,11 +7,12 @@ import { useLang } from '../lib/i18n'
 import { Modal, Field, Textarea, Select, Empty, Spinner } from '../components/ui'
 import Icon from '../components/Icon'
 import { fmtDate } from '../lib/format'
-import { useRouteParam } from '../lib/route'
+import { useRouteParam, goto } from '../lib/route'
 import ServiceDetail from '../components/ServiceDetail'
 import RequestThread from '../components/RequestThread'
 import type { Service } from '../components/ServiceDetail'
 import BrandDeals from '../components/BrandDeals'
+import { GiftOfferView, GiftRequestsList } from '../components/BrandGifting'
 
 // Store dei servizi AUVI (redesign UX handoff): l'atleta sfoglia i servizi
 // come in un marketplace, apre la scheda del partner, compila il questionario
@@ -103,6 +104,10 @@ export default function Services() {
   // dalla notifica "Codice sconto attivato": #/services?tab=brand
   const wantedTab = useRouteParam('tab')
   useEffect(() => { if (wantedTab === 'brand') { setTab('store'); setCat(BRAND_CAT) } }, [wantedTab])
+  // Brand → gifting dedicato (#/services?tab=brand&gift=<offerta>) e richiesta dalle notifiche (?gift_req=<id>)
+  const giftId = useRouteParam('gift')
+  const giftReq = useRouteParam('gift_req')
+  useEffect(() => { if (giftReq) setTab('requests') }, [giftReq])
 
   // link diretto a una scheda: #/services?service=<id o nome partner> (es. dalla Performance)
   const wanted = useRouteParam('service')
@@ -132,6 +137,8 @@ export default function Services() {
   const firstName = (activeAthlete?.name || '').trim().split(/\s+/)[0] || t('Atleta')
 
   if (loading) return <Spinner />
+
+  if (giftId) return <GiftOfferView offerId={giftId} onBack={() => goto('services?tab=brand')} />
 
   if (open) {
     return (
@@ -175,6 +182,7 @@ export default function Services() {
         })}
       </div>
 
+      {tab === 'requests' && <GiftRequestsList openId={giftReq} />}
       {tab === 'requests' ? (
         <RequestsView reqs={reqs} isPlayer={isPlayer} isAdmin={isAdmin} openReq={wantedReq}
           athleteName={athleteName} onManage={setManage} onEmptyGoStore={() => setTab('store')} />
