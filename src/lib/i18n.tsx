@@ -3699,7 +3699,8 @@ const EN: Record<string, string> = {
   "Da verificare": "To be checked",
   "Spedita": "Shipped",
   "CiaoGym — Gifting dedicato": "CiaoGym — Dedicated gifting",
-  "Una selezione di capi CiaoGym in omaggio, riservata a Lorenzo Pirola e Nadir Zortea. Scopri la selezione, scegli i capi e indica le taglie. AUVI confermerà la disponibilità e organizzerà la spedizione.": "A selection of complimentary CiaoGym items, reserved for Lorenzo Pirola and Nadir Zortea. Browse the selection, choose your items and sizes. AUVI will confirm availability and arrange shipping.",
   "Riservato ai destinatari": "Reserved for the recipients",
+  "Una selezione di capi CiaoGym in omaggio, riservata a Lorenzo Pirola. Scopri la selezione, scegli i capi e indica le taglie. AUVI confermerà la disponibilità e organizzerà la spedizione.": "A selection of complimentary CiaoGym items, reserved for Lorenzo Pirola. Browse the selection, choose your items and sizes. AUVI will confirm availability and arrange shipping.",
+  "Una selezione di capi CiaoGym in omaggio, riservata a Nadir Zortea. Scopri la selezione, scegli i capi e indica le taglie. AUVI confermerà la disponibilità e organizzerà la spedizione.": "A selection of complimentary CiaoGym items, reserved for Nadir Zortea. Browse the selection, choose your items and sizes. AUVI will confirm availability and arrange shipping.",
 }
 

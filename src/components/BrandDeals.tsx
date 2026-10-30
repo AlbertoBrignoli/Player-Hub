@@ -42,7 +42,11 @@ export default function BrandDeals({ compact = false }: { compact?: boolean }) {
   const [edit, setEdit] = useState<Partial<Deal> | null>(null)
   // gifting dedicato: lo vedono solo i giocatori destinatari e AUVI (RLS)
   const gifts = useGiftOffers()
-  const giftFor = (d: Deal) => gifts.find(g => g.deal_id === d.id && g.active)
+  // un'offerta per atleta: si apre quella dell'atleta selezionato (AUVI la vede anche senza selezione)
+  const giftFor = (d: Deal) => {
+    const mine = gifts.filter(g => g.deal_id === d.id && g.active)
+    return mine.find(g => !!athleteId && g.recipients.includes(athleteId)) || (isAdmin && !athleteId ? mine[0] : undefined)
+  }
 
   // chi può attivare per l'atleta: l'atleta stesso, AUVI, creator e procuratore
   const canActivate = !!athleteId && (role === 'player' || isAdmin || role === 'creator' || role === 'agente')
