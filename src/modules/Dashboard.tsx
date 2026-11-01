@@ -173,7 +173,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
   const { profile, role, isTeam } = useAuth()
   const { athleteId, athleteTz } = useAthlete()
   const { t, lang } = useLang()
-  const { canEvent, canTask } = useQuickAddPermissions()
+  const { canEvent } = useQuickAddPermissions()
   const [loading, setLoading] = useState(true)
   const [player, setPlayer] = useState<Player | null>(null)
   const [matches, setMatches] = useState<Match[]>([])
@@ -188,6 +188,15 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
   // l'unica azione attiva dell'atleta: il programma settimanale del club
   const [planMissing, setPlanMissing] = useState(false)
   const [adding, setAdding] = useState<'event' | 'task' | null>(null)
+  // Task aperti dell'atleta (attività + documenti richiesti dal commercialista): stesso conteggio della pagina Task
+  const [openTasks, setOpenTasks] = useState(0)
+  useEffect(() => {
+    if (!athleteId) { setOpenTasks(0); return }
+    Promise.all([
+      supabase.from('crm_tasks').select('id', { count: 'exact', head: true }).eq('player_id', athleteId).neq('status', 'done'),
+      supabase.from('crm_tax_items').select('id', { count: 'exact', head: true }).eq('player_id', athleteId).eq('kind', 'richiesta').eq('status', 'aperto'),
+    ]).then(([a, b]) => setOpenTasks((a.count || 0) + (b.count || 0)))
+  }, [athleteId])
   const isPlayer = role === 'player'
 
   useEffect(() => {
@@ -308,13 +317,13 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
     ? { key: 'media', label: t('Foto'), icon: 'image', run: () => goto('media?tab=cartelle'), badge: toApprove.length }
     : { key: 'media', label: t('Foto'), icon: 'image', run: () => goto('media?tab=cartelle'), badge: toApprove.length })
   if (canEvent) qas.push({ key: 'event', label: t('Impegno'), icon: 'calendar', run: () => setAdding('event') })
-  if (canTask) qas.push({ key: 'task', label: t('Task'), icon: 'check-square', run: () => setAdding('task') })
+  qas.push({ key: 'tasks', label: t('Task'), icon: 'check-square', run: () => goto('tasks'), badge: openTasks })
   qas.push({ key: 'chat', label: t('Chat'), icon: 'message', run: () => goto('messages') })
   const quick = (
     <nav className="home-sec home-qas" aria-label={t('Azioni rapide')} style={{ gridTemplateColumns: `repeat(${qas.length}, minmax(0, 1fr))` }}>
       {qas.map(q => (
         <button key={q.key} className={`home-qa${q.badge ? ' primary' : ''}`} onClick={q.run}
-          aria-label={q.badge ? `${q.label}: ${q.badge} ${t('da approvare')}` : q.label}>
+          aria-label={q.badge ? `${q.label}: ${q.badge} ${q.key === 'tasks' ? t('da fare') : t('da approvare')}` : q.label}>
           <span className="home-qa-ic">
             <Icon name={q.icon} size={21} strokeWidth={1.7} />
             {!!q.badge && <span className="home-qa-badge">{q.badge > 99 ? '99+' : q.badge}</span>}
