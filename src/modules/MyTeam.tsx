@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAthlete } from '../lib/athlete'
 import { useLang } from '../lib/i18n'
+import { whatsappUrl } from '../lib/ics'
 import { useAuth } from '../auth/AuthContext'
 import { initials } from '../lib/format'
 import Icon from '../components/Icon'
@@ -227,9 +228,9 @@ function MemberCard({ name, roleLabel, icon, title, agency, photo, logo, email, 
         {onOpen && <button className="btn btn-sm btn-ghost" style={{ paddingLeft: 0, whiteSpace: 'nowrap' }} onClick={e => { stop(e); onOpen() }}>{t('Vedi profilo')} →</button>}
         <span style={{ flex: 1 }} />
         {email && <a className="btn-ghost" style={ico} title={email} href={`mailto:${email}`} onClick={stop}><Icon name="mail" size={15} /></a>}
-        {phone && <a className="btn-ghost" style={ico} title={phone} href={`tel:${phone.replace(/\s/g, '')}`} onClick={stop}><Icon name="smartphone" size={15} /></a>}
-        {whatsapp && <a className="btn-ghost" style={ico} title="WhatsApp" target="_blank" rel="noreferrer" onClick={stop}
-          href={`https://wa.me/${whatsapp.replace(/[^0-9]/g, '')}`}><Icon name="message" size={15} /></a>}
+        {/* il telefono apre WhatsApp: è il canale che usano tutti */}
+        {(whatsapp || phone) && <a className="btn-ghost" style={ico} title={`WhatsApp · ${whatsapp || phone}`} target="_blank" rel="noreferrer" onClick={stop}
+          href={whatsappUrl(whatsapp || phone!)}><Icon name="smartphone" size={15} /></a>}
       </div>
     </div>
   )

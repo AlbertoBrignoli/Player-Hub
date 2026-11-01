@@ -8,6 +8,7 @@ import { ProImages } from '../components/ProImages'
 import { toast } from '../lib/toast'
 import type { CoachProfile } from '../lib/types'
 import { useLang } from '../lib/i18n'
+import { whatsappUrl } from '../lib/ics'
 
 const ALL_SPEC = ['Performance', 'Strength', 'Return To Play', 'Speed', 'Mobility', 'Recovery', 'Prevenzione infortuni']
 const ALL_SERV = ['Allenamento Online', 'Allenamento in presenza', 'Programmi personalizzati', 'Test atletici', 'Valutazioni', 'Video Analisi']
@@ -119,7 +120,7 @@ export default function FitnessCoachProfile({ goto }: { goto?: (r: string) => vo
 
   /* ---------------- VIEW ---------------- */
   const c = p.contacts || {}
-  const links: [string, string | undefined][] = [['Email', c.email ? `mailto:${c.email}` : undefined], ['Telefono', c.phone ? `tel:${c.phone}` : undefined], ['WhatsApp', c.whatsapp], ['Instagram', c.instagram], ['LinkedIn', c.linkedin], ['Sito web', c.website]]
+  const links: [string, string | undefined][] = [['Email', c.email ? `mailto:${c.email}` : undefined], ['Telefono', c.phone ? whatsappUrl(c.phone) : undefined], ['WhatsApp', c.whatsapp], ['Instagram', c.instagram], ['LinkedIn', c.linkedin], ['Sito web', c.website]]
   return (
     <div style={{ maxWidth: 820 }}>
       {/* Header */}

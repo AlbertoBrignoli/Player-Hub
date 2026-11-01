@@ -7,6 +7,7 @@ import { useLang } from '../lib/i18n'
 import { initials } from '../lib/format'
 import { Modal, Spinner } from './ui'
 import Icon from './Icon'
+import { whatsappUrl } from '../lib/ics'
 
 type Field = [col: string, label: string]
 type Cfg = { table: string; idCol: string; title: string; about: Field[]; place: Field[]; links: Field[]; logo?: string }
@@ -121,8 +122,7 @@ export default function ProProfileModal({ role, proId, roleLabel, fallback, onCl
           {(email || phone || whatsapp) && (
             <div className="flex gap" style={{ gap: 8, flexWrap: 'wrap' }}>
               {email && <a className="btn btn-sm" href={`mailto:${email}`}><Icon name="mail" size={13} /> {email}</a>}
-              {phone && <a className="btn btn-sm" href={`tel:${String(phone).replace(/\s/g, '')}`}><Icon name="smartphone" size={13} /> {phone}</a>}
-              {whatsapp && <a className="btn btn-sm" href={`https://wa.me/${String(whatsapp).replace(/[^0-9]/g, '')}`} target="_blank" rel="noreferrer"><Icon name="message" size={13} /> WhatsApp</a>}
+              {(whatsapp || phone) && <a className="btn btn-sm" href={whatsappUrl(String(whatsapp || phone))} target="_blank" rel="noreferrer"><Icon name="smartphone" size={13} /> {String(whatsapp || phone)} · WhatsApp</a>}
             </div>
           )}
 

@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../auth/AuthContext'
 import { useAthlete } from '../lib/athlete'
 import { useLang } from '../lib/i18n'
+import { whatsappUrl } from '../lib/ics'
 import { Spinner, Field, Input, Textarea } from '../components/ui'
 import Icon from '../components/Icon'
 import { ProImages } from '../components/ProImages'
@@ -95,7 +96,7 @@ export default function TaxAdvisorProfile() {
         </div>
         <div className="grid g3" style={{ gap: 10, marginTop: 16 }}>
           <Info k={t('Email')} v={p.email} href={p.email ? `mailto:${p.email}` : undefined} />
-          <Info k={t('Telefono')} v={p.phone} href={p.phone ? `tel:${p.phone}` : undefined} />
+          <Info k={t('Telefono')} v={p.phone} href={p.phone ? whatsappUrl(p.phone) : undefined} />
           <Info k={t('Agenzia')} v={p.agency_name} />
         </div>
       </div>
@@ -188,7 +189,7 @@ function Info({ k, v, href }: { k: string; v?: string; href?: string }) {
     <div>
       <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.8px', fontWeight: 700 }}>{k}</div>
       <div style={{ fontSize: 13.5, marginTop: 2 }}>
-        {v ? (href ? <a href={href} style={{ color: ACCENT }}>{v}</a> : v) : '—'}
+        {v ? (href ? <a href={href} style={{ color: ACCENT }} {...(href.startsWith('http') ? { target: '_blank', rel: 'noreferrer' } : {})}>{v}</a> : v) : '—'}
       </div>
     </div>
   )

@@ -131,7 +131,9 @@ export function telUrl(phone: string): string {
 
 // wa.me vuole solo cifre col prefisso internazionale, senza + né 00
 export function whatsappUrl(phone: string, text?: string): string {
-  const digits = cleanPhone(phone).replace(/\D/g, '')
+  let digits = cleanPhone(phone).replace(/\D/g, '')
+  // cellulare italiano scritto senza prefisso (es. 328…): WhatsApp vuole il 39 davanti
+  if (!phone.trim().startsWith('+') && !phone.trim().startsWith('00') && /^3\d{8,9}$/.test(digits)) digits = '39' + digits
   return `https://wa.me/${digits}` + (text ? `?text=${encodeURIComponent(text)}` : '')
 }
 
