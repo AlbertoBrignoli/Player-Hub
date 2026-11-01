@@ -440,6 +440,10 @@ export interface FitnessProgram {
   recurrence: string | null
   created_at?: string
   updated_at?: string
+  /** risposta dell'atleta prima della seduta (crm_program_respond) */
+  athlete_response?: 'confermato' | 'in_attesa' | 'online' | null
+  athlete_response_note?: string | null
+  athlete_response_at?: string | null
 }
 
 export interface FitnessExercise {

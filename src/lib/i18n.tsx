@@ -3767,5 +3767,22 @@ const EN: Record<string, string> = {
   "Salva nota": "Save note",
   "Segna come fatta": "Mark as done",
   "Modifica nota": "Edit note",
+  // risposta dell'atleta alla scheda
+  "Aggiungi il link della videochiamata nella nota per l'atleta e ripubblica.": "Add the video call link to the athlete note and republish.",
+  "Confermato al preparatore": "Confirmed to your coach",
+  "Richiesta online inviata al preparatore": "Online request sent to your coach",
+  "Il preparatore sa che è in attesa": "Your coach knows it's on hold",
+  "La farai?": "Will you do it?",
+  "Hai risposto: {r}. Puoi cambiare quando vuoi.": "You answered: {r}. You can change it anytime.",
+  "Fallo sapere al preparatore con un tocco.": "Let your coach know with one tap.",
+  "Richiedi online": "Ask for online",
+  "Quando ti va bene? (facoltativo)": "When suits you? (optional)",
+  "Motivo (facoltativo)": "Reason (optional)",
+  "Es. stesso orario, in videochiamata": "E.g. same time, by video call",
+  "Es. aspetto il programma della squadra": "E.g. waiting for the team schedule",
+  "Lo farò": "I'll do it",
+  "Chiede online": "Asks for online",
+  "L'atleta la farà": "Athlete will do it",
+  "Chiede di farla online": "Asks to do it online",
 }
 

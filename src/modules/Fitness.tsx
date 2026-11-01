@@ -18,6 +18,12 @@ const label: React.CSSProperties = { fontSize: 11, letterSpacing: 1.2, textTrans
 const grid = (min = 150): React.CSSProperties => ({ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(min(${min}px, 100%), 1fr))`, gap: 12 })
 const todayKey = () => new Date().toISOString().slice(0, 10)
 type T = (s: string) => string
+// risposta dell'atleta alla scheda, prima della seduta
+const RESPONSE: Record<string, { l: string; tone: 'green' | 'gold' | 'blue'; icon: string; coach: string }> = {
+  confermato: { l: 'Lo farò', tone: 'green', icon: 'check', coach: "L'atleta la farà" },
+  in_attesa: { l: 'In attesa', tone: 'gold', icon: 'clock', coach: "In attesa dell'atleta" },
+  online: { l: 'Chiede online', tone: 'blue', icon: 'video', coach: "Chiede di farla online" },
+}
 const noT: T = s => s
 
 export default function Fitness({ goto }: { goto?: (r: string) => void }) {
@@ -60,7 +66,8 @@ function TrainerFitness() {
 }
 
 function TrainerPrograms() {
-  const { athleteId, athletes } = useAthlete()
+  const { athleteId, athletes, setAthleteId } = useAthlete()
+  const focus = useRouteParam('program')
   const { session } = useAuth()
   const [programs, setPrograms] = useState<FitnessProgram[]>([])
   const [trash, setTrash] = useState<FitnessProgram[]>([])
@@ -84,6 +91,17 @@ function TrainerPrograms() {
     setLoading(false)
   }
   useEffect(() => { load() }, [athleteId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // aperta da una notifica (#/fitness?program=<id>): porta sull'atleta giusto e apre la scheda
+  useEffect(() => {
+    if (!focus) return
+    supabase.from('fitness_programs').select('*').eq('id', focus).maybeSingle().then(({ data }) => {
+      const p = data as FitnessProgram | null
+      if (!p) return
+      if (p.player_id !== athleteId) setAthleteId(p.player_id)
+      setEditing(p)
+    })
+  }, [focus]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function restore(p: FitnessProgram) {
     await supabase.from('fitness_programs').update({ deleted_at: null }).eq('id', p.id)
@@ -182,6 +200,12 @@ function ProgramList({ title, items, tone, onOpen }: {
               {p.program_date ? fmtDate(p.program_date) : t('Data da definire')}{p.start_time ? ` · ${p.start_time.slice(0, 5)}` : ''}
             </div>
             {p.focus && <div style={{ fontSize: 13, marginTop: 4, color: 'var(--text-dim)' }}>{p.focus}</div>}
+            {p.athlete_response && RESPONSE[p.athlete_response] && (
+              <div style={{ marginTop: 8 }}>
+                <Badge tone={RESPONSE[p.athlete_response].tone}><Icon name={RESPONSE[p.athlete_response].icon} size={11} /> {t(RESPONSE[p.athlete_response].coach)}</Badge>
+                {p.athlete_response_note && <div className="faint" style={{ fontSize: 12, marginTop: 4 }}>«{p.athlete_response_note}»</div>}
+              </div>
+            )}
           </button>
         ))}
       </div>
@@ -344,6 +368,13 @@ function ProgramEditor({ program, athleteId, athleteName, trainerId, onClose, on
     if (!form.name?.trim()) { alert(t('Inserisci il nome del programma')); return }
     setBusy(status)
     const payload: any = { player_id: athleteId, trainer_id: trainerId, status, ...programFields(form) }
+    // cambiano giorno o ora: la risposta dell'atleta valeva per l'orario vecchio, si chiede di nuovo
+    if (!isNew) {
+      const old = program as FitnessProgram
+      if ((old.program_date || null) !== (form.program_date || null) || (old.start_time || '').slice(0, 5) !== (form.start_time || '').slice(0, 5)) {
+        Object.assign(payload, { athlete_response: null, athlete_response_note: null, athlete_response_at: null })
+      }
+    }
     let pid = isNew ? undefined : (program as FitnessProgram).id
     if (pid) await supabase.from('fitness_programs').update(payload).eq('id', pid)
     else { const { data } = await supabase.from('fitness_programs').insert(payload).select('id').single(); pid = (data as any)?.id }
@@ -383,6 +414,16 @@ function ProgramEditor({ program, athleteId, athleteName, trainerId, onClose, on
         </>
       }
     >
+      {!isNew && (program as FitnessProgram).athlete_response && RESPONSE[(program as FitnessProgram).athlete_response!] && (() => {
+        const p = program as FitnessProgram, r = RESPONSE[p.athlete_response!]
+        return (
+          <div className="card" style={{ padding: '10px 14px', marginBottom: 14, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+            <Badge tone={r.tone}><Icon name={r.icon} size={11} /> {t(r.coach)}</Badge>
+            {p.athlete_response_note && <span style={{ fontSize: 13 }}>«{p.athlete_response_note}»</span>}
+            {p.athlete_response === 'online' && <span className="faint" style={{ fontSize: 12.5 }}>{t('Aggiungi il link della videochiamata nella nota per l\'atleta e ripubblica.')}</span>}
+          </div>
+        )
+      })()}
       {loading ? <Spinner /> : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))', gap: 20, alignItems: 'start' }}>
           <div>
@@ -639,6 +680,7 @@ function BigProgramCard({ p, onOpen, highlight, muted }: { p: ProgramFull; onOpe
   const fb = p.fitness_feedback?.[0]
   const stato = fb?.status || 'programmato'
   const toneMap: any = { completato: 'green', saltato: 'red', programmato: 'gold' }
+  const resp = !fb && p.athlete_response ? RESPONSE[p.athlete_response] : null
   return (
     <button className="card" onClick={onOpen}
       style={{ display: 'block', width: '100%', textAlign: 'left', padding: 18, marginBottom: 12, cursor: 'pointer', opacity: muted ? 0.7 : 1, border: highlight ? `1px solid ${ACCENT}` : '1px solid var(--border)' }}>
@@ -650,7 +692,7 @@ function BigProgramCard({ p, onOpen, highlight, muted }: { p: ProgramFull; onOpe
           </div>
           {p.focus && <div style={{ fontSize: 13, marginTop: 4, color: ACCENT }}>{p.focus}</div>}
         </div>
-        <Badge tone={toneMap[stato]}>{t(stato)}</Badge>
+        {resp ? <Badge tone={resp.tone}>{t(resp.l)}</Badge> : <Badge tone={toneMap[stato]}>{t(stato)}</Badge>}
       </div>
       <div className="faint" style={{ fontSize: 12.5, marginTop: 8 }}>{t('{n} esercizi · tocca per aprire').replace('{n}', String(p.fitness_exercises?.length || 0))}</div>
     </button>
@@ -665,6 +707,19 @@ function ProgramDetail({ program, athleteId, onClose, onSaved }: {
   const [fb, setFb] = useState<FitnessFeedback>(existing || { program_id: program.id, player_id: athleteId, status: 'programmato', completed: false, feeling: '', discomfort: '', athlete_notes: '' })
   const [busy, setBusy] = useState(false)
   const [saved, setSaved] = useState(false)
+  // prima della seduta: risponde al preparatore; dal giorno della seduta: "Come è andata?"
+  const upcoming = !!program.program_date && program.program_date > todayKey()
+  const [resp, setResp] = useState(program.athlete_response || null)
+  const [pickResp, setPickResp] = useState<'in_attesa' | 'online' | null>(null)
+  const [respNote, setRespNote] = useState('')
+  async function answer(r: 'confermato' | 'in_attesa' | 'online', note?: string) {
+    setBusy(true)
+    const { error } = await supabase.rpc('crm_program_respond', { p_program: program.id, p_response: r, p_note: note || null })
+    setBusy(false)
+    if (error) { toast(error.message, 'err'); return }
+    setResp(r); setPickResp(null); setRespNote('')
+    toast(r === 'confermato' ? t('Confermato al preparatore') : r === 'online' ? t('Richiesta online inviata al preparatore') : t('Il preparatore sa che è in attesa'))
+  }
   // Schede tecniche della libreria: l'atleta di norma non può leggerle (RLS) → in quel caso
   // la query torna vuota e il pulsante "Come si fa" semplicemente non compare.
   const [lib, setLib] = useState<Record<string, FitnessLibraryItem>>({})
@@ -703,6 +758,39 @@ function ProgramDetail({ program, athleteId, onClose, onSaved }: {
       </div>
       {program.focus && <div style={{ marginTop: 6, color: ACCENT, fontWeight: 700 }}>{program.focus}</div>}
       {program.objective && <div style={{ marginTop: 4 }}>{program.objective}</div>}
+
+      {upcoming && (
+        <div className="card" style={{ padding: 16, marginTop: 14, borderLeft: `3px solid ${ACCENT}` }}>
+          <div style={{ fontSize: 14.5, fontWeight: 800 }}>{t('La farai?')}</div>
+          <div className="faint" style={{ fontSize: 12.5, marginTop: 2 }}>
+            {resp ? t('Hai risposto: {r}. Puoi cambiare quando vuoi.').replace('{r}', t(RESPONSE[resp].l)) : t('Fallo sapere al preparatore con un tocco.')}
+          </div>
+          <div className="flex gap" style={{ flexWrap: 'wrap', marginTop: 12 }}>
+            {(['confermato', 'in_attesa', 'online'] as const).map(r => (
+              <TapBtn key={r} on={resp === r || pickResp === r} onClick={() => {
+                if (busy) return
+                if (r === 'confermato') answer(r); else setPickResp(r)
+              }}>
+                <Icon name={RESPONSE[r].icon} size={14} /> {r === 'online' ? t('Richiedi online') : t(RESPONSE[r].l)}
+              </TapBtn>
+            ))}
+          </div>
+          {pickResp && (
+            <div style={{ marginTop: 12 }}>
+              <Field label={pickResp === 'online' ? t('Quando ti va bene? (facoltativo)') : t('Motivo (facoltativo)')}>
+                <Input maxLength={150} value={respNote} onChange={e => setRespNote(e.target.value)}
+                  placeholder={pickResp === 'online' ? t('Es. stesso orario, in videochiamata') : t('Es. aspetto il programma della squadra')} />
+              </Field>
+              <div className="flex gap" style={{ marginTop: 8, alignItems: 'center' }}>
+                <button className="btn btn-primary" disabled={busy} onClick={() => answer(pickResp, respNote)}>
+                  <Icon name="send" size={14} /> {t('Invia al preparatore')}
+                </button>
+                <button className="btn btn-ghost" onClick={() => setPickResp(null)}>{t('Indietro')}</button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {(program.warmup || program.recovery_between_sets || program.recovery_between_exercises || program.cooldown) && (
         <div className="card" style={{ padding: 12, marginTop: 14, ...grid(150) }}>
@@ -744,7 +832,8 @@ function ProgramDetail({ program, athleteId, onClose, onSaved }: {
         </div>
       )}
 
-      {/* Feedback rapido (<20s) */}
+      {/* Feedback rapido (<20s): solo dal giorno della seduta */}
+      {!upcoming && <>
       <div style={label}>{t('Come è andata?')}</div>
       <div className="card" style={{ padding: 16 }}>
         <FbQ title={t('Allenamento completato?')}>
@@ -770,6 +859,7 @@ function ProgramDetail({ program, athleteId, onClose, onSaved }: {
           {saved && <span style={{ color: 'var(--green)', fontSize: 13 }}>{t('Inviato ✓')}</span>}
         </div>
       </div>
+      </>}
     </Modal>
   )
 }
