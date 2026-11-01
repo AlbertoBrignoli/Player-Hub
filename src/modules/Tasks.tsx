@@ -1,4 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { supabase } from '../lib/supabase'
+import { goto } from '../lib/route'
+import Icon from '../components/Icon'
+import { RequestSteps, useRequesters } from '../components/DocRequests'
+import type { TaxItem } from './LegalTax'
 import { useAuth } from '../auth/AuthContext'
 import { useAthlete } from '../lib/athlete'
 import { useCollection, insertRow, updateRow, deleteRow } from '../lib/useData'
@@ -19,6 +24,15 @@ export default function Tasks() {
   const { t: tr } = useLang()
   const { rows, loading, reload, setRows } = useCollection<Task>('crm_tasks', { orderBy: 'created_at', match: { player_id: athleteId } })
   const [edit, setEdit] = useState<Partial<Task> | null>(null)
+  // documenti richiesti dal commercialista (Fisco e legale): sono task dell'atleta con scadenza e consegna
+  const [docReqs, setDocReqs] = useState<TaxItem[]>([])
+  useEffect(() => {
+    if (!athleteId) { setDocReqs([]); return }
+    supabase.from('crm_tax_items').select('*').eq('player_id', athleteId).eq('kind', 'richiesta')
+      .order('due_date', { ascending: true, nullsFirst: false })
+      .then(({ data }) => setDocReqs((data as TaxItem[]) || []))
+  }, [athleteId])
+  const requesters = useRequesters(docReqs)
 
   if (loading) return <Spinner />
 
@@ -31,20 +45,37 @@ export default function Tasks() {
   return (
     <div className="grid" style={{ gap: 16 }}>
       <div className="flex between">
-        <div className="muted">{tr('{n} attività aperte').replace('{n}', String(rows.filter(t => t.status !== 'done').length))}</div>
+        <div className="muted">{tr('{n} attività aperte').replace('{n}', String(rows.filter(t => t.status !== 'done').length + docReqs.filter(r => r.status === 'aperto').length))}</div>
         {isAdmin && <button className="btn btn-primary" onClick={() => setEdit(empty())}>{tr('+ Nuova task')}</button>}
       </div>
 
       <div className="grid g3" style={{ alignItems: 'start' }}>
         {COLS.map(col => {
           const items = rows.filter(t => t.status === col.key)
+          const docs = col.key === 'todo' ? docReqs.filter(r => r.status === 'aperto')
+            : col.key === 'done' ? docReqs.filter(r => r.status !== 'aperto') : []
           return (
             <div className="card" key={col.key} style={{ background: 'var(--bg-2)' }}>
               <div className="card-head">
                 <div className="card-title">{tr(col.label)}</div>
-                <span className="badge">{items.length}</span>
+                <span className="badge">{items.length + docs.length}</span>
               </div>
               <div className="grid" style={{ gap: 10 }}>
+                {docs.map(r => (
+                  <div className="card" key={r.id} style={{ padding: 13, borderLeft: '3px solid #9A5530' }}>
+                    <div className="flex between" style={{ alignItems: 'flex-start', gap: 8 }}>
+                      <div style={{ fontWeight: 600, fontSize: 13.5 }}>{r.title}</div>
+                      <Badge tone="gold">{tr('Documenti')}</Badge>
+                    </div>
+                    <RequestSteps item={r} who={(r.created_by && requesters[r.created_by]) || null} />
+                    {r.status === 'aperto' && (
+                      <button className="btn btn-sm" style={{ marginTop: 10, width: '100%', justifyContent: 'center', background: 'var(--yellow)', color: 'var(--ink)', fontWeight: 800, border: 'none' }}
+                        onClick={() => goto(`legaltax?item=${r.id}`)}>
+                        <Icon name="upload" size={13} /> {tr('Consegna documento')}
+                      </button>
+                    )}
+                  </div>
+                ))}
                 {items.map(t => {
                   const d = daysUntil(t.due_date)
                   return (
@@ -71,7 +102,7 @@ export default function Tasks() {
                     </div>
                   )
                 })}
-                {items.length === 0 && <div className="faint" style={{ fontSize: 12.5, textAlign: 'center', padding: '14px 0' }}>—</div>}
+                {items.length + docs.length === 0 && <div className="faint" style={{ fontSize: 12.5, textAlign: 'center', padding: '14px 0' }}>—</div>}
               </div>
             </div>
           )

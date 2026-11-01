@@ -11,6 +11,7 @@ import { fmtDate, fmtMoney } from '../lib/format'
 import { useLang } from '../lib/i18n'
 import { useItemPeople, PeopleRow, ItemPeopleModal } from '../components/ItemPeople'
 import { useRouteParam } from '../lib/route'
+import { RequestSteps, useRequesters } from '../components/DocRequests'
 
 // Area legale e fiscale: pagamenti, documenti del commercialista
 // e sue richieste che l'atleta deve smarcare.
@@ -58,6 +59,10 @@ export type TaxItem = {
   attachments: { name: string; path: string }[] | null
   response_attachments: { name: string; path: string }[] | null
   response_note: string | null
+  created_by?: string | null
+  created_at?: string | null
+  completed_at?: string | null
+  updated_at?: string | null
 }
 
 const daysTo = (d?: string | null) =>
@@ -102,10 +107,18 @@ export default function LegalTax() {
   const itemParam = useRouteParam('item')
   useEffect(() => {
     const it = itemParam ? rows.find(r => r.id === itemParam) : null
-    if (it) { setTab(it.area); setThread(it) }
+    if (!it) return
+    // richiesta ancora da consegnare aperta dall'atleta (es. dai Task): va dritta a "Rispondi"
+    if (isPlayer && it.kind === 'richiesta' && it.status === 'aperto') { setRespond(it); return }
+    setTab(it.area); setThread(it)
   }, [itemParam, rows.length]) // eslint-disable-line react-hooks/exhaustive-deps
   const ofArea = useMemo(() => rows.filter(i => i.area === tab), [rows, tab])
   const aperte = useMemo(() => rows.filter(i => i.kind === 'richiesta' && i.status === 'aperto'), [rows])
+  // consegnate negli ultimi 60 giorni: restano visibili con la data di consegna
+  const consegnate = useMemo(() => rows.filter(i => i.kind === 'richiesta' && i.status !== 'aperto'
+    && Date.now() - new Date(i.completed_at || i.updated_at || 0).getTime() < 60 * 86400000), [rows])
+  const requesters = useRequesters([...aperte, ...consegnate])
+  const whoOf = (i: TaxItem) => (i.created_by && requesters[i.created_by]) || null
 
   async function marcaPagato(i: TaxItem) {
     await updateRow('crm_tax_items', i.id, {
@@ -134,20 +147,34 @@ export default function LegalTax() {
             <div style={{ ...kicker, color: WARN }}>{tr('Ti hanno chiesto questi documenti')}</div>
             <span className="faint" style={{ fontSize: 12 }}>{aperte.length}</span>
           </div>
-          <div className="grid" style={{ gap: 9 }}>
+          <div className="grid" style={{ gap: 16 }}>
             {aperte.map(i => (
-              <div key={i.id} className="flex between" style={{ alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700 }}>{i.title}</div>
-                  <div className="faint" style={{ fontSize: 11.5 }}>
-                    {i.description || (i.category && tr(i.category)) || '—'}
-                    {i.due_date ? ' · ' + tr('entro il {date}').replace('{date}', fmtDate(i.due_date)) : ''}
+              <div key={i.id}>
+                <div className="flex between" style={{ alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700 }}>{i.title}</div>
+                    <div className="faint" style={{ fontSize: 11.5 }}>{i.description || (i.category && tr(i.category)) || '—'}</div>
                   </div>
+                  <button className="btn btn-sm" style={{ background: 'var(--yellow)', color: 'var(--ink)', fontWeight: 800, border: 'none' }}
+                    onClick={() => setRespond(i)}>
+                    <Icon name="upload" size={13} /> {tr('Rispondi')}
+                  </button>
                 </div>
-                <button className="btn btn-sm" style={{ background: 'var(--yellow)', color: 'var(--ink)', fontWeight: 800, border: 'none' }}
-                  onClick={() => setRespond(i)}>
-                  <Icon name="upload" size={13} /> {tr('Rispondi')}
-                </button>
+                <RequestSteps item={i} who={whoOf(i)} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {consegnate.length > 0 && (
+        <div className="card">
+          <div style={{ ...kicker, color: OK, marginBottom: 12 }}>{tr('Documenti consegnati')}</div>
+          <div className="grid" style={{ gap: 14 }}>
+            {consegnate.map(i => (
+              <div key={i.id}>
+                <div style={{ fontSize: 13.5, fontWeight: 700 }}>{i.title}</div>
+                <RequestSteps item={i} who={whoOf(i)} />
               </div>
             ))}
           </div>

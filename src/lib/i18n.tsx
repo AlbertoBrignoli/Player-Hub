@@ -3784,5 +3784,12 @@ const EN: Record<string, string> = {
   "Chiede online": "Asks for online",
   "L'atleta la farà": "Athlete will do it",
   "Chiede di farla online": "Asks to do it online",
+  // richieste documenti come task
+  "Scaduta il {d}": "Overdue since {d}",
+  "da {who}": "by {who}",
+  "Consegna": "Delivery",
+  "Da consegnare": "To deliver",
+  "Documenti consegnati": "Documents delivered",
+  "Consegna documento": "Deliver document",
 }
 
