@@ -3791,5 +3791,6 @@ const EN: Record<string, string> = {
   "Da consegnare": "To deliver",
   "Documenti consegnati": "Documents delivered",
   "Consegna documento": "Deliver document",
+  "da fare": "to do",
 }
 
