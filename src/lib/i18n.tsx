@@ -3753,5 +3753,19 @@ const EN: Record<string, string> = {
   "Risposta inviata": "Reply sent",
   "Nuovo orario confermato": "New time confirmed",
   "Allenamento annullato": "Session cancelled",
+  // Da fare del preparatore
+  "il giorno": "the day",
+  "{n} volte": "{n} times",
+  "Filtra per atleta": "Filter by athlete",
+  "Eliminare questa richiesta?": "Delete this request?",
+  "Segnata come fatta": "Marked as done",
+  "Richiesta eliminata": "Request deleted",
+  "Richiesta di allenamento": "Session request",
+  "Richiesta di programma": "Programme request",
+  "Dal {d}": "Since {d}",
+  "Es. preferisce il pomeriggio, focus forza": "E.g. prefers afternoons, strength focus",
+  "Salva nota": "Save note",
+  "Segna come fatta": "Mark as done",
+  "Modifica nota": "Edit note",
 }
 

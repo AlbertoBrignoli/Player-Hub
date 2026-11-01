@@ -223,11 +223,14 @@ export function CoachTrainingCalendar({ compact }: { compact?: boolean }) {
   )
 }
 
-function ProposeModal({ day: d, defaultPlayer, onClose, onSent }: {
+export function ProposeModal({ day: initialDay, defaultPlayer, editableDay, onClose, onSent }: {
   day: string; defaultPlayer: number | null; onClose: () => void; onSent: () => void
+  /** aperta fuori dal calendario (es. da una richiesta in "Da fare"): il giorno si sceglie qui */
+  editableDay?: boolean
 }) {
   const { athletes } = useAthlete()
   const { t, day } = useFmt()
+  const [d, setD] = useState(initialDay)
   const [player, setPlayer] = useState<number | null>(defaultPlayer)
   const [time, setTime] = useState('10:00')
   const [mins, setMins] = useState(60)
@@ -236,7 +239,7 @@ function ProposeModal({ day: d, defaultPlayer, onClose, onSent }: {
   const [note, setNote] = useState('')
   const [busy, setBusy] = useState(false)
   const start = atLocal(d, time)
-  const missing = [!player && t('atleta'), !mode && t('online o in presenza'), start < new Date() && t('un orario futuro')].filter(Boolean)
+  const missing = [!player && t('atleta'), !d && t('il giorno'), !mode && t('online o in presenza'), start < new Date() && t('un orario futuro')].filter(Boolean)
   const name = athletes.find(a => a.api_player_id === player)?.name || t('Atleta')
 
   async function send() {
@@ -260,7 +263,9 @@ function ProposeModal({ day: d, defaultPlayer, onClose, onSent }: {
         </button>
       </>}>
       <style>{TR_CSS}</style>
-      <div className="tr-when">{day(d + 'T12:00:00')}</div>
+      {editableDay
+        ? <Field label={t('Giorno')}><Input type="date" value={d} min={dayKey(new Date())} onChange={e => setD(e.target.value)} /></Field>
+        : <div className="tr-when">{day(d + 'T12:00:00')}</div>}
 
       {athletes.length > 1 && (
         <Field label={t('Atleta')}>

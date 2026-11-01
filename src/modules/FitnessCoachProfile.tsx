@@ -60,8 +60,9 @@ export default function FitnessCoachProfile({ goto }: { goto?: (r: string) => vo
 
   async function request(type: 'programma' | 'allenamento' | 'messaggio') {
     if (!athleteId) return
-    await supabase.from('fitness_requests').insert({ player_id: athleteId, trainer_id: p!.trainer_id, type })
+    // il messaggio è solo un collegamento alla chat: non diventa un "Da fare" del preparatore
     if (type === 'messaggio') { goto?.('messages'); return }
+    await supabase.from('fitness_requests').insert({ player_id: athleteId, trainer_id: p!.trainer_id, type })
     setSentReq(type === 'programma' ? t('Richiesta di un nuovo programma inviata ✓') : t('Richiesta di prenotazione inviata ✓'))
     setTimeout(() => setSentReq(''), 3000)
   }

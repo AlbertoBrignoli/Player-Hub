@@ -5,7 +5,9 @@ import { useAthlete } from '../lib/athlete'
 import { useLang } from '../lib/i18n'
 import Icon from '../components/Icon'
 import { fmtMatchTime } from '../lib/format'
-import { CoachTrainingCalendar } from '../components/TrainingSessions'
+import { CoachTrainingCalendar, ProposeModal } from '../components/TrainingSessions'
+import { Modal, Textarea } from '../components/ui'
+import { toast } from '../lib/toast'
 
 /* Ufficio del professionista: UNA Home per agente, assicuratore, commercialista,
    preparatore, fisioterapista, nutrizionista e wealth manager. Tutti gli atleti insieme (non uno alla volta):
@@ -97,6 +99,8 @@ type Todo = {
   sub: string
   days: number | null       // giorni alla scadenza (negativo = scaduta, null = senza data)
   route: string
+  /** richieste dell'atleta al preparatore (stesso tipo raggruppate): si aprono in un pannello con le azioni */
+  req?: { ids: string[]; type: string; note: string | null; first: string }
 }
 type TL = {
   key: string
@@ -137,6 +141,8 @@ export default function ProHome({ goto }: { goto: (r: string) => void }) {
   const [matches, setMatches] = useState<any[]>([])
   const [events, setEvents] = useState<any[]>([])
   const [todos, setTodos] = useState<Todo[]>([])
+  const [sheet, setSheet] = useState<Todo | null>(null)
+  const [weekPid, setWeekPid] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -193,8 +199,8 @@ export default function ProHome({ goto }: { goto: (r: string) => void }) {
             .order('end_date')
         } else if (pro === 'preparatore') {
           roleQ = supabase.from('fitness_requests')
-            .select('id, player_id, type, created_at')
-            .in('player_id', ids).eq('status', 'aperta')
+            .select('id, player_id, type, note, created_at')
+            .in('player_id', ids).eq('status', 'aperta').neq('type', 'messaggio')
             .order('created_at', { ascending: false })
           roleQ2 = supabase.from('fitness_programs')
             .select('id, player_id, name, start_time, program_date')
@@ -280,12 +286,20 @@ export default function ProHome({ goto }: { goto: (r: string) => void }) {
           })
         })
       } else if (pro === 'preparatore') {
-        rows.forEach(r => list.push({
-          key: 'req' + r.id, pid: r.player_id, icon: 'inbox',
-          title: r.type === 'programma' ? t('Richiede un programma') : t('Vuole prenotare un allenamento'),
-          sub: pname(r.player_id),
-          days: null, route: 'fitness',
-        }))
+        // stessa richiesta ripetuta dallo stesso atleta = una sola voce
+        const groups: Record<string, any[]> = {}
+        rows.forEach(r => { (groups[`${r.player_id}:${r.type}`] ||= []).push(r) })
+        Object.values(groups).forEach(g => {
+          const r = g[g.length - 1]
+          list.push({
+            key: 'req' + r.player_id + r.type, pid: r.player_id, icon: r.type === 'programma' ? 'layers' : 'dumbbell',
+            title: (r.type === 'programma' ? t('Richiede un programma') : t('Vuole prenotare un allenamento'))
+              + (g.length > 1 ? ` · ${t('{n} volte').replace('{n}', String(g.length))}` : ''),
+            sub: [pname(r.player_id), g.find(x => x.note)?.note].filter(Boolean).join(' · '),
+            days: null, route: 'fitness',
+            req: { ids: g.map(x => x.id), type: r.type, note: g.find(x => x.note)?.note || null, first: r.created_at },
+          })
+        })
         ;((r2.data as any[]) || []).forEach(s => list.push({
           key: 'ses' + s.id, pid: s.player_id, icon: 'dumbbell',
           title: s.name || t('Seduta'),
@@ -381,7 +395,7 @@ export default function ProHome({ goto }: { goto: (r: string) => void }) {
       out.push({
         key: 'm' + m.id, at, pid: m.player_id, kind: 'match',
         title: `${vs} ${m.opponent || t('Partita')}`,
-        sub: [nameOf(m.player_id), m.league].filter(Boolean).join(' · '),
+        sub: m.league || '',
       })
     })
     events.forEach(e => {
@@ -390,7 +404,7 @@ export default function ProHome({ goto }: { goto: (r: string) => void }) {
       out.push({
         key: 'e' + e.id, at, pid: e.player_id, kind: 'event',
         title: e.title || t('Impegno'),
-        sub: nameOf(e.player_id) + (e.request_status === 'da_confermare' ? ` · ${t('da confermare')}` : ''),
+        sub: e.request_status === 'da_confermare' ? t('da confermare') : '',
       })
     })
     return out.sort((a, b) => a.at.getTime() - b.at.getTime())
@@ -547,7 +561,7 @@ export default function ProHome({ goto }: { goto: (r: string) => void }) {
       ) : (
         <div className="pro-card">
           {shownTodos.map(x => (
-            <button key={x.key} className="pro-todo" onClick={() => open(x.pid, x.route)}>
+            <button key={x.key} className="pro-todo" onClick={() => x.req ? setSheet(x) : open(x.pid, x.route)}>
               <span className={`pro-todo-ic ${dueTone(x.days)}`}><Icon name={x.icon} size={16} /></span>
               <span style={{ flex: 1, minWidth: 0 }}>
                 <span className="pro-todo-t pro-trunc">{x.title}</span>
@@ -569,7 +583,7 @@ export default function ProHome({ goto }: { goto: (r: string) => void }) {
 
   // settimana raggruppata per giorno
   const days: { key: string; date: Date; items: TL[] }[] = []
-  week.forEach(it => {
+  week.filter(it => weekPid == null || it.pid === weekPid).forEach(it => {
     const k = isoDay(it.at)
     let g = days.find(d => d.key === k)
     if (!g) { g = { key: k, date: startOfDay(it.at), items: [] }; days.push(g) }
@@ -579,6 +593,18 @@ export default function ProHome({ goto }: { goto: (r: string) => void }) {
   const weekSection = (
     <section className="pro-sec">
       <div className="pro-h"><span>{t('Questa settimana')}</span>{week.length > 0 && <span className="n">{week.length}</span>}</div>
+      {athList.length > 1 && week.length > 0 && (
+        <div className="pro-wf" role="tablist" aria-label={t('Filtra per atleta')}>
+          <button className={weekPid == null ? 'on' : ''} onClick={() => setWeekPid(null)}>{t('Tutti')}</button>
+          {athList.map(a => (
+            <button key={a.api_player_id} className={weekPid === a.api_player_id ? 'on' : ''}
+              style={{ ['--c' as any]: colorOf(a.api_player_id) }} onClick={() => setWeekPid(weekPid === a.api_player_id ? null : a.api_player_id)}>
+              {a.photo_url ? <img src={a.photo_url} alt="" /> : <span className="pro-wf-i">{(a.name || '?').slice(0, 1)}</span>}
+              {(a.name || '').split(' ').slice(-1)[0]}
+            </button>
+          ))}
+        </div>
+      )}
       {week.length === 0 ? (
         <div className="pro-card pro-calm">
           <span className="pro-calm-ic"><Icon name="calendar" size={16} /></span>
@@ -605,13 +631,14 @@ export default function ProHome({ goto }: { goto: (r: string) => void }) {
                         ? fmtMatchTime(it.at.toISOString(), tzOf(it.pid))
                         : it.at.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
                     </span>
-                    <span className="pro-tl-bar" style={{ background: colorOf(it.pid) }} aria-hidden="true" />
+                    <TlAvatar a={athList.find(x => x.api_player_id === it.pid)} color={colorOf(it.pid)} />
                     <span style={{ flex: 1, minWidth: 0 }}>
+                      <span className="pro-tl-who pro-trunc" style={{ color: colorOf(it.pid) }}>{nameOf(it.pid)}</span>
                       <span className="pro-tl-t pro-trunc">
                         {it.kind === 'match' && <Icon name="ball" size={13} style={{ marginRight: 5, verticalAlign: -2 }} />}
                         {it.title}
                       </span>
-                      <span className="pro-tl-s pro-trunc">{it.sub}</span>
+                      {it.sub && <span className="pro-tl-s pro-trunc">{it.sub}</span>}
                     </span>
                   </button>
                 ))}
@@ -641,7 +668,97 @@ export default function ProHome({ goto }: { goto: (r: string) => void }) {
       <div className="pro-col">
         {weekSection}
       </div>
+      {sheet?.req && (
+        <RequestSheet todo={sheet} name={nameOf(sheet.pid!)} goto={goto} setAthleteId={setAthleteId}
+          onClose={() => setSheet(null)}
+          onDone={(gone, note) => {
+            setTodos(ts => gone ? ts.filter(x => x.key !== sheet.key)
+              : ts.map(x => x.key === sheet.key ? { ...x, sub: [nameOf(x.pid!), note].filter(Boolean).join(' · '), req: { ...x.req!, note } } : x))
+            setSheet(null)
+          }} />
+      )}
     </div>
+  )
+}
+
+function TlAvatar({ a, color }: { a?: Ath; color: string }) {
+  return a?.photo_url
+    ? <img className="pro-tl-av" src={a.photo_url} alt="" style={{ borderColor: color }} />
+    : <span className="pro-tl-av pro-id-ini" style={{ borderColor: color }}>{(a?.name || '?').slice(0, 1)}</span>
+}
+
+/* Richiesta dell'atleta al preparatore: cosa farne, in un tocco. */
+function RequestSheet({ todo, name, goto, setAthleteId, onClose, onDone }: {
+  todo: Todo; name: string; goto: (r: string) => void; setAthleteId: (id: number) => void
+  onClose: () => void; onDone: (gone: boolean, note: string | null) => void
+}) {
+  const { t, lang } = useLang()
+  const r = todo.req!
+  const [editing, setEditing] = useState(false)
+  const [note, setNote] = useState(r.note || '')
+  const [proposing, setProposing] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const isTraining = r.type === 'allenamento'
+  const since = new Date(r.first).toLocaleDateString(lang === 'en' ? 'en-GB' : 'it-IT', { day: 'numeric', month: 'long' })
+
+  async function close(kind: 'done' | 'delete', silent = false) {
+    if (kind === 'delete' && !confirm(t('Eliminare questa richiesta?'))) return
+    setBusy(true)
+    const q = kind === 'done'
+      ? supabase.from('fitness_requests').update({ status: 'gestita' }).in('id', r.ids)
+      : supabase.from('fitness_requests').delete().in('id', r.ids)
+    const { error } = await q
+    setBusy(false)
+    if (error) { toast(error.message, 'err'); return }
+    if (!silent) toast(kind === 'done' ? t('Segnata come fatta') : t('Richiesta eliminata'))
+    onDone(true, null)
+  }
+  async function saveNote() {
+    setBusy(true)
+    const { error } = await supabase.from('fitness_requests').update({ note: note.trim() || null }).in('id', r.ids)
+    setBusy(false)
+    if (error) { toast(error.message, 'err'); return }
+    toast(t('Salvato'))
+    onDone(false, note.trim() || null)
+  }
+
+  if (proposing) {
+    const today = isoDay(new Date())
+    return <ProposeModal day={today} editableDay defaultPlayer={todo.pid} onClose={() => setProposing(false)}
+      onSent={() => close('done', true)} />
+  }
+  return (
+    <Modal title={isTraining ? t('Richiesta di allenamento') : t('Richiesta di programma')} onClose={onClose}>
+      <div className="pro-rs">
+        <div className="pro-rs-who">{name}</div>
+        <div className="pro-rs-what">{todo.title}</div>
+        <div className="pro-rs-when">{t('Dal {d}').replace('{d}', since)}</div>
+        {editing ? (
+          <div style={{ marginTop: 10 }}>
+            <Textarea rows={3} value={note} onChange={e => setNote(e.target.value)} placeholder={t('Es. preferisce il pomeriggio, focus forza')} />
+            <div className="pro-rs-acts">
+              <button className="btn btn-primary pro-rs-big" disabled={busy} onClick={saveNote}>{t('Salva nota')}</button>
+              <button className="pro-rs-quiet" onClick={() => { setEditing(false); setNote(r.note || '') }}>{t('Indietro')}</button>
+            </div>
+          </div>
+        ) : <>
+          {r.note && <div className="pro-rs-note">{r.note}</div>}
+          <div className="pro-rs-acts">
+            <button className="btn btn-primary pro-rs-big" disabled={busy}
+              onClick={() => { if (isTraining) setProposing(true); else { setAthleteId(todo.pid!); goto('training-builder') } }}>
+              <Icon name={isTraining ? 'calendar' : 'layers'} size={16} /> {isTraining ? t('Proponi allenamento') : t('Crea scheda')}
+            </button>
+            <button className="btn pro-rs-big" disabled={busy} onClick={() => close('done')}>
+              <Icon name="check" size={16} /> {t('Segna come fatta')}
+            </button>
+            <div className="pro-rs-row">
+              <button className="btn" disabled={busy} onClick={() => setEditing(true)}><Icon name="edit" size={14} /> {t('Modifica nota')}</button>
+              <button className="btn" style={{ color: 'var(--red)' }} disabled={busy} onClick={() => close('delete')}><Icon name="trash" size={14} /> {t('Elimina')}</button>
+            </div>
+          </div>
+        </>}
+      </div>
+    </Modal>
   )
 }
 
@@ -776,6 +893,23 @@ const PRO_CSS = `
 .pro-tl-row:hover { background: var(--surface-2); }
 .pro-tl-time { width: 42px; flex-shrink: 0; font-size: 12.5px; font-weight: 600; color: var(--text-dim); font-variant-numeric: tabular-nums; }
 .pro-tl-bar { width: 3px; align-self: stretch; margin: 4px 0; border-radius: 2px; flex-shrink: 0; }
+.pro-tl-av { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; border: 2.5px solid; flex-shrink: 0; display: grid; place-items: center; font-size: 12px; font-weight: 800; }
+.pro-tl-who { display: block; font-size: 11px; font-weight: 800; letter-spacing: .3px; text-transform: uppercase; }
+.pro-wf { display: flex; gap: 6px; overflow-x: auto; padding: 2px 0 10px; scrollbar-width: none; }
+.pro-wf::-webkit-scrollbar { display: none; }
+.pro-wf button { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; padding: 5px 11px 5px 5px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); font-size: 12.5px; font-weight: 650; color: var(--text); cursor: pointer; }
+.pro-wf button:first-child { padding-left: 12px; }
+.pro-wf button img, .pro-wf-i { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; border: 2px solid var(--c, var(--border)); display: inline-grid; place-items: center; font-size: 10px; font-weight: 800; }
+.pro-wf button.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+.pro-rs-who { font-size: 11px; font-weight: 800; letter-spacing: .8px; text-transform: uppercase; color: var(--text-dim); }
+.pro-rs-what { font-size: 18px; font-weight: 850; margin-top: 2px; }
+.pro-rs-when { font-size: 12.5px; color: var(--text-faint); margin-top: 2px; }
+.pro-rs-note { margin-top: 10px; padding: 9px 12px; border-radius: 10px; background: var(--surface-2); font-size: 13px; overflow-wrap: anywhere; }
+.pro-rs-acts { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+.pro-rs-big { justify-content: center; min-height: 46px; width: 100%; font-size: 14.5px; }
+.pro-rs-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pro-rs-row .btn { justify-content: center; }
+.pro-rs-quiet { background: none; border: 0; color: var(--text-dim); text-decoration: underline; cursor: pointer; padding: 6px; }
 .pro-tl-t { font-size: 13.5px; font-weight: 650; color: var(--text); }
 .pro-tl-s { font-size: 12px; color: var(--text-faint); margin-top: 1px; }
 .pro-link { width: 100%; display: flex; align-items: center; justify-content: center; gap: 4px; min-height: 44px; border: 0; border-top: 1px solid var(--border); background: none; font-size: 12.5px; font-weight: 650; color: var(--text); cursor: pointer; }
