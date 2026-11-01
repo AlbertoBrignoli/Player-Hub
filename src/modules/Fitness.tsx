@@ -10,6 +10,7 @@ import ExerciseLibrary, { ExerciseDetail, ExMedia, ExlStyle, exImage, exName, ex
 import { toast } from '../lib/toast'
 import { notify } from '../lib/notify'
 import { useLang } from '../lib/i18n'
+import { CoachTrainingCalendar, AthleteTrainings } from '../components/TrainingSessions'
 import type { FitnessProgram, FitnessExercise, FitnessFeedback, FitnessLibraryItem } from '../lib/types'
 
 const ACCENT = '#3F7F00' // verde fitness (scurito per il tema chiaro)
@@ -27,28 +28,33 @@ export default function Fitness({ goto }: { goto?: (r: string) => void }) {
 
 /* ========================= VISTA PREPARATORE ========================= */
 
-type TrainerView = 'programmi' | 'libreria'
+type TrainerView = 'calendario' | 'programmi' | 'libreria'
 
 // Cambia solo il parametro ?view= della vista corrente (tasto indietro e refresh funzionano).
 function setViewParam(v: TrainerView) {
   const raw = window.location.hash.replace(/^#\/?/, '')
   const [route, query = ''] = raw.split('?')
   const params = new URLSearchParams(query)
-  if (v === 'libreria') params.set('view', 'libreria'); else params.delete('view')
+  params.delete('training')
+  if (v === 'programmi') params.delete('view'); else params.set('view', v)
   const qs = params.toString()
   window.location.hash = '#/' + (route || 'fitness') + (qs ? '?' + qs : '')
 }
 
 function TrainerFitness() {
-  const view: TrainerView = useRouteParam('view') === 'libreria' ? 'libreria' : 'programmi'
+  const v = useRouteParam('view')
+  const view: TrainerView = v === 'libreria' || v === 'calendario' ? v : 'programmi'
   const { t } = useLang()
   return (
     <div>
       <Tabs<TrainerView> value={view} onChange={setViewParam} style={{ marginBottom: 18 }} tabs={[
+        { key: 'calendario', label: t('Calendario'), icon: <Icon name="calendar" size={13} /> },
         { key: 'programmi', label: t('Programmi'), icon: <Icon name="layers" size={13} /> },
         { key: 'libreria', label: t('Libreria esercizi'), icon: <Icon name="dumbbell" size={13} /> },
       ]} />
-      {view === 'libreria' ? <ExerciseLibrary mode="browse" /> : <TrainerPrograms />}
+      {view === 'libreria' ? <ExerciseLibrary mode="browse" />
+        : view === 'calendario' ? <div style={{ maxWidth: 720 }}><CoachTrainingCalendar /></div>
+        : <TrainerPrograms />}
     </div>
   )
 }
@@ -600,7 +606,7 @@ function AthleteFitness({ goto }: { goto?: (r: string) => void }) {
   useEffect(() => { load() }, [athleteId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) return <Spinner />
-  if (programs.length === 0) return <div style={{ maxWidth: 900 }}><CoachCard goto={goto} athleteId={athleteId} /><Empty icon={<Icon name="dumbbell" size={22} />} title={t('Nessun programma ancora')} hint={t('Quando il preparatore pubblica una scheda, la trovi qui.')} /></div>
+  if (programs.length === 0) return <div style={{ maxWidth: 900 }}><CoachCard goto={goto} athleteId={athleteId} /><AthleteTrainings /><Empty icon={<Icon name="dumbbell" size={22} />} title={t('Nessun programma ancora')} hint={t('Quando il preparatore pubblica una scheda, la trovi qui.')} /></div>
 
   const today = todayKey()
   const oggi = programs.filter(p => p.program_date === today)
@@ -610,6 +616,7 @@ function AthleteFitness({ goto }: { goto?: (r: string) => void }) {
   return (
     <div style={{ maxWidth: 900 }}>
       <CoachCard goto={goto} athleteId={athleteId} />
+      <AthleteTrainings />
       {oggi.length > 0 && <>
         <div style={label}>{t('Programma di oggi')}</div>
         {oggi.map(p => <BigProgramCard key={p.id} p={p} onOpen={() => setOpen(p)} highlight />)}

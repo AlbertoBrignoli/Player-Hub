@@ -5,6 +5,7 @@ import { useAthlete } from '../lib/athlete'
 import { useLang } from '../lib/i18n'
 import Icon from '../components/Icon'
 import { fmtMatchTime } from '../lib/format'
+import { CoachTrainingCalendar } from '../components/TrainingSessions'
 
 /* Ufficio del professionista: UNA Home per agente, assicuratore, commercialista,
    preparatore, fisioterapista, nutrizionista e wealth manager. Tutti gli atleti insieme (non uno alla volta):
@@ -630,6 +631,7 @@ export default function ProHome({ goto }: { goto: (r: string) => void }) {
       <style>{PRO_CSS}</style>
       <div className="pro-col">
         {header}
+        {pro === 'preparatore' && <CoachTrainingCalendar />}
         {board}
         {completeCard}
         {quick}

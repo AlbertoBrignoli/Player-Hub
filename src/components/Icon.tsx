@@ -42,6 +42,7 @@ const P: Record<string, React.ReactNode> = {
   edit: <path d="M17 3.5a2.8 2.8 0 1 1 4 4L7.5 21 2 22.5 3.5 17z" />,
   smartphone: <><rect x="6" y="2.5" width="12" height="19" rx="2.5" /><path d="M12 18h.01" /></>,
   layers: <><path d="m12 2.5 10 5.5-10 5.5L2 8z" /><path d="m2 13.5 10 5.5 10-5.5" /></>,
+  video: <><rect x="2.5" y="6" width="13" height="12" rx="2.5" /><path d="m15.5 10.5 6-3.5v10l-6-3.5" /></>,
   pin: <><path d="M20 10.5c0 6-8 11-8 11s-8-5-8-11a8 8 0 1 1 16 0" /><circle cx="12" cy="10.5" r="2.8" /></>,
   inbox: <><path d="M22 12.5h-6l-2 3h-4l-2-3H2" /><path d="M5 4.5h14a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-13a2 2 0 0 1 2-2" /></>,
   send: <path d="M22 2.5 11 13.5M22 2.5l-7 19-4-8-8.5-4z" />,
