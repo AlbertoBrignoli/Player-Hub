@@ -70,7 +70,7 @@ const daysTo = (d?: string | null) =>
 
 function dueTone(i: TaxItem) {
   // l è la chiave di traduzione: {n} si sostituisce al momento del render
-  if (i.status !== 'aperto') return { c: OK, l: i.status === 'pagato' ? 'Pagato' : 'Completato', n: 0 }
+  if (i.status !== 'aperto') return { c: OK, l: i.status === 'pagato' ? 'Pagato' : i.status === 'letto' ? 'Letto' : 'Completato', n: 0 }
   const n = daysTo(i.due_date)
   if (n === null) return null
   if (n < 0) return { c: DANGER, l: 'Scaduto da {n} g', n: -n }
@@ -113,12 +113,22 @@ export default function LegalTax() {
     setTab(it.area); setThread(it)
   }, [itemParam, rows.length]) // eslint-disable-line react-hooks/exhaustive-deps
   const ofArea = useMemo(() => rows.filter(i => i.area === tab), [rows, tab])
+  // documento già letto: per l'atleta non è più una voce, resta nel tab Documenti
+  const isRead = (i: TaxItem) => i.kind === 'documento' && i.status === 'letto'
+  const shown = isPlayer ? ofArea.filter(i => !isRead(i)) : ofArea
+  const readHidden = ofArea.length - shown.length
   const aperte = useMemo(() => rows.filter(i => i.kind === 'richiesta' && i.status === 'aperto'), [rows])
   // consegnate negli ultimi 60 giorni: restano visibili con la data di consegna
   const consegnate = useMemo(() => rows.filter(i => i.kind === 'richiesta' && i.status !== 'aperto'
     && Date.now() - new Date(i.completed_at || i.updated_at || 0).getTime() < 60 * 86400000), [rows])
   const requesters = useRequesters([...aperte, ...consegnate])
   const whoOf = (i: TaxItem) => (i.created_by && requesters[i.created_by]) || null
+
+  async function marcaLetto(i: TaxItem) {
+    const { error } = await updateRow('crm_tax_items', i.id, { status: 'letto', completed_at: new Date().toISOString() })
+    if (error) { toast(error.message, 'err'); return }
+    toast(tr('Segnato come letto · lo trovi in Documenti')); reload()
+  }
 
   async function marcaPagato(i: TaxItem) {
     await updateRow('crm_tax_items', i.id, {
@@ -212,7 +222,12 @@ export default function LegalTax() {
             )}
           </div>
 
-          {ofArea.length === 0 ? (
+          {readHidden > 0 && (
+            <button className="btn btn-ghost btn-sm" style={{ marginBottom: 10 }} onClick={() => setTab('documenti')}>
+              <Icon name="check" size={13} /> {(readHidden === 1 ? tr('1 documento letto è in Documenti') : tr('{n} documenti letti sono in Documenti')).replace('{n}', String(readHidden))} →
+            </button>
+          )}
+          {shown.length === 0 ? (
             <div className="card">
               <Empty icon={<Icon name="archive" size={30} strokeWidth={1.4} />}
                 title={tr('Niente in questa area')}
@@ -221,7 +236,7 @@ export default function LegalTax() {
             </div>
           ) : (
             <div className="grid g2" style={{ gap: 12 }}>
-              {ofArea.map(i => {
+              {shown.map(i => {
                 const t = dueTone(i)
                 return (
                   <div key={i.id} className="card" style={{ padding: 0, overflow: 'hidden' }}>
@@ -279,6 +294,10 @@ export default function LegalTax() {
                         {i.kind === 'pagamento' && i.status === 'aperto' && (
                           <button className="btn btn-sm" style={{ background: OK, color: '#fff', fontWeight: 800, border: 'none' }}
                             onClick={() => marcaPagato(i)}>{tr('Segna pagato')}</button>
+                        )}
+                        {i.kind === 'documento' && i.status === 'aperto' && (
+                          <button className="btn btn-sm" style={{ background: OK, color: '#fff', fontWeight: 800, border: 'none' }}
+                            onClick={() => marcaLetto(i)}><Icon name="check" size={12} /> {tr('Segna come letto')}</button>
                         )}
                         {i.kind === 'richiesta' && i.status === 'aperto' && (
                           <button className="btn btn-sm" onClick={() => setRespond(i)}>

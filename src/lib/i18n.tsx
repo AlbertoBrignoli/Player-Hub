@@ -3792,5 +3792,10 @@ const EN: Record<string, string> = {
   "Documenti consegnati": "Documents delivered",
   "Consegna documento": "Deliver document",
   "da fare": "to do",
+  "Letto": "Read",
+  "Segnato come letto · lo trovi in Documenti": "Marked as read · it's in Documents",
+  "1 documento letto è in Documenti": "1 read document is in Documents",
+  "{n} documenti letti sono in Documenti": "{n} read documents are in Documents",
+  "Segna come letto": "Mark as read",
 }
 
