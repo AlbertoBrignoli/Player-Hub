@@ -3814,5 +3814,8 @@ const EN: Record<string, string> = {
   'Extra campo': 'Off-pitch',
   'Consulenze, lifestyle, famiglia e convenzioni': 'Advisory, lifestyle, family and partner deals',
   'I servizi che hai chiesto e a che punto sono': 'The services you asked for and where they stand',
+  'Verticale': 'Vertical',
+  'Zoom': 'Zoom',
+  'Centra': 'Center',
 }
 

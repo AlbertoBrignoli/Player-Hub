@@ -50,13 +50,16 @@ const loadImg = (src: string, cors = false) => new Promise<HTMLImageElement | nu
 })
 
 type Labels = { team: string; send: string; join: string; joinSub: string; scan: string }
-export type Look = { photo?: string | null; bg?: string | null; alpha: number }
+/** inquadratura di un'immagine: x e y da 0 a 1 (0,5 = al centro), z = zoom (1 = riempie appena) */
+export type Frame = { x: number; y: number; z: number }
+export const CENTER: Frame = { x: 0.5, y: 0.5, z: 1 }
+export type Look = { photo?: string | null; bg?: string | null; alpha: number; photoFrame: Frame; bgFrame: Frame }
 
-// immagine che riempie il riquadro tagliando i bordi (come object-fit: cover)
-function cover(g: CanvasRenderingContext2D, im: HTMLImageElement, x: number, y: number, w: number, h: number) {
-  const k = Math.max(w / im.width, h / im.height)
+// immagine che riempie il riquadro tagliando i bordi (come object-fit: cover), con inquadratura scelta
+function cover(g: CanvasRenderingContext2D, im: HTMLImageElement, x: number, y: number, w: number, h: number, f: Frame = CENTER) {
+  const k = Math.max(w / im.width, h / im.height) * Math.max(1, f.z)
   const sw = w / k, sh = h / k
-  g.drawImage(im, (im.width - sw) / 2, (im.height - sh) / 2, sw, sh, x, y, w, h)
+  g.drawImage(im, (im.width - sw) * f.x, (im.height - sh) * f.y, sw, sh, x, y, w, h)
 }
 
 // 1200×630 (stesso formato dell'anteprima dell'app), disegnato a 2x per essere nitido
@@ -74,7 +77,7 @@ async function render(d: CardData, L: Labels, en: boolean, look: Look): Promise<
     QRCode.toDataURL(joinUrl, { width: 600, margin: 1, errorCorrectionLevel: 'M', color: { dark: '#0A0A0A', light: '#FFFFFF' } }).then(u => loadImg(u)),
   ])
   g.fillStyle = '#0A0A0A'; g.fillRect(0, 0, W, H)
-  if (bg && look.bg) { g.globalAlpha = look.alpha; cover(g, bg, 0, 0, W, H); g.globalAlpha = 1 }
+  if (bg && look.bg) { g.globalAlpha = look.alpha; cover(g, bg, 0, 0, W, H, look.bgFrame); g.globalAlpha = 1 }
   else if (bg) g.drawImage(bg, 0, 0, W, H)
   // velo scuro a sinistra: si legge il biglietto, a destra resta il telefono con l'app
   const grad = g.createLinearGradient(0, 0, 860, 0)
@@ -101,7 +104,7 @@ async function render(d: CardData, L: Labels, en: boolean, look: Look): Promise<
   // foto e nome
   const px = 64, py = 104, ps = 124
   g.save(); g.beginPath(); g.arc(px + ps / 2, py + ps / 2, ps / 2, 0, Math.PI * 2); g.clip()
-  if (photo) { g.fillStyle = '#fff'; g.fillRect(px, py, ps, ps); cover(g, photo, px, py, ps, ps) }
+  if (photo) { g.fillStyle = '#fff'; g.fillRect(px, py, ps, ps); cover(g, photo, px, py, ps, ps, look.photoFrame) }
   else {
     g.fillStyle = '#FFE600'; g.fillRect(px, py, ps, ps)
     g.fillStyle = '#0A0A0A'; g.font = `900 46px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'
@@ -150,7 +153,7 @@ export default function AthleteCard({ d }: { d: CardData }) {
   }
   const [blob, setBlob] = useState<Blob | null>(null)
   const [url, setUrl] = useState<string | null>(null)
-  const [look, setLook] = useState<Look>({ alpha: 0.55 })
+  const [look, setLook] = useState<Look>({ alpha: 0.55, photoFrame: CENTER, bgFrame: CENTER })
   const [editing, setEditing] = useState(false)
   const photoRef = useRef<HTMLInputElement>(null)
   const bgRef = useRef<HTMLInputElement>(null)
@@ -165,7 +168,8 @@ export default function AthleteCard({ d }: { d: CardData }) {
       const c = document.createElement('canvas'); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k)
       c.getContext('2d')!.drawImage(bmp, 0, 0, c.width, c.height)
       const src = c.toDataURL('image/jpeg', 0.88)
-      setLook(l => ({ ...l, [key]: src }))
+      // immagine nuova: si riparte centrati
+      setLook(l => ({ ...l, [key]: src, [key === 'photo' ? 'photoFrame' : 'bgFrame']: CENTER }))
     } catch { toast(t('Immagine non disponibile'), 'err') }
   }
 
@@ -208,32 +212,58 @@ export default function AthleteCard({ d }: { d: CardData }) {
       {editing && (
         <div className="card" style={{ marginTop: 10, display: 'grid', gap: 12 }}>
           <div className="flex gap" style={{ alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <span style={{ fontWeight: 800, fontSize: 13, width: 96 }}>{t('Foto')}</span>
+            <span className="t-item" style={{ width: 96 }}>{t('Foto')}</span>
             <button className="btn btn-sm btn-primary" onClick={() => setLibrary('photo')}><Icon name="image" size={13} /> {t('Da Player Hub')}</button>
             <button className="btn btn-sm" onClick={() => photoRef.current?.click()}><Icon name="camera" size={13} /> {t('Dal dispositivo')}</button>
-            {look.photo && <button className="btn btn-sm btn-ghost" onClick={() => setLook(l => ({ ...l, photo: null }))}>{t('Usa la foto del profilo')}</button>}
+            {look.photo && <button className="btn btn-sm btn-ghost" onClick={() => setLook(l => ({ ...l, photo: null, photoFrame: CENTER }))}>{t('Usa la foto del profilo')}</button>}
           </div>
-          <div className="flex gap" style={{ alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <span style={{ fontWeight: 800, fontSize: 13, width: 96 }}>{t('Sfondo')}</span>
+          {(look.photo || d.photo) && <FrameSliders f={look.photoFrame} onChange={f => setLook(l => ({ ...l, photoFrame: f }))} />}
+          <div className="flex gap" style={{ alignItems: 'center', gap: 8, flexWrap: 'wrap', borderTop: '1px solid var(--border)', paddingTop: 12 }}>
+            <span className="t-item" style={{ width: 96 }}>{t('Sfondo')}</span>
             <button className="btn btn-sm btn-primary" onClick={() => setLibrary('bg')}><Icon name="image" size={13} /> {t('Da Player Hub')}</button>
             <button className="btn btn-sm" onClick={() => bgRef.current?.click()}><Icon name="camera" size={13} /> {t('Dal dispositivo')}</button>
-            {look.bg && <button className="btn btn-sm btn-ghost" onClick={() => setLook(l => ({ ...l, bg: null }))}>{t('Torna a Player Hub')}</button>}
+            {look.bg && <button className="btn btn-sm btn-ghost" onClick={() => setLook(l => ({ ...l, bg: null, bgFrame: CENTER }))}>{t('Torna a Player Hub')}</button>}
           </div>
-          {look.bg && (
-            <label className="flex gap" style={{ alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-              <span style={{ fontWeight: 800, fontSize: 13, width: 96 }}>{t('Trasparenza')}</span>
-              <input type="range" min={15} max={100} value={Math.round(look.alpha * 100)} style={{ flex: 1, minWidth: 160 }}
-                onChange={e => setLook(l => ({ ...l, alpha: Number(e.target.value) / 100 }))} />
-              <span className="faint" style={{ fontSize: 12, width: 38, textAlign: 'right' }}>{Math.round(look.alpha * 100)}%</span>
-            </label>
-          )}
-          <div className="faint" style={{ fontSize: 11.5 }}>{t('Le foto scelte restano sul tuo dispositivo e servono solo a creare il biglietto.')}</div>
+          {look.bg && <>
+            <Slider label={t('Trasparenza')} min={15} max={100} value={Math.round(look.alpha * 100)} unit="%"
+              onChange={v => setLook(l => ({ ...l, alpha: v / 100 }))} />
+            <FrameSliders f={look.bgFrame} onChange={f => setLook(l => ({ ...l, bgFrame: f }))} />
+          </>}
+          <div className="t-meta">{t('Le foto scelte restano sul tuo dispositivo e servono solo a creare il biglietto.')}</div>
           <input ref={photoRef} type="file" accept="image/*" hidden onChange={e => { pick(e.target.files?.[0], 'photo'); e.target.value = '' }} />
           {library && <MediaPicker title={library === 'photo' ? t('Scegli la foto') : t('Scegli lo sfondo')}
             onClose={() => setLibrary(null)} onPick={b => { pick(b, library); setLibrary(null) }} />}
           <input ref={bgRef} type="file" accept="image/*" hidden onChange={e => { pick(e.target.files?.[0], 'bg'); e.target.value = '' }} />
         </div>
       )}
+    </div>
+  )
+}
+
+// Un cursore della personalizzazione (trasparenza, spostamenti, zoom): etichetta, barra e valore
+function Slider({ label, value, min, max, unit, onChange }: { label: string; value: number; min: number; max: number; unit?: string; onChange: (v: number) => void }) {
+  return (
+    <label className="flex gap" style={{ alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+      <span className="t-body" style={{ width: 96, fontWeight: 600 }}>{label}</span>
+      <input type="range" min={min} max={max} value={value} style={{ flex: 1, minWidth: 160 }}
+        onChange={e => onChange(Number(e.target.value))} />
+      <span className="t-meta" style={{ width: 44, textAlign: 'right' }}>{value}{unit || ''}</span>
+    </label>
+  )
+}
+
+// Inquadratura di una foto: sposta a destra/sinistra, su/giù e ingrandisci; "Centra" riparte dal centro
+function FrameSliders({ f, onChange }: { f: Frame; onChange: (f: Frame) => void }) {
+  const { t } = useLang()
+  const centered = f.x === CENTER.x && f.y === CENTER.y && f.z === CENTER.z
+  return (
+    <div style={{ display: 'grid', gap: 8 }}>
+      <Slider label={t('Orizzontale')} min={0} max={100} value={Math.round(f.x * 100)} unit="%" onChange={v => onChange({ ...f, x: v / 100 })} />
+      <Slider label={t('Verticale')} min={0} max={100} value={Math.round(f.y * 100)} unit="%" onChange={v => onChange({ ...f, y: v / 100 })} />
+      <Slider label={t('Zoom')} min={100} max={300} value={Math.round(f.z * 100)} unit="%" onChange={v => onChange({ ...f, z: v / 100 })} />
+      {!centered && <button className="btn btn-sm btn-ghost" style={{ justifySelf: 'start' }} onClick={() => onChange(CENTER)}>
+        <Icon name="rotate-ccw" size={13} /> {t('Centra')}
+      </button>}
     </div>
   )
 }
