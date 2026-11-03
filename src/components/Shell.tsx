@@ -15,7 +15,7 @@ import { Modal, Field, Input, Tabs, Empty } from './ui'
 // Schermate home dei vari ruoli: qui compare l'invito ad attivare le notifiche.
 const HOME_ROUTES = ['dashboard', 'brandhome', 'agent-home', 'insurer-home', 'tax-home', 'physio-home', 'partner-home', 'wealth-home']
 
-export const APP_VERSION = 'v12.31'
+export const APP_VERSION = 'v12.32'
 
 export interface NavDef {
   key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[]
@@ -42,7 +42,7 @@ export const NAV: { group: string; items: NavDef[] }[] = [
       { key: 'agenda', label: 'Impegni' },
       { key: 'tasks', label: 'Task' },
     ]},
-    { key: 'media', label: 'Media', icon: 'image' },
+    // Media non è nel menu: ci si entra dal tasto Media in Home (stessa cosa, niente doppioni)
     ...(FEATURES.backstage ? [{ key: 'backstage', label: 'Backstage', icon: 'eye' }] : []),
     // Il mio team = parte operativa. Niente schede: dalla pagina Team ogni professionista apre
     // la SUA area (preparazione, fisco, polizze, patrimonio), l'archivio ha contratti e documenti,
