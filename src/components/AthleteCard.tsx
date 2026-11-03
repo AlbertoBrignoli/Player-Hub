@@ -258,8 +258,8 @@ function FrameSliders({ f, onChange }: { f: Frame; onChange: (f: Frame) => void 
   const centered = f.x === CENTER.x && f.y === CENTER.y && f.z === CENTER.z
   return (
     <div style={{ display: 'grid', gap: 8 }}>
-      <Slider label={t('Orizzontale')} min={0} max={100} value={Math.round(f.x * 100)} unit="%" onChange={v => onChange({ ...f, x: v / 100 })} />
-      <Slider label={t('Verticale')} min={0} max={100} value={Math.round(f.y * 100)} unit="%" onChange={v => onChange({ ...f, y: v / 100 })} />
+      <Slider label={t('Destra / sinistra')} min={0} max={100} value={Math.round(f.x * 100)} unit="%" onChange={v => onChange({ ...f, x: v / 100 })} />
+      <Slider label={t('Su / giù')} min={0} max={100} value={Math.round(f.y * 100)} unit="%" onChange={v => onChange({ ...f, y: v / 100 })} />
       <Slider label={t('Zoom')} min={100} max={300} value={Math.round(f.z * 100)} unit="%" onChange={v => onChange({ ...f, z: v / 100 })} />
       {!centered && <button className="btn btn-sm btn-ghost" style={{ justifySelf: 'start' }} onClick={() => onChange(CENTER)}>
         <Icon name="rotate-ccw" size={13} /> {t('Centra')}
