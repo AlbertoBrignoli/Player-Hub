@@ -3882,5 +3882,6 @@ const EN: Record<string, string> = {
   'Confermata e messa in calendario': 'Confirmed and added to the calendar',
   'Metti nel calendario dell\'atleta': 'Add to the athlete\'s calendar',
   'Già nel calendario: {d}': 'Already in the calendar: {d}',
+  'Profilo e impostazioni': 'Profile and settings',
 }
 

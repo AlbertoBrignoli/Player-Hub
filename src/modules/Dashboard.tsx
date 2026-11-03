@@ -64,17 +64,25 @@ button.home-card:active, .home-qa:active, .home-contact:active { transform: scal
 .home-id-role { font-size: 12.5px; color: var(--text-dim); margin-top: 3px; }
 
 /* 1+2 intestazione: un riquadro giallo AUVI con chi sei e le azioni rapide (su telefono sotto il nome) */
-.home-top { display: flex; align-items: center; justify-content: space-between; gap: 16px 24px; flex-wrap: wrap;
-  background: var(--yellow); border: 0; border-radius: 20px; padding: 14px 16px; }
-.home-top .home-id-hi, .home-top .home-id-role { color: rgba(10,10,10,.68); }
-.home-top .home-id-ph { border-color: rgba(10,10,10,.12); }
+.home-top { position: relative; overflow: hidden; display: flex; align-items: center; justify-content: space-between; gap: 16px 24px; flex-wrap: wrap;
+  border: 0; border-radius: 20px; padding: 14px 16px; color: #fff;
+  /* stesso sfondo della copertina Servizi AUVI: foto in bianco e nero sotto un velo scuro */
+  background: linear-gradient(100deg, rgba(10,10,10,.92) 0%, rgba(10,10,10,.78) 55%, rgba(10,10,10,.55) 100%), url(/servizi/auvi-hero.jpg) center / cover, var(--ink); }
+.home-top::before { content: ''; position: absolute; inset: 0; background: inherit; filter: grayscale(1); z-index: 0; }
+.home-top > * { position: relative; z-index: 1; }
+.home-top .home-id-name, .home-top .home-id-line { color: #fff; }
+.home-top .home-id-hi, .home-top .home-id-role { color: rgba(255,255,255,.7); }
+.home-top .home-id-ph { border-color: rgba(255,255,255,.2); }
+.home-top .home-qa-l { color: #fff; }
 .home-id-line { display: none; }
-.home-top .home-id { flex: 1 1 260px; min-width: 0; }
-.home-top .home-qas { display: flex; gap: 14px; flex: 0 0 auto; width: auto; }
-.home-top .home-qa { width: 56px; }
+.home-top .home-id { flex: 1 1 300px; min-width: min(300px, 100%); }
+.home-top .home-qas { display: flex; gap: 10px; flex: 0 0 auto; width: auto; }
+.home-top .home-qa { width: 52px; }
 .home-top .home-qa-ic { width: 44px; height: 44px; }
 /* sul giallo i cerchi sono tutti uguali: bianchi con bordo nero */
-.home-top .home-qa .home-qa-ic, .home-top .home-qa.primary .home-qa-ic { background: #fff; color: var(--ink); border: 1.5px solid var(--ink); }
+.home-top .home-qa .home-qa-ic, .home-top .home-qa.primary .home-qa-ic { background: #fff; color: var(--ink); border: 0; }
+.home-top .home-qa:hover .home-qa-ic { background: var(--yellow); }
+.home-top .home-qa-badge { border-color: var(--ink); }
 .home-top .home-qa.primary .home-qa-ic { box-shadow: none; }
 @media (max-width: 600px) { .home-top .home-qas { width: 100%; justify-content: space-around; } }
 
@@ -273,6 +281,12 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
     ]).then(([a, b]) => setOpenTasks((a.count || 0) + (b.count || 0)))
   }, [athleteId])
   const isPlayer = role === 'player'
+  const [hasMailbox, setHasMailbox] = useState(false)
+  useEffect(() => {
+    if (!athleteId) { setHasMailbox(false); return }
+    supabase.from('crm_mailboxes').select('player_id').eq('player_id', athleteId).maybeSingle()
+      .then(({ data }) => setHasMailbox(!!data))
+  }, [athleteId])
 
   useEffect(() => {
     if (!athleteId) return
@@ -395,6 +409,8 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
     : { key: 'media', label: t('Media'), icon: 'image', run: () => goto('media?tab=cartelle'), badge: toApprove.length })
   if (canEvent) qas.push({ key: 'event', label: t('Impegno'), icon: 'calendar', run: () => setAdding('event') })
   qas.push({ key: 'tasks', label: t('Task'), icon: 'check-square', run: () => goto('tasks'), badge: openTasks })
+  // Mail solo se l'atleta ha la casella AUVI (sul telefono non è più nel menu: si apre da qui)
+  if (hasMailbox) qas.push({ key: 'mail', label: t('Mail'), icon: 'mail', run: () => goto('mail') })
   qas.push({ key: 'chat', label: t('Chat'), icon: 'message', run: () => goto('messages') })
   const quick = (
     <nav className="home-sec home-qas" aria-label={t('Azioni rapide')} style={{ gridTemplateColumns: `repeat(${qas.length}, minmax(0, 1fr))` }}>

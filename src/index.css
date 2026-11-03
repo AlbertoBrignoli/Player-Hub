@@ -902,3 +902,7 @@ input[type="time"]::-webkit-date-and-time-value { text-align: left; }
   .crumb button { min-height: 40px; }
   .wa-item { min-height: 72px; }
 }
+
+/* Telefono, atleta: il tondo con le iniziali in alto apre il menu completo (impostazioni, lingua, esci) */
+.topbar-me { display: none; width: 38px; height: 38px; border-radius: 50%; border: 0; background: var(--yellow); color: var(--ink); font: inherit; font-weight: 800; font-size: 13px; cursor: pointer; flex-shrink: 0; }
+@media (max-width: 880px) { .topbar-me { display: grid; place-items: center; } }

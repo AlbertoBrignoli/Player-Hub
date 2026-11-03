@@ -15,7 +15,7 @@ import { Modal, Field, Input, Tabs, Empty } from './ui'
 // Schermate home dei vari ruoli: qui compare l'invito ad attivare le notifiche.
 const HOME_ROUTES = ['dashboard', 'brandhome', 'agent-home', 'insurer-home', 'tax-home', 'physio-home', 'partner-home', 'wealth-home']
 
-export const APP_VERSION = 'v12.37'
+export const APP_VERSION = 'v12.38'
 
 export interface NavDef {
   key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[]
@@ -38,7 +38,7 @@ export const NAV: { group: string; items: NavDef[] }[] = [
     { key: 'dashboard', label: 'Home', icon: 'home' },
     { key: 'services', label: 'Servizi AUVI', icon: 'layers', fromHome: true },
     { key: 'messages', label: 'Chat', icon: 'message', fromHome: true },
-    { key: 'mail', label: 'Mail', icon: 'mail', mailbox: true },
+    { key: 'mail', label: 'Mail', icon: 'mail', mailbox: true, fromHome: true },
     { key: 'editorial', label: 'Calendario', icon: 'calendar', tabs: [
       { key: 'editorial', label: 'Editoriale' },
       { key: 'agenda', label: 'Impegni' },
@@ -391,13 +391,17 @@ export default function Shell({ route, setRoute, right, children }: {
             ]
     : isPro ? proTabbar(role as ProRole)
     : [
-              // Chat e Servizi sono già in Home (tasto Chat e copertina Servizi): qui niente doppioni
+              // Chat, Mail e Servizi sono già in Home (cerchi in alto e copertina Servizi): qui niente doppioni.
+              // Al posto di "Altro" c'è Atleta; impostazioni e lingua si aprono dal tondo con le iniziali in alto.
               { key: 'dashboard', label: 'Home', icon: 'home' },
               { key: 'editorial', label: 'Calendario', icon: 'calendar' },
               { key: 'my-team', label: 'Team', icon: 'users' },
               { key: 'commercial', label: 'Business', icon: 'briefcase' },
+              { key: 'performance', label: 'Atleta', icon: 'activity' },
             ]
   const tabbarKeys = new Set(tabbarItems.map(t => t.key))
+  // atleta e AUVI: la barra ha 5 sezioni piene, il menu completo si apre dal tondo in alto
+  const fullTabbar = !isPro && !isBrand && !isPartner
   const title = hub && (hubTabs.length > 1 || hubPage) ? { t: hub.label, s: title0.s } : title0
 
   return (
@@ -483,6 +487,11 @@ export default function Shell({ route, setRoute, right, children }: {
             )}
             <span className="topbar-lang"><LangToggle /></span>
             {right}<NotificationBell goto={setRoute} />
+            {fullTabbar && (
+              <button className="topbar-me" onClick={() => setOpen(true)} aria-label={tr('Profilo e impostazioni')}>
+                {initials(profile?.full_name || profile?.email)}
+              </button>
+            )}
           </div>
         </div>
         <div className="content">
@@ -517,10 +526,12 @@ export default function Shell({ route, setRoute, right, children }: {
             <span className="tab-lbl">{tr(t.label)}</span>
           </button>
         ))}
-        <button className={`tab-item ${open ? 'active' : ''}`} onClick={() => setOpen(true)} aria-label={tr('Altre sezioni')}>
-          <span className="tab-ico"><Icon name="menu" size={21} strokeWidth={1.7} /></span>
-          <span className="tab-lbl">{tr('Altro')}</span>
-        </button>
+        {!fullTabbar && (
+          <button className={`tab-item ${open ? 'active' : ''}`} onClick={() => setOpen(true)} aria-label={tr('Altre sezioni')}>
+            <span className="tab-ico"><Icon name="menu" size={21} strokeWidth={1.7} /></span>
+            <span className="tab-lbl">{tr('Altro')}</span>
+          </button>
+        )}
       </nav>
 
       <Toaster />
