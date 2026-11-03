@@ -27,7 +27,7 @@ const CHIP: Record<string, { l: string; c: string }> = {
 // Desktop (>880px): colonna sinistra 1-4, destra 5-7. Stesso DOM, nessun `order`.
 const HOME_CSS = `
 /* La tua stagione: card chiara (tra due blocchi neri), il giallo resta solo nell'icona */
-.home-season { width: 100%; text-align: left; display: block; cursor: pointer; background: var(--surface); color: var(--ink); border: 1px solid var(--border); border-radius: 20px; padding: 18px; transition: transform .12s, border-color .15s; }
+.home-season { width: 100%; text-align: left; display: block; cursor: pointer; background: #E9E9E7; color: var(--ink); border: 1px solid #E0E0DD; border-radius: 20px; padding: 18px; transition: transform .12s, border-color .15s; }
 .home-season:hover { border-color: var(--border-2); }
 .home-season:active { transform: scale(.985); }
 .home-season-head { display: flex; align-items: center; gap: 12px; }
@@ -36,10 +36,10 @@ const HOME_CSS = `
 .home-season-t { font-family: var(--font-display); font-stretch: 125%; font-weight: 700; font-size: 18px; text-transform: uppercase; line-height: 1.15; }
 .home-season-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 16px; }
 .home-season-grid > div { text-align: center; min-width: 0; }
-.home-season-grid > div + div { border-left: 1px solid var(--border); }
+.home-season-grid > div + div { border-left: 1px solid rgba(10,10,10,.1); }
 .home-season-grid .v { font-family: var(--font-display); font-stretch: 125%; font-weight: 700; font-size: 24px; line-height: 1; font-variant-numeric: tabular-nums; }
 .home-season-grid .l { font-size: 11px; font-weight: 600; margin-top: 6px; color: var(--text-faint); }
-.home-season-last { display: flex; align-items: center; gap: 8px; margin-top: 14px; padding: 10px 12px; border-radius: 12px; background: var(--bg-2); font-size: 12.5px; }
+.home-season-last { display: flex; align-items: center; gap: 8px; margin-top: 14px; padding: 10px 12px; border-radius: 12px; background: rgba(255,255,255,.6); font-size: 12.5px; }
 .home-season-last .k { font-weight: 700; flex-shrink: 0; }
 .home-season-last .m { flex: 1; min-width: 0; font-weight: 600; }
 .home-season-last .x { flex-shrink: 0; color: var(--text-faint); font-variant-numeric: tabular-nums; }
@@ -63,12 +63,19 @@ button.home-card:active, .home-qa:active, .home-contact:active { transform: scal
 .home-id-name { font-family: var(--font-display); font-stretch: 125%; font-weight: 700; text-transform: uppercase; font-size: 22px; line-height: 1.05; margin-top: 2px; }
 .home-id-role { font-size: 12.5px; color: var(--text-dim); margin-top: 3px; }
 
-/* 1+2 intestazione: identità a sinistra, azioni rapide a destra (su telefono vanno sotto) */
-.home-top { display: flex; align-items: center; justify-content: space-between; gap: 16px 24px; flex-wrap: wrap; }
+/* 1+2 intestazione: un riquadro giallo tenue con chi sei e le azioni rapide (su telefono sotto il nome) */
+.home-top { display: flex; align-items: center; justify-content: space-between; gap: 16px 24px; flex-wrap: wrap;
+  background: var(--yellow-soft); border: 1px solid #F3E7A0; border-radius: 20px; padding: 14px 16px; }
+.home-id-line { display: none; }
 .home-top .home-id { flex: 1 1 260px; min-width: 0; }
 .home-top .home-qas { display: flex; gap: 14px; flex: 0 0 auto; width: auto; }
 .home-top .home-qa { width: 56px; }
-.home-top .home-qa-ic { width: 44px; height: 44px; }
+.home-top .home-qa-ic { width: 44px; height: 44px; border: 0; }
+.home-top .home-qa.home-qa-media .home-qa-ic { background: #DCEAFE; color: #1F6FEB; }
+.home-top .home-qa.home-qa-event .home-qa-ic { background: #FFEC00; color: var(--ink); }
+.home-top .home-qa.home-qa-tasks .home-qa-ic { background: #FFDCD2; color: #D23A00; }
+.home-top .home-qa.home-qa-chat .home-qa-ic { background: #D6F3E1; color: #12894A; }
+.home-top .home-qa.primary .home-qa-ic { box-shadow: none; }
 @media (max-width: 600px) { .home-top .home-qas { width: 100%; justify-content: space-around; } }
 
 /* 2 azioni rapide */
@@ -182,7 +189,10 @@ button.home-card:active, .home-qa:active, .home-contact:active { transform: scal
 @media (max-width: 600px) {
   .home { gap: 16px; }
   .home-id-ph, .home-id .avatar { width: 44px !important; height: 44px !important; border-radius: 13px !important; }
-  .home-id-name { font-size: 19px; }
+  .home-id-hi, .home-id-name { display: none; }
+  .home-id-line { display: block; font-size: 17px; line-height: 1.25; color: var(--text); }
+  .home-id-line b { font-weight: var(--w-bold); }
+  .home-top { padding: 12px; border-radius: 18px; }
   .home-top { gap: 12px; }
   .home-top .home-qa { width: auto; flex: 1; gap: 5px; }
   .home-top .home-qa-ic { width: 40px; height: 40px; }
@@ -368,6 +378,8 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
         : <div className="avatar" style={{ width: 52, height: 52, fontSize: 18, borderRadius: 15, flexShrink: 0 }}>{(player?.name || firstName || 'A')[0]}</div>}
       <div style={{ minWidth: 0 }}>
         <div className="home-id-hi home-trunc">{greeting}{firstName ? `, ${firstName}` : ''}</div>
+        {/* telefono: saluto e nome dell'atleta in una riga sola */}
+        <div className="home-id-line home-trunc">{greeting}, <b>{player?.name || t('Atleta')}</b></div>
         <h1 className="home-id-name home-trunc">{player?.name || t('Atleta')}</h1>
         <div className="home-id-role home-trunc">{roleLine}</div>
       </div>
@@ -387,7 +399,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
   const quick = (
     <nav className="home-sec home-qas" aria-label={t('Azioni rapide')} style={{ gridTemplateColumns: `repeat(${qas.length}, minmax(0, 1fr))` }}>
       {qas.map(q => (
-        <button key={q.key} className={`home-qa${q.badge ? ' primary' : ''}`} onClick={q.run}
+        <button key={q.key} className={`home-qa home-qa-${q.key}${q.badge ? ' primary' : ''}`} onClick={q.run}
           aria-label={q.badge ? `${q.label}: ${q.badge} ${q.key === 'tasks' ? t('da fare') : t('da approvare')}` : q.label}>
           <span className="home-qa-ic">
             <Icon name={q.icon} size={21} strokeWidth={1.7} />
