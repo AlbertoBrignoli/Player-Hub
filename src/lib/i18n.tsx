@@ -3848,5 +3848,13 @@ const EN: Record<string, string> = {
   'Link della sessione (facoltativo)': 'Session link (optional)',
   'Gli arriva la richiesta di programma.': 'They receive the program request.',
   'Programma online': 'Online program',
+  'Invia a {name}': 'Send to {name}',
+  'Con chi': 'With whom',
+  'Data e ora': 'Date and time',
+  'Incontro': 'Meeting',
+  'Call con AUVI': 'Call with AUVI',
+  'Call con {name}': 'Call with {name}',
+  'Incontro con {name}': 'Meeting with {name}',
+  'Allenamento online': 'Online training',
 }
 

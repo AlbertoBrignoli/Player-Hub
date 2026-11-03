@@ -9,21 +9,33 @@ import { Modal, Field, Input, Select, Tabs } from './ui'
 import Icon from './Icon'
 import { useLang } from '../lib/i18n'
 
-// "+" sempre a portata di pollice: nuovo impegno o nuova task con solo titolo e data.
-// L'impegno può essere un impegno, una call o un allenamento, e si può taggare la persona di
-// riferimento del team: le arriva la notifica e (se l'ha chiesto l'atleta) è lei a confermare.
-// I dettagli (note, allegati, priorità) si aggiungono dopo, dalla scheda completa.
+// "+" sempre a portata di pollice: nuovo impegno o nuova task.
+// Impegno, in quest'ordine: 1) CON CHI (AUVI o una persona del team), 2) le opzioni di QUELLA
+// persona (preparatore: allenamento in presenza / online / programma online; gli altri: call o
+// incontro; AUVI: impegno o call), 3) le parti comuni: titolo (già proposto), data e ora, luogo o link.
+// Alla persona scelta arriva la notifica e, se l'ha chiesto l'atleta, è lei a confermare.
 type EvType = 'personale' | 'call' | 'allenamento'
-const EV_TYPES: { k: EvType; l: string; icon: string; ph: string }[] = [
-  { k: 'personale', l: 'Impegno', icon: 'calendar', ph: 'Es. Visita medica, shooting, volo' },
-  { k: 'call', l: 'Call', icon: 'smartphone', ph: 'Es. Call con il procuratore' },
-  { k: 'allenamento', l: 'Allenamento', icon: 'dumbbell', ph: 'Es. Forza gambe, recupero' },
-]
+type Mode = 'presenza' | 'online' | 'programma'
+type Opt = { k: string; l: string; icon: string; type: EvType; mode?: Mode; link?: boolean; title: string }
 type Pro = { pro_id: string; role: string; name: string | null; photo_url: string | null }
 const ROLE_L: Record<string, string> = {
   agente: 'Procuratore', preparatore: 'Preparatore', assicuratore: 'Assicuratore', commercialista: 'Commercialista',
   fisioterapista: 'Fisioterapista', nutrizionista: 'Nutrizionista', wealth: 'Wealth manager',
 }
+// cosa si può fare con ciascuno: il titolo è una proposta ({name} = nome della persona)
+const OPTS_AUVI: Opt[] = [
+  { k: 'impegno', l: 'Impegno', icon: 'calendar', type: 'personale', title: '' },
+  { k: 'call', l: 'Call', icon: 'smartphone', type: 'call', link: true, title: 'Call con AUVI' },
+]
+const OPTS_COACH: Opt[] = [
+  { k: 'presenza', l: 'In presenza', icon: 'dumbbell', type: 'allenamento', mode: 'presenza', title: 'Allenamento' },
+  { k: 'online', l: 'Online', icon: 'video', type: 'allenamento', mode: 'online', link: true, title: 'Allenamento online' },
+  { k: 'programma', l: 'Programma online', icon: 'file', type: 'allenamento', mode: 'programma', title: 'Programma online' },
+]
+const OPTS_PRO: Opt[] = [
+  { k: 'call', l: 'Call', icon: 'smartphone', type: 'call', link: true, title: 'Call con {name}' },
+  { k: 'incontro', l: 'Incontro', icon: 'users', type: 'personale', title: 'Incontro con {name}' },
+]
 function defaultStart() {
   const d = new Date()
   d.setDate(d.getDate() + 1)
@@ -55,58 +67,72 @@ export default function QuickAdd({ controlled, initialKind, onClose }: {
   const setOpen = (v: boolean) => { if (controlled) { if (!v) onClose?.() } else setOpenState(v) }
   const [kind, setKind] = useState<'event' | 'task'>(initialKind ?? (canEvent ? 'event' : 'task'))
   const [title, setTitle] = useState('')
+  // finché l'atleta non lo modifica, il titolo segue la scelta (es. "Call con Andrea")
+  const [titleTouched, setTitleTouched] = useState(false)
   const [start, setStart] = useState(defaultStart)
   const [location, setLocation] = useState('')
   const [due, setDue] = useState('')
   const [assignee, setAssignee] = useState<'auvi' | 'player'>('auvi')
   const [busy, setBusy] = useState(false)
-  const [evType, setEvType] = useState<EvType>('personale')
   const [link, setLink] = useState('')
-  // persona di riferimento: null = AUVI (come sempre), altrimenti un professionista del team
+  // con chi: null = AUVI, altrimenti un professionista del team
   const [team, setTeam] = useState<Pro[]>([])
   const [tag, setTag] = useState<string | null>(null)
-  // allenamento con il preparatore: sessione in presenza, online, oppure un programma online da fare da solo
-  const [mode, setMode] = useState<'presenza' | 'online' | 'programma'>('presenza')
+  const [optKey, setOptKey] = useState('impegno')
   useEffect(() => {
     if (!open || !athleteId) return
     supabase.from('crm_athlete_team').select('pro_id, role, name, photo_url').eq('player_id', athleteId)
       .then(({ data }) => setTeam(((data as Pro[]) || []).filter(p => p.pro_id)))
   }, [open, athleteId])
-  // allenamento → il preparatore è già selezionato (si può cambiare)
-  function pickType(k: EvType) {
-    setEvType(k)
-    if (k === 'allenamento') { const c = team.find(p => p.role === 'preparatore'); if (c) setTag(c.pro_id) }
-  }
 
   if (!canEvent && !canTask) return null
 
-  function reset() { setTitle(''); setStart(defaultStart()); setLocation(''); setDue(''); setAssignee('auvi'); setEvType('personale'); setLink(''); setTag(null); setMode('presenza') }
-  const coach = team.find(p => p.pro_id === tag && p.role === 'preparatore')
-  const withCoach = kind === 'event' && evType === 'allenamento' && !!coach
-  const isProgram = withCoach && mode === 'programma'
-  const hasLink = evType === 'call' || (withCoach && mode === 'online')
+  const who = team.find(p => p.pro_id === tag) || null
+  const whoName = who ? (who.name || t(ROLE_L[who.role] || who.role)).split(' ')[0] : 'AUVI'
+  const opts = !who ? OPTS_AUVI : who.role === 'preparatore' ? OPTS_COACH : OPTS_PRO
+  const opt = opts.find(o => o.k === optKey) || opts[0]
+  const isProgram = !!who && opt.mode === 'programma'
+  const suggest = (o: Opt, name: string) => t(o.title).replace('{name}', name)
+
+  // scelta la persona, si aprono le sue opzioni (la prima già selezionata) e il titolo si propone da solo
+  function pickPerson(id: string | null) {
+    setTag(id)
+    const p = team.find(x => x.pro_id === id) || null
+    const list = !p ? OPTS_AUVI : p.role === 'preparatore' ? OPTS_COACH : OPTS_PRO
+    setOptKey(list[0].k)
+    if (!titleTouched) setTitle(suggest(list[0], p ? (p.name || t(ROLE_L[p.role] || p.role)).split(' ')[0] : 'AUVI'))
+  }
+  function pickOpt(o: Opt) {
+    setOptKey(o.k)
+    if (!titleTouched) setTitle(suggest(o, whoName))
+  }
+
+  function reset() {
+    setTitle(''); setTitleTouched(false); setStart(defaultStart()); setLocation(''); setDue(''); setAssignee('auvi')
+    setLink(''); setTag(null); setOptKey('impegno')
+  }
 
   async function save() {
     if (!title.trim() || !athleteId) return
     setBusy(true)
     // programma online: è una richiesta al preparatore (gli arriva la notifica), non un impegno in agenda
-    if (isProgram && coach) {
+    if (kind === 'event' && isProgram && who) {
       const by = due ? ` · ${t('entro il {d}').replace('{d}', new Date(due).toLocaleDateString('it-IT'))}` : ''
       const { error } = await supabase.from('fitness_requests').insert({
-        player_id: athleteId, trainer_id: coach.pro_id, type: 'programma', note: `${title.trim()}${by}`,
+        player_id: athleteId, trainer_id: who.pro_id, type: 'programma', note: `${title.trim()}${by}`,
       })
       setBusy(false)
       if (error) { toast(error.message, 'err'); return }
-      toast(t('Richiesta di programma inviata a {name}').replace('{name}', (coach.name || t('Preparatore')).split(' ')[0]))
+      toast(t('Richiesta di programma inviata a {name}').replace('{name}', whoName))
       reset(); setOpen(false)
       return
     }
     const { error } = kind === 'event'
       ? await supabase.rpc('crm_event_create', {
-          p_player: athleteId, p_type: evType, p_title: title.trim(), p_start: new Date(start).toISOString(),
-          p_location: hasLink ? null : (location.trim() || null),
-          p_link: hasLink ? (link.trim() || null) : null, p_tag: tag,
-          p_mode: withCoach ? mode : null,
+          p_player: athleteId, p_type: opt.type, p_title: title.trim(), p_start: new Date(start).toISOString(),
+          p_location: opt.link ? null : (location.trim() || null),
+          p_link: opt.link ? (link.trim() || null) : null, p_tag: tag,
+          p_mode: opt.mode && opt.mode !== 'programma' ? opt.mode : null,
         })
       : await insertRow('crm_tasks', {
           title: title.trim(), status: 'todo', priority: 'medium', assignee, due_date: due || null,
@@ -115,12 +141,13 @@ export default function QuickAdd({ controlled, initialKind, onClose }: {
     setBusy(false)
     if (error) { toast(error.message, 'err'); return }
     const dest = kind === 'event' ? 'agenda' : 'tasks'
-    const who = team.find(p => p.pro_id === tag)
     toast(kind === 'event'
-      ? (who ? t('Inviato a {name}').replace('{name}', who.name || t(ROLE_L[who.role] || who.role)) : t('Impegno aggiunto'))
+      ? (who ? t('Inviato a {name}').replace('{name}', whoName) : t('Impegno aggiunto'))
       : t('Task aggiunta'), 'ok', { label: t('Apri'), onClick: () => goto(dest) })
     reset(); setOpen(false)
   }
+
+  const send = kind === 'task' ? t('Aggiungi') : isProgram ? t('Chiedi il programma') : who ? t('Invia a {name}').replace('{name}', whoName) : t('Aggiungi')
 
   return (
     <>
@@ -132,47 +159,68 @@ export default function QuickAdd({ controlled, initialKind, onClose }: {
       {open && (
         <Modal title={t('Aggiungi')} onClose={() => setOpen(false)}
           footer={<><button className="btn" onClick={() => setOpen(false)}>{t('Annulla')}</button>
-            <button className="btn btn-primary" disabled={busy || !title.trim()} onClick={save}>{busy ? t('Salvo…') : isProgram ? t('Chiedi il programma') : tag ? t('Invia') : t('Aggiungi')}</button></>}>
+            <button className="btn btn-primary" disabled={busy || !title.trim()} onClick={save}>{busy ? t('Salvo…') : send}</button></>}>
           {canEvent && canTask && (
             <Tabs tabs={[{ key: 'event', label: t('Impegno') }, { key: 'task', label: t('Task') }]} value={kind} onChange={setKind} style={{ marginBottom: 16 }} />
           )}
-          {kind === 'event' && (
-            <div className="qa-types" role="radiogroup" aria-label={t('Tipo')}>
-              {EV_TYPES.map(x => (
-                <button key={x.k} type="button" role="radio" aria-checked={evType === x.k}
-                  className={`qa-type ${evType === x.k ? 'on' : ''}`} onClick={() => pickType(x.k)}>
-                  <Icon name={x.icon} size={18} /> {t(x.l)}
+
+          {kind === 'event' ? (<>
+            {/* 1. con chi */}
+            <div className="field">
+              <label>{t('Con chi')}</label>
+              <div className="qa-people">
+                <button type="button" className={`qa-person ${tag === null ? 'on' : ''}`} onClick={() => pickPerson(null)}>
+                  <span className="qa-person-av qa-person-auvi"><img src="/brand/auvi-mark-yellow.svg" alt="" /></span>
+                  <span className="qa-person-n">AUVI</span>
+                  <span className="qa-person-r">{t('Consulente')}</span>
+                </button>
+                {team.map(p => (
+                  <button key={p.pro_id} type="button" className={`qa-person ${tag === p.pro_id ? 'on' : ''}`} onClick={() => pickPerson(p.pro_id)}>
+                    {p.photo_url
+                      ? <img className="qa-person-av" src={p.photo_url} alt="" />
+                      : <span className="qa-person-av">{(p.name || '?').slice(0, 1)}</span>}
+                    <span className="qa-person-n">{(p.name || t(ROLE_L[p.role] || p.role)).split(' ')[0]}</span>
+                    <span className="qa-person-r">{t(ROLE_L[p.role] || p.role)}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 2. le opzioni di quella persona */}
+            <div className="qa-types" role="radiogroup" aria-label={t('Cosa')} style={{ gridTemplateColumns: `repeat(${opts.length}, minmax(0, 1fr))` }}>
+              {opts.map(o => (
+                <button key={o.k} type="button" role="radio" aria-checked={opt.k === o.k}
+                  className={`qa-type ${opt.k === o.k ? 'on' : ''}`} onClick={() => pickOpt(o)}>
+                  <Icon name={o.icon} size={18} /> {t(o.l)}
                 </button>
               ))}
             </div>
-          )}
-          <Field label={kind === 'event' ? t('Cosa') : t('Da fare')}>
-            <Input autoFocus value={title} onChange={e => setTitle(e.target.value)}
-              placeholder={kind === 'event' ? t(EV_TYPES.find(x => x.k === evType)!.ph) : t('Es. Inviare contratto firmato')}
-              onKeyDown={e => { if (e.key === 'Enter') save() }} />
-          </Field>
-          {withCoach && (
-            <div className="field">
-              <label>{t('Come')}</label>
-              <div className="qa-modes" role="radiogroup" aria-label={t('Come')}>
-                {([['presenza', 'In presenza'], ['online', 'Online'], ['programma', 'Programma online']] as const).map(([k, l]) => (
-                  <button key={k} type="button" role="radio" aria-checked={mode === k}
-                    className={`qa-mode ${mode === k ? 'on' : ''}`} onClick={() => setMode(k)}>{t(l)}</button>
-                ))}
+            {isProgram && <div className="t-meta" style={{ margin: '-8px 0 14px' }}>{t('Il preparatore ti prepara una scheda da fare in autonomia.')}</div>}
+
+            {/* 3. parti comuni */}
+            <Field label={t('Titolo')}>
+              <Input value={title} onChange={e => { setTitle(e.target.value); setTitleTouched(true) }}
+                placeholder={t('Es. Visita medica, shooting, volo')}
+                onKeyDown={e => { if (e.key === 'Enter') save() }} />
+            </Field>
+            {isProgram ? (
+              <Field label={t('Entro quando (facoltativo)')}><Input type="date" value={due} onChange={e => setDue(e.target.value)} /></Field>
+            ) : (
+              <div className="row2">
+                <Field label={t('Data e ora')}><Input type="datetime-local" value={start} onChange={e => setStart(e.target.value)} /></Field>
+                {opt.link
+                  ? <Field label={opt.type === 'call' ? t('Link della call (facoltativo)') : t('Link della sessione (facoltativo)')}><Input value={link} onChange={e => setLink(e.target.value)} placeholder="https://meet…" inputMode="url" /></Field>
+                  : <Field label={t('Dove (facoltativo)')}><Input value={location} onChange={e => setLocation(e.target.value)} placeholder={t('Indirizzo o luogo')} /></Field>}
               </div>
-              {isProgram && <div className="t-meta" style={{ marginTop: 6 }}>{t('Il preparatore ti prepara una scheda da fare in autonomia.')}</div>}
+            )}
+            <div className="t-meta">
+              {isProgram ? t('Gli arriva la richiesta di programma.') : who ? t('Gli arriva la notifica e conferma lui.') : t('La richiesta arriva ad AUVI.')}
             </div>
-          )}
-          {isProgram ? (
-            <Field label={t('Entro quando (facoltativo)')}><Input type="date" value={due} onChange={e => setDue(e.target.value)} /></Field>
-          ) : kind === 'event' ? (
-            <div className="row2">
-              <Field label={t('Quando')}><Input type="datetime-local" value={start} onChange={e => setStart(e.target.value)} /></Field>
-              {hasLink
-                ? <Field label={evType === 'call' ? t('Link della call (facoltativo)') : t('Link della sessione (facoltativo)')}><Input value={link} onChange={e => setLink(e.target.value)} placeholder="https://meet…" inputMode="url" /></Field>
-                : <Field label={t('Dove (facoltativo)')}><Input value={location} onChange={e => setLocation(e.target.value)} placeholder={t('Indirizzo o luogo')} /></Field>}
-            </div>
-          ) : (
+          </>) : (<>
+            <Field label={t('Da fare')}>
+              <Input autoFocus value={title} onChange={e => setTitle(e.target.value)} placeholder={t('Es. Inviare contratto firmato')}
+                onKeyDown={e => { if (e.key === 'Enter') save() }} />
+            </Field>
             <div className="row2">
               <Field label={t('Scadenza (facoltativa)')}><Input type="date" value={due} onChange={e => setDue(e.target.value)} /></Field>
               <Field label={t('Chi')}>
@@ -182,30 +230,7 @@ export default function QuickAdd({ controlled, initialKind, onClose }: {
                 </Select>
               </Field>
             </div>
-          )}
-          {kind === 'event' && team.length > 0 && (
-            <div className="field">
-              <label>{t('Persona di riferimento')}</label>
-              <div className="qa-people">
-                <button type="button" className={`qa-person ${tag === null ? 'on' : ''}`} onClick={() => setTag(null)}>
-                  <span className="qa-person-av qa-person-auvi"><img src="/brand/auvi-mark-yellow.svg" alt="" /></span>
-                  <span className="qa-person-n">AUVI</span>
-                </button>
-                {team.map(p => (
-                  <button key={p.pro_id} type="button" className={`qa-person ${tag === p.pro_id ? 'on' : ''}`} onClick={() => setTag(p.pro_id)}>
-                    {p.photo_url
-                      ? <img className="qa-person-av" src={p.photo_url} alt="" />
-                      : <span className="qa-person-av">{(p.name || '?').slice(0, 1)}</span>}
-                    <span className="qa-person-n">{(p.name || t(ROLE_L[p.role] || p.role)).split(' ')[0]}</span>
-                    <span className="qa-person-r">{t(ROLE_L[p.role] || p.role)}</span>
-                  </button>
-                ))}
-              </div>
-              <div className="t-meta" style={{ marginTop: 6 }}>
-                {isProgram ? t('Gli arriva la richiesta di programma.') : tag ? t('Gli arriva la notifica e conferma lui.') : t('La richiesta arriva ad AUVI.')}
-              </div>
-            </div>
-          )}
+          </>)}
           <style>{QA_CSS}</style>
         </Modal>
       )}
@@ -214,13 +239,10 @@ export default function QuickAdd({ controlled, initialKind, onClose }: {
 }
 
 const QA_CSS = `
-.qa-types { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 16px; }
+.qa-types { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 2px 0 16px; }
 .qa-type { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 6px; min-height: 64px; border-radius: 14px;
   border: 1.5px solid var(--border); background: var(--surface); color: var(--text-dim); font: inherit; font-weight: 600; font-size: var(--fs-meta); cursor: pointer; }
 .qa-type.on { border-color: var(--ink); background: var(--ink); color: var(--yellow); }
-.qa-modes { display: flex; gap: 4px; padding: 4px; border-radius: 12px; background: var(--bg-2); }
-.qa-mode { flex: 1; min-height: 38px; border: 0; border-radius: 9px; background: none; font: inherit; font-size: var(--fs-meta); font-weight: 600; color: var(--text-dim); cursor: pointer; white-space: nowrap; padding: 0 8px; }
-.qa-mode.on { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgba(10,10,10,.12); }
 .qa-people { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 2px 0 4px; }
 .qa-people::-webkit-scrollbar { display: none; }
 .qa-person { flex: 0 0 72px; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 2px; border: 0; background: none; cursor: pointer; font: inherit; color: var(--text); }
