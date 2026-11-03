@@ -584,7 +584,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
       <style>{HOME_CSS}</style>
       <div className="home-col">
         {/* su telefono una colonna sola, ma con le priorità del PC: in alto chi sei e le azioni,
-            poi le sezioni nell'ordine della barra in basso: Calendario, Atleta, Servizi. Ogni titolo è il nome
+            poi Atleta (prossima partita e presenze), Calendario e Servizi. Ogni titolo è il nome
             della voce di menu in cui porta */}
         <div className="home-o1"><div className="home-sec home-top">
           {identity}
@@ -592,7 +592,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
         </div></div>
         {todo && <div className="home-o2">{todo}</div>}
         {/* Atleta: prossima partita e numeri della stagione, sotto lo stesso titolo del menu */}
-        <div className="home-o4 home-group">
+        <div className="home-o3 home-group">
           <div className="home-h">{t('Atleta')}<button className="home-h-link" onClick={() => goto('performance')}>{t('Apri')} <Icon name="chevron-right" size={14} /></button></div>
           {hero}
           {stats}
@@ -600,7 +600,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
         <div className="home-o7"><HomeServices goto={goto} /></div>
       </div>
       <div className="home-col">
-        <div className="home-o3">{agenda}</div>
+        <div className="home-o4">{agenda}</div>
         {/* referenti solo su PC: su telefono e iPad sono già in Il mio team */}
         <div className="home-o6 home-desk"><HomeContacts goto={goto} title={t('Il mio team')} /></div>
       </div>
