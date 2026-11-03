@@ -132,8 +132,7 @@ export default function App() {
       case 'access-requests': return <AccessRequests />
       case 'legaltax': return <LegalTax />
       case 'services': return <Services />
-      case 'services-extra': return <Services scope="extra" />
-      case 'services-req': return <Services scope="requests" />
+      case 'services-extra': case 'services-req': return <Services />
       case 'my-team': return <MyTeam goto={setRoute} />
       case 'my-files': return <MyFiles />
       case 'backstage': return <Backstage />

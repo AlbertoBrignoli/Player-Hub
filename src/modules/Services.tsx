@@ -65,12 +65,6 @@ type Req = {
 }
 
 const isStudio = (s: Service) => s.category === STUDIO_CAT
-// Servizi di campo (performance, scouting, benessere) e di extra campo (consulenze, lifestyle,
-// famiglia, AUVI Studio, convenzioni brand): sono due schede di "Servizi AUVI".
-const FIELD_CATS = ['Performance', 'Analisi e scouting', 'Benessere', 'Benessere e performance']
-const isField = (s: Service) => FIELD_CATS.includes(s.category)
-export type ServicesScope = 'campo' | 'extra' | 'requests'
-const SCOPE_ROUTE: Record<ServicesScope, string> = { campo: 'services', extra: 'services-extra', requests: 'services-req' }
 
 function initials(s: string) {
   return s.trim().split(/\s+/).slice(0, 2).map(w => w[0] || '').join('').toUpperCase()
@@ -78,22 +72,18 @@ function initials(s: string) {
 
 const svcField = (s: any, f: string, lang: string) => (lang === 'en' && s?.i18n?.en?.[f] != null) ? s.i18n.en[f] : s?.[f]
 
-export default function Services({ scope = 'campo' }: { scope?: ServicesScope }) {
+export default function Services() {
   const { t, lang } = useLang()
   const { role, isAdmin } = useAuth()
   const { athleteId, athletes } = useAthlete()
-  const [all, setServices] = useState<Service[]>([])
+  const [services, setServices] = useState<Service[]>([])
   const [reqs, setReqs] = useState<Req[]>([])
   const [loading, setLoading] = useState(true)
   const [open, setOpen] = useState<Service | null>(null)
   const [manage, setManage] = useState<Req | null>(null)
-  const tab: 'store' | 'requests' = scope === 'requests' ? 'requests' : 'store'
-  // vetrina e richieste sono schede di "Servizi AUVI": cambiare vuol dire cambiare route
-  const setTab = (k: 'store' | 'requests', extra?: boolean) => goto(k === 'requests' ? SCOPE_ROUTE.requests : extra ? SCOPE_ROUTE.extra : SCOPE_ROUTE.campo)
-  // "Brand" è una categoria della vetrina di extra campo (convenzioni con codice sconto)
+  const [tab, setTab] = useState<'store' | 'requests'>('store')
+  // "Brand" è una categoria della vetrina come Consulenza o Lifestyle (convenzioni con codice sconto)
   const [cat, setCat] = useState<string>(() => (new URLSearchParams(window.location.hash.split('?')[1] || '').get('tab') === 'brand' ? BRAND_CAT : 'Tutti'))
-  // solo i servizi della scheda aperta (campo o extra campo); le richieste li vedono tutti
-  const services = useMemo(() => scope === 'requests' ? all : all.filter(x => scope === 'campo' ? isField(x) : !isField(x)), [all, scope])
 
   const isPlayer = role === 'player'
 
@@ -110,28 +100,24 @@ export default function Services({ scope = 'campo' }: { scope?: ServicesScope })
 
   // link diretto a una richiesta (dalle notifiche): #/services?req=<id>
   const wantedReq = useRouteParam('req')
+  useEffect(() => { if (wantedReq) setTab('requests') }, [wantedReq])
   // dalla notifica "Codice sconto attivato": #/services?tab=brand
   const wantedTab = useRouteParam('tab')
-  useEffect(() => { if (wantedTab === 'brand') setCat(BRAND_CAT) }, [wantedTab])
+  useEffect(() => { if (wantedTab === 'brand') { setTab('store'); setCat(BRAND_CAT) } }, [wantedTab])
   // Brand → gifting dedicato (#/services?tab=brand&gift=<offerta>) e richiesta dalle notifiche (?gift_req=<id>)
   const giftId = useRouteParam('gift')
   const giftReq = useRouteParam('gift_req')
-  // vecchi link e notifiche su #/services?… → la scheda giusta, con gli stessi parametri
-  useEffect(() => {
-    const want: ServicesScope | null = (wantedReq || giftReq) ? 'requests' : (wantedTab === 'brand' || giftId) ? 'extra' : null
-    if (!want || want === scope) return
-    goto(SCOPE_ROUTE[want] + '?' + (window.location.hash.split('?')[1] || ''))
-  }, [wantedReq, giftReq, wantedTab, giftId]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (giftReq) setTab('requests') }, [giftReq])
 
   // link diretto a una scheda: #/services?service=<id o nome partner> (es. dalla Performance)
   const wanted = useRouteParam('service')
   useEffect(() => {
     if (!wanted || !services.length) return
     const w = wanted.toLowerCase()
-    const hit = all.find(s => s.id === wanted)
-      || all.find(s => (s.partner_name || '').toLowerCase().includes(w))
+    const hit = services.find(s => s.id === wanted)
+      || services.find(s => (s.partner_name || '').toLowerCase().includes(w))
     if (hit) setOpen(hit)
-  }, [wanted, all])
+  }, [wanted, services])
 
   const studio = useMemo(() => services.filter(isStudio), [services])
   const verificati = useMemo(() => services.filter(s => s.verified && !isStudio(s)), [services])
@@ -139,8 +125,8 @@ export default function Services({ scope = 'campo' }: { scope?: ServicesScope })
   const cats = useMemo(() => {
     const seen: string[] = []
     for (const s of services) if (!isStudio(s) && !seen.includes(s.category)) seen.push(s.category)
-    return ['Tutti', ...seen, ...(scope === 'extra' ? [BRAND_CAT] : [])]
-  }, [services, scope])
+    return ['Tutti', ...seen, BRAND_CAT]
+  }, [services])
 
   const inCat = (s: Service) => cat === 'Tutti' || s.category === cat
   const attive = reqs.filter(r => r.status === 'aperta' || r.status === 'in_carico')
@@ -157,7 +143,7 @@ export default function Services({ scope = 'campo' }: { scope?: ServicesScope })
   if (open) {
     return (
       <ServiceDetail service={open} playerId={athleteId} canRequest={!!athleteId}
-        onBack={() => setOpen(null)} onSent={() => { setOpen(null); load() }} />
+        onBack={() => setOpen(null)} onSent={() => { setOpen(null); setTab('store'); load() }} />
     )
   }
 
@@ -165,19 +151,36 @@ export default function Services({ scope = 'campo' }: { scope?: ServicesScope })
     <div className="grid" style={{ gap: 18, color: T.text }}>
       <style>{keyframes}</style>
 
-      {/* --- intro: solo nella vetrina --- */}
-      {tab === 'store' && (
-        <div>
-          <div className="t-item">
-            {isPlayer ? t('Ciao, {name}').replace('{name}', firstName) : scope === 'campo' ? t('Servizi di campo') : t('Servizi extra campo')}
-          </div>
-          <div className="t-meta" style={{ marginTop: 2, maxWidth: 620 }}>
-            {scope === 'campo'
-              ? t('Preparazione, recupero, nutrizione e analisi: tutto quello che serve in campo.')
-              : t('Consulenze, famiglia, viaggi, immagine e convenzioni: la tua vita fuori dal campo.')}
-          </div>
+      {/* --- header --- */}
+      <div>
+        <div style={{ ...kicker, color: T.muted, fontSize: 10, letterSpacing: 2.5 }}>{t('Servizi AUVI')}</div>
+        <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: -0.6, marginTop: 4 }}>
+          {isPlayer ? t('Ciao, {name}').replace('{name}', firstName) : t('Servizi e richieste')}
         </div>
-      )}
+        <div style={{ fontSize: 12.5, color: T.dim, marginTop: 4, maxWidth: 620 }}>
+          {isPlayer
+            ? t('Scopri i servizi, apri la scheda del partner e mandaci la richiesta: pensiamo noi a seguirti fino alla fine.')
+            : t('Catalogo dei servizi proposti agli atleti e richieste da gestire.')}
+        </div>
+      </div>
+
+      {/* --- segmento Store / Richieste --- */}
+      <div className="flex gap" style={{ gap: 8 }}>
+        {(['store', 'requests'] as const).map(k => {
+          const on = tab === k
+          return (
+            <button key={k} onClick={() => setTab(k)}
+              style={{
+                flex: 1, padding: '10px 14px', borderRadius: 12, cursor: 'pointer',
+                border: `1px solid ${on ? T.text : T.border}`,
+                background: on ? T.text : 'transparent',
+                color: on ? '#fff' : T.dim, fontWeight: 800, fontSize: 13,
+              }}>
+              {k === 'store' ? 'Store' : `${t('Richieste')}${reqs.length ? ` · ${reqs.length}` : ''}`}
+            </button>
+          )
+        })}
+      </div>
 
       {tab === 'requests' && <GiftRequestsList openId={giftReq} />}
       {tab === 'requests' ? (
@@ -213,7 +216,7 @@ export default function Services({ scope = 'campo' }: { scope?: ServicesScope })
           )}
 
           {/* --- AUVI Studio --- */}
-          {scope === 'extra' && studio.length > 0 && <StudioHero studio={studio} onOpen={setOpen} />}
+          {studio.length > 0 && <StudioHero studio={studio} onOpen={setOpen} />}
 
           {/* --- chip categorie --- */}
           {cats.length > 1 && (
@@ -287,7 +290,7 @@ export default function Services({ scope = 'campo' }: { scope?: ServicesScope })
             </section>
           )}
 
-          {scope === 'extra' && cat === 'Tutti' && <BrandDeals compact />}
+          {cat === 'Tutti' && <BrandDeals compact />}
 
           {services.length === 0 && (
             <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 16, padding: 20 }}>
