@@ -26,22 +26,23 @@ const CHIP: Record<string, { l: string; c: string }> = {
 // 5 prossimi giorni, 6 stagione + ultima partita, 7 referenti.
 // Desktop (>880px): colonna sinistra 1-4, destra 5-7. Stesso DOM, nessun `order`.
 const HOME_CSS = `
-/* La tua stagione: giallo brand, numeri grandi */
-.home-season { width: 100%; text-align: left; display: block; cursor: pointer; background: var(--yellow); color: var(--ink); border: 0; border-radius: 20px; padding: 16px 16px 14px; box-shadow: 0 10px 28px -16px rgba(10,10,10,.45); transition: transform .12s; }
+/* La tua stagione: card chiara (tra due blocchi neri), il giallo resta solo nell'icona */
+.home-season { width: 100%; text-align: left; display: block; cursor: pointer; background: var(--surface); color: var(--ink); border: 1px solid var(--border); border-radius: 20px; padding: 18px; transition: transform .12s, border-color .15s; }
+.home-season:hover { border-color: var(--border-2); }
 .home-season:active { transform: scale(.985); }
 .home-season-head { display: flex; align-items: center; gap: 12px; }
 .home-season-ic { width: 38px; height: 38px; border-radius: 12px; background: var(--ink); color: var(--yellow); display: grid; place-items: center; flex-shrink: 0; }
-.home-season-k { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; opacity: .7; }
+.home-season-k { font-size: var(--fs-label); font-weight: var(--w-bold); letter-spacing: 1.3px; text-transform: uppercase; color: var(--text-dim); }
 .home-season-t { font-family: var(--font-display); font-stretch: 125%; font-weight: 700; font-size: 18px; text-transform: uppercase; line-height: 1.15; }
 .home-season-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 16px; }
 .home-season-grid > div { text-align: center; min-width: 0; }
-.home-season-grid > div + div { border-left: 1px solid rgba(10,10,10,.14); }
+.home-season-grid > div + div { border-left: 1px solid var(--border); }
 .home-season-grid .v { font-family: var(--font-display); font-stretch: 125%; font-weight: 700; font-size: 24px; line-height: 1; font-variant-numeric: tabular-nums; }
-.home-season-grid .l { font-size: 11px; font-weight: 600; margin-top: 6px; opacity: .72; }
-.home-season-last { display: flex; align-items: center; gap: 8px; margin-top: 14px; padding: 10px 12px; border-radius: 12px; background: rgba(255,255,255,.55); font-size: 12.5px; }
+.home-season-grid .l { font-size: 11px; font-weight: 600; margin-top: 6px; color: var(--text-faint); }
+.home-season-last { display: flex; align-items: center; gap: 8px; margin-top: 14px; padding: 10px 12px; border-radius: 12px; background: var(--bg-2); font-size: 12.5px; }
 .home-season-last .k { font-weight: 700; flex-shrink: 0; }
 .home-season-last .m { flex: 1; min-width: 0; font-weight: 600; }
-.home-season-last .x { flex-shrink: 0; opacity: .7; font-variant-numeric: tabular-nums; }
+.home-season-last .x { flex-shrink: 0; color: var(--text-faint); font-variant-numeric: tabular-nums; }
 @media (max-width: 380px) { .home-season-grid .v { font-size: 22px; } }
 
 .home { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 28px; align-items: start; }
@@ -149,9 +150,9 @@ button.home-card:active, .home-qa:active, .home-contact:active { transform: scal
 /* 8 servizi AUVI: una copertina sola, tutta cliccabile, che invita ad aprire */
 .home-svc-hero { position: relative; display: block; width: 100%; min-height: 230px; padding: 0; border: 0; border-radius: 20px; overflow: hidden; cursor: pointer; text-align: left; background: var(--ink); color: #fff; transition: transform .12s; }
 .home-svc-hero:active { transform: scale(.985); }
-.home-svc-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .6s ease; }
+.home-svc-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: grayscale(1) contrast(1.05); opacity: .55; transition: transform .6s ease; }
 .home-svc-hero:hover .home-svc-bg { transform: scale(1.04); }
-.home-svc-shade { position: absolute; inset: 0; background: linear-gradient(100deg, rgba(10,10,10,.92) 0%, rgba(10,10,10,.7) 50%, rgba(10,10,10,.25) 100%); }
+.home-svc-shade { position: absolute; inset: 0; background: linear-gradient(100deg, rgba(10,10,10,.95) 0%, rgba(10,10,10,.75) 55%, rgba(10,10,10,.4) 100%); }
 .home-svc-in { position: relative; display: flex; flex-direction: column; gap: 6px; min-height: 230px; padding: 20px; }
 .home-svc-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 .home-svc-k { font-size: var(--fs-label); font-weight: var(--w-bold); letter-spacing: 1.3px; text-transform: uppercase; color: var(--yellow); }
@@ -164,7 +165,8 @@ button.home-card:active, .home-qa:active, .home-contact:active { transform: scal
 .home-svc-logos { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
 .home-svc-lg { height: 30px; padding: 0 12px; border-radius: 999px; display: inline-flex; align-items: center; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.18); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
 .home-svc-lg img { height: 14px; width: auto; max-width: 84px; object-fit: contain; }
-.home-svc-cta { display: inline-flex; align-items: center; gap: 4px; padding: 10px 14px 10px 16px; border-radius: 999px; background: var(--yellow); color: var(--ink); font-weight: var(--w-bold); font-size: var(--fs-body); box-shadow: 0 8px 24px -10px rgba(255,236,0,.6); }
+.home-svc-cta { display: inline-flex; align-items: center; gap: 4px; padding: 10px 14px 10px 16px; border-radius: 999px; background: var(--yellow); color: var(--ink); font-weight: var(--w-bold); font-size: var(--fs-body); }
+@media (min-width: 881px) { .home-contacts { flex-wrap: wrap; overflow: visible; } }
 @media (max-width: 600px) { .home-svc-lg:nth-child(n+4) { display: none; } }
 @media (prefers-reduced-motion: reduce) { .home-svc-dot { animation: none; } .home-svc-hero:hover .home-svc-bg { transform: none; } }
 
