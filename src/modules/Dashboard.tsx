@@ -123,6 +123,18 @@ button.home-card:active, .home-qa:active, .home-contact:active { transform: scal
 .home-score-meta img { width: 18px; height: 18px; object-fit: contain; flex-shrink: 0; }
 
 /* 5 prossimi giorni: un blocco per giorno, a destra gli impegni con l'ora */
+/* card scura come gli altri blocchi (foto in bianco e nero sotto velo nero), giorni in giallo */
+.home-agenda { position: relative; background: var(--ink); border: 0; color: #fff; --home-photo: url(/servizi/auvi-brand.jpg); }
+.home-agenda::before { content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background: linear-gradient(100deg, rgba(10,10,10,.95) 0%, rgba(10,10,10,.86) 60%, rgba(10,10,10,.72) 100%), var(--home-photo) center / cover; filter: grayscale(1); }
+.home-agenda > * { position: relative; z-index: 1; }
+.home-agenda .home-tl-group + .home-tl-group, .home-agenda .home-tl-row + .home-tl-row { border-top-color: rgba(255,255,255,.12); }
+.home-agenda .home-tl-day { background: var(--yellow); }
+.home-agenda .home-tl-day .w { color: rgba(10,10,10,.7); }
+.home-agenda .home-tl-day .d { color: var(--ink); }
+.home-agenda .home-tl-time { color: rgba(255,255,255,.62); }
+.home-agenda .home-tl-t { color: #fff; }
+.home-agenda .home-tl-t.faint { color: rgba(255,255,255,.7); }
 .home-tl-group { display: flex; gap: 12px; padding: 10px 14px; align-items: flex-start; }
 .home-tl-group + .home-tl-group { border-top: 1px solid var(--border); }
 .home-tl-items { flex: 1; min-width: 0; display: grid; gap: 6px; padding-top: 4px; }
@@ -526,7 +538,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
   const agenda = (
     <section className="home-sec">
       <div className="home-h">{t('Prossimi giorni')}</div>
-      <button className="home-card" onClick={() => goto('agenda')} aria-label={t('Apri agenda')}>
+      <button className="home-card home-agenda" onClick={() => goto('agenda')} aria-label={t('Apri agenda')}>
         {events.length === 0 ? (
           <div className="home-tl-row">
             <span className="home-tl-t faint" style={{ fontWeight: 400 }}>{t('Nessun impegno in programma.')}</span>
