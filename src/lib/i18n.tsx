@@ -3797,5 +3797,7 @@ const EN: Record<string, string> = {
   "1 documento letto è in Documenti": "1 read document is in Documents",
   "{n} documenti letti sono in Documenti": "{n} read documents are in Documents",
   "Segna come letto": "Mark as read",
+  "Pagamenti": "Payments",
+  "Dichiarativi": "Tax returns",
 }
 
