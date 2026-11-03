@@ -63,16 +63,18 @@ button.home-card:active, .home-qa:active, .home-contact:active { transform: scal
 .home-id-name { font-family: var(--font-display); font-stretch: 125%; font-weight: 700; text-transform: uppercase; font-size: 22px; line-height: 1.05; margin-top: 2px; }
 .home-id-role { font-size: 12.5px; color: var(--text-dim); margin-top: 3px; }
 
-/* 1+2 intestazione: un riquadro giallo tenue con chi sei e le azioni rapide (su telefono sotto il nome) */
+/* 1+2 intestazione: un riquadro giallo AUVI con chi sei e le azioni rapide (su telefono sotto il nome) */
 .home-top { display: flex; align-items: center; justify-content: space-between; gap: 16px 24px; flex-wrap: wrap;
-  background: var(--yellow-soft); border: 1px solid #F3E7A0; border-radius: 20px; padding: 14px 16px; }
+  background: var(--yellow); border: 0; border-radius: 20px; padding: 14px 16px; }
+.home-top .home-id-hi, .home-top .home-id-role { color: rgba(10,10,10,.68); }
+.home-top .home-id-ph { border-color: rgba(10,10,10,.12); }
 .home-id-line { display: none; }
 .home-top .home-id { flex: 1 1 260px; min-width: 0; }
 .home-top .home-qas { display: flex; gap: 14px; flex: 0 0 auto; width: auto; }
 .home-top .home-qa { width: 56px; }
 .home-top .home-qa-ic { width: 44px; height: 44px; border: 0; }
 .home-top .home-qa.home-qa-media .home-qa-ic { background: #DCEAFE; color: #1F6FEB; }
-.home-top .home-qa.home-qa-event .home-qa-ic { background: #FFEC00; color: var(--ink); }
+.home-top .home-qa.home-qa-event .home-qa-ic { background: var(--ink); color: var(--yellow); }
 .home-top .home-qa.home-qa-tasks .home-qa-ic { background: #FFDCD2; color: #D23A00; }
 .home-top .home-qa.home-qa-chat .home-qa-ic { background: #D6F3E1; color: #12894A; }
 .home-top .home-qa.primary .home-qa-ic { box-shadow: none; }
