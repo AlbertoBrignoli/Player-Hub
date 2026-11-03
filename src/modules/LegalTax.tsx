@@ -4,7 +4,7 @@ import { toast } from '../lib/toast'
 import { useAuth } from '../auth/AuthContext'
 import { useAthlete } from '../lib/athlete'
 import { useCollection, insertRow, updateRow, deleteRow } from '../lib/useData'
-import { Modal, Field, Input, Textarea, Select, Empty, Spinner, ConfirmButton } from '../components/ui'
+import { Modal, Field, Input, Textarea, Select, Empty, Spinner, ConfirmButton, Section } from '../components/ui'
 import Icon from '../components/Icon'
 import ChatDocs from '../components/ChatDocs'
 import { fmtDate, fmtMoney } from '../lib/format'
@@ -25,12 +25,10 @@ const kicker: React.CSSProperties = {
   fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase', fontWeight: 800,
 }
 
-const TABS = [
-  { k: 'riepilogo', l: 'Riepilogo', icon: 'activity', hint: 'Spese, scadenze e richieste aperte' },
-  { k: 'fiscale', l: 'Fiscale', icon: 'briefcase', hint: 'Imposte, contributi, dichiarazioni' },
-  { k: 'legale', l: 'Legale', icon: 'archive', hint: 'Contratti, atti, contenziosi' },
-  { k: 'documenti', l: 'Documenti', icon: 'file', hint: 'Allegati e file mandati in chat' },
-] as const
+// id delle sezioni della pagina (una sola pagina che scorre, niente tab interni)
+const secId = (k: string) => `legaltax-${k}`
+const scrollToSec = (k: string) =>
+  document.getElementById(secId(k))?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 
 const CATEGORIES: Record<string, string[]> = {
   // poche voci generiche: il dettaglio (F24, IRPEF, IVA…) va nel titolo
@@ -90,7 +88,6 @@ export default function LegalTax() {
   const { role } = useAuth()
   const { t: tr } = useLang()
   const { athleteId } = useAthlete()
-  const [tab, setTab] = useState<string>('riepilogo')
   const [edit, setEdit] = useState<Partial<TaxItem> | null>(null)
   const [respond, setRespond] = useState<TaxItem | null>(null)
 
@@ -111,13 +108,11 @@ export default function LegalTax() {
     if (!it) return
     // richiesta ancora da consegnare aperta dall'atleta (es. dai Task): va dritta a "Rispondi"
     if (isPlayer && it.kind === 'richiesta' && it.status === 'aperto') { setRespond(it); return }
-    setTab(it.area); setThread(it)
+    setThread(it)
+    setTimeout(() => scrollToSec(it.area), 50)
   }, [itemParam, rows.length]) // eslint-disable-line react-hooks/exhaustive-deps
-  const ofArea = useMemo(() => rows.filter(i => i.area === tab), [rows, tab])
-  // documento già letto: per l'atleta non è più una voce, resta nel tab Documenti
+  // documento già letto: per l'atleta non è più una voce, resta nella sezione Documenti
   const isRead = (i: TaxItem) => i.kind === 'documento' && i.status === 'letto'
-  const shown = isPlayer ? ofArea.filter(i => !isRead(i)) : ofArea
-  const readHidden = ofArea.length - shown.length
   const aperte = useMemo(() => rows.filter(i => i.kind === 'richiesta' && i.status === 'aperto'), [rows])
   // consegnate negli ultimi 60 giorni: restano visibili con la data di consegna
   const consegnate = useMemo(() => rows.filter(i => i.kind === 'richiesta' && i.status !== 'aperto'
@@ -138,96 +133,42 @@ export default function LegalTax() {
     toast(tr('Segnato come pagato')); reload()
   }
 
-  if (loading) return <Spinner />
-
-  return (
-    <div className="grid" style={{ gap: 18 }}>
-      <div className="pill-tabs" style={{ alignSelf: 'start' }}>
-        {TABS.map(t => (
-          <button key={t.k} className={`pill-tab ${tab === t.k ? 'active' : ''}`} onClick={() => setTab(t.k)}
-            style={tab === t.k ? { background: ACCENT, color: '#fff', borderColor: ACCENT } : undefined}>
-            <Icon name={t.icon} size={13} /> {tr(t.l)}
-          </button>
-        ))}
-      </div>
-
-      {/* richieste da smarcare: sempre in evidenza */}
-      {aperte.length > 0 && (
-        <div className="card" style={{ borderColor: `${WARN}55` }}>
-          <div className="flex between" style={{ alignItems: 'center', marginBottom: 12 }}>
-            <div style={{ ...kicker, color: WARN }}>{tr('Ti hanno chiesto questi documenti')}</div>
-            <span className="faint" style={{ fontSize: 12 }}>{aperte.length}</span>
-          </div>
-          <div className="grid" style={{ gap: 16 }}>
-            {aperte.map(i => (
-              <div key={i.id}>
-                <div className="flex between" style={{ alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{ fontSize: 14, fontWeight: 700 }}>{i.title}</div>
-                    <div className="faint" style={{ fontSize: 11.5 }}>{i.description || (i.category && tr(i.category)) || '—'}</div>
-                  </div>
-                  <button className="btn btn-sm" style={{ background: 'var(--yellow)', color: 'var(--ink)', fontWeight: 800, border: 'none' }}
-                    onClick={() => setRespond(i)}>
-                    <Icon name="upload" size={13} /> {tr('Rispondi')}
-                  </button>
-                </div>
-                <RequestSteps item={i} who={whoOf(i)} />
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {consegnate.length > 0 && (
-        <div className="card">
-          <div style={{ ...kicker, color: OK, marginBottom: 12 }}>{tr('Documenti consegnati')}</div>
-          <div className="grid" style={{ gap: 14 }}>
-            {consegnate.map(i => (
-              <div key={i.id}>
-                <div style={{ fontSize: 13.5, fontWeight: 700 }}>{i.title}</div>
-                <RequestSteps item={i} who={whoOf(i)} />
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {tab === 'documenti' ? <LegalDocs rows={rows} /> : tab === 'riepilogo' ? <Overview rows={rows} /> : <>
-        <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 18,
-                      background: 'var(--bg-2)', border: '1px solid var(--border)', padding: '22px' }}>
-          <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 5, background: ACCENT }} />
-          <div style={{ ...kicker, color: ACCENT }}>{tr(TABS.find(t => t.k === tab)?.l || '')}</div>
-          <div className="faint" style={{ fontSize: 12, marginTop: 3 }}>{tr(TABS.find(t => t.k === tab)?.hint || '')}</div>
-          <div className="flex gap" style={{ gap: 26, marginTop: 18, flexWrap: 'wrap' }}>
-            <Metric label={tr('Voci aperte')} value={String(ofArea.filter(i => i.status === 'aperto').length)} tone={ACCENT} />
-            <Metric label={tr('Da pagare')}
-              value={fmtMoney(ofArea.filter(i => i.kind === 'pagamento' && i.status === 'aperto')
-                                    .reduce((s, i) => s + Number(i.amount || 0), 0))} tone={WARN} />
-            <Metric label={tr('Pagato')}
-              value={fmtMoney(ofArea.filter(i => i.status === 'pagato')
-                                    .reduce((s, i) => s + Number(i.amount || 0), 0))} tone={OK} />
-          </div>
-        </div>
-
-        <div>
-          <div className="flex between" style={{ alignItems: 'center', marginBottom: 12 }}>
-            <div className="flex gap" style={{ alignItems: 'center', gap: 9 }}>
-              <span style={{ width: 3, height: 15, background: ACCENT, borderRadius: 2 }} />
-              <span style={{ ...kicker, color: 'var(--text)' }}>{tr('Voci')} · {tr(TABS.find(t => t.k === tab)?.l || '')}</span>
+  // blocco di un'area (fiscale o legale): numeri, voci, aggiungi
+  function renderArea(area: 'fiscale' | 'legale') {
+    const ofArea = rows.filter(i => i.area === area)
+    const shown = isPlayer ? ofArea.filter(i => !isRead(i)) : ofArea
+    const readHidden = ofArea.length - shown.length
+    return (
+      <div id={secId(area)}>
+        <Section
+          title={area === 'fiscale' ? tr('Fiscale') : tr('Legale')}
+          sub={area === 'fiscale' ? tr('Imposte, contributi, dichiarazioni') : tr('Contratti, atti, contenziosi')}
+          action={canManage && (
+            <button className="btn btn-sm" style={{ background: ACCENT, color: '#fff', fontWeight: 800, border: 'none' }}
+              onClick={() => setEdit({ area, kind: 'pagamento', status: 'aperto' })}>
+              <Icon name="plus" size={13} /> {tr('Aggiungi')}
+            </button>
+          )}>
+          <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 18,
+                        background: 'var(--bg-2)', border: '1px solid var(--border)', padding: '18px 22px' }}>
+            <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 5, background: ACCENT }} />
+            <div className="flex gap" style={{ gap: 26, flexWrap: 'wrap' }}>
+              <Metric label={tr('Voci aperte')} value={String(ofArea.filter(i => i.status === 'aperto').length)} tone={ACCENT} />
+              <Metric label={tr('Da pagare')}
+                value={fmtMoney(ofArea.filter(i => i.kind === 'pagamento' && i.status === 'aperto')
+                                      .reduce((s, i) => s + Number(i.amount || 0), 0))} tone={WARN} />
+              <Metric label={tr('Pagato')}
+                value={fmtMoney(ofArea.filter(i => i.status === 'pagato')
+                                      .reduce((s, i) => s + Number(i.amount || 0), 0))} tone={OK} />
             </div>
-            {canManage && (
-              <button className="btn btn-sm" style={{ background: ACCENT, color: '#fff', fontWeight: 800, border: 'none' }}
-                onClick={() => setEdit({ area: tab, kind: 'pagamento', status: 'aperto' })}>
-                <Icon name="plus" size={13} /> {tr('Aggiungi')}
-              </button>
-            )}
           </div>
 
           {readHidden > 0 && (
-            <button className="btn btn-ghost btn-sm" style={{ marginBottom: 10 }} onClick={() => setTab('documenti')}>
+            <button className="btn btn-ghost btn-sm" style={{ justifySelf: 'start' }} onClick={() => scrollToSec('documenti')}>
               <Icon name="check" size={13} /> {(readHidden === 1 ? tr('1 documento letto è in Documenti') : tr('{n} documenti letti sono in Documenti')).replace('{n}', String(readHidden))} →
             </button>
           )}
+
           {shown.length === 0 ? (
             <div className="card">
               <Empty icon={<Icon name="archive" size={30} strokeWidth={1.4} />}
@@ -245,13 +186,13 @@ export default function LegalTax() {
                     <div style={{ padding: 16 }}>
                       <div className="flex between" style={{ alignItems: 'flex-start', gap: 10 }}>
                         <div style={{ minWidth: 0 }}>
-                          <div style={{ ...kicker, fontSize: 9.5, color: ACCENT }}>
+                          <div style={{ ...kicker, fontSize: 11, color: ACCENT }}>
                             {tr(KINDS.find(k => k.k === i.kind)?.l || '')}{i.category ? ` · ${tr(i.category)}` : ''}
                           </div>
-                          <div style={{ fontSize: 15.5, fontWeight: 800, marginTop: 2 }}>{i.title}</div>
-                          {i.period && <div className="faint" style={{ fontSize: 11.5 }}>{i.period}</div>}
+                          <div style={{ fontSize: 15, fontWeight: 800, marginTop: 2 }}>{i.title}</div>
+                          {i.period && <div className="faint" style={{ fontSize: 12.5 }}>{i.period}</div>}
                         </div>
-                        {t && <span style={{ fontSize: 10.5, fontWeight: 800, textTransform: 'uppercase',
+                        {t && <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase',
                                              color: t.c, whiteSpace: 'nowrap' }}>{tr(t.l).replace('{n}', String(t.n))}</span>}
                       </div>
 
@@ -278,7 +219,7 @@ export default function LegalTax() {
 
                       {i.response_attachments && i.response_attachments.length > 0 && (
                         <div style={{ marginTop: 11, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
-                          <div style={{ ...kicker, fontSize: 9.5, color: OK, marginBottom: 6 }}>{tr("Consegnato dall'atleta")}</div>
+                          <div style={{ ...kicker, fontSize: 11, color: OK, marginBottom: 6 }}>{tr("Consegnato dall'atleta")}</div>
                           <div className="flex gap" style={{ flexWrap: 'wrap' }}>
                             {i.response_attachments.map(a => (
                               <button key={a.path} className="btn btn-ghost btn-sm" onClick={() => openDoc(a.path, tr('Impossibile aprire il documento'))}>
@@ -286,7 +227,7 @@ export default function LegalTax() {
                               </button>
                             ))}
                           </div>
-                          {i.response_note && <div className="faint" style={{ fontSize: 12, marginTop: 6 }}>{i.response_note}</div>}
+                          {i.response_note && <div className="faint" style={{ fontSize: 12.5, marginTop: 6 }}>{i.response_note}</div>}
                         </div>
                       )}
 
@@ -314,8 +255,69 @@ export default function LegalTax() {
               })}
             </div>
           )}
+        </Section>
+      </div>
+    )
+  }
+
+  if (loading) return <Spinner />
+
+  return (
+    <div className="grid" style={{ gap: 18 }}>
+      {/* richieste da smarcare: sempre in evidenza */}
+      {aperte.length > 0 && (
+        <div className="card" style={{ borderColor: `${WARN}55` }}>
+          <div className="flex between" style={{ alignItems: 'center', marginBottom: 12 }}>
+            <div style={{ ...kicker, color: WARN }}>{tr('Ti hanno chiesto questi documenti')}</div>
+            <span className="faint" style={{ fontSize: 12.5 }}>{aperte.length}</span>
+          </div>
+          <div className="grid" style={{ gap: 16 }}>
+            {aperte.map(i => (
+              <div key={i.id}>
+                <div className="flex between" style={{ alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600 }}>{i.title}</div>
+                    <div className="faint" style={{ fontSize: 12.5 }}>{i.description || (i.category && tr(i.category)) || '—'}</div>
+                  </div>
+                  <button className="btn btn-sm" style={{ background: 'var(--yellow)', color: 'var(--ink)', fontWeight: 800, border: 'none' }}
+                    onClick={() => setRespond(i)}>
+                    <Icon name="upload" size={13} /> {tr('Rispondi')}
+                  </button>
+                </div>
+                <RequestSteps item={i} who={whoOf(i)} />
+              </div>
+            ))}
+          </div>
         </div>
-      </>}
+      )}
+
+      {consegnate.length > 0 && (
+        <div className="card">
+          <div style={{ ...kicker, color: OK, marginBottom: 12 }}>{tr('Documenti consegnati')}</div>
+          <div className="grid" style={{ gap: 14 }}>
+            {consegnate.map(i => (
+              <div key={i.id}>
+                <div style={{ fontSize: 14, fontWeight: 600 }}>{i.title}</div>
+                <RequestSteps item={i} who={whoOf(i)} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <Section title={tr('Riepilogo')} sub={tr('Spese, scadenze e richieste aperte')}>
+        <Overview rows={rows} />
+      </Section>
+
+      {renderArea('fiscale')}
+      {/* legale: chi non gestisce la vede solo se c'è qualcosa */}
+      {(canManage || rows.some(i => i.area === 'legale')) && renderArea('legale')}
+
+      <div id={secId('documenti')}>
+        <Section title={tr('Documenti')} sub={tr('Allegati e file mandati in chat')}>
+          <LegalDocs rows={rows} />
+        </Section>
+      </div>
 
       {edit && athleteId && (
         <ItemForm value={edit} playerId={athleteId}
@@ -325,7 +327,7 @@ export default function LegalTax() {
         <ItemPeopleModal kind="tax" itemId={thread.id} playerId={athleteId} title={thread.title}
           sub={tr(KINDS.find(k => k.k === thread.kind)?.l || '') + (thread.due_date ? ' · ' + fmtDate(thread.due_date) : '')}
           people={people[thread.id] || []} onPeople={reloadPeople} onClose={() => setThread(null)}>
-          {thread.description && <div style={{ fontSize: 13.5, whiteSpace: 'pre-wrap' }}>{thread.description}</div>}
+          {thread.description && <div style={{ fontSize: 14, whiteSpace: 'pre-wrap' }}>{thread.description}</div>}
         </ItemPeopleModal>
       )}
       {respond && athleteId && (
@@ -350,7 +352,7 @@ function LegalDocs({ rows }: { rows: TaxItem[] }) {
         <div className="flex gap" style={{ alignItems: 'center', gap: 9, marginBottom: 10 }}>
           <span style={{ width: 3, height: 15, background: ACCENT, borderRadius: 2 }} />
           <span style={{ ...kicker, color: 'var(--text)' }}>{tr('Documenti delle voci')}</span>
-          <span className="faint" style={{ fontSize: 12 }}>{files.length}</span>
+          <span className="faint" style={{ fontSize: 12.5 }}>{files.length}</span>
         </div>
         {files.length === 0
           ? <Empty icon={<Icon name="archive" size={30} strokeWidth={1.4} />} title={tr('Nessun documento')}
@@ -410,8 +412,8 @@ function Overview({ rows }: { rows: TaxItem[] }) {
                     background: 'var(--bg-2)', border: '1px solid var(--border)', padding: '22px' }}>
         <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 5, background: ACCENT }} />
         <div style={{ ...kicker, color: ACCENT }}>{tr('Legale e fiscale')} · {anno}</div>
-        <div style={{ fontSize: 34, fontWeight: 900, letterSpacing: -1, marginTop: 6 }}>{fmtMoney(speso)}</div>
-        <div className="faint" style={{ fontSize: 12, marginTop: 2 }}>{tr("versato quest'anno su {n} voci").replace('{n}', String(pagati.length))}</div>
+        <div style={{ fontSize: 34, fontWeight: 800, letterSpacing: -1, marginTop: 6 }}>{fmtMoney(speso)}</div>
+        <div className="faint" style={{ fontSize: 12.5, marginTop: 2 }}>{tr("versato quest'anno su {n} voci").replace('{n}', String(pagati.length))}</div>
 
         <div className="flex gap" style={{ gap: 26, marginTop: 18, flexWrap: 'wrap' }}>
           <Metric label={tr('Da pagare')} value={fmtMoney(totDaPagare)} tone={totDaPagare ? WARN : undefined} />
@@ -424,7 +426,7 @@ function Overview({ rows }: { rows: TaxItem[] }) {
         <div className="card">
           <div className="flex between" style={{ alignItems: 'center', marginBottom: 12 }}>
             <div style={{ ...kicker, color: 'var(--text-dim)' }}>{tr('Prossime scadenze')}</div>
-            <span className="faint" style={{ fontSize: 11.5 }}>{tr('Sono anche in agenda')}</span>
+            <span className="faint" style={{ fontSize: 12.5 }}>{tr('Sono anche in agenda')}</span>
           </div>
           <div className="grid" style={{ gap: 8 }}>
             {prossime.map(i => {
@@ -434,12 +436,12 @@ function Overview({ rows }: { rows: TaxItem[] }) {
                   <div className="flex gap" style={{ alignItems: 'center', gap: 10, minWidth: 0 }}>
                     <span style={{ width: 3, height: 28, borderRadius: 2, background: t?.c || ACCENT }} />
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 13.5, fontWeight: 700 }}>{i.title}</div>
-                      <div className="faint" style={{ fontSize: 11.5 }}>{tr(i.category || (i.area === 'fiscale' ? 'Fiscale' : i.area === 'legale' ? 'Legale' : i.area))}</div>
+                      <div style={{ fontSize: 14, fontWeight: 600 }}>{i.title}</div>
+                      <div className="faint" style={{ fontSize: 12.5 }}>{tr(i.category || (i.area === 'fiscale' ? 'Fiscale' : i.area === 'legale' ? 'Legale' : i.area))}</div>
                     </div>
                   </div>
                   <div style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                    <div style={{ fontSize: 13, fontWeight: 800 }}>{i.amount ? fmtMoney(i.amount) : '—'}</div>
+                    <div style={{ fontSize: 12.5, fontWeight: 800 }}>{i.amount ? fmtMoney(i.amount) : '—'}</div>
                     <div style={{ fontSize: 11, color: t?.c }}>{fmtDate(i.due_date)}</div>
                   </div>
                 </div>
@@ -457,7 +459,7 @@ function Overview({ rows }: { rows: TaxItem[] }) {
               const pct = speso > 0 ? Math.round((v / speso) * 100) : 0
               return (
                 <div key={cat}>
-                  <div className="flex between" style={{ fontSize: 13, marginBottom: 4 }}>
+                  <div className="flex between" style={{ fontSize: 12.5, marginBottom: 4 }}>
                     <span style={{ fontWeight: 600 }}>{tr(cat)}</span>
                     <span className="faint">{fmtMoney(v)} · {pct}%</span>
                   </div>
@@ -477,8 +479,8 @@ function Overview({ rows }: { rows: TaxItem[] }) {
 function Metric({ label, value, tone }: { label: string; value: string; tone?: string }) {
   return (
     <div>
-      <div style={{ ...kicker, fontSize: 10, color: 'var(--text-dim)' }}>{label}</div>
-      <div style={{ fontSize: 21, fontWeight: 900, marginTop: 2,
+      <div style={{ ...kicker, fontSize: 11, color: 'var(--text-dim)' }}>{label}</div>
+      <div style={{ fontSize: 22, fontWeight: 900, marginTop: 2,
                     borderBottom: `2px solid ${tone || 'var(--border)'}`, display: 'inline-block', paddingBottom: 2 }}>
         {value}
       </div>
@@ -489,8 +491,8 @@ function Metric({ label, value, tone }: { label: string; value: string; tone?: s
 function Info({ k, v }: { k: string; v?: any }) {
   return (
     <div>
-      <div className="faint" style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '.7px', fontWeight: 700 }}>{k}</div>
-      <div style={{ fontSize: 13, marginTop: 1 }}>{v || '—'}</div>
+      <div className="t-label">{k}</div>
+      <div style={{ fontSize: 12.5, marginTop: 1 }}>{v || '—'}</div>
     </div>
   )
 }
@@ -584,7 +586,7 @@ function ItemForm({ value, playerId, onClose, onSaved }: {
               <div key={a.path} className="flex between" style={{ alignItems: 'center', gap: 8, border: '1px solid var(--border)', borderRadius: 10, padding: '8px 10px' }}>
                 <span className="flex gap" style={{ alignItems: 'center', gap: 7, minWidth: 0 }}>
                   <Icon name="file" size={15} />
-                  <span style={{ fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</span>
+                  <span style={{ fontSize: 12.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</span>
                 </span>
                 <button className="btn btn-ghost btn-sm" onClick={() => setAtts(prev => prev.filter(x => x.path !== a.path))}>{tr('Rimuovi')}</button>
               </div>
@@ -656,7 +658,7 @@ function RespondForm({ item, playerId, onClose, onSaved }: {
             <div key={a.path} className="flex between" style={{ alignItems: 'center', gap: 8, border: '1px solid var(--border)', borderRadius: 10, padding: '8px 10px' }}>
               <span className="flex gap" style={{ alignItems: 'center', gap: 7, minWidth: 0 }}>
                 <Icon name="file" size={15} />
-                <span style={{ fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</span>
+                <span style={{ fontSize: 12.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</span>
               </span>
               <button className="btn btn-ghost btn-sm" onClick={() => setAtts(prev => prev.filter(x => x.path !== a.path))}>{tr('Rimuovi')}</button>
             </div>

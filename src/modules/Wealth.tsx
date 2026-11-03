@@ -148,7 +148,7 @@ export default function Wealth() {
       sub={tr(KINDS.find(k => k.k === detail.kind)?.l || '') + (detail.category ? ` · ${tr(detail.category)}` : '')
         + (detail.due_date ? ' · ' + tr('entro il {date}').replace('{date}', fmtDate(detail.due_date)) : '')}
       people={people[detail.id] || []} onPeople={loadPeople} onClose={() => setDetail(null)}>
-      {detail.description && <div style={{ fontSize: 13.5, whiteSpace: 'pre-wrap' }}>{detail.description}</div>}
+      {detail.description && <div style={{ fontSize: 14, whiteSpace: 'pre-wrap' }}>{detail.description}</div>}
       {(detail.attachments || []).length > 0 && (
         <div className="flex gap" style={{ marginTop: 10, flexWrap: 'wrap' }}>
           {(detail.attachments || []).map(a => (
@@ -164,7 +164,7 @@ export default function Wealth() {
   if (isGuest) {
     return (
       <div className="grid" style={{ gap: 14 }}>
-        <div className="faint" style={{ fontSize: 13 }}>{tr("Voci del patrimonio dell'atleta in cui sei stato coinvolto.")}</div>
+        <div className="faint" style={{ fontSize: 12.5 }}>{tr("Voci del patrimonio dell'atleta in cui sei stato coinvolto.")}</div>
         {rows.length === 0
           ? <div className="card"><Empty icon={<Icon name="users" size={30} strokeWidth={1.4} />} title={tr('Nessuna voce')}
               hint={tr('Quando il wealth manager o l\'atleta ti coinvolgono in una voce, la trovi qui.')} /></div>
@@ -208,14 +208,14 @@ export default function Wealth() {
         <div className="card" style={{ borderColor: `${WARN}55` }}>
           <div className="flex between" style={{ alignItems: 'center', marginBottom: 12 }}>
             <div style={{ ...kicker, color: WARN }}>{isPlayer ? tr('Il tuo wealth manager ti chiede') : tr("In attesa dell'atleta")}</div>
-            <span className="faint" style={{ fontSize: 12 }}>{open.length}</span>
+            <span className="faint" style={{ fontSize: 12.5 }}>{open.length}</span>
           </div>
           <div className="grid" style={{ gap: 9 }}>
             {open.map(i => (
               <div key={i.id} className="flex between" style={{ alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                 <div style={{ minWidth: 0, cursor: 'pointer' }} onClick={() => setDetail(i)}>
-                  <div style={{ fontSize: 14, fontWeight: 700 }}>{i.title}</div>
-                  <div className="faint" style={{ fontSize: 11.5 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600 }}>{i.title}</div>
+                  <div className="faint" style={{ fontSize: 12.5 }}>
                     {i.description || (i.category && tr(i.category)) || tr(KINDS.find(k => k.k === i.kind)?.l || '')}
                     {i.due_date ? ' · ' + tr('entro il {date}').replace('{date}', fmtDate(i.due_date)) : ''}
                   </div>
@@ -300,13 +300,13 @@ function Summary({ ov, rows, canManage, onEdit }: { ov: Overview | null; rows: W
           {canManage && <button className="btn btn-ghost btn-sm" onClick={onEdit}><Icon name="edit" size={13} /> {ov ? tr('Aggiorna') : tr('Compila')}</button>}
         </div>
         {!ov ? (
-          <div className="faint" style={{ fontSize: 13, marginTop: 10 }}>
+          <div className="faint" style={{ fontSize: 12.5, marginTop: 10 }}>
             {canManage ? tr('Compila il quadro: patrimonio seguito, ripartizione, profilo di rischio e obiettivi.')
                        : tr('Il tuo wealth manager compilerà qui il quadro del tuo patrimonio.')}
           </div>
         ) : <>
-          <div style={{ fontSize: 34, fontWeight: 900, letterSpacing: -1, marginTop: 6 }}>{total ? fmtMoney(total, cur) : '—'}</div>
-          <div className="faint" style={{ fontSize: 12, marginTop: 2 }}>
+          <div style={{ fontSize: 34, fontWeight: 800, letterSpacing: -1, marginTop: 6 }}>{total ? fmtMoney(total, cur) : '—'}</div>
+          <div className="faint" style={{ fontSize: 12.5, marginTop: 2 }}>
             {tr('patrimonio seguito')} · {tr('aggiornato il {date}').replace('{date}', fmtDate(ov.updated_at))}
           </div>
 
@@ -334,8 +334,8 @@ function Summary({ ov, rows, canManage, onEdit }: { ov: Overview | null; rows: W
           </div>
           {ov.goals && (
             <div style={{ marginTop: 16 }}>
-              <div style={{ ...kicker, fontSize: 10, color: 'var(--text-dim)' }}>{tr('Obiettivi')}</div>
-              <div style={{ fontSize: 13.5, marginTop: 4, whiteSpace: 'pre-wrap' }}>{ov.goals}</div>
+              <div style={{ ...kicker, fontSize: 11, color: 'var(--text-dim)' }}>{tr('Obiettivi')}</div>
+              <div style={{ fontSize: 14, marginTop: 4, whiteSpace: 'pre-wrap' }}>{ov.goals}</div>
             </div>
           )}
           {ov.notes && <div className="faint" style={{ fontSize: 12.5, marginTop: 10, whiteSpace: 'pre-wrap' }}>{ov.notes}</div>}
@@ -348,7 +348,7 @@ function Summary({ ov, rows, canManage, onEdit }: { ov: Overview | null; rows: W
             <div className="card">
               <div className="flex between" style={{ alignItems: 'center', marginBottom: 12 }}>
                 <div style={{ ...kicker, color: 'var(--text-dim)' }}>{tr('Prossime scadenze')}</div>
-                <span className="faint" style={{ fontSize: 11.5 }}>{tr('Sono anche in agenda')}</span>
+                <span className="faint" style={{ fontSize: 12.5 }}>{tr('Sono anche in agenda')}</span>
               </div>
               <div className="grid" style={{ gap: 8 }}>
                 {scadenze.map(i => {
@@ -358,11 +358,11 @@ function Summary({ ov, rows, canManage, onEdit }: { ov: Overview | null; rows: W
                       <div className="flex gap" style={{ alignItems: 'center', gap: 10, minWidth: 0 }}>
                         <span style={{ width: 3, height: 28, borderRadius: 2, background: t?.c || ACCENT }} />
                         <div style={{ minWidth: 0 }}>
-                          <div style={{ fontSize: 13.5, fontWeight: 700 }}>{i.title}</div>
-                          <div className="faint" style={{ fontSize: 11.5 }}>{tr(KINDS.find(k => k.k === i.kind)?.l || '')}</div>
+                          <div style={{ fontSize: 14, fontWeight: 600 }}>{i.title}</div>
+                          <div className="faint" style={{ fontSize: 12.5 }}>{tr(KINDS.find(k => k.k === i.kind)?.l || '')}</div>
                         </div>
                       </div>
-                      <div style={{ fontSize: 12, color: t?.c, whiteSpace: 'nowrap', fontWeight: 700 }}>{fmtDate(i.due_date)}</div>
+                      <div style={{ fontSize: 12.5, color: t?.c, whiteSpace: 'nowrap', fontWeight: 600 }}>{fmtDate(i.due_date)}</div>
                     </div>
                   )
                 })}
@@ -373,7 +373,7 @@ function Summary({ ov, rows, canManage, onEdit }: { ov: Overview | null; rows: W
             <div className="card">
               <div style={{ ...kicker, color: 'var(--text-dim)', marginBottom: 10 }}>{tr('Ultimo report')}</div>
               <div style={{ fontSize: 15, fontWeight: 800 }}>{lastReport.title}</div>
-              <div className="faint" style={{ fontSize: 12 }}>{lastReport.period || fmtDate(lastReport.created_at)}</div>
+              <div className="faint" style={{ fontSize: 12.5 }}>{lastReport.period || fmtDate(lastReport.created_at)}</div>
               <div className="flex gap" style={{ marginTop: 12, flexWrap: 'wrap' }}>
                 {(lastReport.attachments || []).map(a => (
                   <button key={a.path} className="btn btn-sm" onClick={() => openDoc(a.path, tr('Impossibile aprire il documento'))}>
@@ -401,13 +401,13 @@ function ItemCard({ i, canManage, isPlayer, people, onOpen, onEdit, onRespond, o
       <div style={{ padding: 16 }}>
         <div className="flex between" style={{ alignItems: 'flex-start', gap: 10 }}>
           <div style={{ minWidth: 0 }}>
-            <div style={{ ...kicker, fontSize: 9.5, color: ACCENT }}>
+            <div style={{ ...kicker, fontSize: 11, color: ACCENT }}>
               {tr(KINDS.find(k => k.k === i.kind)?.l || '')}{i.category ? ` · ${tr(i.category)}` : ''}
             </div>
-            <div style={{ fontSize: 15.5, fontWeight: 800, marginTop: 2 }}>{i.title}</div>
-            {i.period && <div className="faint" style={{ fontSize: 11.5 }}>{i.period}</div>}
+            <div style={{ fontSize: 15, fontWeight: 800, marginTop: 2 }}>{i.title}</div>
+            {i.period && <div className="faint" style={{ fontSize: 12.5 }}>{i.period}</div>}
           </div>
-          {t && <span style={{ fontSize: 10.5, fontWeight: 800, textTransform: 'uppercase', color: t.c, whiteSpace: 'nowrap' }}>
+          {t && <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', color: t.c, whiteSpace: 'nowrap' }}>
             {tr(t.l).replace('{n}', String(t.n))}</span>}
         </div>
         {i.description && <div className="faint" style={{ fontSize: 12.5, marginTop: 9, whiteSpace: 'pre-wrap' }}>{i.description}</div>}
@@ -431,7 +431,7 @@ function ItemCard({ i, canManage, isPlayer, people, onOpen, onEdit, onRespond, o
         )}
         {((i.response_attachments && i.response_attachments.length > 0) || i.response_note) && (
           <div style={{ marginTop: 11, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
-            <div style={{ ...kicker, fontSize: 9.5, color: OK, marginBottom: 6 }}>{tr("Risposta dell'atleta")}</div>
+            <div style={{ ...kicker, fontSize: 11, color: OK, marginBottom: 6 }}>{tr("Risposta dell'atleta")}</div>
             <div className="flex gap" style={{ flexWrap: 'wrap' }}>
               {(i.response_attachments || []).map(a => (
                 <button key={a.path} className="btn btn-ghost btn-sm" onClick={() => openDoc(a.path, tr('Impossibile aprire il documento'))}>
@@ -439,7 +439,7 @@ function ItemCard({ i, canManage, isPlayer, people, onOpen, onEdit, onRespond, o
                 </button>
               ))}
             </div>
-            {i.response_note && <div className="faint" style={{ fontSize: 12, marginTop: 6 }}>{i.response_note}</div>}
+            {i.response_note && <div className="faint" style={{ fontSize: 12.5, marginTop: 6 }}>{i.response_note}</div>}
           </div>
         )}
         <PeopleRow people={people} onOpen={onOpen} />
@@ -463,8 +463,8 @@ function ItemCard({ i, canManage, isPlayer, people, onOpen, onEdit, onRespond, o
 function Metric({ label, value, tone }: { label: string; value: string; tone?: string }) {
   return (
     <div>
-      <div style={{ ...kicker, fontSize: 10, color: 'var(--text-dim)' }}>{label}</div>
-      <div style={{ fontSize: 19, fontWeight: 900, marginTop: 2,
+      <div style={{ ...kicker, fontSize: 11, color: 'var(--text-dim)' }}>{label}</div>
+      <div style={{ fontSize: 18, fontWeight: 900, marginTop: 2,
                     borderBottom: `2px solid ${tone || 'var(--border)'}`, display: 'inline-block', paddingBottom: 2 }}>{value}</div>
     </div>
   )
@@ -473,8 +473,8 @@ function Metric({ label, value, tone }: { label: string; value: string; tone?: s
 function Info({ k, v }: { k: string; v?: any }) {
   return (
     <div>
-      <div className="faint" style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '.7px', fontWeight: 700 }}>{k}</div>
-      <div style={{ fontSize: 13, marginTop: 1 }}>{v || '—'}</div>
+      <div className="t-label">{k}</div>
+      <div style={{ fontSize: 12.5, marginTop: 1 }}>{v || '—'}</div>
     </div>
   )
 }
@@ -488,7 +488,7 @@ function FileList({ files, onRemove }: { files: File_[]; onRemove: (p: string) =
         <div key={a.path} className="flex between" style={{ alignItems: 'center', gap: 8, border: '1px solid var(--border)', borderRadius: 10, padding: '8px 10px' }}>
           <span className="flex gap" style={{ alignItems: 'center', gap: 7, minWidth: 0 }}>
             <Icon name="file" size={15} />
-            <span style={{ fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</span>
+            <span style={{ fontSize: 12.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</span>
           </span>
           <button className="btn btn-ghost btn-sm" onClick={() => onRemove(a.path)}>{tr('Rimuovi')}</button>
         </div>

@@ -5,14 +5,16 @@ import { useAuth } from '../auth/AuthContext'
 import { useAthlete } from '../lib/athlete'
 import { useLang } from '../lib/i18n'
 import { useCollection, insertRow, updateRow, deleteRow } from '../lib/useData'
-import { Modal, Field, Input, Textarea, Select, Empty, Spinner, ConfirmButton } from '../components/ui'
+import { Modal, Field, Input, Textarea, Select, Empty, Spinner, ConfirmButton, Section } from '../components/ui'
+import { useRouteParam } from '../lib/route'
 import Icon from '../components/Icon'
 import { OffersTab, EditorialTab, EDITORIAL_DEFAULTS } from './InsuranceStore'
 import { fmtDate, fmtMoney } from '../lib/format'
 import { useItemPeople, PeopleRow, ItemPeopleModal } from '../components/ItemPeople'
 
-// Area assicurativa dell'atleta: due mondi distinti (sport e personale),
-// ciascuno con la propria dashboard. I documenti li carica l'assicuratore.
+// Area assicurativa dell'atleta: una sola pagina a sezioni (niente schede interne).
+// Prima ciò che scade, poi le polizze (sport e personale), poi spesa e coperture,
+// anagrafica e, in fondo, i contenuti del broker. I documenti li carica l'assicuratore.
 const ACCENT = '#1F6FEB'      // blu assicurativo, distinto da brand/fitness/procura
 const WARN = '#8A6D00'
 const DANGER = '#E53F00'
@@ -23,15 +25,10 @@ const kicker: React.CSSProperties = {
   fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase', fontWeight: 800,
 }
 
+// I due mondi delle polizze, ciascuno con la sua sezione.
 const POLICY_AREAS = [
-  { k: 'riepilogo', l: 'Riepilogo', icon: 'activity', hint: 'Quanto spendi e per cosa sei coperto' },
-  { k: 'sport', l: 'Sport', icon: 'dumbbell', hint: 'Coperture legate alla carriera' },
-  { k: 'personale', l: 'Personale', icon: 'home', hint: 'Casa, veicoli, famiglia' },
-]
-const STORE_AREAS = [
-  { k: 'broker', l: 'Il broker', icon: 'briefcase', hint: 'Cosa fa il tuo broker' },
-  { k: 'proposte', l: 'Proposte', icon: 'lock', hint: 'Soluzioni pensate per te' },
-  { k: 'perche', l: 'Perché', icon: 'star', hint: 'Perché assicurarti' },
+  { k: 'sport', l: 'Polizze sport', hint: 'Coperture legate alla carriera' },
+  { k: 'personale', l: 'Polizze personali', hint: 'Casa, veicoli, famiglia' },
 ]
 
 const CATEGORIES: Record<string, string[]> = {
@@ -105,16 +102,11 @@ export default function Insurance() {
   const { role, session } = useAuth()
   const { athleteId } = useAthlete()
   const { t: tr } = useLang()
-  // L'assicuratore vede lo "store" (Il broker · Proposte · Perché); l'atleta anche le sue polizze.
+  // L'assicuratore vede solo i suoi contenuti (Proposte · Il broker · Perché); l'atleta anche le sue polizze.
   const isInsurerRole = role === 'assicuratore'
-  const AREAS = isInsurerRole ? STORE_AREAS : [...POLICY_AREAS, ...STORE_AREAS]
-  const [area, setArea] = useState<string>(isInsurerRole ? 'broker' : 'riepilogo')
   const [edit, setEdit] = useState<Partial<Policy> | null>(null)
-
-  // Se cambia il ruolo e l'area corrente non è più valida, riparti dalla prima.
-  useEffect(() => {
-    if (!AREAS.some(a => a.k === area) && area !== 'anagrafica') setArea(AREAS[0].k)
-  }, [role]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Contenuti del broker: per l'atleta sono secondari, si aprono a richiesta in fondo alla pagina.
+  const [showStore, setShowStore] = useState(false)
 
   // Anche l'atleta gestisce le proprie polizze: molte (auto, casa) non passano da un assicuratore.
   const canManage = role === 'assicuratore' || role === 'admin' || role === 'player'
@@ -131,7 +123,16 @@ export default function Insurance() {
   const { people, reload: reloadPeople } = useItemPeople('insurance', rows.map(r => r.id))
   const [thread, setThread] = useState<Policy | null>(null)
   const quickRef = useRef<HTMLInputElement>(null)
+  const uploadArea = useRef<string>('sport')
   const [quickBusy, setQuickBusy] = useState(false)
+
+  // apertura diretta di una polizza (insurance?item=<id>): scorre fino alla scheda e la evidenzia
+  const itemParam = useRouteParam('item')
+  useEffect(() => {
+    if (!itemParam || loading) return
+    const t = setTimeout(() => document.getElementById(`ins-${itemParam}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150)
+    return () => clearTimeout(t)
+  }, [itemParam, loading])
 
   // Percorso "documento prima": carichi la polizza e il form si apre già con
   // l'allegato dentro, pronto per i pochi dati che contano.
@@ -145,7 +146,7 @@ export default function Insurance() {
     setQuickBusy(false)
     if (up.error) { toast(up.error.message, 'err'); return }
     setEdit({
-      area: area === 'riepilogo' ? 'sport' : area,
+      area: uploadArea.current,
       status: 'attiva',
       title: file.name.replace(/\.[^.]+$/, ''),
       attachments: [{ name: file.name, path, size: file.size, mime: file.type }],
@@ -153,201 +154,124 @@ export default function Insurance() {
     toast(tr('Documento caricato: completa i dati'))
   }
 
-  const ofArea = useMemo(() => rows.filter(p => p.area === area), [rows, area])
-
-  // Riepilogo dell'area attiva
-  const stats = useMemo(() => {
-    const attive = ofArea.filter(p => p.status === 'attiva').length
-    const inScadenza = ofArea.filter(p => { const n = daysTo(p.expiry_date); return n !== null && n >= 0 && n <= 60 }).length
-    const scadute = ofArea.filter(p => { const n = daysTo(p.expiry_date); return n !== null && n < 0 }).length
-    const premio = ofArea.filter(p => p.status !== 'disdetta').reduce((s, p) => s + Number(p.premium || 0), 0)
-    return { attive, inScadenza, scadute, premio }
-  }, [ofArea])
-
-  const prossime = useMemo(
-    () => ofArea.filter(p => p.expiry_date && p.status !== 'disdetta')
-                .sort((a, b) => (a.expiry_date || '').localeCompare(b.expiry_date || '')).slice(0, 4),
-    [ofArea])
+  // Da sistemare: polizze scadute o in scadenza entro 60 giorni, dalla più urgente.
+  const urgenti = useMemo(
+    () => rows.filter(p => { const n = daysTo(p.expiry_date); return p.status !== 'disdetta' && n !== null && n <= 60 })
+              .sort((a, b) => (a.expiry_date || '').localeCompare(b.expiry_date || '')),
+    [rows])
 
   if (loading) return <Spinner />
 
-  return (
+  const uid = session?.user.id || null
+  const storeBlocks = (
     <div className="grid" style={{ gap: 18 }}>
-      {/* selettore area (Riepilogo/Sport/Personale) + Anagrafica come tab staccata a destra */}
-      <div className="flex between wrap" style={{ gap: 10, alignItems: 'center' }}>
-        <div className="pill-tabs" style={{ alignSelf: 'start' }}>
-          {AREAS.map(a => (
-            <button key={a.k} className={`pill-tab ${area === a.k ? 'active' : ''}`} onClick={() => setArea(a.k)}
-              style={area === a.k ? { background: ACCENT, color: '#fff', borderColor: ACCENT } : undefined}>
-              <Icon name={a.icon} size={13} /> {tr(a.l)}
-            </button>
-          ))}
-        </div>
-        <button className={`pill-tab ${area === 'anagrafica' ? 'active' : ''}`} onClick={() => setArea('anagrafica')}
-          title={tr("Dati bancari e identità dell'atleta")}
-          style={area === 'anagrafica'
-            ? { background: ACCENT, color: '#fff', borderColor: ACCENT }
-            : { borderColor: ACCENT, color: ACCENT }}>
-          <Icon name="user" size={13} /> {tr('Anagrafica')}
-        </button>
-      </div>
+      <OffersTab athleteId={athleteId} isInsurer={isInsurerRole} canInterest={role === 'player'} uid={uid} />
+      <EditorialTab slug="broker" isInsurer={isInsurerRole} uid={uid}
+        defaultTitle={EDITORIAL_DEFAULTS.broker.title} defaultBody={EDITORIAL_DEFAULTS.broker.body} />
+      <EditorialTab slug="why" isInsurer={isInsurerRole} uid={uid}
+        defaultTitle={EDITORIAL_DEFAULTS.why.title} defaultBody={EDITORIAL_DEFAULTS.why.body} />
+    </div>
+  )
 
-      {area === 'anagrafica' ? (
-        <AnagraficaCard athleteId={athleteId} canEdit={role === 'admin' || role === 'player'} />
-      ) : area === 'proposte' ? (
-        <OffersTab athleteId={athleteId} isInsurer={role === 'assicuratore'} canInterest={role === 'player'} uid={session?.user.id || null} />
-      ) : area === 'perche' ? (
-        <EditorialTab slug="why" isInsurer={role === 'assicuratore'} uid={session?.user.id || null}
-          defaultTitle={EDITORIAL_DEFAULTS.why.title} defaultBody={EDITORIAL_DEFAULTS.why.body} />
-      ) : area === 'broker' ? (
-        <EditorialTab slug="broker" isInsurer={role === 'assicuratore'} uid={session?.user.id || null}
-          defaultTitle={EDITORIAL_DEFAULTS.broker.title} defaultBody={EDITORIAL_DEFAULTS.broker.body} />
-      ) : area === 'riepilogo' ? <>
-        <Overview rows={rows} pays={pays} />
-      </> : <>
-      {/* --- riepilogo --- */}
-      <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 18,
-                    background: 'var(--bg-2)', border: '1px solid var(--border)', padding: '22px' }}>
-        <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 5, background: ACCENT }} />
-        <div style={{ ...kicker, color: ACCENT }}>
-          {tr('Assicurazioni')} · {tr(AREAS.find(a => a.k === area)?.l || '')}
-        </div>
-        <div className="faint" style={{ fontSize: 12, marginTop: 3 }}>
-          {tr(AREAS.find(a => a.k === area)?.hint || '')}
-        </div>
-        <div className="flex gap" style={{ gap: 26, marginTop: 18, flexWrap: 'wrap' }}>
-          <Metric label={tr("Polizze attive")} value={String(stats.attive)} tone={ACCENT} />
-          <Metric label={tr("In scadenza")} value={String(stats.inScadenza)} tone={stats.inScadenza ? WARN : undefined} />
-          <Metric label={tr("Scadute")} value={String(stats.scadute)} tone={stats.scadute ? DANGER : undefined} />
-          {stats.premio > 0 && <Metric label={tr("Premio totale")} value={fmtMoney(stats.premio)} tone={ACCENT} />}
-        </div>
+  // Assicuratore: la pagina è il suo "negozio" (proposte e testi) più l'anagrafica dell'atleta scelto.
+  if (isInsurerRole) {
+    return (
+      <div className="grid" style={{ gap: 22 }}>
+        {storeBlocks}
+        {athleteId && <AnagraficaCard athleteId={athleteId} canEdit={false} />}
       </div>
+    )
+  }
 
-      {/* --- prossime scadenze --- */}
-      {prossime.length > 0 && (
-        <div className="card">
-          <div className="flex between" style={{ alignItems: 'center', marginBottom: 12 }}>
-            <div style={{ ...kicker, color: 'var(--text-dim)' }}>{tr('Prossime scadenze')}</div>
-            <span className="faint" style={{ fontSize: 11.5 }}>{tr('Sono anche in agenda')}</span>
-          </div>
-          <div className="grid" style={{ gap: 8 }}>
-            {prossime.map(p => {
+  return (
+    <div className="grid" style={{ gap: 22 }}>
+      <input ref={quickRef} type="file" hidden onChange={quickUpload} />
+
+      {/* --- 1. da sistemare: scadute e in scadenza --- */}
+      {urgenti.length > 0 && (
+        <Section title={tr('Prossime scadenze')} sub={tr('Sono anche in agenda')}>
+          <div className="card grid" style={{ gap: 8 }}>
+            {urgenti.map(p => {
               const t = expiryTone(p.expiry_date)
               return (
-                <div key={p.id} className="flex between" style={{ alignItems: 'center', gap: 10 }}>
+                <div key={p.id} className="flex between" style={{ alignItems: 'center', gap: 10, cursor: 'pointer' }}
+                  onClick={() => document.getElementById(`ins-${p.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
                   <div className="flex gap" style={{ alignItems: 'center', gap: 10, minWidth: 0 }}>
                     <span style={{ width: 3, height: 28, borderRadius: 2, background: t?.c || ACCENT }} />
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 13.5, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.title}</div>
-                      <div className="faint" style={{ fontSize: 11.5 }}>
+                      <div className="t-item" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.title}</div>
+                      <div className="t-meta">
                         {[p.category && tr(p.category), p.company].filter(Boolean).join(' · ')}
                       </div>
                     </div>
                   </div>
                   <div style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                    <div style={{ fontSize: 12.5, fontWeight: 700 }}>{fmtDate(p.expiry_date)}</div>
-                    {t && <div style={{ fontSize: 11, fontWeight: 800, color: t.c }}>{tr(t.l).replace('{n}', String(t.n))}</div>}
+                    <div className="t-body">{fmtDate(p.expiry_date)}</div>
+                    {t && <div className="t-meta" style={{ fontWeight: 800, color: t.c }}>{tr(t.l).replace('{n}', String(t.n))}</div>}
                   </div>
                 </div>
               )
             })}
           </div>
-        </div>
+        </Section>
       )}
 
-      {/* --- elenco polizze --- */}
-      <div>
-        <div className="flex between" style={{ alignItems: 'center', marginBottom: 12 }}>
-          <div className="flex gap" style={{ alignItems: 'center', gap: 9 }}>
-            <span style={{ width: 3, height: 15, background: ACCENT, borderRadius: 2 }} />
-            <span style={{ ...kicker, color: 'var(--text)' }}>{tr('Le mie polizze')}</span>
-          </div>
-          {canManage && (
-            <div className="flex gap" style={{ flexWrap: 'wrap' }}>
-              <button className="btn btn-sm" disabled={quickBusy} onClick={() => quickRef.current?.click()}>
-                <Icon name="upload" size={13} /> {quickBusy ? tr('Carico…') : tr('Carica polizza')}
-              </button>
-              <input ref={quickRef} type="file" hidden onChange={quickUpload} />
-              <button className="btn btn-sm" style={{ background: ACCENT, color: '#fff', fontWeight: 800, border: 'none' }}
-                onClick={() => setEdit({ area: area === 'riepilogo' ? 'sport' : area, status: 'attiva' })}>
-                <Icon name="plus" size={13} /> {tr('Nuova polizza')}
-              </button>
-            </div>
-          )}
-        </div>
+      {/* --- 2. le polizze, una sezione per mondo --- */}
+      {POLICY_AREAS.map(a => {
+        const list = rows.filter(p => p.area === a.k)
+        const attive = list.filter(p => p.status === 'attiva').length
+        return (
+          <Section key={a.k} title={tr(a.l)}
+            sub={`${tr(a.hint)} · ${tr('Polizze attive')}: ${attive}`}
+            action={canManage ? (
+              <div className="flex gap" style={{ flexWrap: 'wrap' }}>
+                <button className="btn btn-sm" disabled={quickBusy}
+                  onClick={() => { uploadArea.current = a.k; quickRef.current?.click() }}>
+                  <Icon name="upload" size={13} /> {quickBusy ? tr('Carico…') : tr('Carica polizza')}
+                </button>
+                <button className="btn btn-sm" style={{ background: ACCENT, color: '#fff', fontWeight: 800, border: 'none' }}
+                  onClick={() => setEdit({ area: a.k, status: 'attiva' })}>
+                  <Icon name="plus" size={13} /> {tr('Nuova polizza')}
+                </button>
+              </div>
+            ) : undefined}>
+            {list.length === 0 ? (
+              <div className="card">
+                <Empty icon={<Icon name="archive" size={30} strokeWidth={1.4} />}
+                  title={tr('Nessuna polizza in questa area')}
+                  hint={canManage
+                    ? tr('Carica il documento della polizza o inseriscila a mano.')
+                    : tr('Il tuo assicuratore le caricherà qui.')} />
+              </div>
+            ) : (
+              <div className="grid g2" style={{ gap: 12 }}>
+                {list.map(p => (
+                  <PolicyCard key={p.id} p={p} highlight={p.id === itemParam} canManage={canManage}
+                    people={people[p.id] || []}
+                    onThread={() => setThread(p)} onPay={() => setPayFor(p)} onEdit={() => setEdit(p)}
+                    onDelete={async () => { await deleteRow('crm_insurance_policies', p.id); reload() }} />
+                ))}
+              </div>
+            )}
+          </Section>
+        )
+      })}
 
-        {ofArea.length === 0 ? (
-          <div className="card">
-            <Empty icon={<Icon name="archive" size={30} strokeWidth={1.4} />}
-              title={tr('Nessuna polizza in questa area')}
-              hint={canManage
-                ? tr('Carica il documento della polizza o inseriscila a mano.')
-                : tr('Il tuo assicuratore le caricherà qui.')} />
-          </div>
-        ) : (
-          <div className="grid g2" style={{ gap: 12 }}>
-            {ofArea.map(p => {
-              const t = expiryTone(p.expiry_date)
-              return (
-                <div key={p.id} className="card" style={{ padding: 0, overflow: 'hidden' }}>
-                  <div style={{ height: 3, background: t?.c || ACCENT }} />
-                  <div style={{ padding: 16 }}>
-                    <div className="flex between" style={{ alignItems: 'flex-start', gap: 10 }}>
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: 15.5, fontWeight: 800 }}>{p.title}</div>
-                        <div className="faint" style={{ fontSize: 12, marginTop: 2 }}>
-                          {[p.category && tr(p.category), p.company].filter(Boolean).join(' · ') || '—'}
-                        </div>
-                      </div>
-                      {t && (
-                        <span style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: .5, textTransform: 'uppercase',
-                                       color: t.c, whiteSpace: 'nowrap' }}>{tr(t.l).replace('{n}', String(t.n))}</span>
-                      )}
-                    </div>
+      {/* --- 3. spesa e coperture (riepilogo) --- */}
+      <Overview rows={rows} pays={pays} />
 
-                    <div className="grid g2" style={{ gap: 8, marginTop: 13 }}>
-                      <Info k={tr('Numero polizza')} v={p.policy_number} />
-                      <Info k={tr('Scadenza')} v={p.expiry_date ? fmtDate(p.expiry_date) : null} />
-                      <Info k={tr('Assicurato')} v={p.insured_party} />
-                      <Info k={tr('Massimale')} v={p.coverage_amount ? fmtMoney(p.coverage_amount) : null} />
-                      <Info k={tr('Premio')} v={p.premium ? `${fmtMoney(p.premium)}${p.payment_frequency ? ' · ' + tr(p.payment_frequency) : ''}` : null} />
-                      <Info k={tr('Franchigia')} v={p.deductible} />
-                    </div>
+      {/* --- 4. anagrafica (dati bancari e identità) --- */}
+      <AnagraficaCard athleteId={athleteId} canEdit={role === 'admin' || role === 'player'} />
 
-                    {p.attachments && p.attachments.length > 0 && (
-                      <div className="flex gap" style={{ marginTop: 13, flexWrap: 'wrap' }}>
-                        {p.attachments.map(a => (
-                          <button key={a.path} className="btn btn-sm" title={a.name}
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, maxWidth: 230 }}
-                            onClick={() => openDoc(a.path, tr('Impossibile aprire il documento'))}>
-                            <Icon name="download" size={13} />
-                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-
-                    {p.notes && <div className="faint" style={{ fontSize: 12.5, marginTop: 11 }}>{p.notes}</div>}
-                    <PeopleRow people={people[p.id] || []} onOpen={() => setThread(p)} />
-
-                    {canManage && (
-                      <div className="flex gap" style={{ marginTop: 13, flexWrap: 'wrap' }}>
-                        <button className="btn btn-sm" onClick={() => setPayFor(p)}>
-                          <Icon name="plus" size={12} /> {tr('Pagamento')}
-                        </button>
-                        <button className="btn btn-ghost btn-sm" onClick={() => setEdit(p)}>{tr('Modifica')}</button>
-                        <ConfirmButton onConfirm={async () => { await deleteRow('crm_insurance_policies', p.id); reload() }}>{tr('Elimina')}</ConfirmButton>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        )}
-      </div>
-
-      </>}
+      {/* --- 5. contenuti del broker: secondari, aperti a richiesta --- */}
+      <Section title={tr('Dal tuo assicuratore')} sub={tr('Proposte, il broker e perché assicurarti')}
+        action={
+          <button className="btn btn-sm" onClick={() => setShowStore(v => !v)}>
+            <Icon name={showStore ? 'x' : 'eye'} size={13} /> {showStore ? tr('Nascondi') : tr('Mostra')}
+          </button>
+        }>
+        {showStore && storeBlocks}
+      </Section>
 
       {payFor && athleteId && (
         <PaymentForm policy={payFor} playerId={athleteId}
@@ -363,6 +287,70 @@ export default function Insurance() {
         <PolicyForm value={edit} playerId={athleteId}
           onClose={() => setEdit(null)} onSaved={() => { setEdit(null); reload() }} />
       )}
+    </div>
+  )
+}
+
+// Scheda di una polizza: dati essenziali, allegati, persone coinvolte e azioni.
+function PolicyCard({ p, highlight, canManage, people, onThread, onPay, onEdit, onDelete }: {
+  p: Policy; highlight: boolean; canManage: boolean; people: Parameters<typeof PeopleRow>[0]['people']
+  onThread: () => void; onPay: () => void; onEdit: () => void; onDelete: () => void
+}) {
+  const { t: tr } = useLang()
+  const t = expiryTone(p.expiry_date)
+  return (
+    <div id={`ins-${p.id}`} className="card"
+      style={{ padding: 0, overflow: 'hidden', scrollMarginTop: 80, ...(highlight ? { boxShadow: `0 0 0 2px ${ACCENT}` } : {}) }}>
+      <div style={{ height: 3, background: t?.c || ACCENT }} />
+      <div style={{ padding: 16 }}>
+        <div className="flex between" style={{ alignItems: 'flex-start', gap: 10 }}>
+          <div style={{ minWidth: 0 }}>
+            <div className="t-item">{p.title}</div>
+            <div className="t-meta" style={{ marginTop: 2 }}>
+              {[p.category && tr(p.category), p.company].filter(Boolean).join(' · ') || '—'}
+            </div>
+          </div>
+          {t && (
+            <span className="t-meta" style={{ fontWeight: 800, letterSpacing: .5, textTransform: 'uppercase',
+                           color: t.c, whiteSpace: 'nowrap' }}>{tr(t.l).replace('{n}', String(t.n))}</span>
+          )}
+        </div>
+
+        <div className="grid g2" style={{ gap: 8, marginTop: 13 }}>
+          <Info k={tr('Numero polizza')} v={p.policy_number} />
+          <Info k={tr('Scadenza')} v={p.expiry_date ? fmtDate(p.expiry_date) : null} />
+          <Info k={tr('Assicurato')} v={p.insured_party} />
+          <Info k={tr('Massimale')} v={p.coverage_amount ? fmtMoney(p.coverage_amount) : null} />
+          <Info k={tr('Premio')} v={p.premium ? `${fmtMoney(p.premium)}${p.payment_frequency ? ' · ' + tr(p.payment_frequency) : ''}` : null} />
+          <Info k={tr('Franchigia')} v={p.deductible} />
+        </div>
+
+        {p.attachments && p.attachments.length > 0 && (
+          <div className="flex gap" style={{ marginTop: 13, flexWrap: 'wrap' }}>
+            {p.attachments.map(a => (
+              <button key={a.path} className="btn btn-sm" title={a.name}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, maxWidth: 230 }}
+                onClick={() => openDoc(a.path, tr('Impossibile aprire il documento'))}>
+                <Icon name="download" size={13} />
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {p.notes && <div className="t-meta" style={{ marginTop: 11 }}>{p.notes}</div>}
+        <PeopleRow people={people} onOpen={onThread} />
+
+        {canManage && (
+          <div className="flex gap" style={{ marginTop: 13, flexWrap: 'wrap' }}>
+            <button className="btn btn-sm" onClick={onPay}>
+              <Icon name="plus" size={12} /> {tr('Pagamento')}
+            </button>
+            <button className="btn btn-ghost btn-sm" onClick={onEdit}>{tr('Modifica')}</button>
+            <ConfirmButton onConfirm={onDelete}>{tr('Elimina')}</ConfirmButton>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -419,73 +407,61 @@ function Overview({ rows, pays }: { rows: Policy[]; pays: Payment[] }) {
       .catch(() => toast(tr('Copia non riuscita'), 'err'))
   }
 
-  if (attive.length === 0) {
-    return (
-      <div className="card">
-        <Empty icon={<Icon name="activity" size={30} strokeWidth={1.4} />}
-          title={tr('Nessun dato da riepilogare')}
-          hint={tr('Quando ci saranno polizze, qui vedrai quanto spendi e per cosa sei coperto.')} />
-      </div>
-    )
-  }
+  // Senza polizze le sezioni sopra mostrano già il proprio stato vuoto.
+  if (attive.length === 0) return null
 
-  return (
-    <div className="grid" style={{ gap: 18 }}>
-      {/* spesa annua */}
-      <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 18,
-                    background: 'var(--bg-2)', border: '1px solid var(--border)', padding: '22px' }}>
-        <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 5, background: ACCENT }} />
-        <div style={{ ...kicker, color: ACCENT }}>{tr('Spesa assicurativa annua')}</div>
-        <div style={{ fontSize: 36, fontWeight: 900, letterSpacing: -1, marginTop: 6 }}>{fmtMoney(totale)}</div>
-        <div className="faint" style={{ fontSize: 12, marginTop: 2 }}>
-          {tr('su {n} polizze · {m} al mese').replace('{n}', String(attive.length)).replace('{m}', fmtMoney(totale / 12))}
-        </div>
+  const anno = new Date().getFullYear()
+  const speso = pays.filter(x => new Date(x.paid_on).getFullYear() === anno)
+                    .reduce((s, x) => s + Number(x.amount || 0), 0)
+  const pctSpeso = totale > 0 ? Math.min(100, Math.round((speso / totale) * 100)) : 0
 
-        <div className="flex gap" style={{ gap: 26, marginTop: 18, flexWrap: 'wrap' }}>
-          {perArea.map(a => (
-            <Metric key={a.area}
-              label={a.area === 'sport' ? tr('Sport') : tr('Personale')}
-              value={fmtMoney(a.costo)} tone={ACCENT} />
-          ))}
-        </div>
-      </div>
-
-      {/* spesa effettiva dell'anno */}
-      {(() => {
-        const anno = new Date().getFullYear()
-        const speso = pays.filter(x => new Date(x.paid_on).getFullYear() === anno)
-                          .reduce((s, x) => s + Number(x.amount || 0), 0)
-        if (!pays.length) return null
-        const pct = totale > 0 ? Math.min(100, Math.round((speso / totale) * 100)) : 0
-        return (
-          <div className="card">
-            <div className="flex between" style={{ alignItems: 'center', marginBottom: 10 }}>
-              <div style={{ ...kicker, color: 'var(--text-dim)' }}>{tr('Speso nel {anno}').replace('{anno}', String(anno))}</div>
-              <span className="faint" style={{ fontSize: 11.5 }}>{tr('{n} pagamenti registrati').replace('{n}', String(pays.length))}</span>
-            </div>
-            <div className="flex gap" style={{ gap: 26, flexWrap: 'wrap', marginBottom: 12 }}>
-              <Metric label={tr("Effettivo")} value={fmtMoney(speso)} tone={OK} />
-              <Metric label={tr("Previsto")} value={fmtMoney(totale)} tone={ACCENT} />
-              <Metric label={tr("Differenza")} value={fmtMoney(speso - totale)} tone={speso > totale ? DANGER : OK} />
-            </div>
-            <div style={{ height: 6, borderRadius: 3, background: 'var(--border)', overflow: 'hidden' }}>
-              <div style={{ width: `${pct}%`, height: '100%', background: OK }} />
+  return <>
+      {/* spesa annua prevista + spesa effettiva dell'anno */}
+      <Section title={tr('Spesa assicurativa annua')}
+        sub={tr('su {n} polizze · {m} al mese').replace('{n}', String(attive.length)).replace('{m}', fmtMoney(totale / 12))}>
+        <div className="grid" style={{ gap: 12 }}>
+          <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 18,
+                        background: 'var(--bg-2)', border: '1px solid var(--border)', padding: '22px' }}>
+            <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 5, background: ACCENT }} />
+            <div style={{ fontSize: 36, fontWeight: 800, letterSpacing: -1 }}>{fmtMoney(totale)}</div>
+            <div className="flex gap" style={{ gap: 26, marginTop: 18, flexWrap: 'wrap' }}>
+              {perArea.map(a => (
+                <Metric key={a.area}
+                  label={a.area === 'sport' ? tr('Sport') : tr('Personale')}
+                  value={fmtMoney(a.costo)} tone={ACCENT} />
+              ))}
             </div>
           </div>
-        )
-      })()}
+
+          {pays.length > 0 && (
+            <div className="card">
+              <div className="flex between" style={{ alignItems: 'center', marginBottom: 10 }}>
+                <div className="t-label">{tr('Speso nel {anno}').replace('{anno}', String(anno))}</div>
+                <span className="t-meta">{tr('{n} pagamenti registrati').replace('{n}', String(pays.length))}</span>
+              </div>
+              <div className="flex gap" style={{ gap: 26, flexWrap: 'wrap', marginBottom: 12 }}>
+                <Metric label={tr("Effettivo")} value={fmtMoney(speso)} tone={OK} />
+                <Metric label={tr("Previsto")} value={fmtMoney(totale)} tone={ACCENT} />
+                <Metric label={tr("Differenza")} value={fmtMoney(speso - totale)} tone={speso > totale ? DANGER : OK} />
+              </div>
+              <div style={{ height: 6, borderRadius: 3, background: 'var(--border)', overflow: 'hidden' }}>
+                <div style={{ width: `${pctSpeso}%`, height: '100%', background: OK }} />
+              </div>
+            </div>
+          )}
+        </div>
+      </Section>
 
       {/* ripartizione per categoria */}
-      <div className="card">
-        <div style={{ ...kicker, color: 'var(--text-dim)', marginBottom: 12 }}>{tr('Dove vanno i soldi')}</div>
-        <div className="grid" style={{ gap: 9 }}>
+      <Section title={tr('Dove vanno i soldi')}>
+        <div className="card grid" style={{ gap: 9 }}>
           {perCat.map(([cat, costo]) => {
             const pct = totale > 0 ? Math.round((costo / totale) * 100) : 0
             return (
               <div key={cat}>
-                <div className="flex between" style={{ fontSize: 13, marginBottom: 4 }}>
-                  <span style={{ fontWeight: 600 }}>{tr(cat)}</span>
-                  <span className="faint">{fmtMoney(costo)} · {pct}%</span>
+                <div className="flex between" style={{ marginBottom: 4 }}>
+                  <span className="t-body" style={{ fontWeight: 600 }}>{tr(cat)}</span>
+                  <span className="t-meta">{fmtMoney(costo)} · {pct}%</span>
                 </div>
                 <div style={{ height: 6, borderRadius: 3, background: 'var(--border)', overflow: 'hidden' }}>
                   <div style={{ width: `${pct}%`, height: '100%', background: ACCENT }} />
@@ -494,58 +470,55 @@ function Overview({ rows, pays }: { rows: Policy[]; pays: Payment[] }) {
             )
           })}
         </div>
-      </div>
+      </Section>
 
       {/* per cosa sono coperto */}
-      <div className="card">
-        <div className="flex between" style={{ alignItems: 'center', marginBottom: 12 }}>
-          <div style={{ ...kicker, color: 'var(--text-dim)' }}>{tr('Per cosa sei coperto')}</div>
-          <span className="faint" style={{ fontSize: 11.5 }}>{tr('{n} garanzie').replace('{n}', String(garanzie.length))}</span>
-        </div>
-        {garanzie.length === 0 ? (
-          <div className="faint" style={{ fontSize: 13 }}>
-            {tr('Le garanzie non sono ancora state dettagliate. Chiedi al tuo assicuratore di compilarle: compariranno qui, polizza per polizza.')}
-          </div>
-        ) : (
-          <div className="grid" style={{ gap: 8 }}>
-            {garanzie.map((g, i) => (
-              <div key={i} className="flex between" style={{ alignItems: 'flex-start', gap: 10,
-                     borderBottom: i < garanzie.length - 1 ? '1px solid var(--border)' : 'none', paddingBottom: 8 }}>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 13.5, fontWeight: 700 }}>{g.name}</div>
-                  <div className="faint" style={{ fontSize: 11.5 }}>
-                    {g.polizza}{g.note ? ` · ${g.note}` : ''}
+      <Section title={tr('Per cosa sei coperto')} sub={tr('{n} garanzie').replace('{n}', String(garanzie.length))}>
+        <div className="card">
+          {garanzie.length === 0 ? (
+            <div className="t-meta">
+              {tr('Le garanzie non sono ancora state dettagliate. Chiedi al tuo assicuratore di compilarle: compariranno qui, polizza per polizza.')}
+            </div>
+          ) : (
+            <div className="grid" style={{ gap: 8 }}>
+              {garanzie.map((g, i) => (
+                <div key={i} className="flex between" style={{ alignItems: 'flex-start', gap: 10,
+                       borderBottom: i < garanzie.length - 1 ? '1px solid var(--border)' : 'none', paddingBottom: 8 }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div className="t-item">{g.name}</div>
+                    <div className="t-meta">
+                      {g.polizza}{g.note ? ` · ${g.note}` : ''}
+                    </div>
                   </div>
+                  {g.amount ? (
+                    <div className="t-body" style={{ fontWeight: 800, color: ACCENT, whiteSpace: 'nowrap' }}>
+                      {fmtMoney(g.amount)}
+                    </div>
+                  ) : null}
                 </div>
-                {g.amount ? (
-                  <div style={{ fontSize: 13, fontWeight: 800, color: ACCENT, whiteSpace: 'nowrap' }}>
-                    {fmtMoney(g.amount)}
-                  </div>
-                ) : null}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </Section>
 
       {/* esportazione per analisi AI */}
-      <div className="card">
-        <div style={{ ...kicker, color: 'var(--text-dim)', marginBottom: 8 }}>{tr('Analisi con AI')}</div>
-        <div className="faint" style={{ fontSize: 12.5, marginBottom: 12 }}>
-          {tr('Copia il riepilogo completo delle tue polizze e incollalo in ChatGPT o Claude per farti spiegare coperture, sovrapposizioni e buchi di tutela.')}
-        </div>
-        <button className="btn btn-sm" onClick={copiaRiepilogo}>
-          <Icon name="copy" size={13} /> {tr('Copia riepilogo per AI')}
-        </button>
-      </div>
-    </div>
-  )
+      <Section title={tr('Analisi con AI')}
+        sub={tr('Copia il riepilogo completo delle tue polizze e incollalo in ChatGPT o Claude per farti spiegare coperture, sovrapposizioni e buchi di tutela.')}
+        action={
+          <button className="btn btn-sm" onClick={copiaRiepilogo}>
+            <Icon name="copy" size={13} /> {tr('Copia riepilogo per AI')}
+          </button>
+        }>
+        {null}
+      </Section>
+  </>
 }
 
 function Metric({ label, value, tone }: { label: string; value: string; tone?: string }) {
   return (
     <div>
-      <div style={{ ...kicker, fontSize: 10, color: 'var(--text-dim)' }}>{label}</div>
+      <div style={{ ...kicker, fontSize: 11, color: 'var(--text-dim)' }}>{label}</div>
       <div style={{ fontSize: 22, fontWeight: 900, marginTop: 2,
                     borderBottom: `2px solid ${tone || 'var(--border)'}`, display: 'inline-block', paddingBottom: 2 }}>
         {value}
@@ -557,8 +530,8 @@ function Metric({ label, value, tone }: { label: string; value: string; tone?: s
 function Info({ k, v }: { k: string; v?: any }) {
   return (
     <div>
-      <div className="faint" style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '.7px', fontWeight: 700 }}>{k}</div>
-      <div style={{ fontSize: 13, marginTop: 1 }}>{v || '—'}</div>
+      <div className="t-label">{k}</div>
+      <div style={{ fontSize: 12.5, marginTop: 1 }}>{v || '—'}</div>
     </div>
   )
 }
@@ -731,7 +704,7 @@ function PolicyForm({ value, playerId, onClose, onSaved }: {
             <div style={{ fontSize: 15, fontWeight: 800, color: ACCENT }}>
               {annualCost(f) ? fmtMoney(annualCost(f)) : '—'}
             </div>
-            <label className="flex gap" style={{ gap: 7, fontSize: 12, cursor: 'pointer', marginTop: 5 }}>
+            <label className="flex gap" style={{ gap: 7, fontSize: 12.5, cursor: 'pointer', marginTop: 5 }}>
               <input type="checkbox" checked={!!f.premium_is_annual}
                 onChange={e => set('premium_is_annual', e.target.checked)} />
               {tr("L'importo inserito è già il totale annuo")}
@@ -751,7 +724,7 @@ function PolicyForm({ value, playerId, onClose, onSaved }: {
           </button>
         </div>
         {cov.length === 0 ? (
-          <div className="faint" style={{ fontSize: 11.5, marginBottom: 10 }}>
+          <div className="faint" style={{ fontSize: 12.5, marginBottom: 10 }}>
             {tr('Es. "Invalidità permanente" · 500.000 € — alimentano la dashboard delle coperture.')}
           </div>
         ) : (
@@ -781,7 +754,7 @@ function PolicyForm({ value, playerId, onClose, onSaved }: {
               <div key={a.path} className="flex between" style={{ alignItems: 'center', gap: 8, border: '1px solid var(--border)', borderRadius: 10, padding: '8px 10px' }}>
                 <span className="flex gap" style={{ alignItems: 'center', minWidth: 0, gap: 7 }}>
                   <Icon name="file" size={15} />
-                  <span style={{ fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</span>
+                  <span style={{ fontSize: 12.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</span>
                 </span>
                 <button className="btn btn-ghost btn-sm" onClick={() => setAtts(prev => prev.filter(x => x.path !== a.path))}>{tr('Rimuovi')}</button>
               </div>
@@ -792,7 +765,7 @@ function PolicyForm({ value, playerId, onClose, onSaved }: {
           <Icon name="upload" size={14} /> {uploading ? tr('Carico…') : tr('Aggiungi documento')}
         </button>
         <input ref={fileRef} type="file" multiple hidden onChange={onFiles} />
-        <div className="faint" style={{ fontSize: 11.5, marginTop: 6 }}>
+        <div className="faint" style={{ fontSize: 12.5, marginTop: 6 }}>
           {tr("Polizza, condizioni, quietanze: l'atleta li apre e li scarica dal suo telefono.")}
         </div>
       </div>
@@ -870,9 +843,9 @@ function AnagraficaCard({ athleteId, canEdit }: { athleteId: number | null; canE
 
   const Row = ({ k, v, copy }: { k: string; v?: string | null; copy?: boolean }) => (
     <div className="flex between" style={{ alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: '1px solid var(--border)' }}>
-      <span className="faint" style={{ fontSize: 12 }}>{k}</span>
+      <span className="faint" style={{ fontSize: 12.5 }}>{k}</span>
       <span className="flex gap" style={{ alignItems: 'center', gap: 8, minWidth: 0 }}>
-        <span style={{ fontSize: 13.5, fontWeight: 600, textAlign: 'right', wordBreak: 'break-all' }}>{v || '—'}</span>
+        <span style={{ fontSize: 14, fontWeight: 600, textAlign: 'right', wordBreak: 'break-all' }}>{v || '—'}</span>
         {copy && v && (
           <button className="btn btn-ghost btn-sm" title={tr('Copia')}
             onClick={() => { navigator.clipboard.writeText(v); toast(tr('Copiato')) }}><Icon name="copy" size={12} /></button>
@@ -882,19 +855,13 @@ function AnagraficaCard({ athleteId, canEdit }: { athleteId: number | null; canE
   )
 
   return (
+    <Section title={tr('Anagrafica')} sub={tr("Dati bancari e identità dell'atleta")}
+      action={canEdit && !editing ? (
+        <button className="btn btn-sm" onClick={() => { setForm({ ...(data || {}), id_docs: docsOf(data) }); setEditing(true) }}>
+          <Icon name={empty ? 'plus' : 'edit'} size={13} /> {empty ? tr('Compila') : tr('Modifica')}
+        </button>
+      ) : undefined}>
     <div className="card">
-      <div className="flex between" style={{ alignItems: 'center', marginBottom: 6 }}>
-        <div>
-          <div style={{ ...kicker, color: ACCENT }}>{tr('Anagrafica')}</div>
-          <div className="faint" style={{ fontSize: 12, marginTop: 2 }}>{tr("Dati bancari e identità dell'atleta")}</div>
-        </div>
-        {canEdit && !editing && (
-          <button className="btn btn-sm" onClick={() => { setForm({ ...(data || {}), id_docs: docsOf(data) }); setEditing(true) }}>
-            <Icon name={empty ? 'plus' : 'edit'} size={13} /> {empty ? tr('Compila') : tr('Modifica')}
-          </button>
-        )}
-      </div>
-
       {editing ? (
         <div className="grid" style={{ gap: 12, marginTop: 8 }}>
           <Field label={tr('Intestatario')}><Input value={form.account_holder || ''} onChange={e => set('account_holder', e.target.value)} placeholder={tr('Nome e cognome')} /></Field>
@@ -910,7 +877,7 @@ function AnagraficaCard({ athleteId, canEdit }: { athleteId: number | null; canE
             <Field label={tr('Numero documento')}><Input value={form.id_doc_number || ''} onChange={e => set('id_doc_number', e.target.value)} /></Field>
           </div>
           <div>
-            <div className="faint" style={{ fontSize: 12, marginBottom: 6 }}>{tr('Documenti (identità, tessera sanitaria, ecc.) — puoi caricarne più insieme')}</div>
+            <div className="faint" style={{ fontSize: 12.5, marginBottom: 6 }}>{tr('Documenti (identità, tessera sanitaria, ecc.) — puoi caricarne più insieme')}</div>
             {(form.id_docs || []).length > 0 && (
               <div className="grid" style={{ gap: 6, marginBottom: 8 }}>
                 {(form.id_docs || []).map((doc: any, i: number) => (
@@ -938,7 +905,7 @@ function AnagraficaCard({ athleteId, canEdit }: { athleteId: number | null; canE
           </div>
         </div>
       ) : empty ? (
-        <div className="faint" style={{ fontSize: 13, padding: '10px 0' }}>
+        <div className="faint" style={{ fontSize: 12.5, padding: '10px 0' }}>
           {tr('Anagrafica non ancora compilata.')}{canEdit ? ' ' + tr('Premi "Compila" per aggiungerla.') : ''}
         </div>
       ) : (
@@ -952,7 +919,7 @@ function AnagraficaCard({ athleteId, canEdit }: { athleteId: number | null; canE
           <Row k={tr('Documento')} v={[d.id_doc_type && tr(d.id_doc_type), d.id_doc_number].filter(Boolean).join(' · ')} />
           {docsOf(d).length > 0 && (
             <div style={{ paddingTop: 12 }}>
-              <div className="faint" style={{ fontSize: 12, marginBottom: 6 }}>{tr('Documenti allegati')}</div>
+              <div className="faint" style={{ fontSize: 12.5, marginBottom: 6 }}>{tr('Documenti allegati')}</div>
               <div className="grid" style={{ gap: 6 }}>
                 {docsOf(d).map((doc, i) => (
                   <button key={i} className="btn btn-sm" style={{ justifyContent: 'flex-start' }} onClick={() => openDoc(doc.path, tr('Impossibile aprire il documento'))}>
@@ -965,5 +932,6 @@ function AnagraficaCard({ athleteId, canEdit }: { athleteId: number | null; canE
         </div>
       )}
     </div>
+    </Section>
   )
 }

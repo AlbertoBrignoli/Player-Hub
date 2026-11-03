@@ -3802,5 +3802,9 @@ const EN: Record<string, string> = {
   'Pratiche': 'Procedures',
   'Ieri': 'Yesterday',
   'Nessun risultato': 'No results',
+  'Dal tuo assicuratore': 'From your insurer',
+  'Proposte, il broker e perché assicurarti': 'Offers, your broker and why get insured',
+  'Polizze sport': 'Sports policies',
+  'Polizze personali': 'Personal policies',
 }
 
