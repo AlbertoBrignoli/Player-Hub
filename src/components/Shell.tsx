@@ -15,7 +15,7 @@ import { Modal, Field, Input, Tabs, Empty } from './ui'
 // Schermate home dei vari ruoli: qui compare l'invito ad attivare le notifiche.
 const HOME_ROUTES = ['dashboard', 'brandhome', 'agent-home', 'insurer-home', 'tax-home', 'physio-home', 'partner-home', 'wealth-home']
 
-export const APP_VERSION = 'v12.32'
+export const APP_VERSION = 'v12.33'
 
 export interface NavDef {
   key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[]
@@ -26,6 +26,8 @@ export interface NavDef {
   /** pagine che si aprono DALLA schermata principale della voce (niente schede in alto):
    *  la voce resta attiva e in cima compare il percorso "← Voce / Pagina" */
   pages?: { key: string; label: string; roles?: string[] }[]
+  /** su telefono non compare (né nella barra in basso né in "Altro"): ci si entra dalla Home */
+  fromHome?: boolean
 }
 
 // Menu principale (admin / player / creator): 5 gruppi, niente gruppi da una voce,
@@ -34,8 +36,8 @@ export const NAV: { group: string; items: NavDef[] }[] = [
   // ordinate per uso: prima ciò che l'atleta apre ogni giorno
   { group: 'Principale', items: [
     { key: 'dashboard', label: 'Home', icon: 'home' },
-    { key: 'services', label: 'Servizi AUVI', icon: 'layers' },
-    { key: 'messages', label: 'Chat', icon: 'message' },
+    { key: 'services', label: 'Servizi AUVI', icon: 'layers', fromHome: true },
+    { key: 'messages', label: 'Chat', icon: 'message', fromHome: true },
     { key: 'mail', label: 'Mail', icon: 'mail', mailbox: true },
     { key: 'editorial', label: 'Calendario', icon: 'calendar', tabs: [
       { key: 'editorial', label: 'Editoriale' },
@@ -389,10 +391,11 @@ export default function Shell({ route, setRoute, right, children }: {
             ]
     : isPro ? proTabbar(role as ProRole)
     : [
+              // Chat e Servizi sono già in Home (tasto Chat e copertina Servizi): qui niente doppioni
               { key: 'dashboard', label: 'Home', icon: 'home' },
-              { key: 'services', label: 'Servizi', icon: 'layers' },
-              { key: 'messages', label: 'Chat', icon: 'message' },
               { key: 'editorial', label: 'Calendario', icon: 'calendar' },
+              { key: 'my-team', label: 'Team', icon: 'users' },
+              { key: 'commercial', label: 'Business', icon: 'briefcase' },
             ]
   const tabbarKeys = new Set(tabbarItems.map(t => t.key))
   const title = hub && (hubTabs.length > 1 || hubPage) ? { t: hub.label, s: title0.s } : title0
@@ -415,7 +418,7 @@ export default function Shell({ route, setRoute, right, children }: {
               <React.Fragment key={g.group}>
                 <div className="nav-label">{tr(g.group)}</div>
                 {items.map(i => (
-                  <button key={i.key} className={`nav-item ${isActiveItem(i.key) ? 'active' : ''} ${tabbarKeys.has(i.key) ? 'in-tabbar' : ''}`}
+                  <button key={i.key} className={`nav-item ${isActiveItem(i.key) ? 'active' : ''} ${tabbarKeys.has(i.key) || (i.fromHome && !isPro && !isBrand && !isPartner) ? 'in-tabbar' : ''}`}
                     onClick={() => openItem(i)}>
                     <span className="nav-ico"><Icon name={i.icon} size={17} /></span>{tr(i.label)}
                   </button>
