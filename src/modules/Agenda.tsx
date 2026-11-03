@@ -195,10 +195,11 @@ export default function Agenda({ goto }: { goto?: (r: string) => void }) {
     || (isPro && !!uid && e.created_by === uid && OPEN_STATES.includes(e.request_status || ''))
     // pasti e integratori del nutrizionista: sono indicazioni, li corregge quando vuole
     || (isNutri && !!uid && e.created_by === uid && e.type === 'nutrizione'))
-  // Richieste dell'atleta: l'agenzia conferma o rifiuta.
-  const canConfirm = (e: AgItem) => !e._match && isAdmin && e.request_status === 'da_confermare' && !isTeamProposal(e)
+  // Richieste dell'atleta: conferma o rifiuta l'agenzia, oppure il professionista a cui l'atleta l'ha indirizzata.
+  const canConfirm = (e: AgItem) => !e._match && e.request_status === 'da_confermare' && !isTeamProposal(e)
+    && (isAdmin || (isPro && !!role && e.assignee_role === role && e.proposed_by_role === 'player'))
   const onConfirm = async (e: EventItem, ok: boolean) => {
-    const { error } = await updateRow('crm_events', e.id, { request_status: ok ? 'confermata' : 'rifiutata' })
+    const { error } = await supabase.rpc('crm_event_answer', { p_event: e.id, p_ok: ok })
     if (error) { toast(error.message, 'err'); return }
     toast(ok ? tr('Richiesta confermata') : tr('Richiesta rifiutata'))
     reload()

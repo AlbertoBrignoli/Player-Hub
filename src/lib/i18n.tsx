@@ -3835,5 +3835,10 @@ const EN: Record<string, string> = {
   'Il tuo consulente AUVI': 'Your AUVI advisor',
   'Scrivi al tuo consulente AUVI': 'Message your AUVI advisor',
   'Consulente': 'Advisor',
+  'Link della call (facoltativo)': 'Call link (optional)',
+  'Gli arriva la notifica e conferma lui.': 'They get a notification and confirm it.',
+  'La richiesta arriva ad AUVI.': 'The request goes to AUVI.',
+  'Es. Call con il procuratore': 'E.g. Call with my agent',
+  'Es. Forza gambe, recupero': 'E.g. Leg strength, recovery',
 }
 
