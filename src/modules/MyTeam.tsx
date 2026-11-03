@@ -65,10 +65,10 @@ export default function MyTeam({ goto }: { goto?: (r: string) => void }) {
     return (
       <div className="grid" style={{ gap: 18 }}>
         <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 18, padding: 18 }}>
-          <div style={{ fontSize: 11, letterSpacing: 1.4, textTransform: 'uppercase', fontWeight: 800, color: 'var(--text-dim)' }}>
+          <div className="t-label">
             {t('Il mio team')}
           </div>
-          <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: -0.3 }}>{t('I miei giocatori')}</div>
+          <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: -0.3 }}>{t('I miei giocatori')}</div>
           <div style={{ fontSize: 12.5, color: 'var(--text-dim)', marginTop: 2 }}>
             {t('Gli atleti che segui. Tocca un giocatore per aprire la sua area.')}
           </div>
@@ -88,7 +88,7 @@ export default function MyTeam({ goto }: { goto?: (r: string) => void }) {
                 <span className="flex gap" style={{ alignItems: 'center', gap: 12, minWidth: 0 }}>
                   {a.photo_url
                     ? <img src={a.photo_url} alt={a.name || ''} style={{ width: 46, height: 46, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
-                    : <span className="avatar" style={{ width: 46, height: 46, fontSize: 16 }}>{initials(a.name)}</span>}
+                    : <span className="avatar" style={{ width: 46, height: 46, fontSize: 15 }}>{initials(a.name)}</span>}
                   <span style={{ fontSize: 15, fontWeight: 800 }}>{a.name}</span>
                 </span>
                 <Icon name="chevron-right" size={18} />
@@ -110,13 +110,13 @@ export default function MyTeam({ goto }: { goto?: (r: string) => void }) {
           <img src={athlete.photo_url} alt={athlete.name || ''}
             style={{ width: 58, height: 58, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
         ) : (
-          <div className="avatar" style={{ width: 58, height: 58, fontSize: 20 }}>{initials(athlete?.name)}</div>
+          <div className="avatar" style={{ width: 58, height: 58, fontSize: 22 }}>{initials(athlete?.name)}</div>
         )}
         <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 11, letterSpacing: 1.4, textTransform: 'uppercase', fontWeight: 800, color: 'var(--text-dim)' }}>
+          <div className="t-label">
             {t('Il club di')}
           </div>
-          <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: -0.3 }}>{athlete?.name || t('Atleta')}</div>
+          <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: -0.3 }}>{athlete?.name || t('Atleta')}</div>
           <div style={{ fontSize: 12.5, color: 'var(--text-dim)', marginTop: 2 }}>
             {t('Le persone che lavorano al tuo fianco: apri la scheda per entrare nella loro area.')}
           </div>
@@ -125,7 +125,7 @@ export default function MyTeam({ goto }: { goto?: (r: string) => void }) {
 
       {/* AUVI Agency: l'advisor è sempre presente */}
       <div>
-        <div className="nav-label" style={{ paddingLeft: 2 }}>{t('Advisor')}</div>
+        <div className="t-label" style={{ paddingLeft: 2 }}>{t('Advisor')}</div>
         <div style={TILES}>
           <MemberCard name="AUVI Agency" roleLabel={t("Il tuo advisor · gestione a 360°")}
             icon="star" email="info@auviagency.com" accent="var(--ink)" />
@@ -148,7 +148,7 @@ export default function MyTeam({ goto }: { goto?: (r: string) => void }) {
         </div>
       ) : (
         <div>
-          <div className="nav-label" style={{ paddingLeft: 2 }}>{t('Il team')}</div>
+          <div className="t-label" style={{ paddingLeft: 2 }}>{t('Il team')}</div>
           <div style={TILES}>
             {rows.map((m, i) => {
               const r = ROLE[m.role] || { label: m.role, icon: 'user' as string, area: undefined }
@@ -212,14 +212,14 @@ function MemberCard({ name, roleLabel, icon, title, agency, photo, logo, email, 
       <div style={{ minWidth: 0, flex: 1 }}>
         <div className="flex gap" style={{ alignItems: 'center', gap: 6, color: 'var(--text-dim)' }}>
           <Icon name={icon} size={12} />
-          <span style={{ fontSize: 10.5, letterSpacing: 1.2, textTransform: 'uppercase', fontWeight: 800 }}>{roleLabel}</span>
+          <span className="t-label" style={{ color: 'inherit' }}>{roleLabel}</span>
         </div>
-        <div style={{ fontSize: 16, fontWeight: 900, marginTop: 3, lineHeight: 1.2 }}>{name || '—'}</div>
-        {sub && <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sub}</div>}
+        <div style={{ fontSize: 15, fontWeight: 800, marginTop: 3, lineHeight: 1.2 }}>{name || '—'}</div>
+        {sub && <div style={{ fontSize: 12.5, color: 'var(--text-dim)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sub}</div>}
       </div>
       {area && onArea && (
         <div className="flex between" style={{ marginTop: 'auto', alignItems: 'center', gap: 8, padding: '9px 11px', borderRadius: 11,
-          background: 'var(--surface-2)', fontSize: 13, fontWeight: 800 }}>
+          background: 'var(--surface-2)', fontSize: 12.5, fontWeight: 800 }}>
           <span className="flex gap" style={{ alignItems: 'center', gap: 7 }}><Icon name="folder" size={15} /> {t(area.label)}</span>
           <Icon name="chevron-right" size={16} />
         </div>

@@ -37,7 +37,7 @@ export default function Contracts() {
               <div className="card" key={c.id}>
                 <div className="flex between" style={{ alignItems: 'flex-start' }}>
                   <div>
-                    <div style={{ fontWeight: 700, fontSize: 15 }}>{c.title}</div>
+                    <div style={{ fontWeight: 800, fontSize: 15 }}>{c.title}</div>
                     <div className="muted" style={{ fontSize: 12.5 }}>{c.counterpart} · {t(typeLabel(c.type))}</div>
                   </div>
                   <Badge tone={c.status === 'active' ? 'green' : c.status === 'draft' ? 'gold' : 'red'}>{t(statusLabel(c.status))}</Badge>
@@ -47,7 +47,7 @@ export default function Contracts() {
                   <Info k={t('Ingaggio lordo')} v={fmtMoney(c.salary_gross, c.currency)} />
                 </div>
                 {c.end_date && d != null && d >= 0 && (
-                  <div className="flex gap" style={{ fontSize: 12 }}>
+                  <div className="flex gap" style={{ fontSize: 12.5 }}>
                     <span className="faint">{t('Scadenza tra')}</span>
                     <Badge tone={d < 90 ? 'red' : d < 180 ? 'gold' : undefined}>{t('{n} giorni').replace('{n}', String(d))}</Badge>
                   </div>
@@ -154,7 +154,7 @@ function ContractForm({ value, onClose, onSaved }: { value: Partial<Contract>; o
 }
 
 function Info({ k, v }: { k: string; v: any }) {
-  return <div><div className="faint" style={{ fontSize: 11 }}>{k}</div><div style={{ fontWeight: 600, fontSize: 13 }}>{v}</div></div>
+  return <div><div className="faint" style={{ fontSize: 11 }}>{k}</div><div style={{ fontWeight: 600, fontSize: 12.5 }}>{v}</div></div>
 }
 const typeLabel = (t: string) => ({ sportivo: 'Sportivo', mandato: 'Mandato', immagine: "Diritti d'immagine", altro: 'Altro' } as any)[t] || t
 const statusLabel = (s: string) => ({ active: 'Attivo', draft: 'Bozza', expired: 'Scaduto' } as any)[s] || s

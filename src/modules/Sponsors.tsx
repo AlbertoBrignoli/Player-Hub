@@ -50,13 +50,13 @@ export default function Sponsors() {
               <div className="card" key={s.id}>
                 <div className="flex between" style={{ alignItems: 'flex-start' }}>
                   <div>
-                    <div style={{ fontWeight: 700, fontSize: 15 }}>{s.brand}</div>
+                    <div style={{ fontWeight: 800, fontSize: 15 }}>{s.brand}</div>
                     <div className="muted" style={{ fontSize: 12.5 }}>{t(typeLabel(s.type))}{s.contact ? ` · ${s.contact}` : ''}</div>
                   </div>
                   <Badge tone={s.status === 'active' ? 'green' : s.status === 'negotiation' ? 'gold' : 'red'}>{t(statusLabel(s.status))}</Badge>
                 </div>
                 <div className="flex between" style={{ margin: '12px 0' }}>
-                  <div><div className="faint" style={{ fontSize: 11 }}>{t('Valore')}</div><b style={{ fontSize: 16 }}>{fmtMoney(s.value, s.currency)}</b></div>
+                  <div><div className="faint" style={{ fontSize: 11 }}>{t('Valore')}</div><b style={{ fontSize: 15 }}>{fmtMoney(s.value, s.currency)}</b></div>
                   <div className="right"><div className="faint" style={{ fontSize: 11 }}>{t('Periodo')}</div><div style={{ fontSize: 12.5 }}>{fmtDate(s.start_date)} → {fmtDate(s.end_date)}</div></div>
                 </div>
                 {dl.length > 0 && (

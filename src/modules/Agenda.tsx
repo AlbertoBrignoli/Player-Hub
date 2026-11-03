@@ -273,23 +273,23 @@ const AG_CSS = `
 .nut-box { margin-top: 10px; padding: 9px 12px; border-radius: 12px; background: rgba(77,124,15,.07); border: 1px solid rgba(77,124,15,.22); }
 .nut-head { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; color: #4D7C0F; }
 .nut-head .faint { text-transform: none; letter-spacing: 0; font-weight: 600; }
-.nut-menu { font-size: 13px; margin-top: 4px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.nut-menu { font-size: 12.5px; margin-top: 4px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .nut-sups { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
 .nut-food { background: rgba(77,124,15,.1); }
-.nut-sup { font-size: 12px; padding: 3px 9px; border-radius: 999px; background: var(--card); border: 1px solid rgba(77,124,15,.3); }
+.nut-sup { font-size: 12.5px; padding: 3px 9px; border-radius: 999px; background: var(--card); border: 1px solid rgba(77,124,15,.3); }
 .nut-add { border-color: rgba(77,124,15,.45); color: #4D7C0F; }
 .nut-row { display: grid; grid-template-columns: minmax(0,1.3fr) minmax(0,1fr) minmax(0,1fr) auto; gap: 6px; align-items: center; }
 @media (max-width: 560px) { .nut-row { grid-template-columns: minmax(0,1fr) minmax(0,1fr); } .nut-row > :nth-child(3) { grid-column: 1; } }
 .ag-chip { display: inline-flex; align-items: center; max-width: 140px; padding: 1px 8px; border-radius: 999px; border: 1px solid; font-size: 11px; font-weight: 700; line-height: 1.5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0; }
 .ag-chips { display: inline-flex; gap: 4px; flex-shrink: 0; }
 .ag-row-static { cursor: default; }
-.ag-st { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; line-height: 1.3; }
+.ag-st { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; font-size: 12.5px; font-weight: 700; padding: 4px 10px; border-radius: 999px; line-height: 1.3; }
 .ag-st span { overflow-wrap: anywhere; }
 .ag-note { margin-top: 6px; padding: 6px 10px; border-left: 3px solid var(--magenta); background: rgba(221,0,136,.06); border-radius: 0 8px 8px 0; font-size: 12.5px; color: var(--text); overflow-wrap: anywhere; }
 .ag-thread { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
-.ag-cm { font-size: 13px; line-height: 1.4; padding: 7px 10px; border-radius: 10px; background: var(--surface-2); overflow-wrap: anywhere; }
+.ag-cm { font-size: 12.5px; line-height: 1.4; padding: 7px 10px; border-radius: 10px; background: var(--surface-2); overflow-wrap: anywhere; }
 .ag-cm.mod { background: rgba(221,0,136,.07); border: 1px solid rgba(221,0,136,.25); }
-.ag-cm-h { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--text-dim); margin-bottom: 2px; flex-wrap: wrap; }
+.ag-cm-h { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--text-dim); margin-bottom: 2px; flex-wrap: wrap; }
 .ag-cm-h b { color: var(--text); font-weight: 700; }
 .ag-cm-x { margin-left: auto; color: var(--text-faint); display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 6px; }
 .ag-cm-x:hover { color: var(--red); background: rgba(229,63,0,.08); }
@@ -422,7 +422,7 @@ function CalendarView(props: SharedProps & { focusId?: string | null }) {
       <div className="card" style={{ padding: 12 }}>
         <div className="flex between" style={{ alignItems: 'center', marginBottom: 8 }}>
           <button className="btn btn-sm" onClick={prev}>‹</button>
-          <div style={{ fontWeight: 700 }}>{tr(MONTHS[cur.m])} {cur.y}</div>
+          <div style={{ fontWeight: 600 }}>{tr(MONTHS[cur.m])} {cur.y}</div>
           <button className="btn btn-sm" onClick={next}>›</button>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 4 }}>
@@ -536,25 +536,25 @@ export function EvCard({ e, focus, canEdit, onEdit, onDel, canConfirm, onConfirm
       </span>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div className="flex between" style={{ alignItems: 'flex-start', gap: 10 }}>
-          <div style={{ fontSize: 14.5, fontWeight: 700, lineHeight: 1.3, minWidth: 0, overflowWrap: 'anywhere' }}>{tr(e.title)}</div>
-          <span style={{ fontSize: 10.5, color: t.c, fontWeight: 700, textTransform: 'uppercase', letterSpacing: .6, textAlign: 'right', maxWidth: '45%' }}>{tr(t.l)}</span>
+          <div style={{ fontSize: 14, fontWeight: 600, lineHeight: 1.3, minWidth: 0, overflowWrap: 'anywhere' }}>{tr(e.title)}</div>
+          <span className="t-label" style={{ color: t.c, textAlign: 'right', maxWidth: '45%' }}>{tr(t.l)}</span>
         </div>
         <div className="flex gap" style={{ alignItems: 'center', marginTop: 4, flexWrap: 'wrap', gap: 10 }}>
           <Chips e={e} tagOf={tagOf} />
-          {e._match && e.notes && <span className="faint" style={{ fontSize: 12 }}>{e.notes}</span>}
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12.5, fontWeight: 500, color: 'var(--text-dim)' }}>
+          {e._match && e.notes && <span className="faint" style={{ fontSize: 12.5 }}>{e.notes}</span>}
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12.5, fontWeight: 400, color: 'var(--text-dim)' }}>
             <Icon name="calendar" size={13} /> {day}
           </span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12.5, fontWeight: 700, color: 'var(--text)' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12.5, fontWeight: 600, color: 'var(--text)' }}>
             <Icon name="clock" size={13} /> {time}
           </span>
           {!e._match && e.visibility === 'privato' && (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11.5, fontWeight: 700, color: 'var(--text-dim)' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12.5, fontWeight: 600, color: 'var(--text-dim)' }}>
               <Icon name="lock" size={12} /> {tr('Privato')}
             </span>
           )}
         </div>
-        {e.location && <a className="faint" href={mapsUrl(e.location)} target="_blank" rel="noreferrer" title={tr("Apri in Maps")} style={{ fontSize: 12, marginTop: 4, display: 'inline-flex', alignItems: 'center', gap: 6, textDecoration: 'none', maxWidth: '100%', overflowWrap: 'anywhere' }}><Icon name="pin" size={13} style={{ flexShrink: 0 }} /> {e.location} <span style={{ opacity: .7 }}>↗</span></a>}
+        {e.location && <a className="faint" href={mapsUrl(e.location)} target="_blank" rel="noreferrer" title={tr("Apri in Maps")} style={{ fontSize: 12.5, marginTop: 4, display: 'inline-flex', alignItems: 'center', gap: 6, textDecoration: 'none', maxWidth: '100%', overflowWrap: 'anywhere' }}><Icon name="pin" size={13} style={{ flexShrink: 0 }} /> {e.location} <span style={{ opacity: .7 }}>↗</span></a>}
         <StatusChip e={e} />
         {e.notes && !e._match && e.service_request_id && <div className="faint" style={{ fontSize: 12.5, marginTop: 6, overflowWrap: 'anywhere' }}>{e.notes}</div>}
         {e.attachments && e.attachments.length > 0 && (
@@ -671,7 +671,7 @@ function Thread({ eventId, uid, mainIsChange, onCount }: { eventId: string; uid?
           <div key={c.id} className={'ag-cm' + (c.kind === 'modifica' ? ' mod' : '')}>
             <div className="ag-cm-h">
               <b>{who(c)}</b><span>· {when(c.created_at)}</span>
-              {c.kind === 'modifica' && <span style={{ color: 'var(--magenta)', fontWeight: 700 }}>· {tr('Richiesta di modifica')}</span>}
+              {c.kind === 'modifica' && <span style={{ color: 'var(--magenta)', fontWeight: 600 }}>· {tr('Richiesta di modifica')}</span>}
               {c.author_id === uid && <button className="ag-cm-x" onClick={() => del(c)} title={tr('Elimina')} aria-label={tr('Elimina')}><Icon name="x" size={13} /></button>}
             </div>
             <div>{c.body}</div>
@@ -699,7 +699,7 @@ function AskChangeModal({ ev, onClose, onSend }: { ev: EventItem; onClose: () =>
         <button className="btn btn-ghost" onClick={onClose}>{tr('Annulla')}</button>
         <button className="btn btn-primary" disabled={busy || !note.trim()} onClick={async () => { setBusy(true); await onSend(note.trim()); setBusy(false) }}>{tr('Invia')}</button>
       </>}>
-      <div className="faint" style={{ fontSize: 13, marginBottom: 10, overflowWrap: 'anywhere' }}>{ev.title}</div>
+      <div className="faint" style={{ fontSize: 12.5, marginBottom: 10, overflowWrap: 'anywhere' }}>{ev.title}</div>
       <Field label={tr('Cosa va cambiato?')}>
         <Textarea rows={3} value={note} onChange={e => setNote(e.target.value)} placeholder={tr('es. Meglio alle 18, la mattina ho allenamento')} />
       </Field>
@@ -801,7 +801,7 @@ function EventForm({ value, isAdmin, role, uid, athleteId, nameOf, athleteChoice
       </div>
       <Field label={tr("Note")}><Textarea value={f.notes || ''} onChange={e => set('notes', e.target.value)} /></Field>
       {isPlayer && (
-        <label style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13.5, fontWeight: 600, margin: '2px 0 10px', cursor: 'pointer' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, fontWeight: 600, margin: '2px 0 10px', cursor: 'pointer' }}>
           <input type="checkbox" checked={priv} onChange={e => { setPriv(e.target.checked); setPrivTouched(true) }} style={{ width: 18, height: 18, accentColor: 'var(--ink)', flexShrink: 0 }} />
           <Icon name="lock" size={14} style={{ flexShrink: 0 }} />
           <span>{tr('Privato (solo io e AUVI)')}</span>
@@ -809,15 +809,15 @@ function EventForm({ value, isAdmin, role, uid, athleteId, nameOf, athleteChoice
       )}
 
       <div style={{ marginTop: 4 }}>
-        <div style={{ fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: 'var(--text-dim)', fontWeight: 700, margin: '2px 0 8px' }}>{tr('Documenti allegati')}</div>
+        <div className="t-label" style={{ margin: '2px 0 8px' }}>{tr('Documenti allegati')}</div>
         {atts.length > 0 && (
           <div className="grid" style={{ gap: 6, marginBottom: 8 }}>
             {atts.map(a => (
               <div key={a.path} className="flex between" style={{ alignItems: 'center', gap: 8, border: '1px solid var(--border)', borderRadius: 10, padding: '8px 10px' }}>
                 <span className="flex gap" style={{ alignItems: 'center', minWidth: 0 }}>
                   <Icon name="file" size={15} />
-                  <span style={{ fontSize: 13.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</span>
-                  {a.size ? <span className="faint" style={{ fontSize: 12, whiteSpace: 'nowrap' }}>· {attSize(a.size)}</span> : null}
+                  <span style={{ fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</span>
+                  {a.size ? <span className="faint" style={{ fontSize: 12.5, whiteSpace: 'nowrap' }}>· {attSize(a.size)}</span> : null}
                 </span>
                 <button className="btn btn-ghost btn-sm" onClick={() => removeAtt(a)}>{tr('Rimuovi')}</button>
               </div>
@@ -828,7 +828,7 @@ function EventForm({ value, isAdmin, role, uid, athleteId, nameOf, athleteChoice
           <Icon name="upload" size={14} /> {uploading ? tr('Carico…') : tr('Aggiungi file')}
         </button>
         <input ref={fileRef} type="file" multiple hidden onChange={onFiles} />
-        <div className="faint" style={{ fontSize: 11.5, marginTop: 6 }}>{tr("Hotel, voli, biglietti, prenotazioni: l'atleta li apre e li scarica sul telefono.")}</div>
+        <div className="faint" style={{ fontSize: 12.5, marginTop: 6 }}>{tr("Hotel, voli, biglietti, prenotazioni: l'atleta li apre e li scarica sul telefono.")}</div>
       </div>
     </Modal>
   )
@@ -858,7 +858,7 @@ function NutritionBlock({ n }: { n: EventNutrition }) {
           ))}
         </div>
       )}
-      {n.note && <div className="faint" style={{ fontSize: 12, marginTop: 4 }}>{n.note}</div>}
+      {n.note && <div className="faint" style={{ fontSize: 12.5, marginTop: 4 }}>{n.note}</div>}
     </div>
   )
 }
@@ -914,7 +914,7 @@ function NutritionModal({ ev, onClose, onSaved }: { ev: EventItem; onClose: () =
         </div>
 
         <div className="grid" style={{ gap: 8 }}>
-          <span style={{ fontSize: 12.5, fontWeight: 700 }}>{tr('Alimenti')}</span>
+          <span style={{ fontSize: 12.5, fontWeight: 600 }}>{tr('Alimenti')}</span>
           <NutriPick items={foodLib} slot={slot} exclude={foods.map(f => f.name.toLowerCase())}
             placeholder={`${tr('Scegli o scrivi un alimento')} · ${tr(slotLabel(slot))}`}
             onPick={v => setFoods(xs => [...xs, v])} />
@@ -933,7 +933,7 @@ function NutritionModal({ ev, onClose, onSaved }: { ev: EventItem; onClose: () =
         </div>
 
         <div className="grid" style={{ gap: 8 }}>
-          <span style={{ fontSize: 12.5, fontWeight: 700 }}>{tr('Integratori')}</span>
+          <span style={{ fontSize: 12.5, fontWeight: 600 }}>{tr('Integratori')}</span>
           <NutriPick items={supLib} slot={slot} exclude={sups.map(s => s.name.toLowerCase())}
             placeholder={tr('Scegli o scrivi un integratore')}
             onPick={v => setSups(xs => [...xs, { name: v.name, dose: v.qty, when: '' }])} />
@@ -957,7 +957,7 @@ function NutritionModal({ ev, onClose, onSaved }: { ev: EventItem; onClose: () =
         <Field label={tr('Note')}>
           <Input value={note} onChange={e => setNote(e.target.value)} placeholder={tr('Es. idratazione 500 ml nelle 2 ore prima')} />
         </Field>
-        <div className="faint" style={{ fontSize: 11.5 }}>{tr('Le voci nuove che scrivi qui entrano nel tuo menu, nel momento scelto.')}</div>
+        <div className="faint" style={{ fontSize: 12.5 }}>{tr('Le voci nuove che scrivi qui entrano nel tuo menu, nel momento scelto.')}</div>
       </div>
     </Modal>
   )

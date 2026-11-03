@@ -95,7 +95,7 @@ export default function Profile() {
           : <div style={{ width: 56, height: 56, borderRadius: 14, background: 'var(--border)' }} />}
         <div>
           <div style={{ fontSize: 18, fontWeight: 800 }}>{player.name}</div>
-          <div style={{ color: 'var(--text-dim)', fontSize: 13 }}>
+          <div style={{ color: 'var(--text-dim)', fontSize: 12.5 }}>
             {[player.position, player.team_name, player.nationality].filter(Boolean).join(' · ') || t("Profilo atleta")}
           </div>
         </div>
@@ -114,7 +114,7 @@ export default function Profile() {
           {player.contract_expiry && (
             <div style={{ marginBottom: (player.transfermarkt_url || player.sofascore_url) ? 14 : 0 }}>
               <div style={section}>{t("Scadenza contratto")}</div>
-              <div style={{ fontSize: 16, fontWeight: 700 }}>{fmtDate(player.contract_expiry)}</div>
+              <div style={{ fontSize: 15, fontWeight: 800 }}>{fmtDate(player.contract_expiry)}</div>
             </div>
           )}
           {(player.transfermarkt_url || player.sofascore_url) && (
@@ -136,7 +136,7 @@ export default function Profile() {
       {/* Tabs */}
       <div className="flex gap" style={{ marginBottom: 6, flexWrap: 'wrap' }}>
         {tabs.map(t => (
-          <button key={t.key} className={`btn btn-sm ${tab === t.key ? 'btn-primary' : ''}`} onClick={() => setTab(t.key)}>
+          <button key={t.key} className={`btn btn-sm ${tab === t.key ? 'btn-dark' : ''}`} onClick={() => setTab(t.key)}>
             <Icon name={t.icon} size={13} /> {t.label}
           </button>
         ))}
@@ -146,7 +146,7 @@ export default function Profile() {
         {tab === 'spedizioni' && (
           <>
             {back && (
-              <div style={{ padding: '10px 12px', borderRadius: 12, background: 'var(--bg-2)', border: '1px solid var(--border)', fontSize: 13, lineHeight: 1.5 }}>
+              <div style={{ padding: '10px 12px', borderRadius: 12, background: 'var(--bg-2)', border: '1px solid var(--border)', fontSize: 12.5, lineHeight: 1.5 }}>
                 {t('Inserisci o verifica qui il tuo indirizzo di spedizione e salva: poi torna all\'offerta per completare la richiesta. La tua selezione resta salvata.')}
               </div>
             )}
@@ -163,7 +163,7 @@ export default function Profile() {
               <Field label="Email"><Input value={s('email')} onChange={ev => setS('email', ev.target.value)} placeholder="email@…" /></Field>
               <Field label={t("Note di consegna")}><Input value={s('delivery_notes')} onChange={ev => setS('delivery_notes', ev.target.value)} placeholder={t("Es. citofono, orari, portineria")} /></Field>
             </div>
-            <div className="faint" style={{ fontSize: 11.5, marginTop: 8 }}>{t('* necessario per le spedizioni dei brand')}</div>
+            <div className="faint" style={{ fontSize: 12.5, marginTop: 8 }}>{t('* necessario per le spedizioni dei brand')}</div>
             <div style={section}>{t("Persona di riferimento")}</div>
             <div style={grid}>
               <Field label={t("Nome")}><Input value={s('ref_name')} onChange={ev => setS('ref_name', ev.target.value)} /></Field>
@@ -245,9 +245,9 @@ export default function Profile() {
           <button className="btn btn-primary" onClick={save} disabled={saving}>
             {saving ? t("Salvo…") : t("Salva")}
           </button>
-          {saved && <span className="faint" style={{ color: 'var(--green)', fontSize: 13 }}>{t("Salvato ✓")}</span>}
+          {saved && <span className="faint" style={{ color: 'var(--green)', fontSize: 12.5 }}>{t("Salvato ✓")}</span>}
           {back && tab === 'spedizioni' && missingAddress(shipping).length > 0 && (
-            <span className="faint" style={{ fontSize: 12, flexBasis: '100%' }}>{t('Mancano')}: {missingAddress(shipping).map(m => t(m)).join(', ')}</span>
+            <span className="faint" style={{ fontSize: 12.5, flexBasis: '100%' }}>{t('Mancano')}: {missingAddress(shipping).map(m => t(m)).join(', ')}</span>
           )}
           {back && tab === 'spedizioni' && (
             <button className="btn" style={{ marginLeft: 'auto' }} onClick={async () => { await save(); goto(back) }}>

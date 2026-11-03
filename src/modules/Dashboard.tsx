@@ -31,7 +31,7 @@ const HOME_CSS = `
 .home-season-head { display: flex; align-items: center; gap: 12px; }
 .home-season-ic { width: 38px; height: 38px; border-radius: 12px; background: var(--ink); color: var(--yellow); display: grid; place-items: center; flex-shrink: 0; }
 .home-season-k { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; opacity: .7; }
-.home-season-t { font-family: var(--font-display); font-stretch: 125%; font-weight: 700; font-size: 17px; text-transform: uppercase; line-height: 1.15; }
+.home-season-t { font-family: var(--font-display); font-stretch: 125%; font-weight: 700; font-size: 18px; text-transform: uppercase; line-height: 1.15; }
 .home-season-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 16px; }
 .home-season-grid > div { text-align: center; min-width: 0; }
 .home-season-grid > div + div { border-left: 1px solid rgba(10,10,10,.14); }
@@ -41,14 +41,14 @@ const HOME_CSS = `
 .home-season-last .k { font-weight: 700; flex-shrink: 0; }
 .home-season-last .m { flex: 1; min-width: 0; font-weight: 600; }
 .home-season-last .x { flex-shrink: 0; opacity: .7; font-variant-numeric: tabular-nums; }
-@media (max-width: 380px) { .home-season-grid .v { font-size: 20px; } }
+@media (max-width: 380px) { .home-season-grid .v { font-size: 22px; } }
 
 .home { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 28px; align-items: start; }
 .home-col { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
 .home-sec { min-width: 0; width: 100%; }
 .home-trunc { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.home-h { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; font-weight: 650; font-size: 13px; color: var(--text-dim); margin: 0 2px 10px; }
-.home-h .n { font-weight: 600; font-size: 12px; color: var(--text-faint); }
+.home-h { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; font-size: var(--fs-label); font-weight: var(--w-bold); letter-spacing: 1.3px; text-transform: uppercase; color: var(--text-dim); margin: 0 2px 10px; }
+.home-h .n { font-weight: 600; font-size: var(--fs-meta); letter-spacing: 0; text-transform: none; color: var(--text-faint); }
 .home-card { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; text-align: left; }
 button.home-card { cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .12s; }
 button.home-card:hover { border-color: var(--border-2); box-shadow: var(--shadow-sm); }
@@ -57,8 +57,8 @@ button.home-card:active, .home-qa:active, .home-contact:active { transform: scal
 /* 1 identita */
 .home-id { display: flex; align-items: center; gap: 14px; }
 .home-id-ph { width: 52px; height: 52px; border-radius: 15px; object-fit: cover; border: 1px solid var(--border-2); flex-shrink: 0; }
-.home-id-hi { font-size: 12.5px; color: var(--text-faint); font-weight: 500; }
-.home-id-name { font-family: var(--font-display); font-stretch: 125%; font-weight: 700; text-transform: uppercase; font-size: 21px; line-height: 1.05; margin-top: 2px; }
+.home-id-hi { font-size: 12.5px; color: var(--text-faint); font-weight: 400; }
+.home-id-name { font-family: var(--font-display); font-stretch: 125%; font-weight: 700; text-transform: uppercase; font-size: 22px; line-height: 1.05; margin-top: 2px; }
 .home-id-role { font-size: 12.5px; color: var(--text-dim); margin-top: 3px; }
 
 /* 2 azioni rapide */
@@ -67,13 +67,13 @@ button.home-card:active, .home-qa:active, .home-contact:active { transform: scal
 .home-qa-ic { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; background: var(--surface); border: 1px solid var(--border); color: var(--text); transition: border-color .15s, background .15s; }
 .home-qa:hover .home-qa-ic { border-color: var(--border-2); }
 .home-qa.primary .home-qa-ic { background: var(--yellow); border-color: var(--yellow); color: var(--ink); }
-.home-qa-l { font-size: 12px; font-weight: 600; color: var(--text); }
+.home-qa-l { font-size: 12.5px; font-weight: 600; color: var(--text); }
 .home-qa-ic { position: relative; }
 .home-qa.primary .home-qa-ic { box-shadow: 0 6px 18px -8px rgba(10,10,10,.35); }
 .home-qa-badge { position: absolute; top: -4px; right: -8px; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; background: var(--grad); color: #fff; font-size: 11px; font-weight: 800; display: grid; place-items: center; border: 2px solid var(--bg); font-variant-numeric: tabular-nums; }
 .home-score-content { display: flex; align-items: center; gap: 10px; margin-top: 14px; padding: 10px 12px; border-radius: 14px; background: rgba(255,255,255,.1); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); text-align: left; }
 .home-score-content img, .home-score-content-ic { width: 38px; height: 38px; border-radius: 10px; object-fit: cover; flex-shrink: 0; display: grid; place-items: center; background: rgba(255,255,255,.12); }
-.home-score-content-k { font-size: 10.5px; color: rgba(255,255,255,.7); font-weight: 600; letter-spacing: .3px; }
+.home-score-content-k { font-size: 11px; color: rgba(255,255,255,.7); font-weight: 600; letter-spacing: .3px; }
 .home-score-content-st { color: var(--yellow); }
 
 /* 3 da fare ora */
@@ -97,29 +97,29 @@ button.home-card:active, .home-qa:active, .home-contact:active { transform: scal
 .home-kick { text-align: center; padding: 0 4px; }
 .home-kick-t { font-family: var(--font-display); font-stretch: 125%; font-weight: 700; font-size: 22px; line-height: 1; font-variant-numeric: tabular-nums; }
 .home-kick-d { font-size: 11px; font-weight: 600; letter-spacing: .6px; text-transform: uppercase; color: rgba(255,255,255,.72); margin-top: 6px; }
-.home-score-meta { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 16px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.14); font-size: 12px; font-weight: 600; color: rgba(255,255,255,.82); min-width: 0; }
+.home-score-meta { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 16px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.14); font-size: 12.5px; font-weight: 600; color: rgba(255,255,255,.82); min-width: 0; }
 .home-score-meta img { width: 18px; height: 18px; object-fit: contain; flex-shrink: 0; }
 
 /* 5 prossimi giorni */
 .home-tl-row { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 8px 14px; }
 .home-tl-row + .home-tl-row { border-top: 1px solid var(--border); }
 .home-tl-day { width: 44px; flex-shrink: 0; text-align: center; border-radius: 10px; background: var(--bg-2); padding: 5px 0 4px; }
-.home-tl-day .w { font-size: 9.5px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: var(--text-faint); }
-.home-tl-day .d { font-weight: 700; font-size: 16px; line-height: 1.1; color: var(--text); font-variant-numeric: tabular-nums; }
+.home-tl-day .w { font-size: 11px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: var(--text-faint); }
+.home-tl-day .d { font-weight: 700; font-size: 15px; line-height: 1.1; color: var(--text); font-variant-numeric: tabular-nums; }
 .home-tl-time { width: 42px; flex-shrink: 0; font-size: 12.5px; font-weight: 600; color: var(--text-dim); font-variant-numeric: tabular-nums; }
-.home-tl-t { flex: 1; min-width: 0; font-size: 13.5px; font-weight: 600; color: var(--text); }
+.home-tl-t { flex: 1; min-width: 0; font-size: 14px; font-weight: 600; color: var(--text); }
 
 /* 6 stagione */
 .home-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 16px 6px 14px; }
 .home-stat { text-align: center; min-width: 0; }
 .home-stat + .home-stat { border-left: 1px solid var(--border); }
 .home-stat .v { font-family: var(--font-display); font-stretch: 125%; font-weight: 700; font-size: 24px; line-height: 1; font-variant-numeric: tabular-nums; }
-.home-stat .l { font-size: 11.5px; color: var(--text-faint); margin-top: 6px; font-weight: 500; }
+.home-stat .l { font-size: 12.5px; color: var(--text-faint); margin-top: 6px; font-weight: 400; }
 .home-last { display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-top: 1px solid var(--border); font-size: 12.5px; min-width: 0; }
 .home-last .k { color: var(--text-faint); font-weight: 600; flex-shrink: 0; }
-.home-last .m { flex: 1; min-width: 0; font-weight: 650; color: var(--text); }
+.home-last .m { flex: 1; min-width: 0; font-weight: 600; color: var(--text); }
 .home-last .x { color: var(--text-faint); flex-shrink: 0; font-variant-numeric: tabular-nums; }
-.home-note { font-size: 11.5px; color: var(--text-faint); padding: 0 14px 12px; text-align: center; }
+.home-note { font-size: 12.5px; color: var(--text-faint); padding: 0 14px 12px; text-align: center; }
 
 /* 7 referenti */
 .home-contacts { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; margin: 0 -16px; padding: 0 16px 4px; scroll-padding-inline: 16px; scrollbar-width: none; }
@@ -127,9 +127,9 @@ button.home-card:active, .home-qa:active, .home-contact:active { transform: scal
 .home-contact { scroll-snap-align: start; flex: 0 0 auto; width: 172px; display: flex; align-items: center; gap: 10px; padding: 10px 12px; min-height: 60px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; text-align: left; cursor: pointer; transition: border-color .15s, transform .12s; }
 .home-contact:hover { border-color: var(--border-2); }
 .home-contact-av { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
-.home-contact-ini { display: grid; place-items: center; background: var(--bg-2); color: var(--text); font-weight: 700; font-size: 13px; }
-.home-contact-n { font-size: 13px; font-weight: 650; color: var(--text); }
-.home-contact-r { font-size: 11.5px; color: var(--text-faint); margin-top: 1px; }
+.home-contact-ini { display: grid; place-items: center; background: var(--bg-2); color: var(--text); font-weight: 700; font-size: 12.5px; }
+.home-contact-n { font-size: 12.5px; font-weight: 600; color: var(--text); }
+.home-contact-r { font-size: 12.5px; color: var(--text-faint); margin-top: 1px; }
 
 @media (min-width: 881px) {
   .home-contacts { margin: 0; padding: 0; flex-direction: column; overflow: visible; }
@@ -300,7 +300,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
     <header className="home-sec home-id">
       {player?.photo_url
         ? <img className="home-id-ph" src={player.photo_url} alt="" />
-        : <div className="avatar" style={{ width: 52, height: 52, fontSize: 19, borderRadius: 15, flexShrink: 0 }}>{(player?.name || firstName || 'A')[0]}</div>}
+        : <div className="avatar" style={{ width: 52, height: 52, fontSize: 18, borderRadius: 15, flexShrink: 0 }}>{(player?.name || firstName || 'A')[0]}</div>}
       <div style={{ minWidth: 0 }}>
         <div className="home-id-hi home-trunc">{greeting}{firstName ? `, ${firstName}` : ''}</div>
         <h1 className="home-id-name home-trunc">{player?.name || t('Atleta')}</h1>
@@ -408,7 +408,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
                 : <span className="home-score-content-ic"><Icon name="image" size={15} strokeWidth={1.6} /></span>}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div className="home-score-content-k home-trunc">{t('Contenuto')} · {fmtDate(nextContent.entry_date)} · <span className="home-score-content-st">{t(CHIP[nextContent.status]?.l || 'In lavorazione')}</span></div>
-                <div className="home-trunc" style={{ fontWeight: 650, fontSize: 13 }}>{nextContent.title}</div>
+                <div className="home-trunc" style={{ fontWeight: 600, fontSize: 12.5 }}>{nextContent.title}</div>
               </div>
               <Icon name="chevron-right" size={16} style={{ opacity: .7, flexShrink: 0 }} />
             </div>
@@ -421,8 +421,8 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
       <button className="home-card home-sec home-calm" onClick={() => goto('performance')}>
         <span className="home-calm-ic"><Icon name="ball" size={16} /></span>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 650, fontSize: 14 }}>{t('Prossima partita')}</div>
-          <div className="faint" style={{ fontSize: 12 }}>{t('Nessuna partita in programma al momento.')}</div>
+          <div style={{ fontWeight: 600, fontSize: 14 }}>{t('Prossima partita')}</div>
+          <div className="faint" style={{ fontSize: 12.5 }}>{t('Nessuna partita in programma al momento.')}</div>
         </div>
         <Icon name="chevron-right" size={18} style={{ color: 'var(--text-faint)', flexShrink: 0 }} />
       </button>
@@ -436,7 +436,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
       <button className="home-card" onClick={() => goto('agenda')} aria-label={t('Apri agenda')}>
         {events.length === 0 ? (
           <div className="home-tl-row">
-            <span className="home-tl-t faint" style={{ fontWeight: 500 }}>{t('Nessun impegno in programma.')}</span>
+            <span className="home-tl-t faint" style={{ fontWeight: 400 }}>{t('Nessun impegno in programma.')}</span>
             <Icon name="chevron-right" size={18} style={{ color: 'var(--text-faint)', flexShrink: 0 }} />
           </div>
         ) : events.map(e => {

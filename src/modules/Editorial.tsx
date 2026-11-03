@@ -252,7 +252,7 @@ export default function Editorial() {
                 <span style={{ display: 'inline-flex', transform: 'rotate(180deg)' }}><Icon name="chevron-right" size={14} /></span>
               </button>
               <button className="btn btn-sm btn-ghost" onClick={() => setYm([today.getFullYear(), today.getMonth()])} title={t('Oggi')}
-                style={{ fontWeight: 700, minWidth: 116 }}>{t(MONTHS[month])} {year}</button>
+                style={{ fontWeight: 600, minWidth: 116 }}>{t(MONTHS[month])} {year}</button>
               <button className="btn btn-sm btn-ghost" onClick={nextMonth} aria-label={t('Mese successivo')}><Icon name="chevron-right" size={14} /></button>
             </div>
           )}
@@ -262,7 +262,7 @@ export default function Editorial() {
         </div>
       </div>
       {view === 'cal' && (
-        <div className="faint" style={{ fontSize: 12, marginTop: -8 }}>
+        <div className="faint" style={{ fontSize: 12.5, marginTop: -8 }}>
           {t('Le partite entrano da sole; copy e grafiche si preparano dentro ogni contenuto. Tocca il mese per tornare a oggi.')}
         </div>
       )}
@@ -322,7 +322,7 @@ export default function Editorial() {
                 <div className="card-title">{t(g.title)}</div>
                 <div className="card-hint">{g.entries.length}</div>
               </div>
-              <div className="faint" style={{ fontSize: 12, marginTop: -4, marginBottom: 4 }}>{t(g.hint)}</div>
+              <div className="faint" style={{ fontSize: 12.5, marginTop: -4, marginBottom: 4 }}>{t(g.hint)}</div>
               <div className="list">
                 {g.entries.slice(0, 40).map(e => (
                   <TodoRow key={e.id} e={e} preview={previews[e.id]} todayKey={todayKey} onOpen={setOpenEntry}
@@ -387,12 +387,12 @@ function EntryChip({ e, onOpen, preview, tz, full }: { e: EditorialEntry; onOpen
         </span>
       </div>
       <div style={{ minWidth: 0, flex: 1 }}>
-        <div style={{ fontSize: 11.5, fontWeight: 700, lineHeight: 1.2, display: '-webkit-box',
+        <div style={{ fontSize: 12.5, fontWeight: 700, lineHeight: 1.2, display: '-webkit-box',
           WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{e.title}</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 3 }}>
           <span style={{ width: 6, height: 6, borderRadius: '50%', background: accent, flexShrink: 0 }} />
-          <span style={{ fontSize: 9.5, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: 0.3, fontWeight: 700 }}>{t(st?.label || '')}</span>
-          {preview && <><span style={{ color: 'var(--text-dim)', fontSize: 9.5 }}>·</span><Icon name="image" size={10} style={{ color: 'var(--text-dim)' }} /></>}
+          <span className="t-label">{t(st?.label || '')}</span>
+          {preview && <><span style={{ color: 'var(--text-dim)', fontSize: 11 }}>·</span><Icon name="image" size={10} style={{ color: 'var(--text-dim)' }} /></>}
         </div>
       </div>
     </button>
@@ -422,9 +422,9 @@ function TodoRow({ e, preview, todayKey, onOpen, action }: {
     <div className="row" style={{ cursor: 'pointer', gap: 12 }} onClick={() => onOpen(e)}>
       <div style={{ width: 44, flexShrink: 0, textAlign: 'center', borderRadius: 10, padding: '5px 0',
         background: isToday ? 'var(--yellow)' : 'var(--bg-2)', color: late ? 'var(--red)' : 'var(--ink)' }}>
-        <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.4px' }}>{t(DOW[(d.getDay() + 6) % 7])}</div>
-        <div style={{ fontSize: 17, fontWeight: 800, lineHeight: 1.1 }}>{d.getDate()}</div>
-        <div style={{ fontSize: 9.5, fontWeight: 600, color: late ? 'var(--red)' : 'var(--text-faint)' }}>{t(MONTHS[d.getMonth()]).slice(0, 3)}</div>
+        <div className="t-label" style={{ color: 'inherit', letterSpacing: .4 }}>{t(DOW[(d.getDay() + 6) % 7])}</div>
+        <div style={{ fontSize: 18, fontWeight: 800, lineHeight: 1.1 }}>{d.getDate()}</div>
+        <div style={{ fontSize: 11, fontWeight: 600, color: late ? 'var(--red)' : 'var(--text-faint)' }}>{t(MONTHS[d.getMonth()]).slice(0, 3)}</div>
       </div>
       {preview
         ? <img className="row-thumb" src={preview} alt="" loading="lazy" />
@@ -439,7 +439,7 @@ function TodoRow({ e, preview, todayKey, onOpen, action }: {
           {late && <span style={{ color: 'var(--red)' }}>{t('in ritardo')}</span>}
         </div>
       </div>
-      <button className="btn btn-primary btn-sm" style={{ flexShrink: 0 }} disabled={action.busy}
+      <button className="btn btn-sm" style={{ flexShrink: 0 }} disabled={action.busy}
         onClick={ev => { ev.stopPropagation(); action.run() }}>
         <Icon name={action.icon} size={13} /> {action.label}
       </button>
@@ -770,7 +770,7 @@ function EntryModal({ entry, onClose, onChanged }: {
           <span className="faint" style={{ fontSize: 12.5 }}>{fmtDate(entry.entry_date)}</span>
         </div>
         {entry.brief && (
-          <div style={{ fontSize: 13.5, color: 'var(--text-dim)', borderLeft: '3px solid var(--border-2)', paddingLeft: 10 }}>
+          <div style={{ fontSize: 14, color: 'var(--text-dim)', borderLeft: '3px solid var(--border-2)', paddingLeft: 10 }}>
             <b style={{ color: 'var(--text)' }}>{t('Brief')}:</b> {entry.brief}
           </div>
         )}
@@ -792,7 +792,7 @@ function EntryModal({ entry, onClose, onChanged }: {
                 </>
               )
             ) : (
-              <div className="faint" style={{ fontSize: 13 }}>{t('Il team non ha ancora caricato la grafica. Ti avviseremo appena è pronta da approvare.')}</div>
+              <div className="faint" style={{ fontSize: 12.5 }}>{t('Il team non ha ancora caricato la grafica. Ti avviseremo appena è pronta da approvare.')}</div>
             )}
           </div>
         )}
@@ -801,7 +801,7 @@ function EntryModal({ entry, onClose, onChanged }: {
         {/* 1. Grafica finale: la cosa che si usa di più (team la carica, atleta la pubblica) */}
         <div>
           <div className="flex between" style={{ marginBottom: 8, alignItems: 'center' }}>
-            <div style={{ fontWeight: 650 }}>{t('Grafica finale')}</div>
+            <div style={{ fontWeight: 600 }}>{t('Grafica finale')}</div>
             {isTeam && (
               <>
                 <button className="btn btn-primary btn-sm" disabled={uploading} onClick={() => fileRef.current?.click()}>
@@ -873,7 +873,7 @@ function EntryModal({ entry, onClose, onChanged }: {
 
         {isTeam && entry.revision && (
           <More title={`${t("Modifiche richieste dall'atleta")}${entry.revision.pins?.length ? ' · ' + t('{n} punti').replace('{n}', String(entry.revision.pins.length)) : ''}`} tone="var(--magenta)">
-            {entry.revision.note && <div style={{ fontSize: 13, marginBottom: 8 }}>{entry.revision.note}</div>}
+            {entry.revision.note && <div style={{ fontSize: 12.5, marginBottom: 8 }}>{entry.revision.note}</div>}
             {firstGraphicImg && urls[firstGraphicImg.storage_path] && (entry.revision.pins?.length > 0) && (
               <div style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', marginBottom: 8 }}>
                 <img src={urls[firstGraphicImg.storage_path]} alt="" style={{ width: '100%', display: 'block' }} />
@@ -890,7 +890,7 @@ function EntryModal({ entry, onClose, onChanged }: {
         {entry.type !== 'partita' && entry.type !== 'story' && (
         <div>
           <div className="flex between" style={{ marginBottom: 6 }}>
-            <div style={{ fontWeight: 650 }}>{t('Copy')}</div>
+            <div style={{ fontWeight: 600 }}>{t('Copy')}</div>
             <div className="flex gap">
               <button className="btn btn-sm" onClick={copyToClipboard} disabled={!copy}>{copied ? t('Copiato') : t('Copia')}</button>
               <button className="btn btn-sm" onClick={downloadCopy} disabled={!copy}>{t('Scarica .txt')}</button>
@@ -899,26 +899,26 @@ function EntryModal({ entry, onClose, onChanged }: {
           </div>
           <Textarea rows={5} value={copy} onChange={e => setCopy(e.target.value)}
             placeholder={t("Scrivi qui il copy del post: didascalia, hashtag, tag…")} />
-          <div className="faint" style={{ fontSize: 11.5, marginTop: 4 }}>{t('Copy modificabile da entrambi: il team lo prepara, tu lo approvi o lo ritocchi.')}</div>
+          <div className="faint" style={{ fontSize: 12.5, marginTop: 4 }}>{t('Copy modificabile da entrambi: il team lo prepara, tu lo approvi o lo ritocchi.')}</div>
         </div>
         )}
 
         {entry.hashtags && (
           <div>
             <div className="flex between" style={{ marginBottom: 6 }}>
-              <div style={{ fontWeight: 650 }}>Hashtag {brandName ? `· ${t('da {brand}').replace('{brand}', brandName)}` : ''}</div>
+              <div style={{ fontWeight: 600 }}>Hashtag {brandName ? `· ${t('da {brand}').replace('{brand}', brandName)}` : ''}</div>
               <button className="btn btn-sm" onClick={copyHashtags}>{hCopied ? t('Copiati') : t('Copia hashtag')}</button>
             </div>
-            <div className="card" style={{ background: 'var(--bg-2)', fontSize: 13, color: 'var(--text-dim)', whiteSpace: 'pre-wrap' }}>{entry.hashtags}</div>
+            <div className="card" style={{ background: 'var(--bg-2)', fontSize: 12.5, color: 'var(--text-dim)', whiteSpace: 'pre-wrap' }}>{entry.hashtags}</div>
           </div>
         )}
 
         {/* 3. Materiale da cui nasce la grafica */}
         <div>
           <div className="flex between" style={{ marginBottom: 6 }}>
-            <div style={{ fontWeight: 650 }}>
+            <div style={{ fontWeight: 600 }}>
               {approvate.length ? t('Materiale') : t('Materiale per la grafica')}
-              {approvate.length > 0 && <span className="faint" style={{ fontWeight: 400, fontSize: 12 }}> · {t('{n} file pronti').replace('{n}', String(approvate.length))}</span>}
+              {approvate.length > 0 && <span className="faint" style={{ fontWeight: 400, fontSize: 12.5 }}> · {t('{n} file pronti').replace('{n}', String(approvate.length))}</span>}
             </div>
             <div className="flex gap" style={{ gap: 8 }}>
               <button className="btn btn-sm" onClick={() => setPickerOpen(true)}>
@@ -1081,15 +1081,15 @@ function InstagramExport({ caption, title, photos, urls, onClose }: {
             <Icon name="image" size={14} /> {preparing ? t('Preparo le foto…') : busy ? t('Scarico…') : (canShareFiles ? t('Salva {n} foto sul telefono') : t('Scarica {n} foto')).replace('{n}', String(files.length))}
           </button>
         </div>
-        {canShareFiles && <div className="faint" style={{ fontSize: 12, marginTop: -4 }}>{t('Si apre la condivisione: scegli')} <b style={{ color: 'var(--text)' }}>“{t('Salva {n} immagini').replace('{n}', String(files.length))}”</b> {t("→ finiscono in Foto nell'ordine giusto.")}</div>}
+        {canShareFiles && <div className="faint" style={{ fontSize: 12.5, marginTop: -4 }}>{t('Si apre la condivisione: scegli')} <b style={{ color: 'var(--text)' }}>“{t('Salva {n} immagini').replace('{n}', String(files.length))}”</b> {t("→ finiscono in Foto nell'ordine giusto.")}</div>}
 
         {/* anteprima ordine */}
         <div>
-          <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 6 }}>{t('Ordine del carosello')}</div>
+          <div style={{ fontWeight: 600, fontSize: 12.5, marginBottom: 6 }}>{t('Ordine del carosello')}</div>
           <div className="grid" style={{ gap: 8 }}>
             {photos.map((m, i) => (
               <div key={m.id} className="flex gap" style={{ alignItems: 'center', gap: 12, border: '1px solid var(--border)', borderRadius: 12, padding: 8 }}>
-                <div style={{ minWidth: 26, height: 26, borderRadius: 8, background: 'var(--accent)', color: 'var(--ink)', fontWeight: 800, fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{i + 1}</div>
+                <div style={{ minWidth: 26, height: 26, borderRadius: 8, background: 'var(--accent)', color: 'var(--ink)', fontWeight: 800, fontSize: 12.5, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{i + 1}</div>
                 {urls[m.storage_path] && isVideoFile(m.file_name)
                   ? <span className="vid-thumb" style={{ width: 56, height: 56, borderRadius: 8, flexShrink: 0 }}><video src={urls[m.storage_path] + '#t=0.1'} muted playsInline preload="metadata" /></span>
                   : urls[m.storage_path]
@@ -1111,14 +1111,14 @@ function InstagramExport({ caption, title, photos, urls, onClose }: {
 function More({ title, tone, children }: { title: string; tone?: string; children: React.ReactNode }) {
   return (
     <details style={{ border: '1px solid var(--border)', borderRadius: 12, background: 'var(--bg-2)', padding: '10px 12px' }}>
-      <summary style={{ cursor: 'pointer', fontWeight: 650, fontSize: 13.5, color: tone || 'var(--text)' }}>{title}</summary>
+      <summary style={{ cursor: 'pointer', fontWeight: 600, fontSize: 14, color: tone || 'var(--text)' }}>{title}</summary>
       <div style={{ marginTop: 10 }}>{children}</div>
     </details>
   )
 }
 
 function Info({ k, v }: { k: string; v: any }) {
-  return <div><div className="faint" style={{ fontSize: 11 }}>{k}</div><div style={{ fontWeight: 650, fontSize: 13.5 }}>{v ?? '—'}</div></div>
+  return <div><div className="faint" style={{ fontSize: 11 }}>{k}</div><div style={{ fontWeight: 600, fontSize: 14 }}>{v ?? '—'}</div></div>
 }
 
 function NewEntryModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
@@ -1290,7 +1290,7 @@ function MediaPicker({ athleteId, excludeSourceIds, onClose, onConfirm }: {
                           : <div className="asset-ph"><Icon name="camera" size={20} strokeWidth={1.4} /></div>}
                       {chosen && (
                         <div style={{ position: 'absolute', top: 6, left: 6, padding: '2px 7px', borderRadius: 8,
-                          background: 'var(--accent)', color: 'var(--ink)', fontSize: 10, fontWeight: 800,
+                          background: 'var(--accent)', color: 'var(--ink)', fontSize: 11, fontWeight: 800,
                           display: 'flex', alignItems: 'center', gap: 3 }}>
                           <Icon name="star" size={11} /> {t('Scelta')}
                         </div>
@@ -1315,7 +1315,7 @@ function MediaPicker({ athleteId, excludeSourceIds, onClose, onConfirm }: {
 
 const pinStyle = (x: number, y: number): any => ({
   position: 'absolute', left: `${x * 100}%`, top: `${y * 100}%`, transform: 'translate(-50%, -50%)',
-  width: 22, height: 22, borderRadius: '50%', background: 'var(--magenta)', color: 'var(--surface)', fontWeight: 800, fontSize: 12,
+  width: 22, height: 22, borderRadius: '50%', background: 'var(--magenta)', color: 'var(--surface)', fontWeight: 800, fontSize: 12.5,
   display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--surface)',
   boxShadow: '0 1px 4px rgba(0,0,0,.5)', pointerEvents: 'none',
 })
@@ -1336,7 +1336,7 @@ function RevisionAnnotator({ url, onCancel, onSend }: {
     const y = Math.min(1, Math.max(0, (e.clientY - r.top) / r.height))
     setPins(p => [...p, { x, y, note: '' }])
   }
-  const inputStyle: any = { flex: 1, background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 10px', color: 'var(--text)', fontSize: 13 }
+  const inputStyle: any = { flex: 1, background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 10px', color: 'var(--text)', fontSize: 12.5 }
   return (
     <div>
       <div className="faint" style={{ fontSize: 12.5, marginBottom: 8 }}>
@@ -1344,7 +1344,7 @@ function RevisionAnnotator({ url, onCancel, onSend }: {
       </div>
       <div className="flex gap" style={{ alignItems: 'center', marginBottom: 8 }}>
         <button className="btn btn-sm" onClick={() => setZoom(z => Math.max(1, +(z - 0.5).toFixed(1)))} disabled={zoom <= 1}>−</button>
-        <span className="faint" style={{ fontSize: 12, minWidth: 44, textAlign: 'center' }}>{Math.round(zoom * 100)}%</span>
+        <span className="faint" style={{ fontSize: 12.5, minWidth: 44, textAlign: 'center' }}>{Math.round(zoom * 100)}%</span>
         <button className="btn btn-sm" onClick={() => setZoom(z => Math.min(4, +(z + 0.5).toFixed(1)))} disabled={zoom >= 4}>+</button>
         {pins.length > 0 && <button className="btn btn-sm" onClick={() => setPins(p => p.slice(0, -1))}>{t('Annulla ultimo punto')}</button>}
       </div>
@@ -1356,7 +1356,7 @@ function RevisionAnnotator({ url, onCancel, onSend }: {
       </div>
       {pins.map((p, i) => (
         <div key={i} className="flex gap" style={{ alignItems: 'center', marginTop: 8 }}>
-          <div style={{ minWidth: 22, height: 22, borderRadius: '50%', background: 'var(--magenta)', color: 'var(--surface)', fontWeight: 800, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: '0 0 auto' }}>{i + 1}</div>
+          <div style={{ minWidth: 22, height: 22, borderRadius: '50%', background: 'var(--magenta)', color: 'var(--surface)', fontWeight: 800, fontSize: 12.5, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: '0 0 auto' }}>{i + 1}</div>
           <input style={inputStyle} placeholder={t('Cosa cambiare nel punto {n}…').replace('{n}', String(i + 1))} value={p.note}
             onChange={e => setPins(arr => arr.map((q, j) => j === i ? { ...q, note: e.target.value } : q))} />
         </div>

@@ -109,7 +109,7 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
             {player.photo_url && <img src={player.photo_url} alt="" style={{ width: 72, height: 72, borderRadius: 14, objectFit: 'cover', border: '1px solid var(--border-2)' }} />}
             <div style={{ flex: 1, minWidth: 0 }}>
               <div className="flex wrap" style={{ gap: 8, alignItems: 'center' }}>
-                <div style={{ fontSize: 19, fontWeight: 750 }}>{player.name}</div>
+                <div style={{ fontSize: 18, fontWeight: 800 }}>{player.name}</div>
                 {prof?.injured && <Badge tone="red">{t('Infortunato')}</Badge>}
               </div>
               <div className="muted">{player.position} · {player.team_name} ({player.team_country})</div>
@@ -121,7 +121,7 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
                 <MiniFact k={t('Maglia')} v={shirt ? '#' + shirt : '—'} />
               </div>
               {prof?.birth?.place && (
-                <div className="faint" style={{ fontSize: 12, marginTop: 8 }}>
+                <div className="faint" style={{ fontSize: 12.5, marginTop: 8 }}>
                   {t('Nato a {place}').replace('{place}', prof.birth.place)}{prof.birth.country ? ` (${prof.birth.country})` : ''}{prof.birth.date ? ' ' + t('il {date}').replace('{date}', fmtDate(prof.birth.date)) : ''}
                 </div>
               )}
@@ -130,9 +130,9 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
           <div className="card stadium-card">
             {player.stadium_photo_url && <img className="stadium-photo" src={player.stadium_photo_url} alt="" />}
             <div className="stadium-overlay">
-              <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.6px' }}>{t('Casa · stagione {s}').replace('{s}', currentSeason)}</div>
-              <div style={{ fontWeight: 750, fontSize: 15 }}>{player.stadium_name || '—'}</div>
-              {player.stadium_capacity && <div className="faint" style={{ fontSize: 12 }}>{t('{n} posti').replace('{n}', player.stadium_capacity.toLocaleString(lang === 'en' ? 'en-GB' : 'it-IT'))}</div>}
+              <div className="t-label">{t('Casa · stagione {s}').replace('{s}', currentSeason)}</div>
+              <div style={{ fontWeight: 800, fontSize: 15 }}>{player.stadium_name || '—'}</div>
+              {player.stadium_capacity && <div className="faint" style={{ fontSize: 12.5 }}>{t('{n} posti').replace('{n}', player.stadium_capacity.toLocaleString(lang === 'en' ? 'en-GB' : 'it-IT'))}</div>}
             </div>
           </div>
         </div>
@@ -143,7 +143,7 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
         <div className="card-head"><div className="card-title">{t('Prossima partita')}</div></div>
         {nextMatch ? (
           <div>
-            <div style={{ fontSize: 17, fontWeight: 750 }}>{nextMatch.home_team} vs {nextMatch.away_team}</div>
+            <div style={{ fontSize: 18, fontWeight: 800 }}>{nextMatch.home_team} vs {nextMatch.away_team}</div>
             <div className="muted" style={{ marginTop: 4 }}>{nextMatch.league}{nextMatch.round ? ` · ${nextMatch.round}` : ''}</div>
             <div className="flex gap wrap" style={{ marginTop: 10, gap: 8 }}>
               <Badge tone="accent">{fmtMatchDateTime(nextMatch.match_date, athleteTz)}</Badge>
@@ -286,7 +286,7 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
       )}
 
       {extra?.updated_at && (
-        <div className="faint" style={{ fontSize: 11.5, textAlign: 'center' }}>
+        <div className="faint" style={{ fontSize: 12.5, textAlign: 'center' }}>
           {t('Dati API-Football · carriera aggiornata il {date}').replace('{date}', fmtDate(extra.updated_at))}
         </div>
       )}
@@ -295,5 +295,5 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
 }
 
 function MiniFact({ k, v }: { k: string; v: any }) {
-  return <div><div className="faint" style={{ fontSize: 11 }}>{k}</div><div style={{ fontWeight: 700, fontSize: 15 }}>{v ?? '—'}</div></div>
+  return <div><div className="faint" style={{ fontSize: 11 }}>{k}</div><div style={{ fontWeight: 800, fontSize: 15 }}>{v ?? '—'}</div></div>
 }

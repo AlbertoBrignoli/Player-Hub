@@ -125,7 +125,7 @@ function TrainerPrograms() {
       <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
         <div>
           <div style={{ fontSize: 18, fontWeight: 800 }}>{t('Programmi di {name}').replace('{name}', athleteName)}</div>
-          <div className="faint" style={{ fontSize: 13 }}>{t('{n} totali · {d} bozze · {p} pubblicati').replace('{n}', String(programs.length)).replace('{d}', String(bozze.length)).replace('{p}', String(pubblicate.length))}</div>
+          <div className="faint" style={{ fontSize: 12.5 }}>{t('{n} totali · {d} bozze · {p} pubblicati').replace('{n}', String(programs.length)).replace('{d}', String(bozze.length)).replace('{p}', String(pubblicate.length))}</div>
         </div>
         <button className="btn btn-primary" onClick={() => setEditing('new')}>
           <Icon name="plus" size={14} /> {t('Nuovo programma')}
@@ -147,7 +147,7 @@ function TrainerPrograms() {
             {trash.map(p => (
               <div key={p.id} className="card" style={{ padding: 16, border: '1px dashed var(--border)', opacity: .85 }}>
                 <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div style={{ fontWeight: 700 }}>{p.name}</div>
+                  <div style={{ fontWeight: 600 }}>{p.name}</div>
                   <Badge tone="red">{t('Eliminato')}</Badge>
                 </div>
                 <div className="faint" style={{ fontSize: 12.5, marginTop: 6 }}>
@@ -193,17 +193,17 @@ function ProgramList({ title, items, tone, onOpen }: {
         {items.map(p => (
           <button key={p.id} className="card" style={{ padding: 16, textAlign: 'left', cursor: 'pointer', border: '1px solid var(--border)' }} onClick={() => onOpen(p)}>
             <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div style={{ fontWeight: 700 }}>{p.name}</div>
+              <div style={{ fontWeight: 600 }}>{p.name}</div>
               <Badge tone={tone === 'published' ? 'green' : 'gold'}>{tone === 'published' ? t('Pubblicata') : t('Bozza')}</Badge>
             </div>
             <div className="faint" style={{ fontSize: 12.5, marginTop: 6 }}>
               {p.program_date ? fmtDate(p.program_date) : t('Data da definire')}{p.start_time ? ` · ${p.start_time.slice(0, 5)}` : ''}
             </div>
-            {p.focus && <div style={{ fontSize: 13, marginTop: 4, color: 'var(--text-dim)' }}>{p.focus}</div>}
+            {p.focus && <div style={{ fontSize: 12.5, marginTop: 4, color: 'var(--text-dim)' }}>{p.focus}</div>}
             {p.athlete_response && RESPONSE[p.athlete_response] && (
               <div style={{ marginTop: 8 }}>
                 <Badge tone={RESPONSE[p.athlete_response].tone}><Icon name={RESPONSE[p.athlete_response].icon} size={11} /> {t(RESPONSE[p.athlete_response].coach)}</Badge>
-                {p.athlete_response_note && <div className="faint" style={{ fontSize: 12, marginTop: 4 }}>«{p.athlete_response_note}»</div>}
+                {p.athlete_response_note && <div className="faint" style={{ fontSize: 12.5, marginTop: 4 }}>«{p.athlete_response_note}»</div>}
               </div>
             )}
           </button>
@@ -419,7 +419,7 @@ function ProgramEditor({ program, athleteId, athleteName, trainerId, onClose, on
         return (
           <div className="card" style={{ padding: '10px 14px', marginBottom: 14, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
             <Badge tone={r.tone}><Icon name={r.icon} size={11} /> {t(r.coach)}</Badge>
-            {p.athlete_response_note && <span style={{ fontSize: 13 }}>«{p.athlete_response_note}»</span>}
+            {p.athlete_response_note && <span style={{ fontSize: 12.5 }}>«{p.athlete_response_note}»</span>}
             {p.athlete_response === 'online' && <span className="faint" style={{ fontSize: 12.5 }}>{t('Aggiungi il link della videochiamata nella nota per l\'atleta e ripubblica.')}</span>}
           </div>
         )
@@ -455,7 +455,7 @@ function ProgramEditor({ program, athleteId, athleteName, trainerId, onClose, on
             <span>{t('Esercizi')} ({exercises.length})</span>
           </div>
           {exercises.length === 0 && (
-            <div className="faint" style={{ fontSize: 13, marginBottom: 12 }}>
+            <div className="faint" style={{ fontSize: 12.5, marginBottom: 12 }}>
               {t('Nessun esercizio. Scegli dalla libreria AUVI e imposta la prescrizione (serie, ripetizioni, carico, RPE…).')}
             </div>
           )}
@@ -472,14 +472,14 @@ function ProgramEditor({ program, athleteId, athleteName, trainerId, onClose, on
                 </div>
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <div className="flex" style={{ gap: 6, alignItems: 'baseline' }}>
-                    <span style={{ fontWeight: 700, color: ACCENT, cursor: 'grab', flex: '0 0 auto' }} title={t('Trascina per riordinare')}>#{i + 1}</span>
-                    <span style={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ex.name || t('Esercizio senza nome')}</span>
+                    <span style={{ fontWeight: 600, color: ACCENT, cursor: 'grab', flex: '0 0 auto' }} title={t('Trascina per riordinare')}>#{i + 1}</span>
+                    <span style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ex.name || t('Esercizio senza nome')}</span>
                   </div>
-                  <div className="faint" style={{ fontSize: 12, marginTop: 2 }}>
+                  <div className="faint" style={{ fontSize: 12.5, marginTop: 2 }}>
                     {[ex.muscle_group, ex.library_id ? t('dalla libreria') : t('esercizio libero')].filter(Boolean).join(' · ')}
                   </div>
                   <div className="flex" style={{ flexWrap: 'wrap', gap: 5, marginTop: 6 }}>
-                    {parts.length ? parts.map((p, j) => <Chip key={j}>{p}</Chip>) : <span className="faint" style={{ fontSize: 12 }}>{t('Nessuna prescrizione')}</span>}
+                    {parts.length ? parts.map((p, j) => <Chip key={j}>{p}</Chip>) : <span className="faint" style={{ fontSize: 12.5 }}>{t('Nessuna prescrizione')}</span>}
                   </div>
                   {ex.technical_notes && <div style={{ fontSize: 12.5, marginTop: 6, color: 'var(--text-dim)' }}>{ex.technical_notes}</div>}
                 </div>
@@ -520,7 +520,7 @@ function ProgramEditor({ program, athleteId, athleteName, trainerId, onClose, on
                     <Field label={t('Variante alternativa')}><Input value={ex.alternative || ''} onChange={e => setEx(i, 'alternative', e.target.value)} /></Field>
                   </div>
                   <Field label={t('Errori da evitare')}><Textarea rows={2} value={ex.mistakes || ''} onChange={e => setEx(i, 'mistakes', e.target.value)} /></Field>
-                  <div className="faint" style={{ fontSize: 12 }}>{t('Carico, RPE, RIR, tempo, durata, distanza, lato e note si impostano da “Prescrizione”.')}</div>
+                  <div className="faint" style={{ fontSize: 12.5 }}>{t('Carico, RPE, RIR, tempo, durata, distanza, lato e note si impostano da “Prescrizione”.')}</div>
                 </div>
               )}
             </div>
@@ -563,7 +563,7 @@ function ProgramEditor({ program, athleteId, athleteName, trainerId, onClose, on
           <div style={label}>{t('Scheda PDF')}</div>
           <div className="flex gap" style={{ alignItems: 'center' }}>
             {form.pdf_path
-              ? <><span className="faint" style={{ fontSize: 13 }}>{t('PDF caricato ✓')}</span><button className="btn btn-sm" onClick={() => set('pdf_path', null)}>{t('Rimuovi')}</button></>
+              ? <><span className="faint" style={{ fontSize: 12.5 }}>{t('PDF caricato ✓')}</span><button className="btn btn-sm" onClick={() => set('pdf_path', null)}>{t('Rimuovi')}</button></>
               : <label className="btn btn-sm" style={{ cursor: 'pointer' }}>
                   {uploading ? t('Carico…') : t('Carica PDF')}
                   <input type="file" accept="application/pdf" hidden onChange={async ev => {
@@ -576,13 +576,13 @@ function ProgramEditor({ program, athleteId, athleteName, trainerId, onClose, on
                   }} />
                 </label>}
           </div>
-          <div className="faint" style={{ fontSize: 12, marginTop: 6 }}>{t('Se carichi un PDF, l\'atleta lo apre direttamente come sua scheda.')}</div>
+          <div className="faint" style={{ fontSize: 12.5, marginTop: 6 }}>{t('Se carichi un PDF, l\'atleta lo apre direttamente come sua scheda.')}</div>
 
           {/* Note */}
           <div style={label}>{t('Note')}</div>
           <Field label={t('Nota visibile all\'atleta')}><Textarea rows={2} value={form.note_athlete || ''} onChange={e => set('note_athlete', e.target.value)} /></Field>
           <Field label={t('Nota privata (solo staff)')}><Textarea rows={2} value={form.note_staff || ''} onChange={e => set('note_staff', e.target.value)} /></Field>
-          <label className="flex gap" style={{ alignItems: 'center', marginTop: 10, fontSize: 13 }}>
+          <label className="flex gap" style={{ alignItems: 'center', marginTop: 10, fontSize: 12.5 }}>
             <input type="checkbox" checked={!!form.recurring} onChange={e => set('recurring', e.target.checked)} /> {t('Programma ricorrente settimanale')}
           </label>
           </div>
@@ -617,10 +617,10 @@ function CoachCard({ goto, athleteId }: { goto?: (r: string) => void; athleteId:
         ? <img src={coach.photo_url} alt="" style={{ width: 52, height: 52, borderRadius: 13, objectFit: 'cover' }} />
         : <div style={{ width: 52, height: 52, borderRadius: 13, background: 'var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>{(coach.name || 'C').slice(0, 1)}</div>}
       <div style={{ flex: 1, minWidth: 140 }}>
-        <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1 }}>{t('Il tuo preparatore')}</div>
-        <div style={{ fontSize: 16, fontWeight: 800 }}>{coach.name || t('Preparatore')}</div>
+        <div className="t-label">{t('Il tuo preparatore')}</div>
+        <div style={{ fontSize: 15, fontWeight: 800 }}>{coach.name || t('Preparatore')}</div>
         <div className="faint" style={{ fontSize: 12.5 }}>{coach.headline || ''}{coach.experience ? ` · ${coach.experience}` : ''}</div>
-        {(coach.specializations || []).length > 0 && <div className="faint" style={{ fontSize: 12, marginTop: 3 }}>{(coach.specializations || []).slice(0, 3).join(' · ')}</div>}
+        {(coach.specializations || []).length > 0 && <div className="faint" style={{ fontSize: 12.5, marginTop: 3 }}>{(coach.specializations || []).slice(0, 3).join(' · ')}</div>}
       </div>
       {goto && <button className="btn btn-sm" onClick={() => goto('coach-profile')}>{t('Visualizza profilo')}</button>}
     </div>
@@ -686,11 +686,11 @@ function BigProgramCard({ p, onOpen, highlight, muted }: { p: ProgramFull; onOpe
       style={{ display: 'block', width: '100%', textAlign: 'left', padding: 18, marginBottom: 12, cursor: 'pointer', opacity: muted ? 0.7 : 1, border: highlight ? `1px solid ${ACCENT}` : '1px solid var(--border)' }}>
       <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <div style={{ fontSize: 16, fontWeight: 800 }}>{p.name}</div>
-          <div className="faint" style={{ fontSize: 13, marginTop: 4 }}>
+          <div style={{ fontSize: 15, fontWeight: 800 }}>{p.name}</div>
+          <div className="faint" style={{ fontSize: 12.5, marginTop: 4 }}>
             {p.program_date ? fmtDate(p.program_date) : ''}{p.start_time ? ` · ${p.start_time.slice(0, 5)}` : ''}{p.duration_min ? ` · ${p.duration_min} min` : ''}
           </div>
-          {p.focus && <div style={{ fontSize: 13, marginTop: 4, color: ACCENT }}>{p.focus}</div>}
+          {p.focus && <div style={{ fontSize: 12.5, marginTop: 4, color: ACCENT }}>{p.focus}</div>}
         </div>
         {resp ? <Badge tone={resp.tone}>{t(resp.l)}</Badge> : <Badge tone={toneMap[stato]}>{t(stato)}</Badge>}
       </div>
@@ -753,15 +753,15 @@ function ProgramDetail({ program, athleteId, onClose, onSaved }: {
               catch { toast(t('Non riesco a generare il PDF'), 'err') }
             }}><Icon name="download" size={14} /> {t('Scarica PDF')}</button>}
       </>}>
-      <div className="faint" style={{ fontSize: 13 }}>
+      <div className="faint" style={{ fontSize: 12.5 }}>
         {program.program_date ? fmtDate(program.program_date) : ''}{program.start_time ? ` · ${program.start_time.slice(0, 5)}` : ''}{program.duration_min ? ` · ${program.duration_min} min` : ''}{program.intensity ? ` · ${t('intensità {v}').replace('{v}', t(program.intensity))}` : ''}
       </div>
-      {program.focus && <div style={{ marginTop: 6, color: ACCENT, fontWeight: 700 }}>{program.focus}</div>}
+      {program.focus && <div style={{ marginTop: 6, color: ACCENT, fontWeight: 600 }}>{program.focus}</div>}
       {program.objective && <div style={{ marginTop: 4 }}>{program.objective}</div>}
 
       {upcoming && (
         <div className="card" style={{ padding: 16, marginTop: 14, borderLeft: `3px solid ${ACCENT}` }}>
-          <div style={{ fontSize: 14.5, fontWeight: 800 }}>{t('La farai?')}</div>
+          <div style={{ fontSize: 14, fontWeight: 800 }}>{t('La farai?')}</div>
           <div className="faint" style={{ fontSize: 12.5, marginTop: 2 }}>
             {resp ? t('Hai risposto: {r}. Puoi cambiare quando vuoi.').replace('{r}', t(RESPONSE[resp].l)) : t('Fallo sapere al preparatore con un tocco.')}
           </div>
@@ -805,21 +805,21 @@ function ProgramDetail({ program, athleteId, onClose, onSaved }: {
       {exercises.map((ex, i) => (
         <div key={i} className="card" style={{ padding: 14, marginBottom: 10, borderLeft: `3px solid ${ACCENT}` }}>
           <div className="flex" style={{ justifyContent: 'space-between' }}>
-            <div style={{ fontWeight: 700 }}>{i + 1}. {ex.name}</div>
+            <div style={{ fontWeight: 600 }}>{i + 1}. {ex.name}</div>
             {ex.muscle_group && <Badge tone="accent">{ex.muscle_group}</Badge>}
           </div>
-          <div className="flex gap" style={{ flexWrap: 'wrap', marginTop: 8, fontSize: 13 }}>
+          <div className="flex gap" style={{ flexWrap: 'wrap', marginTop: 8, fontSize: 12.5 }}>
             {prescParts(ex, t).map((p, j) => <Chip key={j}>{p}</Chip>)}
           </div>
           {((ex.library_id && lib[ex.library_id]) || ex.image_url || ex.video_url) && (
             <div className="flex gap" style={{ marginTop: 8, flexWrap: 'wrap' }}>
-              {ex.library_id && lib[ex.library_id] && <button className="btn btn-sm btn-primary" onClick={() => setHowTo(lib[ex.library_id!])}><Icon name="activity" size={12} /> {t('Come si fa')}</button>}
+              {ex.library_id && lib[ex.library_id] && <button className="btn btn-sm" onClick={() => setHowTo(lib[ex.library_id!])}><Icon name="activity" size={12} /> {t('Come si fa')}</button>}
               {ex.image_url && !ex.image_url.includes('raw.githubusercontent.com') && <a className="btn btn-sm" href={ex.image_url} target="_blank" rel="noreferrer"><Icon name="image" size={12} /> {t('Immagine')}</a>}
               {ex.video_url && <a className="btn btn-sm" href={ex.video_url} target="_blank" rel="noreferrer">Video</a>}
             </div>
           )}
-          {ex.technical_notes && <div style={{ fontSize: 13, marginTop: 8 }}><b>{t('Note:')}</b> {ex.technical_notes}</div>}
-          {ex.mistakes && <div style={{ fontSize: 13, marginTop: 4, color: 'var(--text-dim)' }}><b>{t('Da evitare:')}</b> {ex.mistakes}</div>}
+          {ex.technical_notes && <div style={{ fontSize: 12.5, marginTop: 8 }}><b>{t('Note:')}</b> {ex.technical_notes}</div>}
+          {ex.mistakes && <div style={{ fontSize: 12.5, marginTop: 4, color: 'var(--text-dim)' }}><b>{t('Da evitare:')}</b> {ex.mistakes}</div>}
           {ex.alternative && <div style={{ fontSize: 12.5, marginTop: 4, color: 'var(--text-dim)' }}>{t('Alternativa:')} {ex.alternative}</div>}
         </div>
       ))}
@@ -843,7 +843,7 @@ function ProgramDetail({ program, athleteId, onClose, onSaved }: {
         </FbQ>
         <FbQ title={t('Come ti sei sentito?')}>
           {([['ottimo', '😀'], ['bene', '🙂'], ['normale', '😐'], ['affaticato', '😕'], ['pesante', '😣']] as const).map(([v, em]) => (
-            <TapBtn key={v} on={fb.feeling === v} onClick={() => setFb({ ...fb, feeling: v })}><span style={{ fontSize: 20 }}>{em}</span></TapBtn>
+            <TapBtn key={v} on={fb.feeling === v} onClick={() => setFb({ ...fb, feeling: v })}><span style={{ fontSize: 22 }}>{em}</span></TapBtn>
           ))}
         </FbQ>
         <FbQ title={t('Hai avuto fastidi?')}>
@@ -856,7 +856,7 @@ function ProgramDetail({ program, athleteId, onClose, onSaved }: {
         </Field>
         <div className="flex gap" style={{ marginTop: 12, alignItems: 'center' }}>
           <button className="btn btn-primary" onClick={send} disabled={busy || !fb.status || fb.status === 'programmato'}>{busy ? t('Invio…') : t('Invia')}</button>
-          {saved && <span style={{ color: 'var(--green)', fontSize: 13 }}>{t('Inviato ✓')}</span>}
+          {saved && <span style={{ color: 'var(--green)', fontSize: 12.5 }}>{t('Inviato ✓')}</span>}
         </div>
       </div>
       </>}
@@ -865,7 +865,7 @@ function ProgramDetail({ program, athleteId, onClose, onSaved }: {
 }
 
 function Info({ k, v }: { k: string; v: string }) {
-  return <div><div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1 }}>{k}</div><div style={{ fontSize: 13, marginTop: 2 }}>{v}</div></div>
+  return <div><div className="t-label">{k}</div><div style={{ fontSize: 12.5, marginTop: 2 }}>{v}</div></div>
 }
 export function Chip({ children }: { children: React.ReactNode }) {
   return <span style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 8, padding: '3px 9px', fontSize: 12.5 }}>{children}</span>
@@ -874,7 +874,7 @@ export function Chip({ children }: { children: React.ReactNode }) {
 function FbQ({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: 14 }}>
-      <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>{title}</div>
+      <div style={{ fontSize: 12.5, fontWeight: 600, marginBottom: 8 }}>{title}</div>
       <div className="flex gap" style={{ flexWrap: 'wrap' }}>{children}</div>
     </div>
   )
@@ -885,7 +885,7 @@ function TapBtn({ on, onClick, children, small }: { on: boolean; onClick: () => 
       padding: small ? '7px 12px' : '9px 15px', borderRadius: 10, cursor: 'pointer',
       border: on ? `1.5px solid ${ACCENT}` : '1px solid var(--border)',
       background: on ? ACCENT + '26' : 'transparent', color: 'inherit',
-      fontSize: 13.5, fontWeight: on ? 700 : 500,
+      fontSize: 14, fontWeight: on ? 700 : 500,
     }}>{children}</button>
   )
 }
@@ -930,7 +930,7 @@ function TrainerSummary({ athletes, athleteId }: { athletes: { api_player_id: nu
                     {t(STATUS_LABEL[f.status] || f.status)}{disc ? ` · ${t('fastidio: {v}').replace('{v}', t(cap(disc)))}` : ''}{f.fitness_programs?.program_date ? ` · ${fmtDate(f.fitness_programs.program_date)}` : ''}
                   </div>
                 </div>
-                {f.feeling && <span style={{ fontSize: 20 }}>{FEELING[f.feeling] || ''}</span>}
+                {f.feeling && <span style={{ fontSize: 22 }}>{FEELING[f.feeling] || ''}</span>}
               </div>
             )
           })}
@@ -963,7 +963,7 @@ export function PrescriptionModal({ draft, item, isNew, onCancel, onConfirm }: {
         <div style={{ minWidth: 0 }}>
           <div style={{ fontWeight: 800, fontSize: 15 }}>{d.name}</div>
           <div className="faint" style={{ fontSize: 12.5 }}>{[item?.category, d.muscle_group].filter(Boolean).join(' · ')}</div>
-          <div className="faint" style={{ fontSize: 12, marginTop: 2 }}>{t('Nessun campo è obbligatorio: compila solo quello che serve.')}</div>
+          <div className="faint" style={{ fontSize: 12.5, marginTop: 2 }}>{t('Nessun campo è obbligatorio: compila solo quello che serve.')}</div>
         </div>
       </div>
       <div style={grid(130)}>
@@ -1007,11 +1007,11 @@ export function SchedaPreview({ form, exercises, athleteName }: { form: Partial<
   return (
     <div className="card" style={{ padding: 18, position: 'sticky', top: 8 }}>
       <ExlStyle />
-      <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1 }}>{t('Anteprima scheda atleta')}</div>
+      <div className="t-label">{t('Anteprima scheda atleta')}</div>
       <div style={{ fontSize: 12.5, marginTop: 8 }}>{athleteName}</div>
       <div style={{ fontSize: 18, fontWeight: 800, marginTop: 2 }}>{form.name || t('Nuovo programma')}</div>
-      {form.focus && <div style={{ color: ACCENT, fontWeight: 700, fontSize: 13, marginTop: 2 }}>{form.focus}</div>}
-      <div className="faint" style={{ fontSize: 12, marginTop: 4 }}>
+      {form.focus && <div style={{ color: ACCENT, fontWeight: 600, fontSize: 12.5, marginTop: 2 }}>{form.focus}</div>}
+      <div className="faint" style={{ fontSize: 12.5, marginTop: 4 }}>
         {[form.program_date ? fmtDate(form.program_date) : '', form.start_time ? form.start_time.slice(0, 5) : '', form.duration_min ? `${form.duration_min} min` : '', form.intensity ? t(form.intensity) : ''].filter(Boolean).join(' · ')}
       </div>
       <div style={{ marginTop: 12 }}>
@@ -1019,10 +1019,10 @@ export function SchedaPreview({ form, exercises, athleteName }: { form: Partial<
           <div key={i} className="flex" style={{ gap: 10, alignItems: 'center', padding: '8px 0', borderTop: '1px solid var(--border)' }}>
             {e.image_url
               ? <span style={{ width: 44, height: 44, borderRadius: 8, overflow: 'hidden', flex: '0 0 auto', background: 'var(--bg-2)' }}><ExMedia url={e.image_url} width={120} className="exl-thumb" /></span>
-              : <span style={{ width: 44, height: 44, borderRadius: 8, background: 'var(--border)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: '0 0 auto', fontWeight: 700 }}>{i + 1}</span>}
+              : <span style={{ width: 44, height: 44, borderRadius: 8, background: 'var(--border)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: '0 0 auto', fontWeight: 600 }}>{i + 1}</span>}
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 700 }}>{e.name}</div>
-              <div className="faint" style={{ fontSize: 11.5 }}>{prescParts(e, t).join(' · ')}</div>
+              <div style={{ fontSize: 12.5, fontWeight: 600 }}>{e.name}</div>
+              <div className="faint" style={{ fontSize: 12.5 }}>{prescParts(e, t).join(' · ')}</div>
             </div>
           </div>
         ))}

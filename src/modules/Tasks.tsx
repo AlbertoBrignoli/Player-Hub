@@ -64,7 +64,7 @@ export default function Tasks() {
                 {docs.map(r => (
                   <div className="card" key={r.id} style={{ padding: 13, borderLeft: '3px solid #9A5530' }}>
                     <div className="flex between" style={{ alignItems: 'flex-start', gap: 8 }}>
-                      <div style={{ fontWeight: 600, fontSize: 13.5 }}>{r.title}</div>
+                      <div style={{ fontWeight: 600, fontSize: 14 }}>{r.title}</div>
                       <Badge tone="gold">{tr('Documenti')}</Badge>
                     </div>
                     <RequestSteps item={r} who={(r.created_by && requesters[r.created_by]) || null} />
@@ -81,7 +81,7 @@ export default function Tasks() {
                   return (
                     <div className="card" key={t.id} style={{ padding: 13 }}>
                       <div className="flex between" style={{ alignItems: 'flex-start' }}>
-                        <div style={{ fontWeight: 600, fontSize: 13.5 }}>{t.title}</div>
+                        <div style={{ fontWeight: 600, fontSize: 14 }}>{t.title}</div>
                         <span className="dot" style={{ marginTop: 5, background: t.priority === 'high' ? 'var(--red)' : t.priority === 'low' ? 'var(--text-faint)' : 'var(--gold)' }} />
                       </div>
                       {t.description && <div className="row-sub" style={{ marginTop: 4 }}>{t.description}</div>}

@@ -71,7 +71,7 @@ export default function Documents() {
     <div className="grid" style={{ gap: 16 }}>
       <div className="card flex between wrap gap">
         <div>
-          <div style={{ fontWeight: 650 }}>{t('Carica un documento')}</div>
+          <div style={{ fontWeight: 600 }}>{t('Carica un documento')}</div>
           <div className="faint" style={{ fontSize: 12.5 }}>{t('Archivio cifrato e privato · visibile solo a te e ad AUVI')}</div>
         </div>
         <div className="flex gap">
@@ -97,7 +97,7 @@ export default function Documents() {
           : <div className="list">
               {files[sel].map(f => (
                 <div className="row" key={f.key} style={{ flexWrap: 'wrap' }}>
-                  <div style={{ width: 38, height: 38, borderRadius: 9, background: 'var(--surface-2)', display: 'grid', placeItems: 'center', fontSize: 17 }}>{fileIcon(f.mime || null)}</div>
+                  <div style={{ width: 38, height: 38, borderRadius: 9, background: 'var(--surface-2)', display: 'grid', placeItems: 'center', fontSize: 18 }}>{fileIcon(f.mime || null)}</div>
                   <div className="row-main" style={{ minWidth: 160 }}>
                     <div className="row-title" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</div>
                     <div className="row-sub">{[f.sub && t(f.sub), f.date && fmtDate(f.date), f.size ? humanSize(f.size) : null,
@@ -252,10 +252,10 @@ function ProBoxes({ groups, sel, onSel }: { groups: Group[]; sel: string; onSel:
           }}>
             <span className="flex between" style={{ alignItems: 'center' }}>
               <Icon name={g.icon} size={17} />
-              <span style={{ fontSize: 12, fontWeight: 800, opacity: .75 }}>{g.count}</span>
+              <span style={{ fontSize: 12.5, fontWeight: 800, opacity: .75 }}>{g.count}</span>
             </span>
             <span style={{ minWidth: 0 }}>
-              <span style={{ display: 'block', fontSize: 10.5, letterSpacing: 1.2, textTransform: 'uppercase', fontWeight: 800, opacity: .7 }}>{t(g.label)}</span>
+              <span className="t-label" style={{ display: 'block', opacity: .7, color: 'inherit' }}>{t(g.label)}</span>
               <span style={{ display: 'block', fontSize: 14, fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {g.name || (g.key === 'archivio' ? t('I tuoi documenti') : t(g.label))}
               </span>

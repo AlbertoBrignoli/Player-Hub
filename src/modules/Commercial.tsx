@@ -151,7 +151,7 @@ export default function Commercial() {
           <div className="flex gap" style={{ alignItems: 'center' }}>
             <span style={{ color: 'var(--gold)' }}><Icon name="star" size={20} /></span>
             <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 700 }}>{tr("Completa l'onboarding commerciale")}</div>
+              <div style={{ fontWeight: 600 }}>{tr("Completa l'onboarding commerciale")}</div>
               <div className="muted" style={{ fontSize: 12.5 }}>{tr('Pochi minuti: punteggio e compatibilità diventano più precisi.')}</div>
             </div>
             <Icon name="chevron-right" size={18} />
@@ -212,7 +212,7 @@ function ScoreRing({ value, size = 128 }: { value: number; size?: number }) {
       <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--accent)" strokeWidth={stroke} strokeLinecap="round"
         strokeDasharray={`${(value / 100) * circ} ${circ}`} transform={`rotate(-90 ${size / 2} ${size / 2})`} />
       <text x="50%" y="48%" textAnchor="middle" dominantBaseline="middle"
-        style={{ fontFamily: 'var(--font-display)', fontSize: size * 0.3, fontWeight: 700, fill: 'var(--text)' }}>{value}</text>
+        style={{ fontFamily: 'var(--font-display)', fontSize: size * 0.3, fontWeight: 600, fill: 'var(--text)' }}>{value}</text>
       <text x="50%" y="67%" textAnchor="middle" style={{ fontSize: size * 0.085, fill: 'var(--text-faint)' }}>/ 100</text>
     </svg>
   )
@@ -226,9 +226,9 @@ function ProgressRow({ name, pct, onClick, open }: { name: string; pct: number; 
   const { t: tr } = useLang()
   return (
     <div className="flex gap" style={{ alignItems: 'center', padding: '8px 0', cursor: onClick ? 'pointer' : 'default' }} onClick={onClick}>
-      <div style={{ width: 130, fontWeight: 600, fontSize: 13.5 }}>{name}</div>
+      <div style={{ width: 130, fontWeight: 600, fontSize: 14 }}>{name}</div>
       <div className="bar" style={{ flex: 1 }}><span style={{ width: `${pct}%` }} /></div>
-      <div style={{ width: 44, textAlign: 'right', fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 700 }}>{pct}%</div>
+      <div style={{ width: 44, textAlign: 'right', fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 800 }}>{pct}%</div>
       {onClick && <Icon name="chevron-right" size = {14} style={{ transform: open ? 'rotate(90deg)' : 'none', color: 'var(--text-faint)' }} />}
     </div>
   )
@@ -243,8 +243,8 @@ function Overview({ score, snaps }: any) {
         <div className="flex gap" style={{ alignItems: 'center', gap: 20 }}>
           <ScoreRing value={score.total} />
           <div>
-            <div className="faint" style={{ fontSize: 11, letterSpacing: '.08em', textTransform: 'uppercase' }}>{tr('Commercial Score')}</div>
-            <div style={{ fontWeight: 700, fontSize: 16, margin: '4px 0 10px' }}>{tr(score.level)}</div>
+            <div className="t-label">{tr('Commercial Score')}</div>
+            <div style={{ fontWeight: 800, fontSize: 15, margin: '4px 0 10px' }}>{tr(score.level)}</div>
             <div className="flex gap" style={{ flexWrap: 'wrap' }}>
               <TrendPill delta={trendOf(snaps, score.total, 30)} label={tr('30gg')} />
               <TrendPill delta={trendOf(snaps, score.total, 90)} label={tr('90gg')} />
@@ -253,12 +253,12 @@ function Overview({ score, snaps }: any) {
         </div>
       </div>
       <div className="card">
-        <div className="faint" style={{ fontSize: 11, letterSpacing: '.08em', textTransform: 'uppercase' }}>{tr('Valore commerciale indicativo')}</div>
-        <div style={{ fontFamily: 'var(--font-display)', fontSize: 30, fontWeight: 700, margin: '8px 0 2px' }}>
+        <div className="t-label">{tr('Valore commerciale indicativo')}</div>
+        <div style={{ fontFamily: 'var(--font-display)', fontSize: 30, fontWeight: 800, margin: '8px 0 2px' }}>
           {fmtMoney(score.valueLo)} – {fmtMoney(score.valueHi)}
-          <span className="muted" style={{ fontSize: 14, fontFamily: 'var(--font)', fontWeight: 500 }}> {tr('/anno')}</span>
+          <span className="muted" style={{ fontSize: 14, fontFamily: 'var(--font)', fontWeight: 400 }}> {tr('/anno')}</span>
         </div>
-        <div className="faint" style={{ fontSize: 11.5, lineHeight: 1.55, marginTop: 8 }}>{tr(DISCLAIMER)}</div>
+        <div className="faint" style={{ fontSize: 12.5, lineHeight: 1.55, marginTop: 8 }}>{tr(DISCLAIMER)}</div>
       </div>
     </div>
   )
@@ -271,8 +271,8 @@ function Recos({ score, recos, goto }: any) {
   return (
     <div className="card">
       <div className="flex between" style={{ marginBottom: 10 }}>
-        <div style={{ fontWeight: 700 }}>{tr('Come aumentare il tuo valore')}</div>
-        <span className="faint" style={{ fontSize: 12 }}>{tr('Profilo completo al')} <b style={{ color: ready.score >= 70 ? 'var(--green)' : 'var(--gold)' }}>{ready.score}%</b></span>
+        <div style={{ fontWeight: 600 }}>{tr('Come aumentare il tuo valore')}</div>
+        <span className="faint" style={{ fontSize: 12.5 }}>{tr('Profilo completo al')} <b style={{ color: ready.score >= 70 ? 'var(--green)' : 'var(--gold)' }}>{ready.score}%</b></span>
       </div>
       <div className="bar" style={{ marginBottom: 6 }}><span style={{ width: `${ready.score}%` }} /></div>
       {recos.length === 0 && <div className="muted" style={{ fontSize: 12.5, marginTop: 8 }}>{tr('Hai completato tutte le azioni consigliate.')}</div>}
@@ -280,8 +280,8 @@ function Recos({ score, recos, goto }: any) {
         <div key={i} className="flex gap" style={{ alignItems: 'center', padding: '10px 0', borderBottom: i < recos.length - 1 ? '1px solid var(--border)' : 'none' }}>
           <Badge tone="gold">+{r.impact} pt</Badge>
           <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 600, fontSize: 13.5 }}>{tr(r.title)}</div>
-            <div className="faint" style={{ fontSize: 12 }}>{tr(r.cta)}</div>
+            <div style={{ fontWeight: 600, fontSize: 14 }}>{tr(r.title)}</div>
+            <div className="faint" style={{ fontSize: 12.5 }}>{tr(r.cta)}</div>
           </div>
           <span className="faint" style={{ fontSize: 11, textTransform: 'uppercase', color: r.priority === 'alta' ? 'var(--red)' : r.priority === 'media' ? 'var(--gold)' : undefined }}>{tr(r.priority)}</span>
           {r.section !== 'valore' && <button className="btn btn-sm" onClick={() => goto(r.section)}>{tr('Vai')}</button>}
@@ -298,7 +298,7 @@ function Valore({ score, snaps, relBand }: any) {
   const relLabel = relBand === null ? null : relBand >= 90 ? 'Ottima' : relBand >= 75 ? 'Molto buona' : relBand >= 60 ? 'Buona' : 'In costruzione'
   return (
     <div className="card">
-      <div className="faint" style={{ fontSize: 12, marginBottom: 4 }}>{tr("Tocca un'area per vedere i dati usati. Pesi definiti da {agency}.").replace('{agency}', AGENCY_NAME)}</div>
+      <div className="faint" style={{ fontSize: 12.5, marginBottom: 4 }}>{tr("Tocca un'area per vedere i dati usati. Pesi definiti da {agency}.").replace('{agency}', AGENCY_NAME)}</div>
       {COMP_META.map(m => {
         const c = score.components[m.key]
         const isOpen = open === m.key
@@ -312,23 +312,23 @@ function Valore({ score, snaps, relBand }: any) {
             <div className="flex gap" style={{ alignItems: 'center', padding: '11px 0', cursor: 'pointer' }} onClick={() => setOpen(isOpen ? null : m.key)}>
               <span style={{ color: 'var(--text-dim)', width: 22 }}><Icon name={m.icon} size={17} /></span>
               <div style={{ width: 200 }}>
-                <div style={{ fontWeight: 600, fontSize: 13.5 }}>{tr(m.label)}</div>
+                <div style={{ fontWeight: 600, fontSize: 14 }}>{tr(m.label)}</div>
                 <div className="faint" style={{ fontSize: 11 }}>{tr('peso {n}%').replace('{n}', String(c.weight))}{delta30 ? ` · ${delta30 > 0 ? '+' : ''}${delta30} (${tr('30gg')})` : ''}</div>
               </div>
               <div className="bar" style={{ flex: 1 }}><span style={{ width: `${c.score}%` }} /></div>
-              <div style={{ width: 36, textAlign: 'right', fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700 }}>{c.score}</div>
+              <div style={{ width: 36, textAlign: 'right', fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 800 }}>{c.score}</div>
               <Icon name="chevron-right" size={14} style={{ transform: isOpen ? 'rotate(90deg)' : 'none', color: 'var(--text-faint)' }} />
             </div>
             {isOpen && (
               <div style={{ margin: '0 0 12px 34px', background: 'var(--surface)', borderRadius: 'var(--radius-sm)', padding: '12px 14px' }}>
-                {m.key === 'reputation' && relLabel && <div style={{ fontSize: 13, marginBottom: 8 }}>{tr('Affidabilità:')} <b style={{ color: 'var(--green)' }}>{tr(relLabel)}</b></div>}
+                {m.key === 'reputation' && relLabel && <div style={{ fontSize: 12.5, marginBottom: 8 }}>{tr('Affidabilità:')} <b style={{ color: 'var(--green)' }}>{tr(relLabel)}</b></div>}
                 {c.factors.map((f: any, i: number) => (
                   <div key={i} className="flex between" style={{ fontSize: 12.5, padding: '3px 0' }}>
                     <span className="muted">{tr(f.label)}{f.note ? <span className="faint"> — {f.note}</span> : null}</span>
                     <b>{f.val}</b>
                   </div>
                 ))}
-                {c.missing.length > 0 && <div style={{ marginTop: 8, fontSize: 12, color: 'var(--gold)' }}>{tr('Dati mancanti:')} {c.missing.map((x: string) => tr(x)).join(', ')}</div>}
+                {c.missing.length > 0 && <div style={{ marginTop: 8, fontSize: 12.5, color: 'var(--gold)' }}>{tr('Dati mancanti:')} {c.missing.map((x: string) => tr(x)).join(', ')}</div>}
               </div>
             )}
           </div>
@@ -344,7 +344,7 @@ function BrandFit({ topFits, excluded }: any) {
   const [open, setOpen] = useState<string | null>(null)
   return (
     <div className="card">
-      <div className="faint" style={{ fontSize: 12, marginBottom: 4 }}>{tr('Tocca una categoria per vedere il perché.')}</div>
+      <div className="faint" style={{ fontSize: 12.5, marginBottom: 4 }}>{tr('Tocca una categoria per vedere il perché.')}</div>
       {topFits.map((f: any) => (
         <div key={f.key} style={{ borderBottom: '1px solid var(--border)' }}>
           <ProgressRow name={f.name} pct={f.pct} open={open === f.key} onClick={() => setOpen(open === f.key ? null : f.key)} />
@@ -357,7 +357,7 @@ function BrandFit({ topFits, excluded }: any) {
       ))}
       {excluded.length > 0 && (
         <div style={{ marginTop: 14 }}>
-          <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 8 }}>{tr('Categorie escluse da te')}</div>
+          <div className="t-label" style={{ marginBottom: 8 }}>{tr('Categorie escluse da te')}</div>
           <div className="flex gap" style={{ flexWrap: 'wrap' }}>{excluded.map((f: any) => <Badge key={f.key} tone="red">{f.name}</Badge>)}</div>
         </div>
       )}
@@ -389,8 +389,8 @@ function MediaKitTab({ player, prof, topFits, collabs, cats, saveProf }: any) {
 
   return (<>
     <div className="card">
-      <div style={{ fontWeight: 700, marginBottom: 4 }}>{tr('Media Kit dinamico')}</div>
-      <div className="faint" style={{ fontSize: 12, marginBottom: 14 }}>{tr('Si aggiorna da solo con i dati del profilo.')}</div>
+      <div style={{ fontWeight: 600, marginBottom: 4 }}>{tr('Media Kit dinamico')}</div>
+      <div className="faint" style={{ fontSize: 12.5, marginBottom: 14 }}>{tr('Si aggiorna da solo con i dati del profilo.')}</div>
       <div className="row2">
         <Field label={tr("Versione")}><Select value={version} onChange={e => setVersion(e.target.value as any)}>
           <option value="completo">{tr('Completa — numeri e dettagli (uso interno / su richiesta)')}</option>
@@ -405,7 +405,7 @@ function MediaKitTab({ player, prof, topFits, collabs, cats, saveProf }: any) {
         </Select></Field>
         <div />
       </div>
-      {version === 'teaser' && <div className="faint" style={{ fontSize: 11.5, marginBottom: 10 }}>{tr('Il teaser mostra fascia follower, categorie affini e highlights — niente engagement, reach, demografia o storico campagne.')}</div>}
+      {version === 'teaser' && <div className="faint" style={{ fontSize: 12.5, marginBottom: 10 }}>{tr('Il teaser mostra fascia follower, categorie affini e highlights — niente engagement, reach, demografia o storico campagne.')}</div>}
       <div className="flex gap" style={{ flexWrap: 'wrap' }}>
         <button className="btn btn-primary" onClick={() => setDeck(true)}>
           <Icon name="download" size={15} /> {version === 'teaser' ? tr('Presentazione AUVI (teaser)') : tr('Presentazione AUVI')}
@@ -415,17 +415,17 @@ function MediaKitTab({ player, prof, topFits, collabs, cats, saveProf }: any) {
         </button>
       </div>
       {deck && <MediaKitDeckDialog player={player} prof={prof} saveProf={saveProf} lang={lang === 'en' ? 'en' : 'it'} teaser={version === 'teaser'} onClose={() => setDeck(false)} />}
-      {prof?.media_kit?.generated_at && <div className="faint" style={{ fontSize: 11.5, marginTop: 10 }}>{tr('Ultimo aggiornamento: {date}').replace('{date}', fmtDateTime(prof.media_kit.generated_at))}</div>}
+      {prof?.media_kit?.generated_at && <div className="faint" style={{ fontSize: 12.5, marginTop: 10 }}>{tr('Ultimo aggiornamento: {date}').replace('{date}', fmtDateTime(prof.media_kit.generated_at))}</div>}
     </div>
     {isAdmin && <TeaserAdminCard player={player} prof={prof} topFits={topFits} />}
 
     {/* Anteprima */}
     <div className="card">
-      <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 12 }}>{tr('Anteprima')}</div>
+      <div className="t-label" style={{ marginBottom: 12 }}>{tr('Anteprima')}</div>
       <div className="flex gap" style={{ alignItems: 'center', marginBottom: 14 }}>
         {player?.photo_url && <img src={player.photo_url} alt="" style={{ width: 56, height: 56, borderRadius: 14, objectFit: 'cover', border: '1px solid var(--border)' }} />}
         <div>
-          <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700 }}>{player?.name}</div>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 800 }}>{player?.name}</div>
           <div className="muted" style={{ fontSize: 12.5 }}>{player?.team_name} · {player?.position}{player?.age ? ` · ${tr('{n} anni').replace('{n}', String(player.age))}` : ''}</div>
         </div>
       </div>
@@ -436,18 +436,18 @@ function MediaKitTab({ player, prof, topFits, collabs, cats, saveProf }: any) {
       </div>
       {(prof?.identity?.values || []).length > 0 && (
         <div style={{ marginBottom: 12 }}>
-          <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 6 }}>{tr('Valori')}</div>
+          <div className="t-label" style={{ marginBottom: 6 }}>{tr('Valori')}</div>
           <div className="flex gap" style={{ flexWrap: 'wrap' }}>{prof.identity.values.map((v: string) => <Badge key={v}>{tr(v)}</Badge>)}</div>
         </div>
       )}
       {avail.length > 0 && (
         <div style={{ marginBottom: 12 }}>
-          <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 6 }}>{tr('Formati disponibili')}</div>
+          <div className="t-label" style={{ marginBottom: 6 }}>{tr('Formati disponibili')}</div>
           <div className="muted" style={{ fontSize: 12.5 }}>{avail.map((a: string) => tr(a)).join(' · ')}</div>
         </div>
       )}
       <div>
-        <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 6 }}>{tr('Top categorie')}</div>
+        <div className="t-label" style={{ marginBottom: 6 }}>{tr('Top categorie')}</div>
         <div className="flex gap" style={{ flexWrap: 'wrap' }}>{topFits.slice(0, 4).map((f: any) => <Badge key={f.key} tone="accent">{f.name} {f.pct}%</Badge>)}</div>
       </div>
     </div>
@@ -589,7 +589,7 @@ function Opportunita({ opps, cats, role, userName, reload }: any) {
         <div key={o.id} className="card" style={{ cursor: 'pointer' }} onClick={() => setSel(o)}>
           <div className="flex between" style={{ alignItems: 'flex-start' }}>
             <div>
-              <div style={{ fontWeight: 700, fontSize: 15 }}>{o.brand_name}</div>
+              <div style={{ fontWeight: 800, fontSize: 15 }}>{o.brand_name}</div>
               <div className="muted" style={{ fontSize: 12.5 }}>
                 {cats.find((c: any) => c.key === o.category_key)?.name || ''}
                 {o.deadline ? ` · ${tr('scade {date}').replace('{date}', fmtDate(o.deadline))}` : ''}
@@ -626,8 +626,8 @@ function OppModal({ opp, cats, role, userName, onClose, reload }: any) {
   const canRespond = role === 'player' && ['nuova', 'in_valutazione'].includes(opp.status) && !opp.athlete_response
   const row = (l: string, v: any) => v ? (
     <div style={{ marginBottom: 10 }}>
-      <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 3 }}>{l}</div>
-      <div style={{ fontSize: 13.5 }}>{v}</div>
+      <div className="t-label" style={{ marginBottom: 3 }}>{l}</div>
+      <div style={{ fontSize: 14 }}>{v}</div>
     </div>
   ) : null
 
@@ -657,7 +657,7 @@ function OppModal({ opp, cats, role, userName, onClose, reload }: any) {
       )}
       {events.length > 0 && (
         <div style={{ marginBottom: 14 }}>
-          <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 6 }}>{tr('Timeline')}</div>
+          <div className="t-label" style={{ marginBottom: 6 }}>{tr('Timeline')}</div>
           {events.map((e, i) => (
             <div key={i} className="flex gap" style={{ fontSize: 12.5, padding: '4px 0' }}>
               <span className="faint" style={{ width: 78, flexShrink: 0 }}>{fmtDate(e.created_at)}</span>
@@ -677,7 +677,7 @@ function OppModal({ opp, cats, role, userName, onClose, reload }: any) {
           {askInfo && <button className="btn" style={{ marginTop: 10 }} disabled={busy || !note.trim()} onClick={() => act('info', null, 'Ha chiesto informazioni')}>{note.trim() ? tr('Invia richiesta di informazioni') : tr('Scrivi prima una nota')}</button>}
         </div>
       )}
-      <div className="faint" style={{ fontSize: 11.5, marginTop: 14, lineHeight: 1.6 }}>{tr('Le condizioni economiche vengono gestite da {agency}: il tuo referente ti accompagna in ogni passaggio della trattativa.').replace('{agency}', AGENCY_NAME)}</div>
+      <div className="faint" style={{ fontSize: 12.5, marginTop: 14, lineHeight: 1.6 }}>{tr('Le condizioni economiche vengono gestite da {agency}: il tuo referente ti accompagna in ogni passaggio della trattativa.').replace('{agency}', AGENCY_NAME)}</div>
     </Modal>
   )
 }
@@ -693,14 +693,14 @@ function Collaborazioni({ collabs, perf, cats, role, reload }: any) {
         <div key={c.id} className="card" style={{ cursor: 'pointer' }} onClick={() => setSel(c)}>
           <div className="flex between">
             <div>
-              <div style={{ fontWeight: 700, fontSize: 15 }}>{c.brand_name}</div>
+              <div style={{ fontWeight: 800, fontSize: 15 }}>{c.brand_name}</div>
               <div className="muted" style={{ fontSize: 12.5 }}>
                 {cats.find((x: any) => x.key === c.category_key)?.name || ''}
                 {c.period_start ? ` · ${fmtDate(c.period_start)}` : ''}{c.period_end ? ` → ${fmtDate(c.period_end)}` : ''}
               </div>
             </div>
             <div className="right">
-              {c.contract_value != null && <div style={{ fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 700, color: 'var(--green)' }}>{fmtMoney(Number(c.contract_value))}</div>}
+              {c.contract_value != null && <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 800, color: 'var(--green)' }}>{fmtMoney(Number(c.contract_value))}</div>}
               <Badge tone={c.status === 'completata' ? 'green' : c.status === 'annullata' ? 'red' : 'blue'}>{tr(collabStatusLabel(c.status))}</Badge>
             </div>
           </div>
@@ -720,15 +720,15 @@ function CollabModal({ collab, p, cats, role, onClose, reload }: any) {
       <div className="muted" style={{ fontSize: 12.5, marginBottom: 14 }}>{cats.find((c: any) => c.key === collab.category_key)?.name || ''} · {tr(collabStatusLabel(collab.status))}</div>
       {collab.contract_value != null && (
         <div style={{ marginBottom: 14 }}>
-          <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em' }}>{tr('Valore contratto')}</div>
-          <div style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 700, color: 'var(--green)' }}>{fmtMoney(Number(collab.contract_value))}</div>
+          <div className="t-label">{tr('Valore contratto')}</div>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 800, color: 'var(--green)' }}>{fmtMoney(Number(collab.contract_value))}</div>
         </div>
       )}
-      {collab.activities?.length > 0 && <div style={{ marginBottom: 12, fontSize: 13.5 }}><span className="faint" style={{ fontSize: 11, textTransform: 'uppercase' }}>{tr('Attività')} · </span>{collab.activities.join(' · ')}</div>}
+      {collab.activities?.length > 0 && <div style={{ marginBottom: 12, fontSize: 14 }}><span className="faint" style={{ fontSize: 11, textTransform: 'uppercase' }}>{tr('Attività')} · </span>{collab.activities.join(' · ')}</div>}
       {collab.notes && <div className="muted" style={{ fontSize: 12.5, marginBottom: 12 }}>{collab.notes}</div>}
       {p && (
         <div style={{ marginBottom: 14 }}>
-          <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 8 }}>{tr('Risultati della campagna')}</div>
+          <div className="t-label" style={{ marginBottom: 8 }}>{tr('Risultati della campagna')}</div>
           <div className="grid g3">
             {p.reach != null && <Stat label={tr("Reach")} value={fmtN(p.reach)} />}
             {p.impressions != null && <Stat label={tr("Impression")} value={fmtN(p.impressions)} />}
@@ -742,7 +742,7 @@ function CollabModal({ collab, p, cats, role, onClose, reload }: any) {
       {collab.brand_feedback && (
         <div className="card" style={{ padding: 12, marginBottom: 12 }}>
           <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', marginBottom: 4 }}>{tr('Feedback del brand')}</div>
-          <div style={{ fontSize: 13 }}>"{collab.brand_feedback}"</div>
+          <div style={{ fontSize: 12.5 }}>"{collab.brand_feedback}"</div>
         </div>
       )}
       {role === 'player' && (<>
@@ -766,12 +766,12 @@ function PerformanceTab({ collabs, perf }: any) {
       <Stat label={tr("ER medio")} value={ers.length ? `${(ers.reduce((a: number, b: number) => a + b, 0) / ers.length).toFixed(1)}%` : '—'} />
     </div>
     <div className="card">
-      <div style={{ fontWeight: 700, marginBottom: 10 }}>{tr('Per campagna')}</div>
+      <div style={{ fontWeight: 600, marginBottom: 10 }}>{tr('Per campagna')}</div>
       {perf.map((p: any) => {
         const c = collabs.find((x: any) => x.id === p.collaboration_id)
         return (
           <div key={p.id} className="flex between" style={{ padding: '9px 0', borderBottom: '1px solid var(--border)', flexWrap: 'wrap', gap: 8 }}>
-            <div style={{ fontWeight: 600, fontSize: 13.5 }}>{c?.brand_name || tr('Campagna')}</div>
+            <div style={{ fontWeight: 600, fontSize: 14 }}>{c?.brand_name || tr('Campagna')}</div>
             <div className="flex gap" style={{ fontSize: 12.5, color: 'var(--text-dim)', flexWrap: 'wrap' }}>
               {p.reach != null && <span>{tr('Reach')} <b style={{ color: 'var(--text)' }}>{fmtN(p.reach)}</b></span>}
               {p.engagement != null && <span>ER <b style={{ color: 'var(--text)' }}>{p.engagement}%</b></span>}
@@ -800,14 +800,14 @@ function DatiPreferenze({ prof, saveProf, openWizard }: any) {
     </div>
   )
   const toggle = (obj: any, setObj: any, key: string, label: string) => (
-    <button className={`btn btn-sm ${obj[key] ? 'btn-primary' : ''}`} onClick={() => setObj({ ...obj, [key]: !obj[key] })}>
+    <button className={`btn btn-sm ${obj[key] ? 'btn-dark' : ''}`} onClick={() => setObj({ ...obj, [key]: !obj[key] })}>
       {obj[key] ? <Icon name="check" size={13} /> : null} {tr(label)}
     </button>
   )
   return (<>
     <div className="card">
-      <div style={{ fontWeight: 700, marginBottom: 4 }}>{tr('Audience — altri canali')}</div>
-      <div className="faint" style={{ fontSize: 12, marginBottom: 12 }}>{tr('Instagram lo aggiorna AUVI: qui aggiungi gli altri canali.')}</div>
+      <div style={{ fontWeight: 600, marginBottom: 4 }}>{tr('Audience — altri canali')}</div>
+      <div className="faint" style={{ fontSize: 12.5, marginBottom: 12 }}>{tr('Instagram lo aggiorna AUVI: qui aggiungi gli altri canali.')}</div>
       {plat('tiktok', 'TikTok')}{plat('youtube', 'YouTube')}
       <div className="row2">
         <Field label={tr("Paesi principali audience")}><Input placeholder={tr("Es. Italia, Grecia, Spagna")} value={(aud.geo || []).join(', ')} onChange={e => setAud({ ...aud, geo: e.target.value.split(',').map(x => x.trim()).filter(Boolean) })} /></Field>
@@ -823,7 +823,7 @@ function DatiPreferenze({ prof, saveProf, openWizard }: any) {
       </div>
     </div>
     <div className="card">
-      <div style={{ fontWeight: 700, marginBottom: 10 }}>{tr('Contenuti & sport')}</div>
+      <div style={{ fontWeight: 600, marginBottom: 10 }}>{tr('Contenuti & sport')}</div>
       <div className="flex gap" style={{ flexWrap: 'wrap', marginBottom: 12 }}>
         {toggle(content, setContent, 'shooting_available', 'Disponibile per shooting professionali')}
         {toggle(content, setContent, 'lifestyle', 'Pubblico contenuti lifestyle')}
@@ -834,8 +834,8 @@ function DatiPreferenze({ prof, saveProf, openWizard }: any) {
       </div>
     </div>
     <div className="card">
-      <div style={{ fontWeight: 700, marginBottom: 6 }}>{tr('Preferenze commerciali')}</div>
-      <div className="faint" style={{ fontSize: 12, marginBottom: 10 }}>{tr('Valori, categorie, disponibilità, territori e storico.')}</div>
+      <div style={{ fontWeight: 600, marginBottom: 6 }}>{tr('Preferenze commerciali')}</div>
+      <div className="faint" style={{ fontSize: 12.5, marginBottom: 10 }}>{tr('Valori, categorie, disponibilità, territori e storico.')}</div>
       <button className="btn" onClick={openWizard}><Icon name="edit" size={14} /> {tr('Modifica le preferenze')}</button>
     </div>
     <div className="flex" style={{ justifyContent: 'flex-end' }}>
@@ -869,7 +869,7 @@ function Onboarding({ profile, save, onDone, onLater }: any) {
     <div className="flex gap" style={{ flexWrap: 'wrap' }}>
       {options.map(o => {
         const on = selected.includes(o)
-        return <button key={o} className={`btn btn-sm ${on ? 'btn-primary' : ''}`} onClick={() => on ? onChange(selected.filter(x => x !== o)) : (!max || selected.length < max) && onChange([...selected, o])}>{tr(o)}</button>
+        return <button key={o} className={`btn btn-sm ${on ? 'btn-dark' : ''}`} onClick={() => on ? onChange(selected.filter(x => x !== o)) : (!max || selected.length < max) && onChange([...selected, o])}>{tr(o)}</button>
       })}
     </div>
   )
@@ -877,14 +877,14 @@ function Onboarding({ profile, save, onDone, onLater }: any) {
   return (
     <div className="grid" style={{ gap: 16, maxWidth: 760 }}>
       <div className="card">
-        <div className="faint" style={{ fontSize: 11, letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 6 }}>{tr('AUVI Commercial Profile — Onboarding')}</div>
-        <div style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 700 }}>{tr('Costruiamo il tuo profilo commerciale')}</div>
-        <div className="muted" style={{ fontSize: 13, marginTop: 4 }}>{tr('5 passaggi, pochi minuti. Puoi salvare e completare quando vuoi.')}</div>
+        <div className="t-label" style={{ marginBottom: 6 }}>{tr('AUVI Commercial Profile — Onboarding')}</div>
+        <div style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 800 }}>{tr('Costruiamo il tuo profilo commerciale')}</div>
+        <div className="muted" style={{ fontSize: 12.5, marginTop: 4 }}>{tr('5 passaggi, pochi minuti. Puoi salvare e completare quando vuoi.')}</div>
         <div className="flex gap" style={{ marginTop: 16 }}>
           {STEPS.map((s, i) => (
             <div key={s} style={{ flex: 1 }}>
               <div style={{ height: 4, borderRadius: 4, background: i <= step ? 'var(--accent)' : 'var(--border)' }} />
-              <div className="faint" style={{ fontSize: 10, marginTop: 5, textTransform: 'uppercase', letterSpacing: '.05em', color: i === step ? 'var(--text)' : undefined }}>{tr(s)}</div>
+              <div className="t-label" style={{ marginTop: 5, color: i === step ? 'var(--text)' : undefined }}>{tr(s)}</div>
             </div>
           ))}
         </div>
@@ -892,7 +892,7 @@ function Onboarding({ profile, save, onDone, onLater }: any) {
 
       <div className="card">
         {step === 0 && (<>
-          <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>{tr('Come vuoi essere percepito?')}</div>
+          <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 4 }}>{tr('Come vuoi essere percepito?')}</div>
           <div className="muted" style={{ fontSize: 12.5, marginBottom: 16 }}>{tr('Scegli i valori, lo stile e gli interessi che ti rappresentano davvero.')}</div>
           <Field label={tr("I tuoi valori (max 5)")}>{chips(VALUE_OPTS, ident.values || [], v => setIdent({ ...ident, values: v }), 5)}</Field>
           <Field label={tr("Il tuo stile (max 4)")}>{chips(STYLE_OPTS, ident.style || [], v => setIdent({ ...ident, style: v }), 4)}</Field>
@@ -900,7 +900,7 @@ function Onboarding({ profile, save, onDone, onLater }: any) {
           <Field label={tr("Come vorresti essere descritto in una frase")}><Input value={ident.desired_image || ''} onChange={e => setIdent({ ...ident, desired_image: e.target.value })} placeholder={tr("Es. Un professionista autentico, vicino ai giovani e alla famiglia")} /></Field>
         </>)}
         {step === 1 && (<>
-          <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>{tr('Categorie commerciali')}</div>
+          <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 4 }}>{tr('Categorie commerciali')}</div>
           <div className="muted" style={{ fontSize: 12.5, marginBottom: 16 }}>{tr('Con quali tipologie di brand vorresti collaborare? E quali escludi a priori?')}</div>
           <Field label={tr("Categorie gradite")}>{chips(CATS.map(c => c[1]), liked.map(k => CATS.find(c => c[0] === k)?.[1] || k), v => setLiked(v.map(n => CATS.find(c => c[1] === n)?.[0] || n)))}</Field>
           <Field label={tr("Categorie escluse")}>
@@ -913,25 +913,25 @@ function Onboarding({ profile, save, onDone, onLater }: any) {
           </Field>
         </>)}
         {step === 2 && (<>
-          <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>{tr('Disponibilità')}</div>
+          <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 4 }}>{tr('Disponibilità')}</div>
           <div className="muted" style={{ fontSize: 12.5, marginBottom: 16 }}>{tr('Quali attività sei disponibile a svolgere per una campagna?')}</div>
           <div className="grid g2">
             {AVAIL_OPTS.map(a => (
-              <button key={a.key} className={`btn ${avail[a.key] ? 'btn-primary' : ''}`} style={{ justifyContent: 'flex-start' }} onClick={() => setAvail({ ...avail, [a.key]: !avail[a.key] })}>
+              <button key={a.key} className={`btn ${avail[a.key] ? 'btn-dark' : ''}`} style={{ justifyContent: 'flex-start' }} onClick={() => setAvail({ ...avail, [a.key]: !avail[a.key] })}>
                 {avail[a.key] ? <Icon name="check" size={14} /> : <span style={{ width: 14 }} />} {tr(a.label)}
               </button>
             ))}
           </div>
         </>)}
         {step === 3 && (<>
-          <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>{tr('Territori e lingue')}</div>
+          <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 4 }}>{tr('Territori e lingue')}</div>
           <div className="muted" style={{ fontSize: 12.5, marginBottom: 16 }}>{tr('Dove sei riconosciuto e in quali mercati vuoi crescere?')}</div>
           <Field label={tr("Mercati di interesse")}>{chips(MARKET_OPTS, terr.markets || [], v => setTerr({ ...terr, markets: v }))}</Field>
           <Field label={tr("Lingue parlate")}>{chips(LANG_OPTS, terr.languages || [], v => setTerr({ ...terr, languages: v }))}</Field>
-          <button className={`btn btn-sm ${terr.travel ? 'btn-primary' : ''}`} onClick={() => setTerr({ ...terr, travel: !terr.travel })}>{terr.travel ? <Icon name="check" size={13} /> : null} {tr('Disponibile a viaggiare per campagne')}</button>
+          <button className={`btn btn-sm ${terr.travel ? 'btn-dark' : ''}`} onClick={() => setTerr({ ...terr, travel: !terr.travel })}>{terr.travel ? <Icon name="check" size={13} /> : null} {tr('Disponibile a viaggiare per campagne')}</button>
         </>)}
         {step === 4 && (<>
-          <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>{tr('Storico commerciale')}</div>
+          <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 4 }}>{tr('Storico commerciale')}</div>
           <div className="muted" style={{ fontSize: 12.5, marginBottom: 16 }}>{tr('Sponsor attivi, collaborazioni passate ed eventuali esclusività.')}</div>
           <Field label={tr("Sponsor personali attivi")}><Input value={hist.sponsors || ''} onChange={e => setHist({ ...hist, sponsors: e.target.value })} placeholder={tr("Es. Nike (scarpe), nessun altro")} /></Field>
           <Field label={tr("Collaborazioni precedenti")}><Textarea rows={3} value={hist.collaborations || ''} onChange={e => setHist({ ...hist, collaborations: e.target.value })} placeholder={tr("Brand, anno, tipo di attività")} /></Field>
@@ -1005,7 +1005,7 @@ function AdminOpps({ athleteId, cats, opps, userName, reload }: any) {
       <div key={o.id} className="card">
         <div className="flex between" style={{ flexWrap: 'wrap', gap: 10 }}>
           <div>
-            <div style={{ fontWeight: 700 }}>{o.brand_name}</div>
+            <div style={{ fontWeight: 600 }}>{o.brand_name}</div>
             <div className="muted" style={{ fontSize: 12.5 }}>
               {cats.find((c: any) => c.key === o.category_key)?.name || ''}
               {(o.fee_lo || o.fee_hi) ? ` · ${o.fee_lo ? fmtMoney(Number(o.fee_lo)) : ''}${o.fee_hi ? '–' + fmtMoney(Number(o.fee_hi)) : ''}` : ''}
@@ -1095,7 +1095,7 @@ function PrivateNotesModal({ opp, onClose }: any) {
   return (
     <Modal title={tr('Riservato — {brand}').replace('{brand}', opp.brand_name)} onClose={onClose}
       footer={<><button className="btn btn-ghost" onClick={onClose}>{tr('Chiudi')}</button><button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? tr('Salvo…') : tr('Salva')}</button></>}>
-      <div className="muted" style={{ fontSize: 12, marginBottom: 12, color: 'var(--red)' }}>{tr("Questi dati sono su una tabella riservata (RLS admin-only): l'atleta non può leggerli in nessun caso.")}</div>
+      <div className="muted" style={{ fontSize: 12.5, marginBottom: 12, color: 'var(--red)' }}>{tr("Questi dati sono su una tabella riservata (RLS admin-only): l'atleta non può leggerli in nessun caso.")}</div>
       <Field label={tr("Margine AUVI (€)")}><Input type="number" value={f.margin ?? ''} onChange={e => setF({ ...f, margin: e.target.value })} /></Field>
       <Field label={tr("Note interne")}><Textarea rows={3} value={f.internal_notes || ''} onChange={e => setF({ ...f, internal_notes: e.target.value })} /></Field>
       <Field label={tr("Note di trattativa")}><Textarea rows={3} value={f.negotiation_notes || ''} onChange={e => setF({ ...f, negotiation_notes: e.target.value })} /></Field>
@@ -1114,7 +1114,7 @@ function AdminCollabs({ athleteId, cats, collabs, perf, reload }: any) {
       <div key={c.id} className="card">
         <div className="flex between" style={{ flexWrap: 'wrap', gap: 10 }}>
           <div>
-            <div style={{ fontWeight: 700 }}>{c.brand_name}</div>
+            <div style={{ fontWeight: 600 }}>{c.brand_name}</div>
             <div className="muted" style={{ fontSize: 12.5 }}>{tr(collabStatusLabel(c.status))}{c.contract_value != null ? ` · ${fmtMoney(Number(c.contract_value))}` : ''}</div>
           </div>
           <div className="flex gap">
@@ -1223,8 +1223,8 @@ function AdminEval({ athleteId, reload }: any) {
   }
   return (
     <div className="card">
-      <div style={{ fontWeight: 700, marginBottom: 4 }}>{tr("Valutazione riservata")}</div>
-      <div style={{ fontSize: 12, color: 'var(--red)', marginBottom: 14 }}>{tr("Tabella admin-only: l'atleta vede soltanto un'etichetta sintetica di affidabilità (Ottima / Molto buona / Buona / In costruzione).")}</div>
+      <div style={{ fontWeight: 600, marginBottom: 4 }}>{tr("Valutazione riservata")}</div>
+      <div style={{ fontSize: 12.5, color: 'var(--red)', marginBottom: 14 }}>{tr("Tabella admin-only: l'atleta vede soltanto un'etichetta sintetica di affidabilità (Ottima / Molto buona / Buona / In costruzione).")}</div>
       <div className="row2">
         <Field label={tr("Affidabilità (0-100)")}><Input type="number" value={f.reliability ?? ''} onChange={e => setF({ ...f, reliability: e.target.value })} /></Field>
         <Field label={tr("Professionalità (0-100)")}><Input type="number" value={f.professionalism ?? ''} onChange={e => setF({ ...f, professionalism: e.target.value })} /></Field>
@@ -1254,18 +1254,18 @@ function AdminConfig({ cfg, reload }: any) {
   }
   return (
     <div className="card">
-      <div style={{ fontWeight: 700, marginBottom: 4 }}>{tr("Pesi del Commercial Score")}</div>
+      <div style={{ fontWeight: 600, marginBottom: 4 }}>{tr("Pesi del Commercial Score")}</div>
       <div className="muted" style={{ fontSize: 12.5, marginBottom: 14 }}>{tr('La somma deve fare 100. I nuovi pesi si applicano subito al calcolo del punteggio.')}</div>
       <div className="grid g3">
         {COMP_META.map(m => (
           <Field key={m.key} label={tr(m.label)}><Input type="number" value={w[m.key] ?? ''} onChange={e => setW({ ...w, [m.key]: Number(e.target.value) })} /></Field>
         ))}
       </div>
-      <div style={{ margin: '6px 0 18px', fontWeight: 700, color: total === 100 ? 'var(--green)' : 'var(--red)' }}>{tr('Totale: {n}/100').replace('{n}', String(total))}</div>
-      <div style={{ fontWeight: 700, marginBottom: 10 }}>{tr('Bande di valore commerciale (€/anno)')}</div>
+      <div style={{ margin: '6px 0 18px', fontWeight: 600, color: total === 100 ? 'var(--green)' : 'var(--red)' }}>{tr('Totale: {n}/100').replace('{n}', String(total))}</div>
+      <div style={{ fontWeight: 600, marginBottom: 10 }}>{tr('Bande di valore commerciale (€/anno)')}</div>
       {bands.map((b: any, i: number) => (
         <div key={i} className="flex gap" style={{ alignItems: 'center', marginBottom: 8 }}>
-          <span style={{ width: 90, fontSize: 13, fontWeight: 600 }}>Score ≥ {b.min}</span>
+          <span style={{ width: 90, fontSize: 12.5, fontWeight: 600 }}>Score ≥ {b.min}</span>
           <Input type="number" value={b.lo} onChange={e => setBands(bands.map((x, j) => j === i ? { ...x, lo: Number(e.target.value) } : x))} />
           <Input type="number" value={b.hi} onChange={e => setBands(bands.map((x, j) => j === i ? { ...x, hi: Number(e.target.value) } : x))} />
         </div>
@@ -1318,7 +1318,7 @@ function AdminInstagram({ athleteId, reload }: any) {
 
   return (
     <div className="card">
-      <div style={{ fontWeight: 700, marginBottom: 4 }}>{tr("Collegamento Instagram")}</div>
+      <div style={{ fontWeight: 600, marginBottom: 4 }}>{tr("Collegamento Instagram")}</div>
       <div className="muted" style={{ fontSize: 12.5, marginBottom: 12 }}>
         {tr("Sync diretto con la Graph API di Meta: follower, engagement, reach e demografia dell'audience entrano da soli nel Commercial Score. Aggiornamento automatico ogni notte alle 04:30.")}
       </div>
@@ -1326,9 +1326,9 @@ function AdminInstagram({ athleteId, reload }: any) {
       {acc.ig_username && (
         <div className="flex gap" style={{ alignItems: 'center', marginBottom: 12, flexWrap: 'wrap' }}>
           <Badge tone="green">@{acc.ig_username}</Badge>
-          {acc.last_sync_at && <span className="faint" style={{ fontSize: 12 }}>{tr('ultimo sync {date}').replace('{date}', fmtDateTime(acc.last_sync_at))}</span>}
+          {acc.last_sync_at && <span className="faint" style={{ fontSize: 12.5 }}>{tr('ultimo sync {date}').replace('{date}', fmtDateTime(acc.last_sync_at))}</span>}
           {acc.last_sync_status === 'error' && <Badge tone="red">{tr('errore')}</Badge>}
-          {acc.token_expires_at && <span className="faint" style={{ fontSize: 12 }}>{tr('token valido fino al {date}').replace('{date}', fmtDate(acc.token_expires_at))}</span>}
+          {acc.token_expires_at && <span className="faint" style={{ fontSize: 12.5 }}>{tr('token valido fino al {date}').replace('{date}', fmtDate(acc.token_expires_at))}</span>}
         </div>
       )}
       {acc.last_sync_error && <div style={{ fontSize: 12.5, color: 'var(--red)', marginBottom: 12 }}>{acc.last_sync_error}</div>}
@@ -1378,7 +1378,7 @@ function AdminInstagram({ athleteId, reload }: any) {
         </div>
       )}
 
-      <div className="faint" style={{ fontSize: 11.5, marginTop: 14, lineHeight: 1.6 }}>
+      <div className="faint" style={{ fontSize: 12.5, marginTop: 14, lineHeight: 1.6 }}>
         {tr('Le credenziali sono salvate su una tabella riservata (RLS admin-only). Il token viene scambiato automaticamente in long-lived (60 giorni) e rinnovato a ogni sync: non dovrai reincollarlo, salvo revoca del permesso da parte di Meta.')}
       </div>
     </div>
@@ -1435,7 +1435,7 @@ function TeaserAdminCard({ player, prof, topFits }: any) {
   return (
     <div className="card">
       <div className="flex between" style={{ marginBottom: 4, flexWrap: 'wrap', gap: 8 }}>
-        <div style={{ fontWeight: 700 }}>{tr("Teaser per i brand")}</div>
+        <div style={{ fontWeight: 600 }}>{tr("Teaser per i brand")}</div>
         <Badge tone={f.published ? 'green' : 'gold'}>{f.published ? tr('Pubblicato — visibile ai brand') : tr('Bozza — non visibile')}</Badge>
       </div>
       <div className="muted" style={{ fontSize: 12.5, marginBottom: 14 }}>
@@ -1484,8 +1484,8 @@ function AdminBrandSearches() {
     {rows.map(r => (
       <div key={r.id} className="card">
         <div className="flex between" style={{ flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
-          <div style={{ fontWeight: 750, fontSize: 15 }}>{r.brand_name}</div>
-          <span className="faint" style={{ fontSize: 11.5 }}>{tr('aggiornata {date}').replace('{date}', fmtDateTime(r.updated_at))}</span>
+          <div style={{ fontWeight: 800, fontSize: 15 }}>{r.brand_name}</div>
+          <span className="faint" style={{ fontSize: 12.5 }}>{tr('aggiornata {date}').replace('{date}', fmtDateTime(r.updated_at))}</span>
         </div>
         <div className="flex gap" style={{ flexWrap: 'wrap', marginBottom: r.notes ? 10 : 0 }}>
           {(r.categories || []).map((k: string) => <Badge key={k} tone="accent">{k}</Badge>)}
