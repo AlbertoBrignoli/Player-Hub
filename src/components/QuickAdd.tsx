@@ -65,6 +65,8 @@ export default function QuickAdd({ controlled, initialKind, onClose }: {
   // persona di riferimento: null = AUVI (come sempre), altrimenti un professionista del team
   const [team, setTeam] = useState<Pro[]>([])
   const [tag, setTag] = useState<string | null>(null)
+  // allenamento con il preparatore: sessione in presenza, online, oppure un programma online da fare da solo
+  const [mode, setMode] = useState<'presenza' | 'online' | 'programma'>('presenza')
   useEffect(() => {
     if (!open || !athleteId) return
     supabase.from('crm_athlete_team').select('pro_id, role, name, photo_url').eq('player_id', athleteId)
@@ -78,16 +80,33 @@ export default function QuickAdd({ controlled, initialKind, onClose }: {
 
   if (!canEvent && !canTask) return null
 
-  function reset() { setTitle(''); setStart(defaultStart()); setLocation(''); setDue(''); setAssignee('auvi'); setEvType('personale'); setLink(''); setTag(null) }
+  function reset() { setTitle(''); setStart(defaultStart()); setLocation(''); setDue(''); setAssignee('auvi'); setEvType('personale'); setLink(''); setTag(null); setMode('presenza') }
+  const coach = team.find(p => p.pro_id === tag && p.role === 'preparatore')
+  const withCoach = kind === 'event' && evType === 'allenamento' && !!coach
+  const isProgram = withCoach && mode === 'programma'
+  const hasLink = evType === 'call' || (withCoach && mode === 'online')
 
   async function save() {
     if (!title.trim() || !athleteId) return
     setBusy(true)
+    // programma online: è una richiesta al preparatore (gli arriva la notifica), non un impegno in agenda
+    if (isProgram && coach) {
+      const by = due ? ` · ${t('entro il {d}').replace('{d}', new Date(due).toLocaleDateString('it-IT'))}` : ''
+      const { error } = await supabase.from('fitness_requests').insert({
+        player_id: athleteId, trainer_id: coach.pro_id, type: 'programma', note: `${title.trim()}${by}`,
+      })
+      setBusy(false)
+      if (error) { toast(error.message, 'err'); return }
+      toast(t('Richiesta di programma inviata a {name}').replace('{name}', (coach.name || t('Preparatore')).split(' ')[0]))
+      reset(); setOpen(false)
+      return
+    }
     const { error } = kind === 'event'
       ? await supabase.rpc('crm_event_create', {
           p_player: athleteId, p_type: evType, p_title: title.trim(), p_start: new Date(start).toISOString(),
-          p_location: evType === 'call' ? null : (location.trim() || null),
-          p_link: evType === 'call' ? (link.trim() || null) : null, p_tag: tag,
+          p_location: hasLink ? null : (location.trim() || null),
+          p_link: hasLink ? (link.trim() || null) : null, p_tag: tag,
+          p_mode: withCoach ? mode : null,
         })
       : await insertRow('crm_tasks', {
           title: title.trim(), status: 'todo', priority: 'medium', assignee, due_date: due || null,
@@ -113,7 +132,7 @@ export default function QuickAdd({ controlled, initialKind, onClose }: {
       {open && (
         <Modal title={t('Aggiungi')} onClose={() => setOpen(false)}
           footer={<><button className="btn" onClick={() => setOpen(false)}>{t('Annulla')}</button>
-            <button className="btn btn-primary" disabled={busy || !title.trim()} onClick={save}>{busy ? t('Salvo…') : t('Aggiungi')}</button></>}>
+            <button className="btn btn-primary" disabled={busy || !title.trim()} onClick={save}>{busy ? t('Salvo…') : isProgram ? t('Chiedi il programma') : tag ? t('Invia') : t('Aggiungi')}</button></>}>
           {canEvent && canTask && (
             <Tabs tabs={[{ key: 'event', label: t('Impegno') }, { key: 'task', label: t('Task') }]} value={kind} onChange={setKind} style={{ marginBottom: 16 }} />
           )}
@@ -132,11 +151,25 @@ export default function QuickAdd({ controlled, initialKind, onClose }: {
               placeholder={kind === 'event' ? t(EV_TYPES.find(x => x.k === evType)!.ph) : t('Es. Inviare contratto firmato')}
               onKeyDown={e => { if (e.key === 'Enter') save() }} />
           </Field>
-          {kind === 'event' ? (
+          {withCoach && (
+            <div className="field">
+              <label>{t('Come')}</label>
+              <div className="qa-modes" role="radiogroup" aria-label={t('Come')}>
+                {([['presenza', 'In presenza'], ['online', 'Online'], ['programma', 'Programma online']] as const).map(([k, l]) => (
+                  <button key={k} type="button" role="radio" aria-checked={mode === k}
+                    className={`qa-mode ${mode === k ? 'on' : ''}`} onClick={() => setMode(k)}>{t(l)}</button>
+                ))}
+              </div>
+              {isProgram && <div className="t-meta" style={{ marginTop: 6 }}>{t('Il preparatore ti prepara una scheda da fare in autonomia.')}</div>}
+            </div>
+          )}
+          {isProgram ? (
+            <Field label={t('Entro quando (facoltativo)')}><Input type="date" value={due} onChange={e => setDue(e.target.value)} /></Field>
+          ) : kind === 'event' ? (
             <div className="row2">
               <Field label={t('Quando')}><Input type="datetime-local" value={start} onChange={e => setStart(e.target.value)} /></Field>
-              {evType === 'call'
-                ? <Field label={t('Link della call (facoltativo)')}><Input value={link} onChange={e => setLink(e.target.value)} placeholder="https://meet…" inputMode="url" /></Field>
+              {hasLink
+                ? <Field label={evType === 'call' ? t('Link della call (facoltativo)') : t('Link della sessione (facoltativo)')}><Input value={link} onChange={e => setLink(e.target.value)} placeholder="https://meet…" inputMode="url" /></Field>
                 : <Field label={t('Dove (facoltativo)')}><Input value={location} onChange={e => setLocation(e.target.value)} placeholder={t('Indirizzo o luogo')} /></Field>}
             </div>
           ) : (
@@ -169,7 +202,7 @@ export default function QuickAdd({ controlled, initialKind, onClose }: {
                 ))}
               </div>
               <div className="t-meta" style={{ marginTop: 6 }}>
-                {tag ? t('Gli arriva la notifica e conferma lui.') : t('La richiesta arriva ad AUVI.')}
+                {isProgram ? t('Gli arriva la richiesta di programma.') : tag ? t('Gli arriva la notifica e conferma lui.') : t('La richiesta arriva ad AUVI.')}
               </div>
             </div>
           )}
@@ -185,6 +218,9 @@ const QA_CSS = `
 .qa-type { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 6px; min-height: 64px; border-radius: 14px;
   border: 1.5px solid var(--border); background: var(--surface); color: var(--text-dim); font: inherit; font-weight: 600; font-size: var(--fs-meta); cursor: pointer; }
 .qa-type.on { border-color: var(--ink); background: var(--ink); color: var(--yellow); }
+.qa-modes { display: flex; gap: 4px; padding: 4px; border-radius: 12px; background: var(--bg-2); }
+.qa-mode { flex: 1; min-height: 38px; border: 0; border-radius: 9px; background: none; font: inherit; font-size: var(--fs-meta); font-weight: 600; color: var(--text-dim); cursor: pointer; white-space: nowrap; padding: 0 8px; }
+.qa-mode.on { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgba(10,10,10,.12); }
 .qa-people { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 2px 0 4px; }
 .qa-people::-webkit-scrollbar { display: none; }
 .qa-person { flex: 0 0 72px; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 2px; border: 0; background: none; cursor: pointer; font: inherit; color: var(--text); }

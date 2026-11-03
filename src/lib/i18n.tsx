@@ -3840,5 +3840,13 @@ const EN: Record<string, string> = {
   'La richiesta arriva ad AUVI.': 'The request goes to AUVI.',
   'Es. Call con il procuratore': 'E.g. Call with my agent',
   'Es. Forza gambe, recupero': 'E.g. Leg strength, recovery',
+  'entro il {d}': 'by {d}',
+  'Richiesta di programma inviata a {name}': 'Program request sent to {name}',
+  'Chiedi il programma': 'Request the program',
+  'Il preparatore ti prepara una scheda da fare in autonomia.': 'Your coach prepares a plan for you to do on your own.',
+  'Entro quando (facoltativo)': 'By when (optional)',
+  'Link della sessione (facoltativo)': 'Session link (optional)',
+  'Gli arriva la richiesta di programma.': 'They receive the program request.',
+  'Programma online': 'Online program',
 }
 
