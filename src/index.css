@@ -51,6 +51,17 @@
   --shadow-sm: 0 1px 2px rgba(10,10,10,.05);
   --shadow: 0 1px 2px rgba(10,10,10,.04), 0 18px 48px -18px rgba(10,10,10,.22);
 
+  /* gerarchia (v12.13): 5 livelli di testo, 3 pesi, 3 raggi — vedi blocco "Gerarchia" */
+  --fs-page: 19px;           /* titolo pagina (topbar) */
+  --fs-label: 11px;          /* titolo sezione, maiuscolo */
+  --fs-item: 15px;           /* titolo di una voce / card */
+  --fs-body: 14px;           /* testo */
+  --fs-meta: 12.5px;         /* dettaglio, date, note */
+  --w-regular: 400;
+  --w-semi: 600;
+  --w-bold: 800;
+  --radius-pill: 999px;
+
   --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-display: 'Archivo', 'Inter', sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -152,8 +163,27 @@ p { text-wrap: pretty; }
 }
 .card-lg { padding: 28px; }
 .card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; gap: 12px; }
-.card-title { font-size: 15px; font-weight: 700; letter-spacing: -.2px; }
+.card-title { font-size: var(--fs-item); font-weight: var(--w-bold); letter-spacing: -.2px; }
 .card-hint { font-size: 11.5px; color: var(--text-faint); font-weight: 500; }
+
+/* ---------- Gerarchia ----------
+   Regole fisse per tutte le schermate (niente dimensioni inventate nei singoli moduli):
+   1. Titolo pagina   → topbar (.page-title), uno per schermata
+   2. Titolo sezione  → .t-label  (o <Section title>): piccolo, maiuscolo, grigio
+   3. Titolo voce     → .t-item   (o .card-title): 15px grassetto
+   4. Testo           → .t-body   14px
+   5. Dettaglio       → .t-meta   12,5px grigio chiaro
+   Pesi: --w-regular · --w-semi · --w-bold. Raggi: --radius (card) · --radius-sm (dentro le card) · --radius-pill.
+   Navigazione: massimo 2 livelli (menu laterale + schede in alto); dentro la pagina si usano sezioni.
+   Azioni: un solo tasto giallo (.btn-primary) per schermata, il resto .btn neutro. */
+.t-label { font-size: var(--fs-label); font-weight: var(--w-bold); letter-spacing: 1.3px; text-transform: uppercase; color: var(--text-dim); line-height: 1.3; }
+.t-item { font-size: var(--fs-item); font-weight: var(--w-bold); letter-spacing: -.2px; line-height: 1.3; color: var(--text); }
+.t-body { font-size: var(--fs-body); font-weight: var(--w-regular); line-height: 1.5; color: var(--text); }
+.t-meta { font-size: var(--fs-meta); font-weight: var(--w-regular); line-height: 1.45; color: var(--text-faint); }
+.section { display: grid; gap: 10px; }
+.section-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 22px; }
+.section-head .t-meta { margin-top: 2px; }
+.section-body { display: grid; gap: 10px; }
 
 /* Stat card */
 .stat { display: flex; flex-direction: column; gap: 6px; }

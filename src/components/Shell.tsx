@@ -15,7 +15,7 @@ import { Modal, Field, Input, Tabs, Empty } from './ui'
 // Schermate home dei vari ruoli: qui compare l'invito ad attivare le notifiche.
 const HOME_ROUTES = ['dashboard', 'brandhome', 'agent-home', 'insurer-home', 'tax-home', 'physio-home', 'partner-home', 'wealth-home']
 
-export const APP_VERSION = 'v12.12'
+export const APP_VERSION = 'v12.13'
 
 export interface NavDef {
   key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[]
@@ -28,8 +28,10 @@ export interface NavDef {
 // Menu principale (admin / player / creator): 5 gruppi, niente gruppi da una voce,
 // le azioni quotidiane (Messaggi, Agenda, Task) subito dopo i contenuti.
 export const NAV: { group: string; items: NavDef[] }[] = [
+  // ordinate per uso: prima ciò che l'atleta apre ogni giorno
   { group: 'Principale', items: [
     { key: 'dashboard', label: 'Home', icon: 'home' },
+    { key: 'messages', label: 'Chat', icon: 'message' },
     { key: 'editorial', label: 'Calendario', icon: 'calendar', tabs: [
       { key: 'editorial', label: 'Editoriale' },
       { key: 'agenda', label: 'Impegni' },
@@ -37,17 +39,6 @@ export const NAV: { group: string; items: NavDef[] }[] = [
     ]},
     { key: 'media', label: 'Media', icon: 'image' },
     ...(FEATURES.backstage ? [{ key: 'backstage', label: 'Backstage', icon: 'eye' }] : []),
-    { key: 'services', label: 'Servizi AUVI', icon: 'layers' },
-    { key: 'performance', label: 'Atleta', icon: 'activity', tabs: [
-      { key: 'performance', label: 'Performance' },
-      { key: 'fitness', label: 'Preparazione' },
-      { key: 'profile', label: 'Profilo' },
-    ]},
-    // Business = marketing: valore commerciale e sponsor
-    { key: 'commercial', label: 'Business', icon: 'briefcase', tabs: [
-      { key: 'commercial', label: 'Profilo commerciale', roles: ['admin', 'player', 'creator'] },
-      { key: 'sponsors', label: 'Sponsor' },
-    ]},
     // Il mio team = parte operativa: le persone e le aree che gestiscono per l'atleta
     // (le schede di fisco, polizze e patrimonio compaiono solo se quel professionista c'è)
     { key: 'my-team', label: 'Il mio team', icon: 'users', tabs: [
@@ -58,9 +49,19 @@ export const NAV: { group: string; items: NavDef[] }[] = [
       { key: 'wealth', label: 'Patrimonio', roles: ['admin', 'player'], team: 'wealth' },
       { key: 'documents', label: 'Documenti' },
     ]},
+    // Business = marketing: valore commerciale e sponsor
+    { key: 'commercial', label: 'Business', icon: 'briefcase', tabs: [
+      { key: 'commercial', label: 'Profilo commerciale', roles: ['admin', 'player', 'creator'] },
+      { key: 'sponsors', label: 'Sponsor' },
+    ]},
+    { key: 'performance', label: 'Atleta', icon: 'activity', tabs: [
+      { key: 'performance', label: 'Performance' },
+      { key: 'fitness', label: 'Preparazione' },
+      { key: 'profile', label: 'Profilo' },
+    ]},
   ]},
   { group: 'Altro', items: [
-    { key: 'messages', label: 'Chat', icon: 'message' },
+    { key: 'services', label: 'Servizi AUVI', icon: 'layers' },
     { key: 'mail', label: 'Posta', icon: 'mail', mailbox: true },
     { key: 'my-files', label: 'I miei file', icon: 'folder', adminOnly: true },
     { key: 'access-requests', label: 'Collegamenti', icon: 'key' },
@@ -372,9 +373,9 @@ export default function Shell({ route, setRoute, right, children }: {
     : isPro ? proTabbar(role as ProRole)
     : [
               { key: 'dashboard', label: 'Home', icon: 'home' },
+              { key: 'messages', label: 'Chat', icon: 'message' },
               { key: 'editorial', label: 'Calendario', icon: 'calendar' },
               { key: 'media', label: 'Media', icon: 'image' },
-              { key: 'services', label: 'Servizi', icon: 'layers' },
             ]
   const tabbarKeys = new Set(tabbarItems.map(t => t.key))
   const title = hub && hubTabs.length > 1 ? { t: hub.label, s: title0.s } : title0

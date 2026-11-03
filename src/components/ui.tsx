@@ -95,6 +95,25 @@ export function Stat({ label, value, sub, icon, tone }: { label: string; value: 
   )
 }
 
+// Sezione di pagina: titoletto maiuscolo (+ riga di dettaglio e azione a destra) sopra il contenuto.
+// È il secondo livello della gerarchia: dentro una schermata si usano sezioni, non altre schede.
+export function Section({ title, sub, action, children, style }: {
+  title: React.ReactNode; sub?: React.ReactNode; action?: React.ReactNode; children: React.ReactNode; style?: React.CSSProperties
+}) {
+  return (
+    <section className="section" style={style}>
+      <div className="section-head">
+        <div style={{ minWidth: 0 }}>
+          <div className="t-label">{title}</div>
+          {sub && <div className="t-meta">{sub}</div>}
+        </div>
+        {action}
+      </div>
+      <div className="section-body">{children}</div>
+    </section>
+  )
+}
+
 export function ConfirmButton({ onConfirm, children, className = 'btn btn-danger btn-sm' }: {
   onConfirm: () => void; children: React.ReactNode; className?: string
 }) {
