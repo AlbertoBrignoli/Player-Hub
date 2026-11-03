@@ -15,7 +15,7 @@ import { Modal, Field, Input, Tabs, Empty } from './ui'
 // Schermate home dei vari ruoli: qui compare l'invito ad attivare le notifiche.
 const HOME_ROUTES = ['dashboard', 'brandhome', 'agent-home', 'insurer-home', 'tax-home', 'physio-home', 'partner-home', 'wealth-home']
 
-export const APP_VERSION = 'v12.17'
+export const APP_VERSION = 'v12.18'
 
 export interface NavDef {
   key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[]
@@ -40,10 +40,11 @@ export const NAV: { group: string; items: NavDef[] }[] = [
     { key: 'media', label: 'Media', icon: 'image' },
     ...(FEATURES.backstage ? [{ key: 'backstage', label: 'Backstage', icon: 'eye' }] : []),
     // Il mio team = parte operativa: le persone e le aree che gestiscono per l'atleta
-    // (le schede di fisco, polizze e patrimonio compaiono solo se quel professionista c'è)
+    // (preparazione, fisco, polizze e patrimonio: ogni area del suo professionista, solo se c'è)
     { key: 'my-team', label: 'Il mio team', icon: 'users', tabs: [
       { key: 'my-team', label: 'Team' },
       { key: 'contracts', label: 'Contratti' },
+      { key: 'fitness', label: 'Preparazione', roles: ['admin', 'player'], team: 'preparatore' },
       { key: 'legaltax', label: 'Fisco e legale', roles: ['admin', 'player'], team: 'commercialista' },
       { key: 'insurance', label: 'Polizze', roles: ['admin', 'player'], team: 'assicuratore' },
       { key: 'wealth', label: 'Patrimonio', roles: ['admin', 'player'], team: 'wealth' },
@@ -62,10 +63,9 @@ export const NAV: { group: string; items: NavDef[] }[] = [
       { key: 'performance', label: 'Performance' },
       { key: 'profile', label: 'Profilo' },
     ]},
-    // Servizi: di campo (con la preparazione atletica) ed extra campo, più le richieste fatte
+    // Servizi: di campo ed extra campo, più le richieste fatte
     { key: 'services', label: 'Servizi AUVI', icon: 'layers', tabs: [
       { key: 'services', label: 'Campo' },
-      { key: 'fitness', label: 'Preparazione', roles: ['admin', 'player', 'creator'] },
       { key: 'services-extra', label: 'Extra campo' },
       { key: 'services-req', label: 'Richieste' },
     ]},
