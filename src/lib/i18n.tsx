@@ -3818,5 +3818,7 @@ const EN: Record<string, string> = {
   'Su / giù': 'Up / down',
   'Zoom': 'Zoom',
   'Centra': 'Center',
+  'Mail': 'Mail',
+  'Inviti e accessi dei professionisti': 'Professionals’ invites and access',
 }
 

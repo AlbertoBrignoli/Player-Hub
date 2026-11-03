@@ -15,7 +15,7 @@ import { Modal, Field, Input, Tabs, Empty } from './ui'
 // Schermate home dei vari ruoli: qui compare l'invito ad attivare le notifiche.
 const HOME_ROUTES = ['dashboard', 'brandhome', 'agent-home', 'insurer-home', 'tax-home', 'physio-home', 'partner-home', 'wealth-home']
 
-export const APP_VERSION = 'v12.19'
+export const APP_VERSION = 'v12.20'
 
 export interface NavDef {
   key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[]
@@ -31,6 +31,12 @@ export const NAV: { group: string; items: NavDef[] }[] = [
   // ordinate per uso: prima ciò che l'atleta apre ogni giorno
   { group: 'Principale', items: [
     { key: 'dashboard', label: 'Home', icon: 'home' },
+    // Servizi: di campo ed extra campo, più le richieste fatte
+    { key: 'services', label: 'Servizi AUVI', icon: 'layers', tabs: [
+      { key: 'services', label: 'Campo' },
+      { key: 'services-extra', label: 'Extra campo' },
+      { key: 'services-req', label: 'Richieste' },
+    ]},
     { key: 'messages', label: 'Chat', icon: 'message' },
     { key: 'editorial', label: 'Calendario', icon: 'calendar', tabs: [
       { key: 'editorial', label: 'Editoriale' },
@@ -39,8 +45,9 @@ export const NAV: { group: string; items: NavDef[] }[] = [
     ]},
     { key: 'media', label: 'Media', icon: 'image' },
     ...(FEATURES.backstage ? [{ key: 'backstage', label: 'Backstage', icon: 'eye' }] : []),
-    // Il mio team = parte operativa: le persone e le aree che gestiscono per l'atleta
-    // (preparazione, fisco, polizze e patrimonio: ogni area del suo professionista, solo se c'è)
+    // Il mio team = parte operativa: le persone, le aree che gestiscono per l'atleta
+    // (preparazione, fisco, polizze e patrimonio: ognuna solo se c'è quel professionista)
+    // e i collegamenti, cioè inviti e accessi dei professionisti
     { key: 'my-team', label: 'Il mio team', icon: 'users', tabs: [
       { key: 'my-team', label: 'Team' },
       { key: 'contracts', label: 'Contratti' },
@@ -49,6 +56,7 @@ export const NAV: { group: string; items: NavDef[] }[] = [
       { key: 'insurance', label: 'Polizze', roles: ['admin', 'player'], team: 'assicuratore' },
       { key: 'wealth', label: 'Patrimonio', roles: ['admin', 'player'], team: 'wealth' },
       { key: 'documents', label: 'Documenti' },
+      { key: 'access-requests', label: 'Collegamenti' },
     ]},
     // Business = marketing: valore commerciale e sponsor
     { key: 'commercial', label: 'Business', icon: 'briefcase', tabs: [
@@ -63,17 +71,10 @@ export const NAV: { group: string; items: NavDef[] }[] = [
       { key: 'performance', label: 'Performance' },
       { key: 'profile', label: 'Profilo' },
     ]},
-    // Servizi: di campo ed extra campo, più le richieste fatte
-    { key: 'services', label: 'Servizi AUVI', icon: 'layers', tabs: [
-      { key: 'services', label: 'Campo' },
-      { key: 'services-extra', label: 'Extra campo' },
-      { key: 'services-req', label: 'Richieste' },
-    ]},
   ]},
   { group: 'Altro', items: [
-    { key: 'mail', label: 'Posta', icon: 'mail', mailbox: true },
+    { key: 'mail', label: 'Mail', icon: 'mail', mailbox: true },
     { key: 'my-files', label: 'I miei file', icon: 'folder', adminOnly: true },
-    { key: 'access-requests', label: 'Collegamenti', icon: 'key' },
   ]},
 ]
 
@@ -241,13 +242,13 @@ const TITLES: Record<string, { t: string; s: string }> = {
   agenda: { t: 'Agenda', s: 'Extra campo · impegni, prenotazioni, call, viaggi' },
   tasks: { t: 'Task', s: 'Attività condivise' },
   messages: { t: 'Messaggi', s: 'Comunicazione diretta' },
-  mail: { t: 'Posta', s: 'Tutte le mail della gestione, in un solo indirizzo' },
+  mail: { t: 'Mail', s: 'Tutte le mail della gestione, in un solo indirizzo' },
   settings: { t: 'Impostazioni', s: 'Password, accessi e configurazione' },
   brandhome: { t: 'Home', s: 'La tua scheda e gli atleti in partnership' },
   'coach-office': { t: 'Il mio ufficio', s: 'Agenda personale, clienti e cassa · area privata' },
   'agent-home': { t: 'Home', s: 'La tua scheda e i tuoi assistiti' },
   'insurer-home': { t: 'Home', s: 'La tua scheda e gli atleti seguiti' },
-  'access-requests': { t: 'Collegamenti', s: 'Richieste di accesso agli atleti' },
+  'access-requests': { t: 'Collegamenti', s: 'Inviti e accessi dei professionisti' },
   'insurer-profile': { t: 'Il mio profilo', s: 'Contatti e agenzia' },
   insurance: { t: 'Insurance', s: 'Polizze, documenti e scadenze' },
   legaltax: { t: 'Legal & Tax', s: 'Pagamenti, documenti e richieste' },
@@ -391,9 +392,9 @@ export default function Shell({ route, setRoute, right, children }: {
     : isPro ? proTabbar(role as ProRole)
     : [
               { key: 'dashboard', label: 'Home', icon: 'home' },
+              { key: 'services', label: 'Servizi', icon: 'layers' },
               { key: 'messages', label: 'Chat', icon: 'message' },
               { key: 'editorial', label: 'Calendario', icon: 'calendar' },
-              { key: 'media', label: 'Media', icon: 'image' },
             ]
   const tabbarKeys = new Set(tabbarItems.map(t => t.key))
   const title = hub && hubTabs.length > 1 ? { t: hub.label, s: title0.s } : title0

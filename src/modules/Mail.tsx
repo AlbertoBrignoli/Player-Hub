@@ -197,7 +197,7 @@ function ThreadView({ th, onBack, onReply, onArchive }: { th: Thread; onBack: ()
   return (
     <div className="grid" style={{ gap: 10 }}>
       <div className="flex gap" style={{ gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-        <button className="btn btn-sm" onClick={onBack}>← {t('Posta')}</button>
+        <button className="btn btn-sm" onClick={onBack}>← {t('Mail')}</button>
         <span style={{ flex: 1 }} />
         <button className="btn btn-sm" onClick={onArchive}><Icon name="archive" size={13} /> {th.archived ? t('Ripristina') : t('Archivia')}</button>
         <button className="btn btn-primary btn-sm" onClick={onReply}><Icon name="send" size={13} /> {t('Rispondi')}</button>
