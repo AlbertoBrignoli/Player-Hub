@@ -27,11 +27,11 @@ const CHIP: Record<string, { l: string; c: string }> = {
 // Desktop (>880px): colonna sinistra 1-4, destra 5-7. Stesso DOM, nessun `order`.
 const HOME_CSS = `
 /* La tua stagione: barra compatta sotto la partita, cliccabile */
-.home-season { width: 100%; display: flex; align-items: center; gap: 10px; text-align: left; cursor: pointer; background: var(--surface); color: var(--ink); border: 1px solid var(--border); border-radius: 16px; padding: 10px 12px; min-height: 56px; transition: transform .12s, border-color .15s; }
+.home-season { width: 100%; display: flex; align-items: center; gap: 10px; text-align: left; cursor: pointer; background: var(--surface); color: var(--ink); border: 1px solid var(--border); border-radius: 20px; padding: 10px 12px; min-height: 56px; transition: transform .12s, border-color .15s; }
 .home-season:hover { border-color: var(--border-2); }
 .home-season:active { transform: scale(.985); }
-.home-season-ic { width: 32px; height: 32px; border-radius: 10px; background: var(--yellow); color: var(--ink); display: grid; place-items: center; flex-shrink: 0; }
-.home-season-k { font-size: var(--fs-label); font-weight: var(--w-bold); letter-spacing: 1px; text-transform: uppercase; color: var(--text-dim); flex-shrink: 0; }
+.home-season-ic { width: 32px; height: 32px; border-radius: 12px; background: var(--yellow); color: var(--ink); display: grid; place-items: center; flex-shrink: 0; }
+.home-season-k { font-size: var(--fs-meta); font-weight: var(--w-semi); color: var(--text-dim); flex-shrink: 0; }
 .home-season-nums { flex: 1; min-width: 0; display: flex; justify-content: flex-end; gap: 14px; font-size: var(--fs-meta); color: var(--text-dim); white-space: nowrap; overflow: hidden; }
 .home-season-nums b { font-family: var(--font-display); font-stretch: 125%; font-weight: 700; font-size: 15px; color: var(--ink); font-variant-numeric: tabular-nums; }
 @media (max-width: 600px) { .home-season-k { display: none; } .home-season-nums { justify-content: space-between; gap: 8px; } }
@@ -39,17 +39,21 @@ const HOME_CSS = `
 .home { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 28px; align-items: start; }
 .home-col { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
 .home-sec { min-width: 0; width: 100%; }
+.home-group { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.home-group > .home-h { margin-bottom: 0; }
 .home-trunc { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.home-h { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; font-size: var(--fs-label); font-weight: var(--w-bold); letter-spacing: 1.3px; text-transform: uppercase; color: var(--text-dim); margin: 0 2px 10px; }
+.home-h { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; font-size: 17px; font-weight: var(--w-bold); letter-spacing: -.2px; color: var(--ink); margin: 0 2px 10px; }
+.home-h-link { border: 0; background: none; padding: 4px 0; font: inherit; font-size: var(--fs-meta); font-weight: 600; letter-spacing: 0; color: var(--text-dim); cursor: pointer; display: inline-flex; align-items: center; gap: 2px; }
+.home-h-link:hover { color: var(--ink); }
 .home-h .n { font-weight: 600; font-size: var(--fs-meta); letter-spacing: 0; text-transform: none; color: var(--text-faint); }
-.home-card { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; text-align: left; }
+.home-card { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 20px; overflow: hidden; text-align: left; }
 button.home-card { cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .12s; }
 button.home-card:hover { border-color: var(--border-2); box-shadow: var(--shadow-sm); }
 button.home-card:active, .home-qa:active, .home-contact:active { transform: scale(.98); }
 
 /* 1 identita */
 .home-id { display: flex; align-items: center; gap: 14px; }
-.home-id-ph { width: 52px; height: 52px; border-radius: 15px; object-fit: cover; border: 1px solid var(--border-2); flex-shrink: 0; }
+.home-id-ph { width: 52px; height: 52px; border-radius: 12px; object-fit: cover; border: 1px solid var(--border-2); flex-shrink: 0; }
 .home-id-hi { font-size: 12.5px; color: var(--text-faint); font-weight: 400; }
 .home-id-name { font-family: var(--font-display); font-stretch: 125%; font-weight: 700; text-transform: uppercase; font-size: 22px; line-height: 1.05; margin-top: 2px; }
 .home-id-role { font-size: 12.5px; color: var(--text-dim); margin-top: 3px; }
@@ -84,7 +88,7 @@ button.home-card:active, .home-qa:active, .home-contact:active { transform: scal
 .home-qa-l { font-size: 12.5px; font-weight: 600; color: var(--text); }
 .home-qa-ic { position: relative; }
 .home-qa.primary .home-qa-ic { box-shadow: 0 6px 18px -8px rgba(10,10,10,.35); }
-.home-qa-badge { position: absolute; top: -4px; right: -8px; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; background: var(--grad); color: #fff; font-size: 11px; font-weight: 800; display: grid; place-items: center; border: 2px solid var(--bg); font-variant-numeric: tabular-nums; }
+.home-qa-badge { position: absolute; top: -4px; right: -8px; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; background: var(--ink); color: var(--yellow); font-size: 11px; font-weight: 800; display: grid; place-items: center; border: 2px solid var(--bg); font-variant-numeric: tabular-nums; }
 .home-score-content { display: flex; align-items: center; gap: 10px; margin-top: 14px; padding: 10px 12px; border-radius: 14px; background: rgba(255,255,255,.1); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); text-align: left; }
 .home-score-content img, .home-score-content-ic { width: 38px; height: 38px; border-radius: 10px; object-fit: cover; flex-shrink: 0; display: grid; place-items: center; background: rgba(255,255,255,.12); }
 .home-score-content-k { font-size: 11px; color: rgba(255,255,255,.7); font-weight: 600; letter-spacing: .3px; }
@@ -103,7 +107,9 @@ button.home-card:active, .home-qa:active, .home-contact:active { transform: scal
 .home-score .ed-hero-img { filter: grayscale(1); }
 .home-score.ed-hero { height: auto; min-height: 0; padding: 0; border: 1px solid var(--border); display: block; cursor: pointer; }
 .home-score-body { position: relative; padding: 16px 16px 16px; }
-.home-score .ed-livepill { margin-bottom: 14px; }
+.home-score .ed-livepill { margin-bottom: 14px; background: var(--yellow); color: var(--ink); }
+.home-score .ed-livepill .ed-livedot { background: var(--ink); }
+.home-score .ed-livepill span { color: var(--ink); }
 .home-score-row { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 8px; }
 .home-team { display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0; text-align: center; }
 .home-team-logo { width: 46px; height: 46px; object-fit: contain; }
@@ -126,7 +132,7 @@ button.home-card:active, .home-qa:active, .home-contact:active { transform: scal
 .home-tl-item { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
 .home-tl-row { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 8px 14px; }
 .home-tl-row + .home-tl-row { border-top: 1px solid var(--border); }
-.home-tl-day { width: 44px; flex-shrink: 0; text-align: center; border-radius: 10px; background: var(--bg-2); padding: 5px 0 4px; }
+.home-tl-day { width: 44px; flex-shrink: 0; text-align: center; border-radius: 12px; background: var(--bg-2); padding: 5px 0 4px; }
 .home-tl-day .w { font-size: 11px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: var(--text-faint); }
 .home-tl-day .d { font-weight: 700; font-size: 15px; line-height: 1.1; color: var(--text); font-variant-numeric: tabular-nums; }
 .home-tl-time { width: 42px; flex-shrink: 0; font-size: 12.5px; font-weight: 600; color: var(--text-dim); font-variant-numeric: tabular-nums; }
@@ -190,7 +196,7 @@ button.home-card:active, .home-qa:active, .home-contact:active { transform: scal
 /* iPhone: tutto più compatto, come le app Apple (meno aria morta, stesse gerarchie) */
 @media (max-width: 600px) {
   .home { gap: 16px; }
-  .home-id-ph, .home-id .avatar { width: 44px !important; height: 44px !important; border-radius: 13px !important; }
+  .home-id-ph, .home-id .avatar { width: 44px !important; height: 44px !important; border-radius: 12px !important; }
   .home-id-hi, .home-id-name { display: none; }
   .home-id-line { display: block; font-size: 17px; line-height: 1.25; color: var(--text); }
   .home-id-line b { font-weight: var(--w-bold); }
@@ -379,7 +385,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
     <header className="home-sec home-id">
       {player?.photo_url
         ? <img className="home-id-ph" src={player.photo_url} alt="" />
-        : <div className="avatar" style={{ width: 52, height: 52, fontSize: 18, borderRadius: 15, flexShrink: 0 }}>{(player?.name || firstName || 'A')[0]}</div>}
+        : <div className="avatar" style={{ width: 52, height: 52, fontSize: 18, borderRadius: 12, flexShrink: 0 }}>{(player?.name || firstName || 'A')[0]}</div>}
       <div style={{ minWidth: 0 }}>
         <div className="home-id-hi home-trunc">{greeting}{firstName ? `, ${firstName}` : ''}</div>
         {/* telefono: saluto e nome dell'atleta in una riga sola */}
@@ -522,7 +528,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
   }
   const agenda = (
     <section className="home-sec">
-      <div className="home-h">{t('Prossimi giorni')}</div>
+      <div className="home-h">{t('Calendario')}<button className="home-h-link" onClick={() => goto('agenda')}>{t('Apri')} <Icon name="chevron-right" size={14} /></button></div>
       <button className="home-card home-agenda" onClick={() => goto('agenda')} aria-label={t('Apri agenda')}>
         {events.length === 0 ? (
           <div className="home-tl-row">
@@ -578,20 +584,25 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
       <style>{HOME_CSS}</style>
       <div className="home-col">
         {/* su telefono una colonna sola, ma con le priorità del PC: in alto chi sei e le azioni,
-            poi partita con sotto la barra della stagione, prossimi giorni e servizi */}
+            poi le sezioni nell'ordine della barra in basso: Calendario, Atleta, Servizi. Ogni titolo è il nome
+            della voce di menu in cui porta */}
         <div className="home-o1"><div className="home-sec home-top">
           {identity}
           {quick}
         </div></div>
         {todo && <div className="home-o2">{todo}</div>}
-        <div className="home-o3">{hero}</div>
-        <div className="home-o4">{stats}</div>
+        {/* Atleta: prossima partita e numeri della stagione, sotto lo stesso titolo del menu */}
+        <div className="home-o4 home-group">
+          <div className="home-h">{t('Atleta')}<button className="home-h-link" onClick={() => goto('performance')}>{t('Apri')} <Icon name="chevron-right" size={14} /></button></div>
+          {hero}
+          {stats}
+        </div>
         <div className="home-o7"><HomeServices goto={goto} /></div>
       </div>
       <div className="home-col">
-        <div className="home-o5">{agenda}</div>
+        <div className="home-o3">{agenda}</div>
         {/* referenti solo su PC: su telefono e iPad sono già in Il mio team */}
-        <div className="home-o6 home-desk"><HomeContacts goto={goto} title={t('I tuoi referenti')} /></div>
+        <div className="home-o6 home-desk"><HomeContacts goto={goto} title={t('Il mio team')} /></div>
       </div>
       {adding && <QuickAddModal initialKind={adding} onClose={() => setAdding(null)} />}
     </div>

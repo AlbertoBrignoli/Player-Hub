@@ -99,7 +99,7 @@ export default function HomeContacts({ goto, title }: { goto: (r: string) => voi
 
   return (
     <section className="home-sec">
-      <div className="home-h">{title}</div>
+      <div className="home-h">{title}<button className="home-h-link" onClick={() => goto('my-team')}>{t('Apri')} <Icon name="chevron-right" size={14} /></button></div>
       <div className="home-contacts">
         {/* il consulente dedicato AUVI è sempre il primo: un tocco apre direttamente la sua chat */}
         <button className="home-contact" onClick={() => chat('team')} aria-label={t('Scrivi al tuo consulente AUVI')}>
