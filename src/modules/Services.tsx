@@ -4,7 +4,7 @@ import { toast } from '../lib/toast'
 import { useAuth } from '../auth/AuthContext'
 import { useAthlete } from '../lib/athlete'
 import { useLang } from '../lib/i18n'
-import { Modal, Field, Textarea, Select, Empty, Spinner } from '../components/ui'
+import { Modal, Field, Input, Textarea, Select, Empty, Spinner } from '../components/ui'
 import Icon from '../components/Icon'
 import { fmtDate } from '../lib/format'
 import { useRouteParam, goto } from '../lib/route'
@@ -572,16 +572,44 @@ export function ManageForm({ req, service, athlete, onClose, onSaved }: {
   const [status, setStatus] = useState(req.status)
   const [note, setNote] = useState(req.internal_note || '')
   const [busy, setBusy] = useState(false)
+  const { session } = useAuth()
+
+  // Confermata → finisce nel calendario dell'atleta, collegata alla richiesta (una volta sola).
+  // Data, ora e luogo arrivano già dalle risposte (es. transfer: giorno, ora, da dove).
+  const a = (req.answers || {}) as Record<string, any>
+  const ora = typeof a.ora === 'string' && /^\d{1,2}[:.]\d{2}$/.test(a.ora.trim()) ? a.ora.trim().replace('.', ':').padStart(5, '0') : '10:00'
+  const giorno = (typeof a.data === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(a.data) ? a.data : req.preferred_date) || ''
+  const [linked, setLinked] = useState<string | null>(null)
+  const [toCal, setToCal] = useState(true)
+  const [calTitle, setCalTitle] = useState(req.service_title || '')
+  const [calStart, setCalStart] = useState(giorno ? `${giorno}T${ora}` : '')
+  const [calPlace, setCalPlace] = useState(typeof a.da === 'string' ? a.da : '')
+  useEffect(() => {
+    supabase.from('crm_events').select('start_at').eq('service_request_id', req.id).limit(1).maybeSingle()
+      .then(({ data }) => setLinked((data as { start_at: string } | null)?.start_at || null))
+  }, [req.id])
+  const askCal = status === 'completata' && !linked
 
   async function save() {
+    if (askCal && toCal && !calStart) { toast(t('Indica data e ora per il calendario'), 'err'); return }
     setBusy(true)
     const { error } = await supabase.from('crm_service_requests').update({
       status, internal_note: note || null, updated_at: new Date().toISOString(),
       closed_at: ['completata', 'annullata'].includes(status) ? new Date().toISOString() : null,
     }).eq('id', req.id)
+    if (!error && askCal && toCal) {
+      const route = [a.da, a.a].filter(Boolean).join(' → ')
+      const { error: e2 } = await supabase.from('crm_events').insert({
+        title: calTitle.trim() || req.service_title, type: /transfer|ncc/i.test(req.service_title || '') ? 'viaggio' : 'personale',
+        start_at: new Date(calStart).toISOString(), location: calPlace.trim() || null,
+        notes: [route, a.ritorno === 'Andata e ritorno' && a.ritorno_quando ? `${t('Ritorno')}: ${a.ritorno_quando}` : '', note].filter(Boolean).join('\n') || null,
+        player_id: req.player_id, created_by: session?.user.id, service_request_id: req.id,
+      })
+      if (e2) { setBusy(false); toast(e2.message, 'err'); return }
+    }
     setBusy(false)
     if (error) { toast(error.message, 'err'); return }
-    toast(t('Richiesta aggiornata'))
+    toast(askCal && toCal ? t('Confermata e messa in calendario') : t('Richiesta aggiornata'))
     onSaved()
   }
 
@@ -628,6 +656,28 @@ export function ManageForm({ req, service, athlete, onClose, onSaved }: {
           <option value="annullata">{t('Annullata')}</option>
         </Select>
       </Field>
+      {askCal && (
+        <div style={{ background: 'var(--yellow-soft)', borderRadius: 12, padding: 12, marginBottom: 12 }}>
+          <label className="flex gap" style={{ alignItems: 'center', gap: 8, cursor: 'pointer', fontWeight: 700 }}>
+            <input type="checkbox" checked={toCal} onChange={e => setToCal(e.target.checked)} />
+            {t("Metti nel calendario dell'atleta")}
+          </label>
+          {toCal && (
+            <div className="grid" style={{ gap: 8, marginTop: 10 }}>
+              <Field label={t('Titolo')}><Input value={calTitle} onChange={e => setCalTitle(e.target.value)} /></Field>
+              <div className="row2">
+                <Field label={t('Data e ora')}><Input type="datetime-local" value={calStart} onChange={e => setCalStart(e.target.value)} /></Field>
+                <Field label={t('Dove (facoltativo)')}><Input value={calPlace} onChange={e => setCalPlace(e.target.value)} /></Field>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+      {linked && (
+        <div className="t-meta" style={{ marginBottom: 10 }}>
+          <Icon name="calendar" size={12} /> {t('Già nel calendario: {d}').replace('{d}', fmtDate(linked))}
+        </div>
+      )}
       <Field label={t("Messaggio per l'atleta")}>
         <Textarea rows={2} value={note} onChange={e => setNote(e.target.value)}
           placeholder={t("Es. ho girato la richiesta al nostro partner, ti aggiorno entro domani")} />
