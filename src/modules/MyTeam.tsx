@@ -24,10 +24,11 @@ type Member = {
 
 type Area = { route: string; label: string }
 const ROLE: Record<string, { label: string; icon: string; area?: Area }> = {
-  agente:         { label: 'Procuratore',          icon: 'briefcase', area: { route: 'contracts', label: 'Contratti e Documenti' } },
-  preparatore:    { label: 'Preparatore atletico', icon: 'activity',  area: { route: 'fitness',  label: 'Area Fitness' } },
-  assicuratore:   { label: 'Assicuratore',         icon: 'lock',      area: { route: 'insurance', label: 'Polizze e coperture' } },
-  commercialista: { label: 'Commercialista',       icon: 'briefcase', area: { route: 'legaltax', label: 'Legal & Tax' } },
+  // l'etichetta dell'area è la stessa del percorso in alto ("Il mio team / Polizze")
+  agente:         { label: 'Procuratore',          icon: 'briefcase', area: { route: 'contracts', label: 'Contratti' } },
+  preparatore:    { label: 'Preparatore atletico', icon: 'activity',  area: { route: 'fitness',  label: 'Preparazione' } },
+  assicuratore:   { label: 'Assicuratore',         icon: 'lock',      area: { route: 'insurance', label: 'Polizze' } },
+  commercialista: { label: 'Commercialista',       icon: 'briefcase', area: { route: 'legaltax', label: 'Fisco e legale' } },
   nutrizionista:  { label: 'Nutrizionista',        icon: 'layers',    area: { route: 'agenda', label: 'Piano alimentare' } },
   wealth:         { label: 'Wealth manager',       icon: 'briefcase', area: { route: 'wealth', label: 'Patrimonio' } },
 }
@@ -50,6 +51,8 @@ export default function MyTeam({ goto }: { goto?: (r: string) => void }) {
   const isRoster = ROSTER_ROLES.includes(role || '')
   // Chi può aprire tutte le aree: agenzia e atleta. Un professionista apre solo la sua.
   const canOpenAll = isAdmin || !PRO.includes(role || '')
+  // gli inviti ai professionisti li gestiscono l'agenzia e l'atleta
+  const canInvite = isAdmin || role === 'player'
 
   useEffect(() => {
     if (isRoster) { setLoading(false); return }
@@ -112,15 +115,21 @@ export default function MyTeam({ goto }: { goto?: (r: string) => void }) {
         ) : (
           <div className="avatar" style={{ width: 58, height: 58, fontSize: 22 }}>{initials(athlete?.name)}</div>
         )}
-        <div style={{ minWidth: 0 }}>
+        <div style={{ minWidth: 0, flex: 1 }}>
           <div className="t-label">
             {t('Il club di')}
           </div>
           <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: -0.3 }}>{athlete?.name || t('Atleta')}</div>
-          <div style={{ fontSize: 12.5, color: 'var(--text-dim)', marginTop: 2 }}>
+          <div className="t-meta" style={{ marginTop: 2 }}>
             {t('Le persone che lavorano al tuo fianco: apri la scheda per entrare nella loro area.')}
           </div>
         </div>
+        {/* collegamenti = inviti e accessi: un'azione di servizio, non un'area del team */}
+        {canInvite && goto && (
+          <button className="btn btn-sm" style={{ flexShrink: 0 }} onClick={() => goto('access-requests')}>
+            <Icon name="key" size={14} /> {t('Collegamenti')}
+          </button>
+        )}
       </div>
 
       {/* AUVI Agency: l'advisor è sempre presente */}
@@ -140,7 +149,7 @@ export default function MyTeam({ goto }: { goto?: (r: string) => void }) {
             hint={isAdmin
               ? t('Quando colleghi un preparatore, un procuratore, un assicuratore o un commercialista a questo atleta, compaiono qui.')
               : t('Il tuo team apparirà qui man mano che i professionisti vengono collegati.')} />
-          {isAdmin && goto && (
+          {canInvite && goto && (
             <button className="btn btn-primary" style={{ marginTop: 14 }} onClick={() => goto('access-requests')}>
               <Icon name="key" size={15} /> {t('Gestisci i collegamenti')}
             </button>
@@ -171,10 +180,15 @@ export default function MyTeam({ goto }: { goto?: (r: string) => void }) {
           fallback={openPro} onClose={() => setOpenPro(null)} />
       )}
 
-      {isAdmin && goto && rows.length > 0 && (
-        <button className="btn btn-ghost btn-sm" style={{ alignSelf: 'start' }} onClick={() => goto('access-requests')}>
-          <Icon name="key" size={14} /> {t('Gestisci i collegamenti')}
-        </button>
+      {/* archivio condiviso: contratti e documenti dell'atleta, non legati a un solo professionista */}
+      {canOpenAll && goto && (
+        <div>
+          <div className="t-label" style={{ paddingLeft: 2 }}>{t('Archivio')}</div>
+          <div style={TILES}>
+            <ArchiveTile icon="briefcase" title={t('Contratti')} sub={t('Accordi sportivi e scadenze')} onClick={() => goto('contracts')} />
+            <ArchiveTile icon="archive" title={t('Documenti')} sub={t('Archivio file riservato')} onClick={() => goto('documents')} />
+          </div>
+        </div>
       )}
     </div>
   )
@@ -233,6 +247,23 @@ function MemberCard({ name, roleLabel, icon, title, agency, photo, logo, email, 
           href={whatsappUrl(whatsapp || phone!)}><Icon name="smartphone" size={15} /></a>}
       </div>
     </div>
+  )
+}
+
+function ArchiveTile({ icon, title, sub, onClick }: { icon: string; title: string; sub: string; onClick: () => void }) {
+  return (
+    <button onClick={onClick} className="mt-tile flex gap"
+      style={{ alignItems: 'center', gap: 12, textAlign: 'left', cursor: 'pointer', color: 'var(--text)',
+        background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: 14, minWidth: 0 }}>
+      <span style={{ width: 40, height: 40, borderRadius: 12, flexShrink: 0, display: 'grid', placeItems: 'center', background: 'var(--surface-2)' }}>
+        <Icon name={icon} size={18} />
+      </span>
+      <span style={{ minWidth: 0, flex: 1 }}>
+        <span className="t-item" style={{ display: 'block' }}>{title}</span>
+        <span className="t-meta" style={{ display: 'block' }}>{sub}</span>
+      </span>
+      <Icon name="chevron-right" size={16} />
+    </button>
   )
 }
 

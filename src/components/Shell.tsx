@@ -15,7 +15,7 @@ import { Modal, Field, Input, Tabs, Empty } from './ui'
 // Schermate home dei vari ruoli: qui compare l'invito ad attivare le notifiche.
 const HOME_ROUTES = ['dashboard', 'brandhome', 'agent-home', 'insurer-home', 'tax-home', 'physio-home', 'partner-home', 'wealth-home']
 
-export const APP_VERSION = 'v12.21'
+export const APP_VERSION = 'v12.22'
 
 export interface NavDef {
   key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[]
@@ -23,6 +23,9 @@ export interface NavDef {
   mailbox?: boolean
   /** sezione con schede: le route elencate sono le schede della stessa voce di menu */
   tabs?: { key: string; label: string; roles?: string[]; team?: string }[]
+  /** pagine che si aprono DALLA schermata principale della voce (niente schede in alto):
+   *  la voce resta attiva e in cima compare il percorso "← Voce / Pagina" */
+  pages?: { key: string; label: string; roles?: string[] }[]
 }
 
 // Menu principale (admin / player / creator): 5 gruppi, niente gruppi da una voce,
@@ -45,16 +48,15 @@ export const NAV: { group: string; items: NavDef[] }[] = [
     ]},
     { key: 'media', label: 'Media', icon: 'image' },
     ...(FEATURES.backstage ? [{ key: 'backstage', label: 'Backstage', icon: 'eye' }] : []),
-    // Il mio team = parte operativa: le persone, le aree che gestiscono per l'atleta
-    // (preparazione, fisco, polizze e patrimonio: ognuna solo se c'è quel professionista)
-    // e i collegamenti, cioè inviti e accessi dei professionisti
-    { key: 'my-team', label: 'Il mio team', icon: 'users', tabs: [
-      { key: 'my-team', label: 'Team' },
+    // Il mio team = parte operativa. Niente schede: dalla pagina Team ogni professionista apre
+    // la SUA area (preparazione, fisco, polizze, patrimonio), l'archivio ha contratti e documenti,
+    // i collegamenti (inviti e accessi) sono un tasto secondario
+    { key: 'my-team', label: 'Il mio team', icon: 'users', pages: [
+      { key: 'fitness', label: 'Preparazione', roles: ['admin', 'player'] },
+      { key: 'legaltax', label: 'Fisco e legale', roles: ['admin', 'player'] },
+      { key: 'insurance', label: 'Polizze', roles: ['admin', 'player'] },
+      { key: 'wealth', label: 'Patrimonio', roles: ['admin', 'player'] },
       { key: 'contracts', label: 'Contratti' },
-      { key: 'fitness', label: 'Preparazione', roles: ['admin', 'player'], team: 'preparatore' },
-      { key: 'legaltax', label: 'Fisco e legale', roles: ['admin', 'player'], team: 'commercialista' },
-      { key: 'insurance', label: 'Polizze', roles: ['admin', 'player'], team: 'assicuratore' },
-      { key: 'wealth', label: 'Patrimonio', roles: ['admin', 'player'], team: 'wealth' },
       { key: 'documents', label: 'Documenti' },
       { key: 'access-requests', label: 'Collegamenti' },
     ]},
@@ -357,8 +359,10 @@ export default function Shell({ route, setRoute, right, children }: {
   const visibleItem = (i: NavDef) => (!i.adminOnly || isAdmin) && (!i.roles || (!!role && i.roles.includes(role))) && (!i.mailbox || hasMailbox)
   const tabsOf = (i: NavDef) => (i.tabs || []).filter(t => (!t.roles || (!!role && t.roles.includes(role))) && (!t.team || teamRoles.includes(t.team)))
   const allItems = nav.flatMap(g => g.items).filter(visibleItem)
-  const hub = allItems.find(i => i.key === route || tabsOf(i).some(t => t.key === route))
+  const pagesOf = (i: NavDef) => (i.pages || []).filter(t => !t.roles || (!!role && t.roles.includes(role)))
+  const hub = allItems.find(i => i.key === route || tabsOf(i).some(t => t.key === route) || pagesOf(i).some(t => t.key === route))
   const hubTabs = hub ? tabsOf(hub) : []
+  const hubPage = hub && route !== hub.key ? pagesOf(hub).find(p => p.key === route) : undefined
   useEffect(() => {
     if (hub && hubTabs.some(t => t.key === route)) {
       try { sessionStorage.setItem('hub:' + hub.key, route) } catch { /* modalità privata */ }
@@ -397,7 +401,7 @@ export default function Shell({ route, setRoute, right, children }: {
               { key: 'editorial', label: 'Calendario', icon: 'calendar' },
             ]
   const tabbarKeys = new Set(tabbarItems.map(t => t.key))
-  const title = hub && hubTabs.length > 1 ? { t: hub.label, s: title0.s } : title0
+  const title = hub && (hubTabs.length > 1 || hubPage) ? { t: hub.label, s: title0.s } : title0
 
   return (
     <div className="app">
@@ -487,6 +491,13 @@ export default function Shell({ route, setRoute, right, children }: {
         <div className="content">
           {HOME_ROUTES.includes(route) && <InstallNudge />}
           {HOME_ROUTES.includes(route) && <PushNudge />}
+          {hub && hubPage && (
+            <nav className="crumb" aria-label={tr('Percorso')}>
+              <button onClick={() => setRoute(hub.key)}><Icon name="chevron-left" size={16} /> {tr(hub.label)}</button>
+              <span className="crumb-sep">/</span>
+              <span className="crumb-here">{tr(hubPage.label)}</span>
+            </nav>
+          )}
           {hub && hubTabs.length > 1 && (
             <div className="hub-tabs">
               <Tabs tabs={hubTabs.map(t => ({ key: t.key, label: tr(t.label) }))} value={route} onChange={k => setRoute(k)} />

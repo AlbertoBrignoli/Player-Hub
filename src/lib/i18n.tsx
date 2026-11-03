@@ -3821,5 +3821,6 @@ const EN: Record<string, string> = {
   'Mail': 'Mail',
   'Inviti e accessi dei professionisti': 'Professionals’ invites and access',
   'Scheda commerciale': 'Commercial profile',
+  'Percorso': 'Breadcrumb',
 }
 

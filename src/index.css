@@ -689,6 +689,13 @@ p { text-wrap: pretty; }
 .pill-tab.active .tab-badge { background: var(--yellow); color: var(--ink); }
 /* Schede di sezione (hub): sotto la barra in alto, sempre visibili */
 .hub-tabs { margin: -6px 0 18px; }
+/* percorso di una pagina aperta da una voce senza schede (es. Il mio team / Fisco e legale) */
+.crumb { display: flex; align-items: center; gap: 8px; margin: -6px 0 16px; font-size: var(--fs-body); min-width: 0; }
+.crumb button { display: inline-flex; align-items: center; gap: 4px; border: 0; background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-pill); padding: 6px 12px 6px 8px; font: inherit; font-weight: var(--w-semi); color: var(--text); cursor: pointer; }
+.crumb button:hover { background: var(--surface-2); }
+.crumb-sep { color: var(--text-faint); }
+.crumb-here { font-weight: var(--w-bold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 @media (max-width: 880px) { .hub-tabs { margin: -2px 0 14px; } .hub-tabs .pill-tabs { width: 100%; } .hub-tabs .pill-tab { flex: 1; justify-content: center; } }
 @media (max-width: 880px) {
   /* barra in alto a 375px: titolo, atleta, + e campanella devono stare in una riga */
