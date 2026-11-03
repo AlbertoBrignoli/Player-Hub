@@ -144,20 +144,28 @@ button.home-card:active, .home-qa:active, .home-contact:active { transform: scal
 .home-contact-n { font-size: 12.5px; font-weight: 600; color: var(--text); max-width: 100%; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
 .home-contact-r { font-size: 11px; color: var(--text-faint); max-width: 100%; }
 
-/* 8 servizi AUVI */
-.home-h-link { border: 0; background: none; padding: 0; font: inherit; font-size: var(--fs-meta); font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--text); cursor: pointer; }
-.home-svc-req { display: flex; align-items: center; gap: 10px; width: 100%; padding: 12px 14px; background: none; border: 0; text-align: left; cursor: pointer; font: inherit; font-size: var(--fs-body); color: var(--text); }
-.home-svc-req + .home-svc-req { border-top: 1px solid var(--border); }
-.home-svc-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.home-svc-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
-.home-svc { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; cursor: pointer; text-align: left; padding: 0; min-width: 0; transition: border-color .15s; }
-.home-svc:hover { border-color: var(--border-2); }
-.home-svc-cover { position: relative; display: block; height: 72px; }
-.home-svc-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.home-svc-logo { position: absolute; left: 10px; bottom: -14px; width: 32px; height: 32px; border-radius: 9px; background: #fff; display: grid; place-items: center; box-shadow: 0 1px 4px rgba(10,10,10,.18); overflow: hidden; }
-.home-svc-logo img { width: 78%; height: 78%; object-fit: contain; }
-.home-svc-body { display: grid; gap: 1px; padding: 20px 10px 10px; font-size: var(--fs-body); color: var(--text); min-width: 0; }
-@media (max-width: 1100px) { .home-svc-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* 8 servizi AUVI: una copertina sola, tutta cliccabile, che invita ad aprire */
+.home-svc-hero { position: relative; display: block; width: 100%; min-height: 230px; padding: 0; border: 0; border-radius: 20px; overflow: hidden; cursor: pointer; text-align: left; background: var(--ink); color: #fff; transition: transform .12s; }
+.home-svc-hero:active { transform: scale(.985); }
+.home-svc-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .6s ease; }
+.home-svc-hero:hover .home-svc-bg { transform: scale(1.04); }
+.home-svc-shade { position: absolute; inset: 0; background: linear-gradient(100deg, rgba(10,10,10,.92) 0%, rgba(10,10,10,.7) 50%, rgba(10,10,10,.25) 100%); }
+.home-svc-in { position: relative; display: flex; flex-direction: column; gap: 6px; min-height: 230px; padding: 20px; }
+.home-svc-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.home-svc-k { font-size: var(--fs-label); font-weight: var(--w-bold); letter-spacing: 1.3px; text-transform: uppercase; color: var(--yellow); }
+.home-svc-live { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: rgba(255,255,255,.14); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); font-size: var(--fs-meta); font-weight: 600; }
+.home-svc-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--yellow); animation: homePulse 2s infinite; }
+@keyframes homePulse { 0%, 100% { opacity: 1 } 50% { opacity: .35 } }
+.home-svc-t { font-family: var(--font-display); font-stretch: 125%; font-weight: 700; text-transform: uppercase; font-size: 22px; line-height: 1.1; max-width: 460px; margin-top: 4px; }
+.home-svc-s { font-size: var(--fs-body); color: rgba(255,255,255,.78); max-width: 440px; line-height: 1.45; }
+.home-svc-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: auto; padding-top: 14px; }
+.home-svc-logos { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+.home-svc-lg { height: 30px; padding: 0 12px; border-radius: 999px; display: inline-flex; align-items: center; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.18); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.home-svc-lg img { height: 14px; width: auto; max-width: 84px; object-fit: contain; }
+.home-svc-cta { display: inline-flex; align-items: center; gap: 4px; padding: 10px 14px 10px 16px; border-radius: 999px; background: var(--yellow); color: var(--ink); font-weight: var(--w-bold); font-size: var(--fs-body); box-shadow: 0 8px 24px -10px rgba(255,236,0,.6); }
+@media (max-width: 600px) { .home-svc-lg:nth-child(n+4) { display: none; } }
+@media (prefers-reduced-motion: reduce) { .home-svc-dot { animation: none; } .home-svc-hero:hover .home-svc-bg { transform: none; } }
+
 
 @media (max-width: 880px) {
   .home { display: flex; flex-direction: column; align-items: stretch; gap: 24px; }

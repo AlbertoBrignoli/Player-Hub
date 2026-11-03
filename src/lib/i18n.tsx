@@ -3825,5 +3825,12 @@ const EN: Record<string, string> = {
   'Il tuo advisor': 'Your advisor',
   'Gestione a 360°': '360° management',
   'Vedi tutti': 'See all',
+  'Scopri i Servizi AUVI': 'Discover AUVI Services',
+  '1 richiesta in corso': '1 request in progress',
+  '{n} richieste in corso': '{n} requests in progress',
+  'Dentro e fuori dal campo': 'On and off the pitch',
+  'Preparazione, recupero, consulenze, viaggi, famiglia: scopri cosa possiamo fare per te.': 'Training, recovery, advisory, travel, family: discover what we can do for you.',
+  'Scopri i {n} servizi': 'Discover {n} services',
+  'Scopri i servizi': 'Discover the services',
 }
 
