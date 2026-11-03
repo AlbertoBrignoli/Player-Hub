@@ -5,7 +5,7 @@ import { useAthlete } from '../lib/athlete'
 import { insertRow } from '../lib/useData'
 import { toast } from '../lib/toast'
 import { goto } from '../lib/route'
-import { Modal, Field, Input, Select, Tabs } from './ui'
+import { Modal, Field, Input, Select, Tabs, Textarea } from './ui'
 import Icon from './Icon'
 import { useLang } from '../lib/i18n'
 
@@ -16,7 +16,8 @@ import { useLang } from '../lib/i18n'
 // Alla persona scelta arriva la notifica e, se l'ha chiesto l'atleta, è lei a confermare.
 type EvType = 'personale' | 'call' | 'allenamento'
 type Mode = 'presenza' | 'online' | 'programma'
-type Opt = { k: string; l: string; icon: string; type: EvType; mode?: Mode; link?: boolean; title: string }
+// ask = non è un impegno ma una richiesta che parte in chat con quella persona (es. piano alimentare)
+type Opt = { k: string; l: string; icon: string; type: EvType; mode?: Mode; link?: boolean; title: string; ask?: string }
 type Pro = { pro_id: string; role: string; name: string | null; photo_url: string | null }
 const ROLE_L: Record<string, string> = {
   agente: 'Procuratore', preparatore: 'Preparatore', assicuratore: 'Assicuratore', commercialista: 'Commercialista',
@@ -32,6 +33,12 @@ const OPTS_COACH: Opt[] = [
   { k: 'online', l: 'Online', icon: 'video', type: 'allenamento', mode: 'online', link: true, title: 'Allenamento online' },
   { k: 'programma', l: 'Programma online', icon: 'file', type: 'allenamento', mode: 'programma', title: 'Programma online' },
 ]
+const OPTS_NUTRI: Opt[] = [
+  { k: 'call', l: 'Call', icon: 'smartphone', type: 'call', link: true, title: 'Call con {name}' },
+  { k: 'incontro', l: 'Incontro', icon: 'users', type: 'personale', title: 'Incontro con {name}' },
+  { k: 'piano', l: 'Piano alimentare', icon: 'layers', type: 'personale', title: 'Piano alimentare', ask: 'Richiesta piano alimentare' },
+]
+const optsFor = (p: Pro | null): Opt[] => !p ? OPTS_AUVI : p.role === 'preparatore' ? OPTS_COACH : p.role === 'nutrizionista' ? OPTS_NUTRI : OPTS_PRO
 const OPTS_PRO: Opt[] = [
   { k: 'call', l: 'Call', icon: 'smartphone', type: 'call', link: true, title: 'Call con {name}' },
   { k: 'incontro', l: 'Incontro', icon: 'users', type: 'personale', title: 'Incontro con {name}' },
@@ -58,7 +65,7 @@ export function QuickAddModal({ initialKind, onClose }: { initialKind: 'event' |
 export default function QuickAdd({ controlled, initialKind, onClose }: {
   controlled?: boolean; initialKind?: 'event' | 'task'; onClose?: () => void
 } = {}) {
-  const { session } = useAuth()
+  const { session, profile } = useAuth()
   const { athleteId } = useAthlete()
   const { t } = useLang()
   const { canEvent, canTask } = useQuickAddPermissions()
@@ -79,6 +86,7 @@ export default function QuickAdd({ controlled, initialKind, onClose }: {
   const [team, setTeam] = useState<Pro[]>([])
   const [tag, setTag] = useState<string | null>(null)
   const [optKey, setOptKey] = useState('impegno')
+  const [askNote, setAskNote] = useState('')
   useEffect(() => {
     if (!open || !athleteId) return
     supabase.from('crm_athlete_team').select('pro_id, role, name, photo_url').eq('player_id', athleteId)
@@ -89,16 +97,19 @@ export default function QuickAdd({ controlled, initialKind, onClose }: {
 
   const who = team.find(p => p.pro_id === tag) || null
   const whoName = who ? (who.name || t(ROLE_L[who.role] || who.role)).split(' ')[0] : 'AUVI'
-  const opts = !who ? OPTS_AUVI : who.role === 'preparatore' ? OPTS_COACH : OPTS_PRO
+  const opts = optsFor(who)
   const opt = opts.find(o => o.k === optKey) || opts[0]
   const isProgram = !!who && opt.mode === 'programma'
+  const isAsk = !!who && !!opt.ask
+  // programma online e richieste in chat: niente data e ora, solo "entro quando" e cosa serve
+  const noDate = isProgram || isAsk
   const suggest = (o: Opt, name: string) => t(o.title).replace('{name}', name)
 
   // scelta la persona, si aprono le sue opzioni (la prima già selezionata) e il titolo si propone da solo
   function pickPerson(id: string | null) {
     setTag(id)
     const p = team.find(x => x.pro_id === id) || null
-    const list = !p ? OPTS_AUVI : p.role === 'preparatore' ? OPTS_COACH : OPTS_PRO
+    const list = optsFor(p)
     setOptKey(list[0].k)
     if (!titleTouched) setTitle(suggest(list[0], p ? (p.name || t(ROLE_L[p.role] || p.role)).split(' ')[0] : 'AUVI'))
   }
@@ -109,11 +120,11 @@ export default function QuickAdd({ controlled, initialKind, onClose }: {
 
   function reset() {
     setTitle(''); setTitleTouched(false); setStart(defaultStart()); setLocation(''); setDue(''); setAssignee('auvi')
-    setLink(''); setTag(null); setOptKey('impegno')
+    setLink(''); setTag(null); setOptKey('impegno'); setAskNote('')
   }
 
   async function save() {
-    if (!title.trim() || !athleteId) return
+    if ((!title.trim() && !isAsk) || !athleteId) return
     setBusy(true)
     // programma online: è una richiesta al preparatore (gli arriva la notifica), non un impegno in agenda
     if (kind === 'event' && isProgram && who) {
@@ -124,6 +135,24 @@ export default function QuickAdd({ controlled, initialKind, onClose }: {
       setBusy(false)
       if (error) { toast(error.message, 'err'); return }
       toast(t('Richiesta di programma inviata a {name}').replace('{name}', whoName))
+      reset(); setOpen(false)
+      return
+    }
+    // richiesta in chat (es. piano alimentare): parte un messaggio sul canale di quella persona,
+    // che riceve la notifica e risponde lì
+    if (kind === 'event' && isAsk && who && opt.ask) {
+      const by = due ? ` · ${t('entro il {d}').replace('{d}', new Date(due).toLocaleDateString('it-IT'))}` : ''
+      const body = `${t(opt.ask)}${by}${askNote.trim() ? `\n${askNote.trim()}` : ''}`
+      const { error } = await supabase.from('crm_messages').insert({
+        sender_id: session?.user.id, sender_name: profile?.full_name || profile?.email, sender_role: profile?.role,
+        body, player_id: athleteId, channel: who.role,
+      })
+      setBusy(false)
+      if (error) { toast(error.message, 'err'); return }
+      toast(t('Richiesta inviata a {name}').replace('{name}', whoName), 'ok', { label: t('Apri la chat'), onClick: () => {
+        try { sessionStorage.setItem('chat_channel', who.role) } catch { /* modalità privata */ }
+        goto('messages')
+      } })
       reset(); setOpen(false)
       return
     }
@@ -147,7 +176,7 @@ export default function QuickAdd({ controlled, initialKind, onClose }: {
     reset(); setOpen(false)
   }
 
-  const send = kind === 'task' ? t('Aggiungi') : isProgram ? t('Chiedi il programma') : who ? t('Invia a {name}').replace('{name}', whoName) : t('Aggiungi')
+  const send = kind === 'task' ? t('Aggiungi') : isProgram ? t('Chiedi il programma') : isAsk ? t('Invia la richiesta') : who ? t('Invia a {name}').replace('{name}', whoName) : t('Aggiungi')
 
   return (
     <>
@@ -159,7 +188,7 @@ export default function QuickAdd({ controlled, initialKind, onClose }: {
       {open && (
         <Modal title={t('Aggiungi')} onClose={() => setOpen(false)}
           footer={<><button className="btn" onClick={() => setOpen(false)}>{t('Annulla')}</button>
-            <button className="btn btn-primary" disabled={busy || !title.trim()} onClick={save}>{busy ? t('Salvo…') : send}</button></>}>
+            <button className="btn btn-primary" disabled={busy || (!title.trim() && !isAsk)} onClick={save}>{busy ? t('Salvo…') : send}</button></>}>
           {canEvent && canTask && (
             <Tabs tabs={[{ key: 'event', label: t('Impegno') }, { key: 'task', label: t('Task') }]} value={kind} onChange={setKind} style={{ marginBottom: 16 }} />
           )}
@@ -198,12 +227,18 @@ export default function QuickAdd({ controlled, initialKind, onClose }: {
             {isProgram && <div className="t-meta" style={{ margin: '-8px 0 14px' }}>{t('Il preparatore ti prepara una scheda da fare in autonomia.')}</div>}
 
             {/* 3. parti comuni */}
-            <Field label={t('Titolo')}>
+            {!isAsk && <Field label={t('Titolo')}>
               <Input value={title} onChange={e => { setTitle(e.target.value); setTitleTouched(true) }}
                 placeholder={t('Es. Visita medica, shooting, volo')}
                 onKeyDown={e => { if (e.key === 'Enter') save() }} />
-            </Field>
-            {isProgram ? (
+            </Field>}
+            {isAsk && (
+              <Field label={t('Cosa ti serve (facoltativo)')}>
+                <Textarea rows={3} value={askNote} onChange={e => setAskNote(e.target.value)}
+                  placeholder={t('Es. obiettivi, intolleranze, orari degli allenamenti…')} />
+              </Field>
+            )}
+            {noDate ? (
               <Field label={t('Entro quando (facoltativo)')}><Input type="date" value={due} onChange={e => setDue(e.target.value)} /></Field>
             ) : (
               <div className="row2">
@@ -214,7 +249,7 @@ export default function QuickAdd({ controlled, initialKind, onClose }: {
               </div>
             )}
             <div className="t-meta">
-              {isProgram ? t('Gli arriva la richiesta di programma.') : who ? t('Gli arriva la notifica e conferma lui.') : t('La richiesta arriva ad AUVI.')}
+              {isProgram ? t('Gli arriva la richiesta di programma.') : isAsk ? t('Gli arriva in chat: rispondete lì.') : who ? t('Gli arriva la notifica e conferma lui.') : t('La richiesta arriva ad AUVI.')}
             </div>
           </>) : (<>
             <Field label={t('Da fare')}>

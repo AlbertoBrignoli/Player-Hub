@@ -3883,5 +3883,11 @@ const EN: Record<string, string> = {
   'Metti nel calendario dell\'atleta': 'Add to the athlete\'s calendar',
   'Già nel calendario: {d}': 'Already in the calendar: {d}',
   'Profilo e impostazioni': 'Profile and settings',
+  'Richiesta inviata a {name}': 'Request sent to {name}',
+  'Invia la richiesta': 'Send the request',
+  'Cosa ti serve (facoltativo)': 'What do you need (optional)',
+  'Es. obiettivi, intolleranze, orari degli allenamenti…': 'E.g. goals, intolerances, training times…',
+  'Gli arriva in chat: rispondete lì.': 'It reaches them in chat: reply there.',
+  'Richiesta piano alimentare': 'Meal plan request',
 }
 
