@@ -72,11 +72,9 @@ button.home-card:active, .home-qa:active, .home-contact:active { transform: scal
 .home-top .home-id { flex: 1 1 260px; min-width: 0; }
 .home-top .home-qas { display: flex; gap: 14px; flex: 0 0 auto; width: auto; }
 .home-top .home-qa { width: 56px; }
-.home-top .home-qa-ic { width: 44px; height: 44px; border: 0; }
-.home-top .home-qa.home-qa-media .home-qa-ic { background: #DCEAFE; color: #1F6FEB; }
-.home-top .home-qa.home-qa-event .home-qa-ic { background: var(--ink); color: var(--yellow); }
-.home-top .home-qa.home-qa-tasks .home-qa-ic { background: #FFDCD2; color: #D23A00; }
-.home-top .home-qa.home-qa-chat .home-qa-ic { background: #D6F3E1; color: #12894A; }
+.home-top .home-qa-ic { width: 44px; height: 44px; }
+/* sul giallo i cerchi sono tutti uguali: bianchi con bordo nero */
+.home-top .home-qa .home-qa-ic, .home-top .home-qa.primary .home-qa-ic { background: #fff; color: var(--ink); border: 1.5px solid var(--ink); }
 .home-top .home-qa.primary .home-qa-ic { box-shadow: none; }
 @media (max-width: 600px) { .home-top .home-qas { width: 100%; justify-content: space-around; } }
 
