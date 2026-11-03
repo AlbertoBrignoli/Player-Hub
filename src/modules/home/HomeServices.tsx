@@ -8,8 +8,6 @@ import Icon from '../../components/Icon'
 // Non si sceglie un servizio da qui (se no gli altri non si vedono): un tocco apre la pagina
 // Servizi AUVI con tutto il catalogo. Sulla copertina solo un assaggio: i loghi dei partner,
 // quanti servizi ci sono e, se c'è, la richiesta già in corso.
-const VIDEO = '/servizi/auvi-video.mp4'
-const POSTER = '/servizi/auvi-hero.jpg'
 
 export default function HomeServices({ goto }: { goto: (r: string) => void }) {
   const { athleteId } = useAthlete()
@@ -17,9 +15,7 @@ export default function HomeServices({ goto }: { goto: (r: string) => void }) {
   const [count, setCount] = useState(0)
   const [logos, setLogos] = useState<string[]>([])
   const [open, setOpen] = useState(0)
-  // i loghi dei partner sono bianchi: stanno su pastiglie scure sopra il video
-  // video di sfondo solo se chi guarda non ha chiesto meno animazioni
-  const still = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+  // sfondo: foto in bianco e nero sotto il velo nero, come gli altri blocchi scuri della Home (CSS)
 
   useEffect(() => {
     let ok = true
@@ -43,10 +39,6 @@ export default function HomeServices({ goto }: { goto: (r: string) => void }) {
   return (
     <section className="home-sec">
       <button className="home-svc-hero" onClick={() => goto('services')} aria-label={t('Scopri i Servizi AUVI')}>
-        {still
-          ? <img className="home-svc-bg" src={POSTER} alt="" />
-          : <video className="home-svc-bg" src={VIDEO} poster={POSTER} autoPlay muted loop playsInline aria-hidden="true" />}
-        <span className="home-svc-shade" />
         <span className="home-svc-in">
           <span className="home-svc-top">
             <span className="home-svc-k">{t('Servizi AUVI')}</span>
