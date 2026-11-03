@@ -172,8 +172,37 @@ button.home-card:active, .home-qa:active, .home-contact:active { transform: scal
 
 
 @media (max-width: 880px) {
-  .home { display: flex; flex-direction: column; align-items: stretch; gap: 24px; }
-  .home-col { gap: 24px; }
+  /* le due colonne si sciolgono in una sola, riordinata per priorità */
+  .home { display: flex; flex-direction: column; align-items: stretch; gap: 20px; }
+  .home-col { display: contents; }
+  .home-o1 { order: 1; } .home-o2 { order: 2; } .home-o3 { order: 3; } .home-o4 { order: 4; }
+  .home-o5 { order: 5; } .home-o6 { order: 6; } .home-o7 { order: 7; }
+}
+/* iPhone: tutto più compatto, come le app Apple (meno aria morta, stesse gerarchie) */
+@media (max-width: 600px) {
+  .home { gap: 16px; }
+  .home-id-ph, .home-id .avatar { width: 44px !important; height: 44px !important; border-radius: 13px !important; }
+  .home-id-name { font-size: 19px; }
+  .home-top { gap: 12px; }
+  .home-top .home-qa { width: auto; flex: 1; gap: 5px; }
+  .home-top .home-qa-ic { width: 40px; height: 40px; }
+  .home-qa-l { font-size: 11px; }
+  .home-score-body { padding: 14px; }
+  .home-score .ed-livepill { margin-bottom: 10px; }
+  .home-team-logo, .home-team-ini { width: 38px; height: 38px; }
+  .home-kick-t { font-size: 20px; }
+  .home-score-meta { margin-top: 12px; padding-top: 10px; }
+  .home-season { padding: 14px; border-radius: 18px; }
+  .home-season-grid { margin-top: 12px; }
+  .home-season-grid .v { font-size: 20px; }
+  .home-season-last { margin-top: 12px; padding: 8px 10px; }
+  .home-svc-hero, .home-svc-in { min-height: 0; }
+  .home-svc-in { padding: 16px; }
+  .home-svc-t { font-size: 18px; }
+  .home-svc-s { font-size: var(--fs-meta); }
+  .home-svc-foot { padding-top: 12px; }
+  .home-tl-group { padding: 9px 12px; }
+  .home-h { margin-bottom: 8px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .home-thumbs img { transition: none; }
@@ -541,18 +570,20 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
     <div className="home">
       <style>{HOME_CSS}</style>
       <div className="home-col">
-        <div className="home-sec home-top">
+        {/* su telefono una colonna sola, ma con le priorità del PC: in alto chi sei e le azioni,
+            poi partita e prossimi giorni (che su PC si vedono insieme), poi stagione, referenti e servizi */}
+        <div className="home-o1"><div className="home-sec home-top">
           {identity}
           {quick}
-        </div>
-        {todo}
-        {hero}
-        {stats}
-        <HomeServices goto={goto} />
+        </div></div>
+        {todo && <div className="home-o2">{todo}</div>}
+        <div className="home-o3">{hero}</div>
+        <div className="home-o5">{stats}</div>
+        <div className="home-o7"><HomeServices goto={goto} /></div>
       </div>
       <div className="home-col">
-        {agenda}
-        <HomeContacts goto={goto} title={t('I tuoi referenti')} />
+        <div className="home-o4">{agenda}</div>
+        <div className="home-o6"><HomeContacts goto={goto} title={t('I tuoi referenti')} /></div>
       </div>
       {adding && <QuickAddModal initialKind={adding} onClose={() => setAdding(null)} />}
     </div>
