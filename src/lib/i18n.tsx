@@ -3800,5 +3800,7 @@ const EN: Record<string, string> = {
   "Pagamenti": "Payments",
   "Dichiarativi": "Tax returns",
   'Pratiche': 'Procedures',
+  'Ieri': 'Yesterday',
+  'Nessun risultato': 'No results',
 }
 

@@ -45,6 +45,7 @@ const P: Record<string, React.ReactNode> = {
   video: <><rect x="2.5" y="6" width="13" height="12" rx="2.5" /><path d="m15.5 10.5 6-3.5v10l-6-3.5" /></>,
   pin: <><path d="M20 10.5c0 6-8 11-8 11s-8-5-8-11a8 8 0 1 1 16 0" /><circle cx="12" cy="10.5" r="2.8" /></>,
   inbox: <><path d="M22 12.5h-6l-2 3h-4l-2-3H2" /><path d="M5 4.5h14a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-13a2 2 0 0 1 2-2" /></>,
+  search: <><circle cx="11" cy="11" r="7" /><path d="m20.5 20.5-4.2-4.2" /></>,
   send: <path d="M22 2.5 11 13.5M22 2.5l-7 19-4-8-8.5-4z" />,
   dumbbell: <><path d="M6.5 6.5 17.5 17.5M4 7l3-3 3 3-3 3zM14 17l3-3 3 3-3 3z"/><path d="M3 8l1-1M20 16l1-1"/></>,
   user: <><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7" /></>,

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { toast } from '../lib/toast'
 import { useAuth } from '../auth/AuthContext'
@@ -7,8 +7,8 @@ import { useLang } from '../lib/i18n'
 import { Spinner, Empty } from '../components/ui'
 import Icon from '../components/Icon'
 import { ChatAvatar, useChatPhotos } from '../components/ChatAvatar'
-import { ChatAttachment, useAttach } from '../components/ChatAttachment'
-import { fmtDateTime, initials } from '../lib/format'
+import { useAttach } from '../components/ChatAttachment'
+import { WA_CSS, WaItem, WaMessages, WaComposer, listWhen, seenAt, markSeen } from '../components/WaChat'
 import type { Message, BrandLite } from '../lib/types'
 import StaffChat, { STAFF_ROLE } from '../components/StaffChat'
 import { useRouteParam } from '../lib/route'
@@ -20,7 +20,7 @@ type Chan = { key: string; label: string; sub: string; icon: string; accent?: st
 const roleLabel = (r?: string | null) =>
   r === 'admin' ? 'Management' : r === 'brand' ? 'Brand' : r === 'player' || !r ? 'Giocatore' : STAFF_ROLE[r] || 'Giocatore'
 
-// Due sezioni: "Con l'atleta" (chat dirette di sempre) e "Staff" (professionisti tra loro).
+// Due sezioni: "Chat" (dirette di sempre) e "Staff" (professionisti tra loro), come i filtri di WhatsApp.
 export default function Messages() {
   const { t } = useLang()
   const { role } = useAuth()
@@ -28,45 +28,44 @@ export default function Messages() {
   const canStaff = role !== 'brand' && role !== 'partner'
   const [mode, setMode] = useState<'direct' | 'staff'>(staffParam ? 'staff' : 'direct')
   useEffect(() => { if (staffParam) setMode('staff') }, [staffParam])
-  if (!canStaff) return <DirectChat />
-  return (
-    <div className="grid" style={{ gap: 10 }}>
-      <div className="seg-2" style={{ display: 'flex', gap: 8 }}>
-        {(['direct', 'staff'] as const).map(k => (
-          <button key={k} onClick={() => setMode(k)} className="btn btn-sm"
-            style={mode === k ? { background: 'var(--text)', color: 'var(--bg, #fff)', borderColor: 'var(--text)' } : undefined}>
-            <Icon name={k === 'direct' ? 'message' : 'users'} size={13} /> {k === 'direct'
-              ? (role === 'player' ? t('Le mie chat') : t('Con l\'atleta'))
-              : (role === 'player' ? t('Il mio staff') : t('Staff'))}
-          </button>
-        ))}
-      </div>
-      {mode === 'staff' ? <StaffChat openThread={staffParam} /> : <DirectChat />}
+  const switcher = canStaff ? (
+    <div className="wa-chips">
+      {(['direct', 'staff'] as const).map(k => (
+        <button key={k} onClick={() => setMode(k)} className={`wa-chipf ${mode === k ? 'on' : ''}`}>
+          <Icon name={k === 'direct' ? 'message' : 'users'} size={13} /> {k === 'direct'
+            ? (role === 'player' ? t('Le mie chat') : t('Con l\'atleta'))
+            : (role === 'player' ? t('Il mio staff') : t('Staff'))}
+        </button>
+      ))}
     </div>
-  )
+  ) : null
+  return mode === 'staff' && canStaff
+    ? <StaffChat openThread={staffParam} switcher={switcher} />
+    : <DirectChat switcher={switcher} />
 }
 
-function DirectChat() {
+type Last = { body: string; at: string; sender_id: string; file_name: string | null; mine: boolean }
+
+function DirectChat({ switcher }: { switcher?: React.ReactNode }) {
   const { t: tr } = useLang()
   const { session, profile, isAdmin, role } = useAuth()
   const { athleteId, athletes } = useAthlete()
+  const me = session?.user.id
   const [rows, setRows] = useState<Message[]>([])
   const [brands, setBrands] = useState<BrandLite[]>([])
-  const [coachName, setCoachName] = useState<string | null>(null)
-  const [hasCoach, setHasCoach] = useState(false)
-  const [agentName, setAgentName] = useState<string | null>(null)
-  const [insurerName, setInsurerName] = useState<string | null>(null)
-  const [taxName, setTaxName] = useState<string | null>(null)
-  const [physioName, setPhysioName] = useState<string | null>(null)
-  const [nutriName, setNutriName] = useState<string | null>(null)
-  const [wealthName, setWealthName] = useState<string | null>(null)
+  // professionisti collegati all'atleta, per ruolo: nome e foto
+  const [team, setTeam] = useState<Record<string, { name: string | null; photo: string | null }>>({})
   const [chan, setChan] = useState<string>('team')
+  // su telefono: false = elenco, true = conversazione aperta
+  const [open, setOpen] = useState(false)
+  const [last, setLast] = useState<Record<string, Last>>({})
+  const [unread, setUnread] = useState<Record<string, number>>({})
+  const [q, setQ] = useState('')
   const [loading, setLoading] = useState(true)
   const [text, setText] = useState('')
   const [busy, setBusy] = useState(false)
-  const endRef = useRef<HTMLDivElement>(null)
   const photoOf = useChatPhotos()
-  const attach = useAttach(session?.user.id)
+  const attach = useAttach(me)
 
   const isBrand = role === 'brand'
   const isCoach = role === 'preparatore'
@@ -76,6 +75,8 @@ function DirectChat() {
   const isPhysio = role === 'fisioterapista'
   const isNutri = role === 'nutrizionista'
   const isWealth = role === 'wealth'
+  const isPro = isCoach || isAgent || isInsurer || isTax || isPhysio || isNutri || isWealth
+  const pro = (r: string) => team[r]?.name || null
 
   // Canali disponibili in base al ruolo e all'atleta attivo.
   const chans: Chan[] = isBrand
@@ -96,13 +97,14 @@ function DirectChat() {
       ? [{ key: 'wealth', label: tr('Patrimonio'), sub: tr('Wealth management'), icon: 'briefcase' }]
       : [
           { key: 'team', label: tr('Alberto · Management'), sub: tr('AUVI Agency'), icon: 'briefcase' },
-          ...(agentName ? [{ key: 'agente', label: agentName, sub: tr('Procuratore'), icon: 'briefcase' }] : []),
-          ...(insurerName ? [{ key: 'assicuratore', label: insurerName, sub: tr('Assicuratore'), icon: 'lock' }] : []),
-          ...(taxName ? [{ key: 'commercialista', label: taxName, sub: tr('Commercialista'), icon: 'briefcase' }] : []),
-          ...(physioName ? [{ key: 'fisioterapista', label: physioName, sub: tr('Fisioterapista'), icon: 'activity' }] : []),
-          ...(nutriName ? [{ key: 'nutrizionista', label: nutriName, sub: tr('Nutrizionista'), icon: 'layers' }] : []),
-          ...(wealthName ? [{ key: 'wealth', label: wealthName, sub: tr('Wealth manager'), icon: 'briefcase' }] : []),
-          ...(hasCoach ? [{ key: 'fitness', label: coachName || tr('Preparatore'), sub: tr('Preparazione atletica'), icon: 'dumbbell' }] : []),
+          ...(pro('agente') ? [{ key: 'agente', label: pro('agente')!, sub: tr('Procuratore'), icon: 'briefcase' }] : []),
+          ...(pro('assicuratore') ? [{ key: 'assicuratore', label: pro('assicuratore')!, sub: tr('Assicuratore'), icon: 'lock' }] : []),
+          ...(pro('commercialista') ? [{ key: 'commercialista', label: pro('commercialista')!, sub: tr('Commercialista'), icon: 'briefcase' }] : []),
+          ...(pro('fisioterapista') ? [{ key: 'fisioterapista', label: pro('fisioterapista')!, sub: tr('Fisioterapista'), icon: 'activity' }] : []),
+          ...(pro('nutrizionista') ? [{ key: 'nutrizionista', label: pro('nutrizionista')!, sub: tr('Nutrizionista'), icon: 'layers' }] : []),
+          ...(pro('wealth') ? [{ key: 'wealth', label: pro('wealth')!, sub: tr('Wealth manager'), icon: 'briefcase' }] : []),
+          // se l'atleta non ha un preparatore (es. Zortea), il canale non compare
+          ...(team.preparatore ? [{ key: 'fitness', label: pro('preparatore') || tr('Preparatore'), sub: tr('Preparazione atletica'), icon: 'dumbbell' }] : []),
           ...brands.map(b => ({ key: `brand:${b.id}`, label: b.name, sub: tr('Partner ufficiale'), icon: 'award', accent: b.accent_color, logo: b.logo_url })),
         ]
 
@@ -110,7 +112,7 @@ function DirectChat() {
   useEffect(() => {
     try {
       const want = sessionStorage.getItem('chat_channel')
-      if (want) { setChan(want); sessionStorage.removeItem('chat_channel') }
+      if (want) { setChan(want); setOpen(true); sessionStorage.removeItem('chat_channel') }
     } catch { /* storage non disponibile */ }
   }, [])
 
@@ -144,47 +146,42 @@ function DirectChat() {
     return () => { ok = false }
   }, [athleteId, isBrand])
 
-  // Nome del preparatore assegnato, per etichettare il canale fitness.
-  // Se l'atleta non ha un preparatore (es. Zortea), il canale non compare.
+  // Professionisti collegati all'atleta (dal team): danno nome e foto ai canali del giocatore.
+  // Se un professionista non è collegato, il suo canale non compare.
   useEffect(() => {
     let ok = true
     ;(async () => {
-      if (!athleteId || isBrand || isAgent) { setCoachName(null); setHasCoach(false); return }
-      const { data: a } = await supabase.from('fitness_trainer_athletes')
-        .select('trainer_id').eq('player_id', athleteId).limit(1).maybeSingle()
-      const tid = (a as { trainer_id?: string } | null)?.trainer_id
+      if (!athleteId || isBrand || isPro) { setTeam({}); return }
+      const { data } = await supabase.from('crm_athlete_team').select('role, name, photo_url').eq('player_id', athleteId)
       if (!ok) return
-      if (!tid) { setCoachName(null); setHasCoach(false); return }
-      setHasCoach(true)
-      const { data: c } = await supabase.from('fitness_coach_profile')
-        .select('name').eq('trainer_id', tid).maybeSingle()
-      if (ok) setCoachName((c as { name?: string } | null)?.name || null)
-    })()
-    return () => { ok = false }
-  }, [athleteId, isBrand])
-
-  // Nomi dei professionisti collegati all'atleta (procuratore, assicuratore,
-  // commercialista): servono a mostrare i rispettivi canali al giocatore, così
-  // può scrivere loro direttamente. Se non collegati, il canale non compare.
-  useEffect(() => {
-    let ok = true
-    ;(async () => {
-      if (!athleteId || isBrand || isCoach || isAgent || isInsurer || isTax || isPhysio || isNutri || isWealth) {
-        setAgentName(null); setInsurerName(null); setTaxName(null); setPhysioName(null); setNutriName(null); setWealthName(null); return
+      const m: Record<string, { name: string | null; photo: string | null }> = {}
+      for (const r of (data as { role: string; name: string | null; photo_url: string | null }[]) || []) {
+        if (!m[r.role]) m[r.role] = { name: r.name, photo: r.photo_url }
       }
-      const { data } = await supabase.from('crm_athlete_team').select('role, name').eq('player_id', athleteId)
-      if (!ok) return
-      const rows = (data as { role: string; name: string | null }[]) || []
-      const byRole = (r: string) => rows.find(x => x.role === r)?.name || null
-      setAgentName(byRole('agente'))
-      setInsurerName(byRole('assicuratore'))
-      setTaxName(byRole('commercialista'))
-      setPhysioName(byRole('fisioterapista'))
-      setNutriName(byRole('nutrizionista'))
-      setWealthName(byRole('wealth'))
+      setTeam(m)
     })()
     return () => { ok = false }
-  }, [athleteId, isBrand, isCoach, isAgent, isInsurer, isTax, isPhysio, isNutri, isWealth])
+  }, [athleteId, isBrand, isPro])
+
+  const seenKey = (c: string) => `${me}:${athleteId}:${c}`
+
+  // Ultimo messaggio e non letti di ogni conversazione, per l'elenco
+  async function loadLast() {
+    if (!athleteId) { setLast({}); setUnread({}); return }
+    const { data } = await supabase.from('crm_messages')
+      .select('channel, body, created_at, sender_id, file_name')
+      .eq('player_id', athleteId).order('created_at', { ascending: false }).limit(400)
+    const l: Record<string, Last> = {}, u: Record<string, number> = {}
+    for (const m of (data as { channel: string | null; body: string; created_at: string; sender_id: string; file_name: string | null }[]) || []) {
+      const c = m.channel || 'team'
+      if (!l[c]) l[c] = { body: m.body, at: m.created_at, sender_id: m.sender_id, file_name: m.file_name, mine: m.sender_id === me }
+      const seen = seenAt(seenKey(c))
+      if (m.sender_id !== me && seen && m.created_at > seen) u[c] = (u[c] || 0) + 1
+    }
+    // prima apertura su questo dispositivo: tutto letto, poi si contano solo i nuovi
+    for (const c of Object.keys(l)) if (!seenAt(seenKey(c))) markSeen(seenKey(c), l[c].at)
+    setLast(l); setUnread(u)
+  }
 
   async function load() {
     if (!athleteId) { setRows([]); setLoading(false); return }
@@ -192,19 +189,20 @@ function DirectChat() {
     // 'team' include anche i messaggi storici senza canale.
     q = chan === 'team' ? q.or('channel.is.null,channel.eq.team') : q.eq('channel', chan)
     const { data } = await q
-    setRows((data as Message[]) || [])
+    const list = (data as Message[]) || []
+    setRows(list)
     setLoading(false)
+    if (list.length) markSeen(seenKey(chan), list[list.length - 1].created_at)
+    setUnread(u => ({ ...u, [chan]: 0 }))
   }
 
   useEffect(() => {
-    setLoading(true); load()
+    setLoading(true); load(); loadLast()
     const ch = supabase.channel('crm_messages_rt')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'crm_messages' }, () => load())
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'crm_messages' }, () => { load(); loadLast() })
       .subscribe()
     return () => { supabase.removeChannel(ch) }
   }, [athleteId, chan]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [rows.length])
 
   async function send() {
     if ((!text.trim() && !attach.pending) || !session || !athleteId) return
@@ -222,102 +220,93 @@ function DirectChat() {
     })
     setBusy(false)
     if (error) toast(error.message, 'err')
-    if (!error) { setText(''); load() }
+    if (!error) { setText(''); load(); loadLast() }
   }
 
   const active = chans.find(c => c.key === chan)
-  // Chi scrive al giocatore (management, preparatore, brand) deve vedere SEMPRE
+  // Chi scrive al giocatore (management, professionisti, brand) deve vedere SEMPRE
   // e in chiaro a quale atleta sta scrivendo: il selettore in alto è troppo defilato.
-  const toAthlete = isAdmin || isCoach || isBrand || isAgent || isInsurer || isTax || isPhysio || isNutri || isWealth
+  const toAthlete = isAdmin || isPro || isBrand
   const athlete = athletes.find(a => a.api_player_id === athleteId)
   const placeholder = tr('Scrivi a {name}…').replace('{name}', toAthlete
     ? (athlete?.name || tr('giocatore'))
     : (active?.label || 'AUVI'))
 
-  return (
-    <div className="grid" style={{ gap: 10 }}>
-      {chans.length > 1 && (
-        <div className="pill-tabs wrap" style={{ alignSelf: 'start' }}>
-          {chans.map(c => (
-            <button key={c.key} className={`pill-tab ${chan === c.key ? 'active' : ''}`} onClick={() => setChan(c.key)}
-              style={c.accent && chan === c.key ? { background: c.accent, color: '#fff', borderColor: c.accent } : undefined}>
-              {c.logo
-                ? <img src={c.logo} alt="" style={{ width: 14, height: 14, objectFit: 'contain', borderRadius: 3 }} />
-                : <Icon name={c.icon} size={13} />} {c.label}
-            </button>
-          ))}
-        </div>
-      )}
+  // Foto del canale: AUVI per il management, il professionista, il logo del brand;
+  // per chi scrive all'atleta (professionisti, brand) la foto dell'atleta.
+  const ROLE_OF: Record<string, string> = { fitness: 'preparatore' }
+  function chanAvatar(c: Chan, size = 48) {
+    if (toAthlete && !isAdmin) return <ChatAvatar size={size} name={athlete?.name} role="player" photo={athlete?.photo_url || null} />
+    if (c.logo) return <ChatAvatar size={size} name={c.label} role="brand" photo={c.logo} />
+    if (c.key === 'team') return <ChatAvatar size={size} name="AUVI" role="admin" photo="/brand/auvi-mark-yellow.svg" />
+    const ph = team[ROLE_OF[c.key] || c.key]?.photo
+    if (ph) return <ChatAvatar size={size} name={c.label} photo={ph} />
+    return <span className="wa-ico" style={{ width: size, height: size }}><Icon name={c.icon} size={Math.round(size * .4)} /></span>
+  }
+  // per professionisti e brand l'elenco porta il nome dell'atleta, il canale resta come contesto
+  const titleOf = (c: Chan) => toAthlete && !isAdmin ? (athlete?.name || c.label) : c.label
 
-      <div className="card" style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 250px)', padding: 0 }}>
-        {toAthlete ? (
-          /* Destinatario in evidenza: foto, nome grande, canale come contesto */
-          <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 13 }}>
-            {athlete?.photo_url
-              ? <img src={athlete.photo_url} alt="" style={{ width: 44, height: 44, borderRadius: 12, objectFit: 'cover' }} />
-              : <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>
-                  {(athlete?.name || '?').slice(0, 1)}
-                </div>}
+  const ordered = [...chans]
+    .filter(c => !q.trim() || (titleOf(c) + ' ' + c.sub).toLowerCase().includes(q.trim().toLowerCase()))
+    .sort((a, b) => (last[b.key]?.at || '').localeCompare(last[a.key]?.at || ''))
+
+  function preview(c: Chan) {
+    const l = last[c.key]
+    if (!l) return <span>{c.sub}</span>
+    return <>
+      {l.mine && <span style={{ fontWeight: 600, flexShrink: 0 }}>{tr('Tu')}:</span>}
+      {l.file_name && l.body === l.file_name && <Icon name="paperclip" size={13} />}
+      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{l.body}</span>
+    </>
+  }
+
+  return (
+    <div className={`wa ${open ? 'open' : ''}`}>
+      <style>{WA_CSS}</style>
+
+      {/* elenco conversazioni */}
+      <div className="wa-list">
+        <div className="wa-list-head">
+          <div className="wa-list-title"><h3>{tr('Chat')}</h3></div>
+          {chans.length > 4 && (
+            <label className="wa-search">
+              <Icon name="search" size={15} />
+              <input value={q} onChange={e => setQ(e.target.value)} placeholder={tr('Cerca')} />
+            </label>
+          )}
+          {switcher}
+        </div>
+        <div className="wa-items">
+          {ordered.map(c => (
+            <WaItem key={c.key} active={chan === c.key} avatar={chanAvatar(c)} title={titleOf(c)}
+              when={listWhen(last[c.key]?.at, tr)} unread={chan === c.key ? 0 : unread[c.key]}
+              preview={preview(c)}
+              onClick={() => { setChan(c.key); setOpen(true) }} />
+          ))}
+          {ordered.length === 0 && <div className="faint" style={{ padding: 20, fontSize: 13, textAlign: 'center' }}>{tr('Nessun risultato')}</div>}
+        </div>
+      </div>
+
+      {/* conversazione */}
+      <div className="wa-thread">
+        {active && (
+          <div className="wa-head">
+            <button className="wa-back" onClick={() => setOpen(false)} aria-label={tr('Indietro')}><Icon name="chevron-left" size={22} /></button>
+            {chanAvatar(active, 40)}
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', fontWeight: 800, color: 'var(--text-dim)' }}>
-                {tr('Stai scrivendo a')}
-              </div>
-              {/* l'atleta si sceglie una volta sola, dal selettore in alto */}
-              <div style={{ fontSize: 18, fontWeight: 900, letterSpacing: -0.2, lineHeight: 1.2 }}>
-                {athlete?.name || tr('Nessun atleta selezionato')}
-              </div>
-              <div className="faint" style={{ fontSize: 11.5, marginTop: 1 }}>
-                {active?.label} · {tr('conversazione riservata')}
-              </div>
-            </div>
-          </div>
-        ) : active && (
-          <div style={{ padding: '12px 18px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 11 }}>
-            {active.accent && <span style={{ width: 3, height: 30, borderRadius: 2, background: active.accent }} />}
-            {active.logo && <div style={{ background: '#fff', borderRadius: 8, padding: 4, display: 'flex' }}>
-              <img src={active.logo} alt="" style={{ width: 24, height: 24, objectFit: 'contain' }} />
-            </div>}
-            <div>
-              <div style={{ fontWeight: 800, fontSize: 14.5, textTransform: active.accent ? 'uppercase' : 'none', letterSpacing: active.accent ? .5 : 0 }}>{active.label}</div>
-              <div className="faint" style={{ fontSize: 11.5 }}>{active.sub} · {tr('conversazione riservata')}</div>
+              <div className="wa-head-t">{toAthlete ? (athlete?.name || tr('Nessun atleta selezionato')) : active.label}</div>
+              <div className="wa-head-s">{toAthlete ? active.label : active.sub} · {tr('conversazione riservata')}</div>
             </div>
           </div>
         )}
-        <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
-          {loading ? <Spinner /> : rows.length === 0 ? (
-            <Empty icon={<Icon name="message" size={30} strokeWidth={1.4} />} title={tr("Nessun messaggio")}
-              hint={tr('Inizia la conversazione con {name}.').replace('{name}', toAthlete ? (athlete?.name || tr('il giocatore')) : (active?.label || tr('il tuo referente')))} />
-          ) : (
-            <div className="chat">
-              {rows.map(m => {
-                const mine = m.sender_id === session?.user.id
-                return (
-                  <div key={m.id} style={{ display: 'flex', flexDirection: 'column', alignItems: mine ? 'flex-end' : 'flex-start' }}>
-                    {!mine && <div className="flex gap" style={{ marginBottom: 4, gap: 7, alignItems: 'center' }}>
-                      <ChatAvatar name={m.sender_name} role={m.sender_role} photo={m.sender_role === 'brand' && active?.logo ? active.logo : photoOf(m.sender_id, m.sender_role)} />
-                      <span className="faint" style={{ fontSize: 11 }}>{m.sender_name} · {tr(roleLabel(m.sender_role))}</span>
-                    </div>}
-                    <div className={`bubble ${mine ? 'bubble-out' : 'bubble-in'}`}>
-                      {m.file_path && <ChatAttachment path={m.file_path} name={m.file_name} mime={m.file_mime} size={m.file_size} mine={mine} />}
-                      {(!m.file_path || m.body !== m.file_name) && m.body}
-                      <div className="bubble-meta">{fmtDateTime(m.created_at)}</div>
-                    </div>
-                  </div>
-                )
-              })}
-              <div ref={endRef} />
-            </div>
-          )}
-        </div>
-        <div style={{ borderTop: '1px solid var(--border)' }}>
-          {attach.chip}
-          <div className="flex gap" style={{ padding: 14, gap: 6 }}>
-            {attach.button}
-            <input className="input" placeholder={placeholder} value={text}
-              onChange={e => setText(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }} />
-            <button className="btn btn-primary" disabled={busy || (!text.trim() && !attach.pending)} onClick={send}>{busy && attach.uploading ? tr('Carico…') : tr('Invia')}</button>
-          </div>
-        </div>
+        {loading ? <div className="wa-blank"><Spinner /></div> : (
+          <WaMessages msgs={rows} me={me} photoOf={(id, r) => r === 'brand' && active?.logo ? active.logo : photoOf(id, r)}
+            names={m => tr(roleLabel(m.sender_role))}
+            empty={<Empty icon={<Icon name="message" size={30} strokeWidth={1.4} />} title={tr('Nessun messaggio')}
+              hint={tr('Inizia la conversazione con {name}.').replace('{name}', toAthlete ? (athlete?.name || tr('il giocatore')) : (active?.label || tr('il tuo referente')))} />} />
+        )}
+        <WaComposer value={text} onChange={setText} onSend={send} placeholder={placeholder}
+          busy={busy} canSend={!!text.trim() || !!attach.pending} attach={attach} />
       </div>
     </div>
   )
