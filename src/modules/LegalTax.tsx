@@ -35,7 +35,7 @@ const TABS = [
 const CATEGORIES: Record<string, string[]> = {
   // poche voci generiche: il dettaglio (F24, IRPEF, IVA…) va nel titolo
   fiscale: ['Pagamenti', 'Dichiarativi', 'Altro'],
-  legale: ['Contratto', 'Atto', 'Contenzioso', 'Visura', 'Procura', 'Altro'],
+  legale: ['Contratti', 'Pratiche', 'Altro'],
 }
 
 const KINDS = [

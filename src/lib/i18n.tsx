@@ -3799,5 +3799,6 @@ const EN: Record<string, string> = {
   "Segna come letto": "Mark as read",
   "Pagamenti": "Payments",
   "Dichiarativi": "Tax returns",
+  'Pratiche': 'Procedures',
 }
 
