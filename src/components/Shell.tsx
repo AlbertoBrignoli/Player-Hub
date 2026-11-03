@@ -15,14 +15,14 @@ import { Modal, Field, Input, Tabs, Empty } from './ui'
 // Schermate home dei vari ruoli: qui compare l'invito ad attivare le notifiche.
 const HOME_ROUTES = ['dashboard', 'brandhome', 'agent-home', 'insurer-home', 'tax-home', 'physio-home', 'partner-home', 'wealth-home']
 
-export const APP_VERSION = 'v12.10'
+export const APP_VERSION = 'v12.11'
 
 export interface NavDef {
   key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[]
   /** solo se l'atleta selezionato ha la casella di posta AUVI */
   mailbox?: boolean
   /** sezione con schede: le route elencate sono le schede della stessa voce di menu */
-  tabs?: { key: string; label: string; roles?: string[]; wealth?: boolean }[]
+  tabs?: { key: string; label: string; roles?: string[]; team?: string }[]
 }
 
 // Menu principale (admin / player / creator): 5 gruppi, niente gruppi da una voce,
@@ -43,16 +43,23 @@ export const NAV: { group: string; items: NavDef[] }[] = [
       { key: 'fitness', label: 'Preparazione' },
       { key: 'profile', label: 'Profilo' },
     ]},
+    // Business = marketing: valore commerciale e sponsor
     { key: 'commercial', label: 'Business', icon: 'briefcase', tabs: [
       { key: 'commercial', label: 'Profilo commerciale', roles: ['admin', 'player', 'creator'] },
       { key: 'sponsors', label: 'Sponsor' },
+    ]},
+    // Il mio team = parte operativa: le persone e le aree che gestiscono per l'atleta
+    // (le schede di fisco, polizze e patrimonio compaiono solo se quel professionista c'è)
+    { key: 'my-team', label: 'Il mio team', icon: 'users', tabs: [
+      { key: 'my-team', label: 'Team' },
       { key: 'contracts', label: 'Contratti' },
+      { key: 'legaltax', label: 'Fisco e legale', roles: ['admin', 'player'], team: 'commercialista' },
+      { key: 'insurance', label: 'Polizze', roles: ['admin', 'player'], team: 'assicuratore' },
+      { key: 'wealth', label: 'Patrimonio', roles: ['admin', 'player'], team: 'wealth' },
       { key: 'documents', label: 'Documenti' },
-      { key: 'wealth', label: 'Patrimonio', roles: ['admin', 'player'], wealth: true },
     ]},
   ]},
   { group: 'Altro', items: [
-    { key: 'my-team', label: 'Il mio team', icon: 'users' },
     { key: 'messages', label: 'Chat', icon: 'message' },
     { key: 'mail', label: 'Posta', icon: 'mail', mailbox: true },
     { key: 'my-files', label: 'I miei file', icon: 'folder', adminOnly: true },
@@ -98,6 +105,8 @@ export const PRO_ROLES: Record<ProRole, { home: string; profile: string; area: N
       { key: 'commercial', label: 'Business', icon: 'briefcase', tabs: [
         { key: 'commercial', label: 'Profilo commerciale' },
         { key: 'sponsors', label: 'Sponsor' },
+      ]},
+      { key: 'contracts', label: 'Contratti', icon: 'file', tabs: [
         { key: 'contracts', label: 'Contratti' },
         { key: 'documents', label: 'Documenti' },
       ]},
@@ -318,15 +327,15 @@ export default function Shell({ route, setRoute, right, children }: {
     supabase.from('crm_mailboxes').select('player_id').eq('player_id', athleteId).maybeSingle()
       .then(({ data }) => setHasMailbox(!!data))
   }, [athleteId, isAdmin, role])
-  // Patrimonio: la scheda compare solo se l'atleta ha un wealth manager collegato
-  const [hasWealth, setHasWealth] = useState(false)
+  // Fisco, polizze, patrimonio: la scheda compare solo se l'atleta ha quel professionista nel team
+  const [teamRoles, setTeamRoles] = useState<string[]>([])
   useEffect(() => {
-    if (!athleteId || !(isAdmin || role === 'player')) { setHasWealth(false); return }
-    supabase.from('crm_wealth_athletes').select('player_id').eq('player_id', athleteId).limit(1)
-      .then(({ data }) => setHasWealth(!!data?.length))
+    if (!athleteId || !(isAdmin || role === 'player')) { setTeamRoles([]); return }
+    supabase.from('crm_athlete_team').select('role').eq('player_id', athleteId)
+      .then(({ data }) => setTeamRoles(((data as { role: string }[]) || []).map(r => r.role)))
   }, [athleteId, isAdmin, role])
   const visibleItem = (i: NavDef) => (!i.adminOnly || isAdmin) && (!i.roles || (!!role && i.roles.includes(role))) && (!i.mailbox || hasMailbox)
-  const tabsOf = (i: NavDef) => (i.tabs || []).filter(t => (!t.roles || (!!role && t.roles.includes(role))) && (!t.wealth || hasWealth))
+  const tabsOf = (i: NavDef) => (i.tabs || []).filter(t => (!t.roles || (!!role && t.roles.includes(role))) && (!t.team || teamRoles.includes(t.team)))
   const allItems = nav.flatMap(g => g.items).filter(visibleItem)
   const hub = allItems.find(i => i.key === route || tabsOf(i).some(t => t.key === route))
   const hubTabs = hub ? tabsOf(hub) : []

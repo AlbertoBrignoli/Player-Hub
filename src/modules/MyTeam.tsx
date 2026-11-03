@@ -24,7 +24,7 @@ type Member = {
 
 type Area = { route: string; label: string }
 const ROLE: Record<string, { label: string; icon: string; area?: Area }> = {
-  agente:         { label: 'Procuratore',          icon: 'briefcase', area: { route: 'archivio', label: 'Contratti e Documenti' } },
+  agente:         { label: 'Procuratore',          icon: 'briefcase', area: { route: 'contracts', label: 'Contratti e Documenti' } },
   preparatore:    { label: 'Preparatore atletico', icon: 'activity',  area: { route: 'fitness',  label: 'Area Fitness' } },
   assicuratore:   { label: 'Assicuratore',         icon: 'lock',      area: { route: 'insurance', label: 'Polizze e coperture' } },
   commercialista: { label: 'Commercialista',       icon: 'briefcase', area: { route: 'legaltax', label: 'Legal & Tax' } },
