@@ -3889,5 +3889,9 @@ const EN: Record<string, string> = {
   'Es. obiettivi, intolleranze, orari degli allenamenti…': 'E.g. goals, intolerances, training times…',
   'Gli arriva in chat: rispondete lì.': 'It reaches them in chat: reply there.',
   'Richiesta piano alimentare': 'Meal plan request',
+  'pres.': 'apps',
+  'gol': 'goals',
+  'voto': 'rating',
+  'Apri Performance': 'Open Performance',
 }
 

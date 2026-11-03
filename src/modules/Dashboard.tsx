@@ -26,24 +26,15 @@ const CHIP: Record<string, { l: string; c: string }> = {
 // 5 prossimi giorni, 6 stagione + ultima partita, 7 referenti.
 // Desktop (>880px): colonna sinistra 1-4, destra 5-7. Stesso DOM, nessun `order`.
 const HOME_CSS = `
-/* La tua stagione: card chiara (tra due blocchi neri), il giallo resta solo nell'icona */
-.home-season { width: 100%; text-align: left; display: block; cursor: pointer; background: #E9E9E7; color: var(--ink); border: 1px solid #E0E0DD; border-radius: 20px; padding: 18px; transition: transform .12s, border-color .15s; }
+/* La tua stagione: barra compatta sotto la partita, cliccabile */
+.home-season { width: 100%; display: flex; align-items: center; gap: 10px; text-align: left; cursor: pointer; background: #E9E9E7; color: var(--ink); border: 1px solid #E0E0DD; border-radius: 16px; padding: 10px 12px; min-height: 52px; transition: transform .12s, border-color .15s; }
 .home-season:hover { border-color: var(--border-2); }
 .home-season:active { transform: scale(.985); }
-.home-season-head { display: flex; align-items: center; gap: 12px; }
-.home-season-ic { width: 38px; height: 38px; border-radius: 12px; background: var(--ink); color: var(--yellow); display: grid; place-items: center; flex-shrink: 0; }
-.home-season-k { font-size: var(--fs-label); font-weight: var(--w-bold); letter-spacing: 1.3px; text-transform: uppercase; color: var(--text-dim); }
-.home-season-t { font-family: var(--font-display); font-stretch: 125%; font-weight: 700; font-size: 18px; text-transform: uppercase; line-height: 1.15; }
-.home-season-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 16px; }
-.home-season-grid > div { text-align: center; min-width: 0; }
-.home-season-grid > div + div { border-left: 1px solid rgba(10,10,10,.1); }
-.home-season-grid .v { font-family: var(--font-display); font-stretch: 125%; font-weight: 700; font-size: 24px; line-height: 1; font-variant-numeric: tabular-nums; }
-.home-season-grid .l { font-size: 11px; font-weight: 600; margin-top: 6px; color: var(--text-faint); }
-.home-season-last { display: flex; align-items: center; gap: 8px; margin-top: 14px; padding: 10px 12px; border-radius: 12px; background: rgba(255,255,255,.6); font-size: 12.5px; }
-.home-season-last .k { font-weight: 700; flex-shrink: 0; }
-.home-season-last .m { flex: 1; min-width: 0; font-weight: 600; }
-.home-season-last .x { flex-shrink: 0; color: var(--text-faint); font-variant-numeric: tabular-nums; }
-@media (max-width: 380px) { .home-season-grid .v { font-size: 22px; } }
+.home-season-ic { width: 32px; height: 32px; border-radius: 10px; background: var(--ink); color: var(--yellow); display: grid; place-items: center; flex-shrink: 0; }
+.home-season-k { font-size: var(--fs-label); font-weight: var(--w-bold); letter-spacing: 1px; text-transform: uppercase; color: var(--text-dim); flex-shrink: 0; }
+.home-season-nums { flex: 1; min-width: 0; display: flex; justify-content: flex-end; gap: 14px; font-size: var(--fs-meta); color: var(--text-dim); white-space: nowrap; overflow: hidden; }
+.home-season-nums b { font-family: var(--font-display); font-stretch: 125%; font-weight: 700; font-size: 15px; color: var(--ink); font-variant-numeric: tabular-nums; }
+@media (max-width: 600px) { .home-season-k { display: none; } .home-season-nums { justify-content: space-between; gap: 8px; } }
 
 .home { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 28px; align-items: start; }
 .home-col { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
@@ -193,6 +184,7 @@ button.home-card:active, .home-qa:active, .home-contact:active { transform: scal
   .home-o1 { order: 1; } .home-o2 { order: 2; } .home-o3 { order: 3; } .home-o4 { order: 4; }
   .home-o5 { order: 5; } .home-o6 { order: 6; } .home-o7 { order: 7; }
 }
+@media (max-width: 1280px) { .home-desk { display: none; } }
 /* iPhone: tutto più compatto, come le app Apple (meno aria morta, stesse gerarchie) */
 @media (max-width: 600px) {
   .home { gap: 16px; }
@@ -210,10 +202,6 @@ button.home-card:active, .home-qa:active, .home-contact:active { transform: scal
   .home-team-logo, .home-team-ini { width: 38px; height: 38px; }
   .home-kick-t { font-size: 20px; }
   .home-score-meta { margin-top: 12px; padding-top: 10px; }
-  .home-season { padding: 14px; border-radius: 18px; }
-  .home-season-grid { margin-top: 12px; }
-  .home-season-grid .v { font-size: 20px; }
-  .home-season-last { margin-top: 12px; padding: 8px 10px; }
   .home-svc-hero, .home-svc-in { min-height: 0; }
   .home-svc-in { padding: 16px; }
   .home-svc-t { font-size: 18px; }
@@ -568,28 +556,17 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
   const seasonLabel = curSeason ? `${curSeason}/${String((Number(curSeason) + 1) % 100).padStart(2, '0')}` : ''
   const stats = (
     <section className="home-sec">
-      <button className="home-season" onClick={() => goto('performance')} aria-label={`${t('La tua stagione')} ${seasonLabel}`}>
-        <div className="home-season-head">
-          <span className="home-season-ic"><Icon name="ball" size={18} strokeWidth={1.8} /></span>
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <div className="home-season-k">{t('La tua stagione')}{seasonLabel ? ` ${seasonLabel}` : ''}</div>
-            <div className="home-season-t">{t('Numeri in campo')}</div>
-          </div>
-          <Icon name="chevron-right" size={18} style={{ flexShrink: 0 }} />
-        </div>
-        <div className="home-season-grid">
-          <div><div className="v">{presenze}</div><div className="l">{t('Presenze')}</div></div>
-          <div><div className="v">{minutes.toLocaleString(locale)}</div><div className="l">{t('Minuti')}</div></div>
-          <div><div className="v">{goals}</div><div className="l">{t('Gol')}</div></div>
-          <div><div className="v">{avgRating ? avgRating.toFixed(2) : '-'}</div><div className="l">{t('Voto medio')}</div></div>
-        </div>
-        {lastMatch && (
-          <div className="home-season-last">
-            <span className="k">{t('Ultima')}</span>
-            <span className="m home-trunc">{lastMatch.match_name}</span>
-            <span className="x">{lastMatch.minutes}′ · {fmtDate(lastMatch.match_date)}</span>
-          </div>
-        )}
+      {/* barra compatta sotto la partita: i 4 numeri della stagione, un tocco apre Performance */}
+      <button className="home-season" onClick={() => goto('performance')} aria-label={`${t('La tua stagione')} ${seasonLabel} · ${t('Apri Performance')}`}>
+        <span className="home-season-ic"><Icon name="ball" size={16} strokeWidth={1.8} /></span>
+        <span className="home-season-k">{t('Stagione')}{seasonLabel ? ` ${seasonLabel}` : ''}</span>
+        <span className="home-season-nums">
+          <span><b>{presenze}</b> {t('pres.')}</span>
+          <span><b>{minutes.toLocaleString(locale)}</b>′</span>
+          <span><b>{goals}</b> {t('gol')}</span>
+          <span><b>{avgRating ? avgRating.toFixed(2) : '-'}</b> {t('voto')}</span>
+        </span>
+        <Icon name="chevron-right" size={16} style={{ flexShrink: 0, color: 'var(--text-faint)' }} />
       </button>
     </section>
   )
@@ -599,19 +576,20 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
       <style>{HOME_CSS}</style>
       <div className="home-col">
         {/* su telefono una colonna sola, ma con le priorità del PC: in alto chi sei e le azioni,
-            poi partita e prossimi giorni (che su PC si vedono insieme), poi stagione, referenti e servizi */}
+            poi partita con sotto la barra della stagione, prossimi giorni e servizi */}
         <div className="home-o1"><div className="home-sec home-top">
           {identity}
           {quick}
         </div></div>
         {todo && <div className="home-o2">{todo}</div>}
         <div className="home-o3">{hero}</div>
-        <div className="home-o5">{stats}</div>
+        <div className="home-o4">{stats}</div>
         <div className="home-o7"><HomeServices goto={goto} /></div>
       </div>
       <div className="home-col">
-        <div className="home-o4">{agenda}</div>
-        <div className="home-o6"><HomeContacts goto={goto} title={t('I tuoi referenti')} /></div>
+        <div className="home-o5">{agenda}</div>
+        {/* referenti solo su PC: su telefono e iPad sono già in Il mio team */}
+        <div className="home-o6 home-desk"><HomeContacts goto={goto} title={t('I tuoi referenti')} /></div>
       </div>
       {adding && <QuickAddModal initialKind={adding} onClose={() => setAdding(null)} />}
     </div>
