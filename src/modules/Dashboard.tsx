@@ -27,12 +27,13 @@ const CHIP: Record<string, { l: string; c: string }> = {
 // Desktop (>880px): colonna sinistra 1-4, destra 5-7. Stesso DOM, nessun `order`.
 const HOME_CSS = `
 /* La tua stagione: barra compatta sotto la partita, cliccabile */
-.home-season { position: relative; overflow: hidden; width: 100%; display: flex; align-items: center; gap: 10px; text-align: left; cursor: pointer; background: var(--ink); color: #fff; border: 0; border-radius: 16px; padding: 10px 12px; min-height: 56px; transition: transform .12s; }
+.home-season { width: 100%; display: flex; align-items: center; gap: 10px; text-align: left; cursor: pointer; background: var(--surface); color: var(--ink); border: 1px solid var(--border); border-radius: 16px; padding: 10px 12px; min-height: 56px; transition: transform .12s, border-color .15s; }
+.home-season:hover { border-color: var(--border-2); }
 .home-season:active { transform: scale(.985); }
 .home-season-ic { width: 32px; height: 32px; border-radius: 10px; background: var(--yellow); color: var(--ink); display: grid; place-items: center; flex-shrink: 0; }
-.home-season-k { font-size: var(--fs-label); font-weight: var(--w-bold); letter-spacing: 1px; text-transform: uppercase; color: var(--yellow); flex-shrink: 0; }
-.home-season-nums { flex: 1; min-width: 0; display: flex; justify-content: flex-end; gap: 14px; font-size: var(--fs-meta); color: rgba(255,255,255,.7); white-space: nowrap; overflow: hidden; }
-.home-season-nums b { font-family: var(--font-display); font-stretch: 125%; font-weight: 700; font-size: 15px; color: #fff; font-variant-numeric: tabular-nums; }
+.home-season-k { font-size: var(--fs-label); font-weight: var(--w-bold); letter-spacing: 1px; text-transform: uppercase; color: var(--text-dim); flex-shrink: 0; }
+.home-season-nums { flex: 1; min-width: 0; display: flex; justify-content: flex-end; gap: 14px; font-size: var(--fs-meta); color: var(--text-dim); white-space: nowrap; overflow: hidden; }
+.home-season-nums b { font-family: var(--font-display); font-stretch: 125%; font-weight: 700; font-size: 15px; color: var(--ink); font-variant-numeric: tabular-nums; }
 @media (max-width: 600px) { .home-season-k { display: none; } .home-season-nums { justify-content: space-between; gap: 8px; } }
 
 .home { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 28px; align-items: start; }
@@ -55,30 +56,22 @@ button.home-card:active, .home-qa:active, .home-contact:active { transform: scal
 
 /* 1+2 intestazione: un riquadro giallo AUVI con chi sei e le azioni rapide (su telefono sotto il nome) */
 .home-top { position: relative; overflow: hidden; display: flex; align-items: center; justify-content: space-between; gap: 16px 24px; flex-wrap: wrap;
-  border: 0; border-radius: 20px; padding: 14px 16px; color: #fff;
-  background: var(--ink); }
-/* Blocchi scuri della Home (intestazione, stagione, servizi): stessa ricetta, una foto senza scritte
-   in bianco e nero sotto un velo nero. Cambia solo la foto (--home-photo). */
-.home-top, .home-season, .home-svc-hero { --home-veil: linear-gradient(100deg, rgba(10,10,10,.93) 0%, rgba(10,10,10,.8) 55%, rgba(10,10,10,.6) 100%); }
-.home-top { --home-photo: url(/servizi/auvi-studio.jpg); }
-.home-season { --home-photo: url(/servizi/scouting-cover.jpg); }
+  border: 1px solid var(--border); border-radius: 20px; padding: 14px 16px; color: var(--ink);
+  background: var(--surface); }
+/* Colori della Home: base chiara come le pagine interne; il nero solo per i due "momenti vetrina"
+   (prossima partita e copertina Servizi, foto in bianco e nero sotto velo nero); il giallo come accento. */
 .home-svc-hero { --home-photo: url(/servizi/auvi-performance.jpg); }
-.home-top::before, .home-season::before, .home-svc-hero::before { content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none;
-  background: var(--home-veil), var(--home-photo) center / cover; filter: grayscale(1); }
-.home-top > *, .home-season > * { position: relative; z-index: 1; }
-.home-top .home-id-name, .home-top .home-id-line { color: #fff; }
-.home-top .home-id-hi, .home-top .home-id-role { color: rgba(255,255,255,.7); }
-.home-top .home-id-ph { border-color: rgba(255,255,255,.2); }
-.home-top .home-qa-l { color: #fff; }
+.home-svc-hero::before { content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background: linear-gradient(100deg, rgba(10,10,10,.93) 0%, rgba(10,10,10,.8) 55%, rgba(10,10,10,.6) 100%), var(--home-photo) center / cover; filter: grayscale(1); }
 .home-id-line { display: none; }
 .home-top .home-id { flex: 1 1 300px; min-width: min(300px, 100%); }
 .home-top .home-qas { display: flex; gap: 10px; flex: 0 0 auto; width: auto; }
 .home-top .home-qa { width: 52px; }
 .home-top .home-qa-ic { width: 44px; height: 44px; }
 /* sul giallo i cerchi sono tutti uguali: bianchi con bordo nero */
-.home-top .home-qa .home-qa-ic, .home-top .home-qa.primary .home-qa-ic { background: #fff; color: var(--ink); border: 0; }
+.home-top .home-qa .home-qa-ic, .home-top .home-qa.primary .home-qa-ic { background: var(--bg-2); color: var(--ink); border: 0; }
 .home-top .home-qa:hover .home-qa-ic { background: var(--yellow); }
-.home-top .home-qa-badge { border-color: var(--ink); }
+.home-top .home-qa-badge { border-color: var(--surface); }
 .home-top .home-qa.primary .home-qa-ic { box-shadow: none; }
 @media (max-width: 600px) { .home-top .home-qas { width: 100%; justify-content: space-around; } }
 
@@ -123,18 +116,10 @@ button.home-card:active, .home-qa:active, .home-contact:active { transform: scal
 .home-score-meta img { width: 18px; height: 18px; object-fit: contain; flex-shrink: 0; }
 
 /* 5 prossimi giorni: un blocco per giorno, a destra gli impegni con l'ora */
-/* card scura come gli altri blocchi (foto in bianco e nero sotto velo nero), giorni in giallo */
-.home-agenda { position: relative; background: var(--ink); border: 0; color: #fff; --home-photo: url(/servizi/auvi-brand.jpg); }
-.home-agenda::before { content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none;
-  background: linear-gradient(100deg, rgba(10,10,10,.95) 0%, rgba(10,10,10,.86) 60%, rgba(10,10,10,.72) 100%), var(--home-photo) center / cover; filter: grayscale(1); }
-.home-agenda > * { position: relative; z-index: 1; }
-.home-agenda .home-tl-group + .home-tl-group, .home-agenda .home-tl-row + .home-tl-row { border-top-color: rgba(255,255,255,.12); }
+/* prossimi giorni: card chiara, giorni della settimana in giallo AUVI */
 .home-agenda .home-tl-day { background: var(--yellow); }
 .home-agenda .home-tl-day .w { color: rgba(10,10,10,.7); }
 .home-agenda .home-tl-day .d { color: var(--ink); }
-.home-agenda .home-tl-time { color: rgba(255,255,255,.62); }
-.home-agenda .home-tl-t { color: #fff; }
-.home-agenda .home-tl-t.faint { color: rgba(255,255,255,.7); }
 .home-tl-group { display: flex; gap: 12px; padding: 10px 14px; align-items: flex-start; }
 .home-tl-group + .home-tl-group { border-top: 1px solid var(--border); }
 .home-tl-items { flex: 1; min-width: 0; display: grid; gap: 6px; padding-top: 4px; }
@@ -583,7 +568,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
           <span><b>{goals}</b> {t('gol')}</span>
           <span><b>{avgRating ? avgRating.toFixed(2) : '-'}</b> {t('voto')}</span>
         </span>
-        <Icon name="chevron-right" size={16} style={{ flexShrink: 0, color: 'rgba(255,255,255,.7)' }} />
+        <Icon name="chevron-right" size={16} style={{ flexShrink: 0, color: 'var(--text-faint)' }} />
       </button>
     </section>
   )
