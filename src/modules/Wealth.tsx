@@ -292,7 +292,7 @@ function Summary({ ov, rows, canManage, onEdit }: { ov: Overview | null; rows: W
 
   return (
     <div className="grid" style={{ gap: 18 }}>
-      <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 18,
+      <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 20,
                     background: 'var(--bg-2)', border: '1px solid var(--border)', padding: '22px' }}>
         <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 5, background: ACCENT }} />
         <div className="flex between" style={{ alignItems: 'flex-start', gap: 10 }}>
@@ -312,7 +312,7 @@ function Summary({ ov, rows, canManage, onEdit }: { ov: Overview | null; rows: W
 
           {parts.length > 0 && (
             <div style={{ marginTop: 16 }}>
-              <div style={{ display: 'flex', height: 10, borderRadius: 5, overflow: 'hidden', background: 'var(--border)' }}>
+              <div style={{ display: 'flex', height: 10, borderRadius: 8, overflow: 'hidden', background: 'var(--border)' }}>
                 {parts.map(p => <div key={p.k} title={tr(p.k)} style={{ width: `${(p.v / sumParts) * 100}%`, background: p.c }} />)}
               </div>
               <div className="flex gap" style={{ gap: 16, marginTop: 10, flexWrap: 'wrap' }}>
@@ -485,7 +485,7 @@ function FileList({ files, onRemove }: { files: File_[]; onRemove: (p: string) =
   return (
     <div className="grid" style={{ gap: 6, marginBottom: 8 }}>
       {files.map(a => (
-        <div key={a.path} className="flex between" style={{ alignItems: 'center', gap: 8, border: '1px solid var(--border)', borderRadius: 10, padding: '8px 10px' }}>
+        <div key={a.path} className="flex between" style={{ alignItems: 'center', gap: 8, border: '1px solid var(--border)', borderRadius: 12, padding: '8px 10px' }}>
           <span className="flex gap" style={{ alignItems: 'center', gap: 7, minWidth: 0 }}>
             <Icon name="file" size={15} />
             <span style={{ fontSize: 12.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</span>

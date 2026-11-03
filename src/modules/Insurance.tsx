@@ -15,7 +15,7 @@ import { useItemPeople, PeopleRow, ItemPeopleModal } from '../components/ItemPeo
 // Area assicurativa dell'atleta: una sola pagina a sezioni (niente schede interne).
 // Prima ciò che scade, poi le polizze (sport e personale), poi spesa e coperture,
 // anagrafica e, in fondo, i contenuti del broker. I documenti li carica l'assicuratore.
-const ACCENT = '#1F6FEB'      // blu assicurativo, distinto da brand/fitness/procura
+const ACCENT = '#0A0A0A'      // accento unico AUVI: le aree si distinguono per titolo e icona, non per colore
 const WARN = '#8A6D00'
 const DANGER = '#E53F00'
 const OK = '#12A150'
@@ -420,7 +420,7 @@ function Overview({ rows, pays }: { rows: Policy[]; pays: Payment[] }) {
       <Section title={tr('Spesa assicurativa annua')}
         sub={tr('su {n} polizze · {m} al mese').replace('{n}', String(attive.length)).replace('{m}', fmtMoney(totale / 12))}>
         <div className="grid" style={{ gap: 12 }}>
-          <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 18,
+          <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 20,
                         background: 'var(--bg-2)', border: '1px solid var(--border)', padding: '22px' }}>
             <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 5, background: ACCENT }} />
             <div style={{ fontSize: 36, fontWeight: 800, letterSpacing: -1 }}>{fmtMoney(totale)}</div>
@@ -751,7 +751,7 @@ function PolicyForm({ value, playerId, onClose, onSaved }: {
         {atts.length > 0 && (
           <div className="grid" style={{ gap: 6, marginBottom: 8 }}>
             {atts.map(a => (
-              <div key={a.path} className="flex between" style={{ alignItems: 'center', gap: 8, border: '1px solid var(--border)', borderRadius: 10, padding: '8px 10px' }}>
+              <div key={a.path} className="flex between" style={{ alignItems: 'center', gap: 8, border: '1px solid var(--border)', borderRadius: 12, padding: '8px 10px' }}>
                 <span className="flex gap" style={{ alignItems: 'center', minWidth: 0, gap: 7 }}>
                   <Icon name="file" size={15} />
                   <span style={{ fontSize: 12.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</span>
@@ -882,7 +882,7 @@ function AnagraficaCard({ athleteId, canEdit }: { athleteId: number | null; canE
               <div className="grid" style={{ gap: 6, marginBottom: 8 }}>
                 {(form.id_docs || []).map((doc: any, i: number) => (
                   <div key={i} className="flex between" style={{ alignItems: 'center', gap: 10,
-                    border: '1px solid var(--border)', borderRadius: 10, padding: '8px 10px' }}>
+                    border: '1px solid var(--border)', borderRadius: 12, padding: '8px 10px' }}>
                     <span className="flex gap" style={{ alignItems: 'center', gap: 8, minWidth: 0 }}>
                       <Icon name="file" size={13} /> <span style={{ fontSize: 12.5, overflow: 'hidden', textOverflow: 'ellipsis' }}>{tr(doc.name || 'Documento')}</span>
                     </span>

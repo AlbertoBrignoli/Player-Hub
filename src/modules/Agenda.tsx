@@ -286,17 +286,17 @@ const AG_CSS = `
 .ag-row-static { cursor: default; }
 .ag-st { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; font-size: 12.5px; font-weight: 700; padding: 4px 10px; border-radius: 999px; line-height: 1.3; }
 .ag-st span { overflow-wrap: anywhere; }
-.ag-note { margin-top: 6px; padding: 6px 10px; border-left: 3px solid var(--magenta); background: rgba(221,0,136,.06); border-radius: 0 8px 8px 0; font-size: 12.5px; color: var(--text); overflow-wrap: anywhere; }
+.ag-note { margin-top: 6px; padding: 6px 10px; border-left: 3px solid var(--yellow); background: rgba(255,236,0,.14); border-radius: 0 8px 8px 0; font-size: 12.5px; color: var(--text); overflow-wrap: anywhere; }
 .ag-thread { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
-.ag-cm { font-size: 12.5px; line-height: 1.4; padding: 7px 10px; border-radius: 10px; background: var(--surface-2); overflow-wrap: anywhere; }
+.ag-cm { font-size: 12.5px; line-height: 1.4; padding: 7px 10px; border-radius: 12px; background: var(--surface-2); overflow-wrap: anywhere; }
 .ag-cm.mod { background: rgba(221,0,136,.07); border: 1px solid rgba(221,0,136,.25); }
 .ag-cm-h { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--text-dim); margin-bottom: 2px; flex-wrap: wrap; }
 .ag-cm-h b { color: var(--text); font-weight: 700; }
-.ag-cm-x { margin-left: auto; color: var(--text-faint); display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 6px; }
+.ag-cm-x { margin-left: auto; color: var(--text-faint); display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 8px; }
 .ag-cm-x:hover { color: var(--red); background: rgba(229,63,0,.08); }
 .ag-cm-form { display: flex; flex-direction: column; gap: 6px; }
 .ag-cm-btns { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: wrap; }
-.ev-row-dot.mod { background: var(--magenta); }
+.ev-row-dot.mod { background: var(--gold); }
 .ev-row-dot.no { background: var(--red); }
 .ev-focus { box-shadow: 0 0 0 2px var(--ink), 0 8px 24px rgba(10,10,10,.12); }
 `
@@ -436,7 +436,7 @@ function CalendarView(props: SharedProps & { focusId?: string | null }) {
             const isSel = sel && dayKey(sel) === k
             return (
               <div key={i} onClick={() => setSel(d)}
-                style={{ minHeight: 36, borderRadius: 10, cursor: 'pointer', border: isSel ? '1.5px solid var(--ink)' : isToday ? '1px solid var(--accent)' : '1px solid var(--border)', background: isSel ? 'var(--yellow-soft)' : isToday ? 'rgba(255,236,0,.10)' : 'transparent', padding: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                style={{ minHeight: 36, borderRadius: 12, cursor: 'pointer', border: isSel ? '1.5px solid var(--ink)' : isToday ? '1px solid var(--accent)' : '1px solid var(--border)', background: isSel ? 'var(--yellow-soft)' : isToday ? 'rgba(255,236,0,.10)' : 'transparent', padding: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
                 <span style={{ fontSize: 12.5, fontWeight: isToday ? 800 : 500 }}>{d.getDate()}</span>
                 <span className="flex" style={{ gap: 2 }}>
                   {evs.slice(0, 4).map((e, j) => <span key={j} style={{ width: 5, height: 5, borderRadius: '50%', background: typeFor(e).c }} />)}
@@ -497,7 +497,7 @@ function StatusChip({ e }: { e: AgItem }) {
   const conf: Record<string, { bg: string; c: string; ic: string; l: string }> = {
     da_confermare: { bg: 'var(--yellow-soft)', c: 'var(--gold)', ic: 'clock',
       l: e.proposed_by_role === 'partner' ? tr('Da confermare') : team ? `${tr('Proposta da {who}').replace('{who}', who)} · ${tr('da confermare')}` : tr("Richiesta dell'atleta · da confermare") },
-    modifica_richiesta: { bg: 'rgba(221,0,136,.10)', c: 'var(--magenta)', ic: 'edit', l: tr('Modifica richiesta') },
+    modifica_richiesta: { bg: 'var(--yellow-soft)', c: 'var(--gold)', ic: 'edit', l: tr('Modifica richiesta') },
     rifiutata: { bg: 'rgba(229,63,0,.10)', c: 'var(--red)', ic: 'x', l: team ? tr('Non accettata') : tr('Richiesta non accolta') },
     confermata: { bg: 'rgba(18,161,80,.12)', c: 'var(--green)', ic: 'check', l: tr('Confermato') },
   }
@@ -532,7 +532,7 @@ export function EvCard({ e, focus, canEdit, onEdit, onDel, canConfirm, onConfirm
   const canRepropose = isPro && !!uid && e.created_by === uid && (e.request_status === 'modifica_richiesta' || e.request_status === 'rifiutata')
   return (
     <div id={'ev-' + e.id} className={'card' + (focus ? ' ev-focus' : '')} style={{ padding: '12px 14px', display: 'flex', gap: 12, alignItems: 'flex-start', borderLeft: `3px solid ${t.c}`, minWidth: 0 }}>
-      <span style={{ width: 34, height: 34, borderRadius: 10, background: t.c + '22', color: t.c, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: '0 0 auto' }}>
+      <span style={{ width: 34, height: 34, borderRadius: 12, background: t.c + '22', color: t.c, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: '0 0 auto' }}>
         <Icon name={t.icon} size={17} />
       </span>
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -672,7 +672,7 @@ function Thread({ eventId, uid, mainIsChange, onCount }: { eventId: string; uid?
           <div key={c.id} className={'ag-cm' + (c.kind === 'modifica' ? ' mod' : '')}>
             <div className="ag-cm-h">
               <b>{who(c)}</b><span>· {when(c.created_at)}</span>
-              {c.kind === 'modifica' && <span style={{ color: 'var(--magenta)', fontWeight: 600 }}>· {tr('Richiesta di modifica')}</span>}
+              {c.kind === 'modifica' && <span style={{ color: 'var(--gold)', fontWeight: 600 }}>· {tr('Richiesta di modifica')}</span>}
               {c.author_id === uid && <button className="ag-cm-x" onClick={() => del(c)} title={tr('Elimina')} aria-label={tr('Elimina')}><Icon name="x" size={13} /></button>}
             </div>
             <div>{c.body}</div>
@@ -814,7 +814,7 @@ function EventForm({ value, isAdmin, role, uid, athleteId, nameOf, athleteChoice
         {atts.length > 0 && (
           <div className="grid" style={{ gap: 6, marginBottom: 8 }}>
             {atts.map(a => (
-              <div key={a.path} className="flex between" style={{ alignItems: 'center', gap: 8, border: '1px solid var(--border)', borderRadius: 10, padding: '8px 10px' }}>
+              <div key={a.path} className="flex between" style={{ alignItems: 'center', gap: 8, border: '1px solid var(--border)', borderRadius: 12, padding: '8px 10px' }}>
                 <span className="flex gap" style={{ alignItems: 'center', minWidth: 0 }}>
                   <Icon name="file" size={15} />
                   <span style={{ fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</span>

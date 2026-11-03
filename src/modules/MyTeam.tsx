@@ -72,7 +72,7 @@ export default function MyTeam({ goto }: { goto?: (r: string) => void }) {
     const open = (api: number) => { setAthleteId(api); goto?.(AREA_FOR[role || ''] || 'profile') }
     return (
       <div className="grid" style={{ gap: 18 }}>
-        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 18, padding: 18 }}>
+        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 20, padding: 18 }}>
           <div className="t-label">
             {t('Il mio team')}
           </div>
@@ -82,7 +82,7 @@ export default function MyTeam({ goto }: { goto?: (r: string) => void }) {
           </div>
         </div>
         {athletes.length === 0 ? (
-          <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: 20 }}>
+          <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 20, padding: 20 }}>
             <Empty icon={<Icon name="users" size={30} strokeWidth={1.4} />}
               title={t("Nessun giocatore ancora collegato")}
               hint={t('Quando vieni collegato a un atleta, comparirà qui.')} />
@@ -92,7 +92,7 @@ export default function MyTeam({ goto }: { goto?: (r: string) => void }) {
             {athletes.map(a => (
               <button key={a.api_player_id} onClick={() => open(a.api_player_id)}
                 className="flex between" style={{ alignItems: 'center', gap: 12, cursor: 'pointer', textAlign: 'left',
-                  background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: 14, color: 'var(--text)' }}>
+                  background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 20, padding: 14, color: 'var(--text)' }}>
                 <span className="flex gap" style={{ alignItems: 'center', gap: 12, minWidth: 0 }}>
                   {a.photo_url
                     ? <img src={a.photo_url} alt={a.name || ''} style={{ width: 46, height: 46, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
@@ -114,7 +114,7 @@ export default function MyTeam({ goto }: { goto?: (r: string) => void }) {
       {/* intestazione: il club dell'atleta */}
       <style>{MT_CSS}</style>
       <div className="flex gap" style={{ alignItems: 'center', gap: 14, flexWrap: 'wrap',
-        background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 18, padding: 18 }}>
+        background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 20, padding: 18 }}>
         {athlete?.photo_url ? (
           <img src={athlete.photo_url} alt={athlete.name || ''}
             style={{ width: 58, height: 58, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
@@ -150,7 +150,7 @@ export default function MyTeam({ goto }: { goto?: (r: string) => void }) {
 
       {/* professionisti collegati */}
       {loading ? <Spinner /> : rows.length === 0 ? (
-        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: 20 }}>
+        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 20, padding: 20 }}>
           <Empty icon={<Icon name="users" size={30} strokeWidth={1.4} />}
             title={t("Ancora nessun professionista collegato")}
             hint={isAdmin
@@ -215,13 +215,13 @@ function MemberCard({ name, roleLabel, icon, title, agency, photo, logo, email, 
   return (
     <div role={main ? 'button' : undefined} tabIndex={main ? 0 : undefined} className="mt-tile"
       onClick={main} onKeyDown={main ? e => { if (e.key === 'Enter') main() } : undefined}
-      style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: 16,
+      style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 20, padding: 16,
         display: 'flex', flexDirection: 'column', gap: 12, cursor: main ? 'pointer' : undefined, minWidth: 0 }}>
       <div className="flex between" style={{ alignItems: 'flex-start', gap: 10 }}>
         {photo ? (
-          <img src={photo} alt={name || ''} style={{ width: 56, height: 56, borderRadius: 14, objectFit: 'cover', flexShrink: 0 }} />
+          <img src={photo} alt={name || ''} style={{ width: 56, height: 56, borderRadius: 20, objectFit: 'cover', flexShrink: 0 }} />
         ) : (
-          <div style={{ width: 56, height: 56, borderRadius: 14, flexShrink: 0, display: 'flex',
+          <div style={{ width: 56, height: 56, borderRadius: 20, flexShrink: 0, display: 'flex',
             alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 18,
             background: accent ? 'var(--yellow)' : 'var(--bg-2)',
             color: accent || 'var(--text)', border: '1px solid var(--border)' }}>
@@ -239,7 +239,7 @@ function MemberCard({ name, roleLabel, icon, title, agency, photo, logo, email, 
         {sub && <div style={{ fontSize: 12.5, color: 'var(--text-dim)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sub}</div>}
       </div>
       {area && onArea && (
-        <div className="flex between" style={{ marginTop: 'auto', alignItems: 'center', gap: 8, padding: '9px 11px', borderRadius: 11,
+        <div className="flex between" style={{ marginTop: 'auto', alignItems: 'center', gap: 8, padding: '9px 11px', borderRadius: 12,
           background: 'var(--surface-2)', fontSize: 12.5, fontWeight: 800 }}>
           <span className="flex gap" style={{ alignItems: 'center', gap: 7 }}><Icon name="folder" size={15} /> {t(area.label)}</span>
           <Icon name="chevron-right" size={16} />
@@ -261,7 +261,7 @@ function ArchiveTile({ icon, title, sub, onClick }: { icon: string; title: strin
   return (
     <button onClick={onClick} className="mt-tile flex gap"
       style={{ alignItems: 'center', gap: 12, textAlign: 'left', cursor: 'pointer', color: 'var(--text)',
-        background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: 14, minWidth: 0 }}>
+        background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 20, padding: 14, minWidth: 0 }}>
       <span style={{ width: 40, height: 40, borderRadius: 12, flexShrink: 0, display: 'grid', placeItems: 'center', background: 'var(--surface-2)' }}>
         <Icon name={icon} size={18} />
       </span>
@@ -275,7 +275,7 @@ function ArchiveTile({ icon, title, sub, onClick }: { icon: string; title: strin
 }
 
 const MT_CSS = `
-.mt-advisor { display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 10px; min-height: 64px; border-radius: 14px; cursor: pointer; font: inherit;
+.mt-advisor { display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 10px; min-height: 64px; border-radius: 20px; cursor: pointer; font: inherit;
   background: var(--surface-2); border: 1px solid var(--border); color: var(--text); flex-shrink: 0; }
 .mt-advisor-go { width: 36px; height: 36px; border-radius: 50%; background: var(--yellow); color: var(--ink); display: grid; place-items: center; flex-shrink: 0; margin-left: 4px; }
 .mt-advisor:hover { border-color: var(--border-2); }
@@ -286,6 +286,6 @@ const MT_CSS = `
 
 const TILES: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 12 }
 const ico: React.CSSProperties = {
-  width: 30, height: 30, flexShrink: 0, borderRadius: 10, display: 'inline-flex', alignItems: 'center',
+  width: 30, height: 30, flexShrink: 0, borderRadius: 12, display: 'inline-flex', alignItems: 'center',
   justifyContent: 'center', color: 'var(--text-dim)', border: '1px solid var(--border)',
 }

@@ -106,7 +106,7 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
       {player && (
         <div className="grid g2" style={{ gap: 14 }}>
           <div className="card card-lg flex gap" style={{ gap: 18, alignItems: 'center' }}>
-            {player.photo_url && <img src={player.photo_url} alt="" style={{ width: 72, height: 72, borderRadius: 14, objectFit: 'cover', border: '1px solid var(--border-2)' }} />}
+            {player.photo_url && <img src={player.photo_url} alt="" style={{ width: 72, height: 72, borderRadius: 20, objectFit: 'cover', border: '1px solid var(--border-2)' }} />}
             <div style={{ flex: 1, minWidth: 0 }}>
               <div className="flex wrap" style={{ gap: 8, alignItems: 'center' }}>
                 <div style={{ fontSize: 18, fontWeight: 800 }}>{player.name}</div>

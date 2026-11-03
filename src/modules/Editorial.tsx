@@ -43,7 +43,7 @@ const STATUSES: Record<string, { label: string; tone?: 'green' | 'red' | 'gold' 
 }
 
 const moveBtn = (disabled: boolean): React.CSSProperties => ({
-  width: 24, height: 24, borderRadius: 7, border: 'none', cursor: disabled ? 'default' : 'pointer',
+  width: 24, height: 24, borderRadius: 8, border: 'none', cursor: disabled ? 'default' : 'pointer',
   background: 'var(--ink)', color: 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center',
   opacity: disabled ? 0.35 : 1,
 })
@@ -375,13 +375,13 @@ function EntryChip({ e, onOpen, preview, tz, full }: { e: EditorialEntry; onOpen
   return (
     <button className={`cal-chip-rich ${full ? 'cal-w-full' : ''}`} onClick={() => onOpen(e)} title={`${e.title} · Instagram`}
       style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', padding: '6px 8px',
-        borderRadius: 10, cursor: 'pointer', background: 'var(--card)', border: '1px solid var(--border)', borderLeft: `3px solid ${accent}`, color: 'var(--text)' }}>
+        borderRadius: 12, cursor: 'pointer', background: 'var(--card)', border: '1px solid var(--border)', borderLeft: `3px solid ${accent}`, color: 'var(--text)' }}>
       <div style={{ position: 'relative', width: 40, height: 40, borderRadius: 8, overflow: 'hidden', flexShrink: 0,
         background: 'var(--surface-2)', display: 'grid', placeItems: 'center', color: 'var(--text-dim)' }}>
         {preview
           ? <img src={preview} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           : <Icon name={TYPES[e.type]?.icon || 'image'} size={16} strokeWidth={1.5} />}
-        <span style={{ position: 'absolute', bottom: -1, right: -1, width: 15, height: 15, borderRadius: 5,
+        <span style={{ position: 'absolute', bottom: -1, right: -1, width: 15, height: 15, borderRadius: 8,
           background: 'var(--ink)', display: 'grid', placeItems: 'center' }}>
           <Icon name="instagram" size={9} style={{ color: e.status === 'pubblicato' ? IG_PINK : 'var(--surface)' }} />
         </span>
@@ -420,7 +420,7 @@ function TodoRow({ e, preview, todayKey, onOpen, action }: {
   const isToday = e.entry_date === todayKey
   return (
     <div className="row" style={{ cursor: 'pointer', gap: 12 }} onClick={() => onOpen(e)}>
-      <div style={{ width: 44, flexShrink: 0, textAlign: 'center', borderRadius: 10, padding: '5px 0',
+      <div style={{ width: 44, flexShrink: 0, textAlign: 'center', borderRadius: 12, padding: '5px 0',
         background: isToday ? 'var(--yellow)' : 'var(--bg-2)', color: late ? 'var(--red)' : 'var(--ink)' }}>
         <div className="t-label" style={{ color: 'inherit', letterSpacing: .4 }}>{t(DOW[(d.getDay() + 6) % 7])}</div>
         <div style={{ fontSize: 18, fontWeight: 800, lineHeight: 1.1 }}>{d.getDate()}</div>
@@ -783,7 +783,7 @@ function EntryModal({ entry, onClose, onChanged }: {
                 <RevisionAnnotator url={urls[firstGraphicImg.storage_path]} onCancel={() => setShowAnnotator(false)} onSend={sendRevision} />
               ) : (
                 <>
-                  <img src={urls[firstGraphicImg.storage_path]} alt="" style={{ width: '100%', borderRadius: 10, display: 'block' }} />
+                  <img src={urls[firstGraphicImg.storage_path]} alt="" style={{ width: '100%', borderRadius: 12, display: 'block' }} />
                   {entry.revision && <div className="faint" style={{ fontSize: 12.5, marginTop: 8 }}>{t('Hai già inviato una richiesta di modifiche — il team ci sta lavorando.')}</div>}
                   <div className="flex gap" style={{ marginTop: 12 }}>
                     <button className="btn btn-primary" style={{ flex: 1 }} onClick={acceptGraphic}><Icon name="check" size={15} /> {t('Accetta')}</button>
@@ -875,7 +875,7 @@ function EntryModal({ entry, onClose, onChanged }: {
           <More title={`${t("Modifiche richieste dall'atleta")}${entry.revision.pins?.length ? ' · ' + t('{n} punti').replace('{n}', String(entry.revision.pins.length)) : ''}`} tone="var(--magenta)">
             {entry.revision.note && <div style={{ fontSize: 12.5, marginBottom: 8 }}>{entry.revision.note}</div>}
             {firstGraphicImg && urls[firstGraphicImg.storage_path] && (entry.revision.pins?.length > 0) && (
-              <div style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', marginBottom: 8 }}>
+              <div style={{ position: 'relative', borderRadius: 12, overflow: 'hidden', marginBottom: 8 }}>
                 <img src={urls[firstGraphicImg.storage_path]} alt="" style={{ width: '100%', display: 'block' }} />
                 {entry.revision.pins.map((p: any, i: number) => (<div key={i} style={pinStyle(p.x, p.y)}>{i + 1}</div>))}
               </div>
@@ -931,7 +931,7 @@ function EntryModal({ entry, onClose, onChanged }: {
             <input ref={materialRef} type="file" multiple accept="image/*,video/*" hidden onChange={onUploadMaterial} />
           </div>
           {approvate.length === 0
-            ? <div style={{ fontSize: 12.5, color: 'var(--gold)', background: 'var(--yellow-soft)', borderRadius: 10, padding: '8px 12px',
+            ? <div style={{ fontSize: 12.5, color: 'var(--gold)', background: 'var(--yellow-soft)', borderRadius: 12, padding: '8px 12px',
                 display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Icon name="clock" size={14} /> {entry.status !== 'pubblicato'
                   ? t('Serve il materiale (foto/video da cui nasce la grafica): senza non si può segnare Pronto o Pubblicato.')
@@ -950,7 +950,7 @@ function EntryModal({ entry, onClose, onChanged }: {
                     </div>
                     {/* numero d'ordine nel carosello */}
                     <div style={{ position: 'absolute', top: 6, left: 6, minWidth: 20, height: 20, padding: '0 5px',
-                      borderRadius: 10, background: 'var(--ink)', color: 'var(--surface)', fontSize: 11, fontWeight: 800,
+                      borderRadius: 12, background: 'var(--ink)', color: 'var(--surface)', fontSize: 11, fontWeight: 800,
                       display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{i + 1}</div>
                     {/* frecce per ordinare il carosello */}
                     {approvate.length > 1 && (
@@ -1315,7 +1315,7 @@ function MediaPicker({ athleteId, excludeSourceIds, onClose, onConfirm }: {
 
 const pinStyle = (x: number, y: number): any => ({
   position: 'absolute', left: `${x * 100}%`, top: `${y * 100}%`, transform: 'translate(-50%, -50%)',
-  width: 22, height: 22, borderRadius: '50%', background: 'var(--magenta)', color: 'var(--surface)', fontWeight: 800, fontSize: 12.5,
+  width: 22, height: 22, borderRadius: '50%', background: 'var(--yellow)', color: 'var(--ink)', fontWeight: 800, fontSize: 12.5,
   display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--surface)',
   boxShadow: '0 1px 4px rgba(0,0,0,.5)', pointerEvents: 'none',
 })
@@ -1348,7 +1348,7 @@ function RevisionAnnotator({ url, onCancel, onSend }: {
         <button className="btn btn-sm" onClick={() => setZoom(z => Math.min(4, +(z + 0.5).toFixed(1)))} disabled={zoom >= 4}>+</button>
         {pins.length > 0 && <button className="btn btn-sm" onClick={() => setPins(p => p.slice(0, -1))}>{t('Annulla ultimo punto')}</button>}
       </div>
-      <div style={{ maxHeight: 440, overflow: 'auto', border: '1px solid var(--border)', borderRadius: 10, background: 'var(--ink)' }}>
+      <div style={{ maxHeight: 440, overflow: 'auto', border: '1px solid var(--border)', borderRadius: 12, background: 'var(--ink)' }}>
         <div ref={wrapRef} onClick={addPin} style={{ position: 'relative', width: `${zoom * 100}%`, cursor: 'crosshair' }}>
           <img src={url} alt="" style={{ display: 'block', width: '100%' }} draggable={false} />
           {pins.map((p, i) => (<div key={i} style={pinStyle(p.x, p.y)}>{i + 1}</div>))}
@@ -1356,7 +1356,7 @@ function RevisionAnnotator({ url, onCancel, onSend }: {
       </div>
       {pins.map((p, i) => (
         <div key={i} className="flex gap" style={{ alignItems: 'center', marginTop: 8 }}>
-          <div style={{ minWidth: 22, height: 22, borderRadius: '50%', background: 'var(--magenta)', color: 'var(--surface)', fontWeight: 800, fontSize: 12.5, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: '0 0 auto' }}>{i + 1}</div>
+          <div style={{ minWidth: 22, height: 22, borderRadius: '50%', background: 'var(--yellow)', color: 'var(--ink)', fontWeight: 800, fontSize: 12.5, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: '0 0 auto' }}>{i + 1}</div>
           <input style={inputStyle} placeholder={t('Cosa cambiare nel punto {n}…').replace('{n}', String(i + 1))} value={p.note}
             onChange={e => setPins(arr => arr.map((q, j) => j === i ? { ...q, note: e.target.value } : q))} />
         </div>

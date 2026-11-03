@@ -15,7 +15,7 @@ import { RequestSteps, useRequesters } from '../components/DocRequests'
 
 // Area legale e fiscale: pagamenti, documenti del commercialista
 // e sue richieste che l'atleta deve smarcare.
-const ACCENT = '#9A5530'   // terra bruciata: distinto da brand/fitness/procura/assicurazioni
+const ACCENT = '#0A0A0A'   // accento unico AUVI: le aree si distinguono per titolo e icona, non per colore
 const WARN = '#8A6D00'
 const DANGER = '#E53F00'
 const OK = '#12A150'
@@ -149,7 +149,7 @@ export default function LegalTax() {
               <Icon name="plus" size={13} /> {tr('Aggiungi')}
             </button>
           )}>
-          <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 18,
+          <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 20,
                         background: 'var(--bg-2)', border: '1px solid var(--border)', padding: '18px 22px' }}>
             <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 5, background: ACCENT }} />
             <div className="flex gap" style={{ gap: 26, flexWrap: 'wrap' }}>
@@ -408,7 +408,7 @@ function Overview({ rows }: { rows: TaxItem[] }) {
 
   return (
     <div className="grid" style={{ gap: 18 }}>
-      <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 18,
+      <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 20,
                     background: 'var(--bg-2)', border: '1px solid var(--border)', padding: '22px' }}>
         <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 5, background: ACCENT }} />
         <div style={{ ...kicker, color: ACCENT }}>{tr('Legale e fiscale')} · {anno}</div>
@@ -583,7 +583,7 @@ function ItemForm({ value, playerId, onClose, onSaved }: {
         {atts.length > 0 && (
           <div className="grid" style={{ gap: 6, marginBottom: 8 }}>
             {atts.map(a => (
-              <div key={a.path} className="flex between" style={{ alignItems: 'center', gap: 8, border: '1px solid var(--border)', borderRadius: 10, padding: '8px 10px' }}>
+              <div key={a.path} className="flex between" style={{ alignItems: 'center', gap: 8, border: '1px solid var(--border)', borderRadius: 12, padding: '8px 10px' }}>
                 <span className="flex gap" style={{ alignItems: 'center', gap: 7, minWidth: 0 }}>
                   <Icon name="file" size={15} />
                   <span style={{ fontSize: 12.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</span>
@@ -655,7 +655,7 @@ function RespondForm({ item, playerId, onClose, onSaved }: {
       {atts.length > 0 && (
         <div className="grid" style={{ gap: 6, marginBottom: 10 }}>
           {atts.map(a => (
-            <div key={a.path} className="flex between" style={{ alignItems: 'center', gap: 8, border: '1px solid var(--border)', borderRadius: 10, padding: '8px 10px' }}>
+            <div key={a.path} className="flex between" style={{ alignItems: 'center', gap: 8, border: '1px solid var(--border)', borderRadius: 12, padding: '8px 10px' }}>
               <span className="flex gap" style={{ alignItems: 'center', gap: 7, minWidth: 0 }}>
                 <Icon name="file" size={15} />
                 <span style={{ fontSize: 12.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</span>

@@ -104,7 +104,7 @@ export function Section({ title, sub, action, children, style }: {
     <section className="section" style={style}>
       <div className="section-head">
         <div style={{ minWidth: 0 }}>
-          <div className="t-label">{title}</div>
+          <div className="t-section">{title}</div>
           {sub && <div className="t-meta">{sub}</div>}
         </div>
         {action}

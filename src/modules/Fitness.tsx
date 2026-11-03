@@ -467,7 +467,7 @@ function ProgramEditor({ program, athleteId, athleteName, trainerId, onClose, on
               draggable onDragStart={() => setDragIdx(i)} onDragOver={e => e.preventDefault()} onDrop={() => onDrop(i)}
               style={{ padding: 12, marginBottom: 10, borderLeft: `3px solid ${ACCENT}`, opacity: dragIdx === i ? 0.4 : 1 }}>
               <div className="flex" style={{ gap: 12, alignItems: 'flex-start' }}>
-                <div style={{ width: 56, height: 56, borderRadius: 10, overflow: 'hidden', flex: '0 0 auto', background: 'var(--bg-2)' }}>
+                <div style={{ width: 56, height: 56, borderRadius: 12, overflow: 'hidden', flex: '0 0 auto', background: 'var(--bg-2)' }}>
                   <ExMedia url={ex.image_url} width={160} className="exl-thumb" />
                 </div>
                 <div style={{ minWidth: 0, flex: 1 }}>
@@ -614,8 +614,8 @@ function CoachCard({ goto, athleteId }: { goto?: (r: string) => void; athleteId:
   return (
     <div className="card" style={{ padding: 16, marginBottom: 18, display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
       {coach.photo_url
-        ? <img src={coach.photo_url} alt="" style={{ width: 52, height: 52, borderRadius: 13, objectFit: 'cover' }} />
-        : <div style={{ width: 52, height: 52, borderRadius: 13, background: 'var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>{(coach.name || 'C').slice(0, 1)}</div>}
+        ? <img src={coach.photo_url} alt="" style={{ width: 52, height: 52, borderRadius: 12, objectFit: 'cover' }} />
+        : <div style={{ width: 52, height: 52, borderRadius: 12, background: 'var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>{(coach.name || 'C').slice(0, 1)}</div>}
       <div style={{ flex: 1, minWidth: 140 }}>
         <div className="t-label">{t('Il tuo preparatore')}</div>
         <div style={{ fontSize: 15, fontWeight: 800 }}>{coach.name || t('Preparatore')}</div>
@@ -882,7 +882,7 @@ function FbQ({ title, children }: { title: string; children: React.ReactNode }) 
 function TapBtn({ on, onClick, children, small }: { on: boolean; onClick: () => void; children: React.ReactNode; small?: boolean }) {
   return (
     <button onClick={onClick} style={{
-      padding: small ? '7px 12px' : '9px 15px', borderRadius: 10, cursor: 'pointer',
+      padding: small ? '7px 12px' : '9px 15px', borderRadius: 12, cursor: 'pointer',
       border: on ? `1.5px solid ${ACCENT}` : '1px solid var(--border)',
       background: on ? ACCENT + '26' : 'transparent', color: 'inherit',
       fontSize: 14, fontWeight: on ? 700 : 500,
@@ -923,7 +923,7 @@ function TrainerSummary({ athletes, athleteId }: { athletes: { api_player_id: nu
             const disc = f.discomfort && f.discomfort !== 'nessuno' ? f.discomfort : ''
             const issue = f.status !== 'completato' || !!disc
             return (
-              <div key={f.id} className="row" style={{ alignItems: 'center', borderLeft: issue ? '2px solid var(--orange)' : '2px solid transparent', paddingLeft: 10 }}>
+              <div key={f.id} className="row" style={{ alignItems: 'center', borderLeft: issue ? '2px solid var(--red)' : '2px solid transparent', paddingLeft: 10 }}>
                 <div className="row-main">
                   <div className="row-title">{name}</div>
                   <div className="row-sub">

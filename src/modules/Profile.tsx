@@ -91,8 +91,8 @@ export default function Profile() {
       {/* Intestazione atleta */}
       <div className="card" style={{ display: 'flex', gap: 16, alignItems: 'center', padding: 18, marginBottom: 18 }}>
         {player.photo_url
-          ? <img src={player.photo_url} alt="" style={{ width: 56, height: 56, borderRadius: 14, objectFit: 'cover' }} />
-          : <div style={{ width: 56, height: 56, borderRadius: 14, background: 'var(--border)' }} />}
+          ? <img src={player.photo_url} alt="" style={{ width: 56, height: 56, borderRadius: 20, objectFit: 'cover' }} />
+          : <div style={{ width: 56, height: 56, borderRadius: 20, background: 'var(--border)' }} />}
         <div>
           <div style={{ fontSize: 18, fontWeight: 800 }}>{player.name}</div>
           <div style={{ color: 'var(--text-dim)', fontSize: 12.5 }}>

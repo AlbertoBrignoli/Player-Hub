@@ -97,7 +97,7 @@ export default function Documents() {
           : <div className="list">
               {files[sel].map(f => (
                 <div className="row" key={f.key} style={{ flexWrap: 'wrap' }}>
-                  <div style={{ width: 38, height: 38, borderRadius: 9, background: 'var(--surface-2)', display: 'grid', placeItems: 'center', fontSize: 18 }}>{fileIcon(f.mime || null)}</div>
+                  <div style={{ width: 38, height: 38, borderRadius: 12, background: 'var(--surface-2)', display: 'grid', placeItems: 'center', fontSize: 18 }}>{fileIcon(f.mime || null)}</div>
                   <div className="row-main" style={{ minWidth: 160 }}>
                     <div className="row-title" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</div>
                     <div className="row-sub">{[f.sub && t(f.sub), f.date && fmtDate(f.date), f.size ? humanSize(f.size) : null,
@@ -246,7 +246,7 @@ function ProBoxes({ groups, sel, onSel }: { groups: Group[]; sel: string; onSel:
         const on = g.key === sel
         return (
           <button key={g.key} onClick={() => onSel(g.key)} style={{
-            textAlign: 'left', cursor: 'pointer', borderRadius: 14, padding: '14px 14px 12px', color: on ? 'var(--bg, #fff)' : 'var(--text)',
+            textAlign: 'left', cursor: 'pointer', borderRadius: 20, padding: '14px 14px 12px', color: on ? 'var(--bg, #fff)' : 'var(--text)',
             background: on ? 'var(--text)' : 'var(--card)', border: '1px solid ' + (on ? 'var(--text)' : 'var(--border)'),
             display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0,
           }}>

@@ -428,7 +428,7 @@ function MediaKitTab({ player, prof, topFits, collabs, cats, saveProf }: any) {
     <div className="card">
       <div className="t-label" style={{ marginBottom: 12 }}>{tr('Anteprima')}</div>
       <div className="flex gap" style={{ alignItems: 'center', marginBottom: 14 }}>
-        {player?.photo_url && <img src={player.photo_url} alt="" style={{ width: 56, height: 56, borderRadius: 14, objectFit: 'cover', border: '1px solid var(--border)' }} />}
+        {player?.photo_url && <img src={player.photo_url} alt="" style={{ width: 56, height: 56, borderRadius: 20, objectFit: 'cover', border: '1px solid var(--border)' }} />}
         <div>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 800 }}>{player?.name}</div>
           <div className="muted" style={{ fontSize: 12.5 }}>{player?.team_name} · {player?.position}{player?.age ? ` · ${tr('{n} anni').replace('{n}', String(player.age))}` : ''}</div>
