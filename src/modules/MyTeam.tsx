@@ -107,7 +107,8 @@ export default function MyTeam({ goto }: { goto?: (r: string) => void }) {
   return (
     <div className="grid" style={{ gap: 18 }}>
       {/* intestazione: il club dell'atleta */}
-      <div className="flex gap" style={{ alignItems: 'center', gap: 14,
+      <style>{MT_CSS}</style>
+      <div className="flex gap" style={{ alignItems: 'center', gap: 14, flexWrap: 'wrap',
         background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 18, padding: 18 }}>
         {athlete?.photo_url ? (
           <img src={athlete.photo_url} alt={athlete.name || ''}
@@ -124,21 +125,22 @@ export default function MyTeam({ goto }: { goto?: (r: string) => void }) {
             {t('Le persone che lavorano al tuo fianco: apri la scheda per entrare nella loro area.')}
           </div>
         </div>
+        {/* l'advisor AUVI segue tutto: sta nell'intestazione, non tra i professionisti */}
+        <a className="mt-advisor" href="mailto:info@auviagency.com" title="info@auviagency.com">
+          <span className="mt-advisor-mark"><img src="/brand/auvi-mark-yellow.svg" alt="" /></span>
+          <span style={{ minWidth: 0 }}>
+            <span className="t-label" style={{ display: 'block' }}>{t('Il tuo advisor')}</span>
+            <span className="t-item" style={{ display: 'block' }}>AUVI Agency</span>
+            <span className="t-meta" style={{ display: 'block' }}>{t('Gestione a 360°')}</span>
+          </span>
+          <Icon name="mail" size={16} />
+        </a>
         {/* collegamenti = inviti e accessi: un'azione di servizio, non un'area del team */}
         {canInvite && goto && (
           <button className="btn btn-sm" style={{ flexShrink: 0 }} onClick={() => goto('access-requests')}>
             <Icon name="key" size={14} /> {t('Collegamenti')}
           </button>
         )}
-      </div>
-
-      {/* AUVI Agency: l'advisor è sempre presente */}
-      <div>
-        <div className="t-label" style={{ paddingLeft: 2 }}>{t('Advisor')}</div>
-        <div style={TILES}>
-          <MemberCard name="AUVI Agency" roleLabel={t("Il tuo advisor · gestione a 360°")}
-            icon="star" email="info@auviagency.com" accent="var(--ink)" />
-        </div>
       </div>
 
       {/* professionisti collegati */}
@@ -266,6 +268,15 @@ function ArchiveTile({ icon, title, sub, onClick }: { icon: string; title: strin
     </button>
   )
 }
+
+const MT_CSS = `
+.mt-advisor { display: flex; align-items: center; gap: 12px; padding: 10px 14px 10px 10px; border-radius: 14px;
+  background: var(--surface-2); border: 1px solid var(--border); color: var(--text); text-decoration: none; flex-shrink: 0; }
+.mt-advisor:hover { border-color: var(--border-2); }
+.mt-advisor-mark { width: 44px; height: 44px; border-radius: 12px; background: var(--ink); display: grid; place-items: center; flex-shrink: 0; }
+.mt-advisor-mark img { width: 24px; }
+@media (max-width: 760px) { .mt-advisor { width: 100%; } }
+`
 
 const TILES: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 12 }
 const ico: React.CSSProperties = {

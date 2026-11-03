@@ -9,6 +9,7 @@ import Icon from '../components/Icon'
 import { defaultWeek } from '../components/WeekPlan'
 import { QuickAddModal, useQuickAddPermissions } from '../components/QuickAdd'
 import HomeContacts from './home/HomeContacts'
+import HomeServices from './home/HomeServices'
 import { fmtDate, fmtMatchTime, daysUntil, isImageFile } from '../lib/format'
 import type { Player, EventItem, Contract, Match, StatsMatch, EditorialEntry, MediaItem } from '../lib/types'
 
@@ -61,6 +62,14 @@ button.home-card:active, .home-qa:active, .home-contact:active { transform: scal
 .home-id-name { font-family: var(--font-display); font-stretch: 125%; font-weight: 700; text-transform: uppercase; font-size: 22px; line-height: 1.05; margin-top: 2px; }
 .home-id-role { font-size: 12.5px; color: var(--text-dim); margin-top: 3px; }
 
+/* 1+2 intestazione: identità a sinistra, azioni rapide a destra (su telefono vanno sotto) */
+.home-top { display: flex; align-items: center; justify-content: space-between; gap: 16px 24px; flex-wrap: wrap; }
+.home-top .home-id { flex: 1 1 260px; min-width: 0; }
+.home-top .home-qas { display: flex; gap: 14px; flex: 0 0 auto; width: auto; }
+.home-top .home-qa { width: 56px; }
+.home-top .home-qa-ic { width: 44px; height: 44px; }
+@media (max-width: 600px) { .home-top .home-qas { width: 100%; justify-content: space-around; } }
+
 /* 2 azioni rapide */
 .home-qas { display: grid; gap: 8px; }
 .home-qa { display: flex; flex-direction: column; align-items: center; gap: 7px; min-height: 44px; padding: 2px 0; background: none; border: none; cursor: pointer; transition: transform .12s; }
@@ -100,7 +109,11 @@ button.home-card:active, .home-qa:active, .home-contact:active { transform: scal
 .home-score-meta { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 16px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.14); font-size: 12.5px; font-weight: 600; color: rgba(255,255,255,.82); min-width: 0; }
 .home-score-meta img { width: 18px; height: 18px; object-fit: contain; flex-shrink: 0; }
 
-/* 5 prossimi giorni */
+/* 5 prossimi giorni: un blocco per giorno, a destra gli impegni con l'ora */
+.home-tl-group { display: flex; gap: 12px; padding: 10px 14px; align-items: flex-start; }
+.home-tl-group + .home-tl-group { border-top: 1px solid var(--border); }
+.home-tl-items { flex: 1; min-width: 0; display: grid; gap: 6px; padding-top: 4px; }
+.home-tl-item { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
 .home-tl-row { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 8px 14px; }
 .home-tl-row + .home-tl-row { border-top: 1px solid var(--border); }
 .home-tl-day { width: 44px; flex-shrink: 0; text-align: center; border-radius: 10px; background: var(--bg-2); padding: 5px 0 4px; }
@@ -121,20 +134,31 @@ button.home-card:active, .home-qa:active, .home-contact:active { transform: scal
 .home-last .x { color: var(--text-faint); flex-shrink: 0; font-variant-numeric: tabular-nums; }
 .home-note { font-size: 12.5px; color: var(--text-faint); padding: 0 14px 12px; text-align: center; }
 
-/* 7 referenti */
-.home-contacts { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; margin: 0 -16px; padding: 0 16px 4px; scroll-padding-inline: 16px; scrollbar-width: none; }
+/* 7 referenti: una fila di foto rotonde con nome e ruolo sotto */
+.home-contacts { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
 .home-contacts::-webkit-scrollbar { display: none; }
-.home-contact { scroll-snap-align: start; flex: 0 0 auto; width: 172px; display: flex; align-items: center; gap: 10px; padding: 10px 12px; min-height: 60px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; text-align: left; cursor: pointer; transition: border-color .15s, transform .12s; }
-.home-contact:hover { border-color: var(--border-2); }
-.home-contact-av { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
-.home-contact-ini { display: grid; place-items: center; background: var(--bg-2); color: var(--text); font-weight: 700; font-size: 12.5px; }
-.home-contact-n { font-size: 12.5px; font-weight: 600; color: var(--text); }
-.home-contact-r { font-size: 12.5px; color: var(--text-faint); margin-top: 1px; }
+.home-contact { flex: 0 0 92px; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 6px 2px; background: none; border: 0; cursor: pointer; text-align: center; min-width: 0; }
+.home-contact-av { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--border-2); }
+.home-contact:hover .home-contact-av { box-shadow: 0 0 0 2px var(--ink); }
+.home-contact-ini { display: grid; place-items: center; background: var(--bg-2); color: var(--text); font-weight: 700; font-size: 15px; }
+.home-contact-n { font-size: 12.5px; font-weight: 600; color: var(--text); max-width: 100%; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.home-contact-r { font-size: 11px; color: var(--text-faint); max-width: 100%; }
 
-@media (min-width: 881px) {
-  .home-contacts { margin: 0; padding: 0; flex-direction: column; overflow: visible; }
-  .home-contact { width: 100%; }
-}
+/* 8 servizi AUVI */
+.home-h-link { border: 0; background: none; padding: 0; font: inherit; font-size: var(--fs-meta); font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--text); cursor: pointer; }
+.home-svc-req { display: flex; align-items: center; gap: 10px; width: 100%; padding: 12px 14px; background: none; border: 0; text-align: left; cursor: pointer; font: inherit; font-size: var(--fs-body); color: var(--text); }
+.home-svc-req + .home-svc-req { border-top: 1px solid var(--border); }
+.home-svc-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.home-svc-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.home-svc { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; cursor: pointer; text-align: left; padding: 0; min-width: 0; transition: border-color .15s; }
+.home-svc:hover { border-color: var(--border-2); }
+.home-svc-cover { position: relative; display: block; height: 72px; }
+.home-svc-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.home-svc-logo { position: absolute; left: 10px; bottom: -14px; width: 32px; height: 32px; border-radius: 9px; background: #fff; display: grid; place-items: center; box-shadow: 0 1px 4px rgba(10,10,10,.18); overflow: hidden; }
+.home-svc-logo img { width: 78%; height: 78%; object-fit: contain; }
+.home-svc-body { display: grid; gap: 1px; padding: 20px 10px 10px; font-size: var(--fs-body); color: var(--text); min-width: 0; }
+@media (max-width: 1100px) { .home-svc-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
 @media (max-width: 880px) {
   .home { display: flex; flex-direction: column; align-items: stretch; gap: 24px; }
   .home-col { gap: 24px; }
@@ -208,7 +232,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
         supabase.from('player').select('*').eq('api_player_id', pid).maybeSingle(),
         supabase.from('matches').select('*').eq('player_id', pid).order('match_date', { ascending: true }),
         supabase.from('player_stats_match').select('*').eq('player_id', pid).order('match_date', { ascending: false }).limit(1),
-        supabase.from('crm_events').select('*').eq('player_id', pid).gte('start_at', new Date().toISOString()).order('start_at').limit(5),
+        supabase.from('crm_events').select('*').eq('player_id', pid).gte('start_at', new Date().toISOString()).order('start_at').limit(8),
         supabase.from('crm_contracts').select('*').eq('player_id', pid),
         supabase.from('crm_editorial').select('*').eq('player_id', pid).gte('entry_date', todayKey)
           .neq('status', 'pubblicato').order('entry_date').limit(1).maybeSingle(),
@@ -429,7 +453,14 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
     )
   }
 
-  // ---- 5 prossimi giorni ----
+  // ---- 5 prossimi giorni: impegni raggruppati per giorno (la data compare una volta) ----
+  const dayKey = (iso: string) => new Date(iso).toLocaleDateString('en-CA', { timeZone: athleteTz || undefined })
+  const days: [string, EventItem[]][] = []
+  for (const e of events) {
+    const k = dayKey(e.start_at)
+    const g = days.find(x => x[0] === k)
+    if (g) g[1].push(e); else days.push([k, [e]])
+  }
   const agenda = (
     <section className="home-sec">
       <div className="home-h">{t('Prossimi giorni')}</div>
@@ -439,16 +470,22 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
             <span className="home-tl-t faint" style={{ fontWeight: 400 }}>{t('Nessun impegno in programma.')}</span>
             <Icon name="chevron-right" size={18} style={{ color: 'var(--text-faint)', flexShrink: 0 }} />
           </div>
-        ) : events.map(e => {
-          const d = new Date(e.start_at)
+        ) : days.map(([key, list]) => {
+          const d = new Date(list[0].start_at)
           return (
-            <div className="home-tl-row" key={e.id}>
+            <div className="home-tl-group" key={key}>
               <div className="home-tl-day">
-                <div className="w">{d.toLocaleDateString(locale, { weekday: 'short' }).replace('.', '')}</div>
-                <div className="d">{d.getDate()}</div>
+                <div className="w">{d.toLocaleDateString(locale, { weekday: 'short', timeZone: athleteTz || undefined }).replace('.', '')}</div>
+                <div className="d">{d.toLocaleDateString(locale, { day: 'numeric', timeZone: athleteTz || undefined })}</div>
               </div>
-              <span className="home-tl-time">{d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}</span>
-              <span className="home-tl-t home-trunc">{e.title}</span>
+              <div className="home-tl-items">
+                {list.map(e => (
+                  <div className="home-tl-item" key={e.id}>
+                    <span className="home-tl-time">{new Date(e.start_at).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', timeZone: athleteTz || undefined })}</span>
+                    <span className="home-tl-t home-trunc">{e.title}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           )
         })}
@@ -492,11 +529,14 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
     <div className="home">
       <style>{HOME_CSS}</style>
       <div className="home-col">
-        {identity}
-        {quick}
+        <div className="home-sec home-top">
+          {identity}
+          {quick}
+        </div>
         {todo}
         {hero}
         {stats}
+        <HomeServices goto={goto} />
       </div>
       <div className="home-col">
         {agenda}

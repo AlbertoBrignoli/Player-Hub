@@ -109,7 +109,7 @@ export default function HomeContacts({ goto, title }: { goto: (r: string) => voi
               ? <img src={r.photo} alt="" className="home-contact-av" />
               : <span className="home-contact-av home-contact-ini">{initials(r.name)}</span>}
             <span style={{ minWidth: 0 }}>
-              <span className="home-contact-n home-trunc">{r.name}</span>
+              <span className="home-contact-n">{r.name}</span>
               <span className="home-contact-r home-trunc">{t(r.label)}</span>
             </span>
           </button>

@@ -3822,5 +3822,8 @@ const EN: Record<string, string> = {
   'Inviti e accessi dei professionisti': 'Professionals’ invites and access',
   'Scheda commerciale': 'Commercial profile',
   'Percorso': 'Breadcrumb',
+  'Il tuo advisor': 'Your advisor',
+  'Gestione a 360°': '360° management',
+  'Vedi tutti': 'See all',
 }
 

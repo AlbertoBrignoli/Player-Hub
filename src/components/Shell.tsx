@@ -15,7 +15,7 @@ import { Modal, Field, Input, Tabs, Empty } from './ui'
 // Schermate home dei vari ruoli: qui compare l'invito ad attivare le notifiche.
 const HOME_ROUTES = ['dashboard', 'brandhome', 'agent-home', 'insurer-home', 'tax-home', 'physio-home', 'partner-home', 'wealth-home']
 
-export const APP_VERSION = 'v12.23'
+export const APP_VERSION = 'v12.24'
 
 export interface NavDef {
   key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[]
@@ -36,6 +36,7 @@ export const NAV: { group: string; items: NavDef[] }[] = [
     { key: 'dashboard', label: 'Home', icon: 'home' },
     { key: 'services', label: 'Servizi AUVI', icon: 'layers' },
     { key: 'messages', label: 'Chat', icon: 'message' },
+    { key: 'mail', label: 'Mail', icon: 'mail', mailbox: true },
     { key: 'editorial', label: 'Calendario', icon: 'calendar', tabs: [
       { key: 'editorial', label: 'Editoriale' },
       { key: 'agenda', label: 'Impegni' },
@@ -69,8 +70,8 @@ export const NAV: { group: string; items: NavDef[] }[] = [
       { key: 'profile', label: 'Profilo' },
     ]},
   ]},
+  // solo per AUVI: i file ricevuti in chat (per l'atleta il gruppo non compare)
   { group: 'Altro', items: [
-    { key: 'mail', label: 'Mail', icon: 'mail', mailbox: true },
     { key: 'my-files', label: 'I miei file', icon: 'folder', adminOnly: true },
   ]},
 ]
