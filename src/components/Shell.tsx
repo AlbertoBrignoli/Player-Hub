@@ -15,7 +15,7 @@ import { Modal, Field, Input, Tabs, Empty } from './ui'
 // Schermate home dei vari ruoli: qui compare l'invito ad attivare le notifiche.
 const HOME_ROUTES = ['dashboard', 'brandhome', 'agent-home', 'insurer-home', 'tax-home', 'physio-home', 'partner-home', 'wealth-home']
 
-export const APP_VERSION = 'v12.14'
+export const APP_VERSION = 'v12.15'
 
 export interface NavDef {
   key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[]
@@ -51,8 +51,12 @@ export const NAV: { group: string; items: NavDef[] }[] = [
     ]},
     // Business = marketing: valore commerciale e sponsor
     { key: 'commercial', label: 'Business', icon: 'briefcase', tabs: [
-      { key: 'commercial', label: 'Profilo commerciale', roles: ['admin', 'player', 'creator'] },
+      { key: 'commercial', label: 'Valore', roles: ['admin', 'player', 'creator'] },
+      { key: 'cp-opps', label: 'Opportunità', roles: ['admin', 'player', 'creator'] },
+      { key: 'cp-kit', label: 'Media Kit', roles: ['admin', 'player', 'creator'] },
+      { key: 'cp-profile', label: 'Profilo', roles: ['admin', 'player', 'creator'] },
       { key: 'sponsors', label: 'Sponsor' },
+      { key: 'cp-admin', label: 'Gestione', roles: ['admin'] },
     ]},
     { key: 'performance', label: 'Atleta', icon: 'activity', tabs: [
       { key: 'performance', label: 'Performance' },
@@ -104,7 +108,10 @@ export const PRO_ROLES: Record<ProRole, { home: string; profile: string; area: N
       ]},
       { key: 'media', label: 'Media', icon: 'image' },
       { key: 'commercial', label: 'Business', icon: 'briefcase', tabs: [
-        { key: 'commercial', label: 'Profilo commerciale' },
+        { key: 'commercial', label: 'Valore' },
+        { key: 'cp-opps', label: 'Opportunità' },
+        { key: 'cp-kit', label: 'Media Kit' },
+        { key: 'cp-profile', label: 'Profilo' },
         { key: 'sponsors', label: 'Sponsor' },
       ]},
       { key: 'contracts', label: 'Contratti', icon: 'file', tabs: [
@@ -222,6 +229,10 @@ const TITLES: Record<string, { t: string; s: string }> = {
   media: { t: 'Media', s: 'Foto, selezioni e grafiche del team' },
   sponsors: { t: 'Sponsor & Commerciale', s: 'Accordi e deliverable' },
   commercial: { t: 'Commercial Profile', s: 'Misura il tuo valore, scopri i brand compatibili, costruisci opportunità' },
+  'cp-opps': { t: 'Opportunità', s: 'Proposte dei brand e collaborazioni' },
+  'cp-kit': { t: 'Media Kit', s: 'La scheda da mandare ai brand' },
+  'cp-profile': { t: 'Profilo commerciale', s: 'Pubblico, contenuti, valori e disponibilità' },
+  'cp-admin': { t: 'Gestione', s: 'Pipeline, brand e impostazioni del punteggio' },
   agenda: { t: 'Agenda', s: 'Extra campo · impegni, prenotazioni, call, viaggi' },
   tasks: { t: 'Task', s: 'Attività condivise' },
   messages: { t: 'Messaggi', s: 'Comunicazione diretta' },

@@ -102,7 +102,7 @@ function SlotCard({ label, kind, rows, onAdd, onEdit, onDel, hidden }: {
     <div className="nm-slot">
       <div className="nm-slot-h"><b>{label}</b><span>{rows.length}</span></div>
       <div className="nm-items">
-        {rows.length === 0 && <div className="faint" style={{ fontSize: 12 }}>{t('Ancora vuoto')}</div>}
+        {rows.length === 0 && <div className="faint" style={{ fontSize: 12.5 }}>{t('Ancora vuoto')}</div>}
         {rows.map(i => {
           const q = kind === 'cibo' ? i.details : i.dose
           return (
@@ -219,7 +219,7 @@ function UploadMenu({ onClose, onDone }: { onClose: () => void; onDone: () => vo
       {busy && !rows ? (
         <div style={{ textAlign: 'center', padding: '24px 0' }}>
           <div className="spinner" style={{ margin: '0 auto' }} />
-          <div style={{ fontWeight: 700, marginTop: 12 }}>{t('Leggo il menu…')}</div>
+          <div style={{ fontWeight: 600, marginTop: 12 }}>{t('Leggo il menu…')}</div>
           <div className="faint" style={{ fontSize: 12.5 }}>{t('Lo divido per colazione, pranzo, merenda, cena e integratori.')}</div>
         </div>
       ) : !rows ? (
@@ -231,7 +231,7 @@ function UploadMenu({ onClose, onDone }: { onClose: () => void; onDone: () => vo
             <b>{t('Carica PDF, foto o file di testo')}</b>
             <span>{t('Il tuo schema alimentare o la lista di alimenti e integratori: lo leggo e lo divido per momento della giornata.')}</span>
           </label>
-          <div className="faint" style={{ fontSize: 12, textAlign: 'center' }}>{t('oppure incolla il testo')}</div>
+          <div className="faint" style={{ fontSize: 12.5, textAlign: 'center' }}>{t('oppure incolla il testo')}</div>
           <textarea className="input" rows={6} value={text} onChange={e => setText(e.target.value)}
             placeholder={t('Colazione: avena 80 g, yogurt greco, frutti rossi\nPranzo: pasta 100 g, pollo 150 g, verdure\nIntegratori: creatina 5 g dopo allenamento…')} />
           <button className="btn btn-primary" disabled={!text.trim()} onClick={() => read()}>{t('Leggi il testo')}</button>
@@ -279,7 +279,7 @@ const NM_CSS = `
 .nm-hero { position: relative; overflow: hidden; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; border-radius: 18px; background: var(--bg-2); border: 1px solid var(--border); padding: 20px 22px; }
 .nm-hero-bar { position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: ${ACCENT}; }
 .nm-kicker { font-size: 11px; letter-spacing: 1.6px; text-transform: uppercase; font-weight: 800; color: ${ACCENT}; }
-.nm-title { font-size: 22px; font-weight: 900; letter-spacing: -.3px; margin-top: 2px; }
+.nm-title { font-size: 22px; font-weight: 800; letter-spacing: -.3px; margin-top: 2px; }
 .nm-search { display: flex; align-items: center; gap: 8px; padding: 0 12px; height: 38px; border-radius: 12px; border: 1px solid var(--border); background: var(--card); color: var(--text-dim); flex: 1; max-width: 320px; min-width: 180px; }
 .nm-search input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; font: inherit; font-size: 14px; color: var(--text); }
 .nm-slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
@@ -287,18 +287,18 @@ const NM_CSS = `
 .nm-slot { background: var(--card); border: 1px solid var(--border); border-top: 3px solid ${ACCENT}; border-radius: 16px; padding: 14px; display: grid; gap: 10px; align-content: start; }
 .nm-slot-h { display: flex; align-items: baseline; gap: 8px; }
 .nm-slot-h b { font-size: 15px; }
-.nm-slot-h span { font-size: 12px; color: var(--text-dim); font-weight: 700; }
+.nm-slot-h span { font-size: 12.5px; color: var(--text-dim); font-weight: 700; }
 .nm-items { display: flex; flex-wrap: wrap; gap: 6px; }
 .nm-it { display: inline-flex; align-items: center; border-radius: 999px; background: rgba(77,124,15,.07); border: 1px solid rgba(77,124,15,.25); max-width: 100%; }
 .nm-it-b { border: 0; background: none; padding: 5px 4px 5px 11px; font: inherit; font-size: 12.5px; font-weight: 600; color: var(--text); cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.nm-it-b em, .nm-pv em { font-style: normal; font-weight: 500; color: var(--text-dim); }
+.nm-it-b em, .nm-pv em { font-style: normal; font-weight: 400; color: var(--text-dim); }
 .nm-it-x { border: 0; background: none; width: 24px; height: 24px; margin-right: 3px; border-radius: 999px; display: grid; place-items: center; color: var(--text-dim); cursor: pointer; }
 .nm-it-x:hover { background: rgba(229,63,0,.1); color: var(--red); }
 .nm-add { display: flex; gap: 6px; }
-.nm-add input { flex: 1; min-width: 0; height: 36px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-2); padding: 0 10px; font: inherit; font-size: 13px; color: var(--text); }
+.nm-add input { flex: 1; min-width: 0; height: 36px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-2); padding: 0 10px; font: inherit; font-size: 12.5px; color: var(--text); }
 .nm-group { font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; font-weight: 800; color: var(--text-dim); margin: 6px 2px 8px; }
 .nm-prev { display: grid; gap: 6px; padding: 8px 0; border-top: 1px solid var(--border); }
-.nm-prev b { font-size: 13px; }
+.nm-prev b { font-size: 12.5px; }
 .nm-pv { border: 1px solid var(--border); background: var(--bg-2); border-radius: 999px; padding: 5px 10px; font: inherit; font-size: 12.5px; color: var(--text-dim); cursor: pointer; text-decoration: line-through; }
 .nm-pv.on { text-decoration: none; color: var(--text); background: rgba(77,124,15,.07); border-color: rgba(77,124,15,.3); }
 `

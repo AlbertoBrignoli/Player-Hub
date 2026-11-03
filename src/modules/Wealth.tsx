@@ -4,7 +4,7 @@ import { toast } from '../lib/toast'
 import { useAuth } from '../auth/AuthContext'
 import { useAthlete } from '../lib/athlete'
 import { useCollection, insertRow, updateRow, deleteRow } from '../lib/useData'
-import { Modal, Field, Input, Textarea, Select, Empty, Spinner, ConfirmButton } from '../components/ui'
+import { Modal, Field, Input, Textarea, Select, Empty, Spinner, ConfirmButton, Section } from '../components/ui'
 import Icon from '../components/Icon'
 import ChatDocs from '../components/ChatDocs'
 import { fmtDate, fmtMoney } from '../lib/format'
@@ -25,18 +25,12 @@ const kicker: React.CSSProperties = {
   fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase', fontWeight: 800,
 }
 
-const TABS = [
-  { k: 'riepilogo', l: 'Riepilogo', icon: 'activity' },
-  { k: 'todo', l: 'Da fare', icon: 'check' },
-  { k: 'docs', l: 'Documenti', icon: 'archive' },
-] as const
-
 const KINDS = [
-  { k: 'task', l: 'Task per l\'atleta', tab: 'todo' },
-  { k: 'richiesta', l: 'Richiesta di documenti', tab: 'todo' },
-  { k: 'scadenza', l: 'Scadenza', tab: 'todo' },
-  { k: 'report', l: 'Report', tab: 'docs' },
-  { k: 'documento', l: 'Documento', tab: 'docs' },
+  { k: 'task', l: 'Task per l\'atleta' },
+  { k: 'richiesta', l: 'Richiesta di documenti' },
+  { k: 'scadenza', l: 'Scadenza' },
+  { k: 'report', l: 'Report' },
+  { k: 'documento', l: 'Documento' },
 ]
 const CATEGORIES = ['Investimenti', 'Liquidità', 'Immobili', 'Previdenza', 'Protezione', 'Fiscalità', 'Successione', 'Bancario', 'Altro']
 const RISK = ['Conservativo', 'Moderato', 'Bilanciato', 'Dinamico', 'Aggressivo']
@@ -88,7 +82,6 @@ export default function Wealth() {
   const { role } = useAuth()
   const { t: tr } = useLang()
   const { athleteId } = useAthlete()
-  const [tab, setTab] = useState<string>('riepilogo')
   const [edit, setEdit] = useState<Partial<WealthItem> | null>(null)
   const [respond, setRespond] = useState<WealthItem | null>(null)
   const [editOv, setEditOv] = useState(false)
@@ -101,6 +94,9 @@ export default function Wealth() {
   const isGuest = !canManage && !isPlayer
   const itemParam = useRouteParam('item')
   const [detail, setDetail] = useState<WealthItem | null>(null)
+  // pagina unica a sezioni: i ref servono solo per scorrere alla sezione giusta da un link diretto
+  const todoRef = useRef<HTMLDivElement>(null)
+  const docsRef = useRef<HTMLDivElement>(null)
 
   const { rows, loading, reload } = useCollection<WealthItem>('crm_wealth_items', {
     orderBy: 'due_date', ascending: true,
@@ -129,7 +125,10 @@ export default function Wealth() {
   useEffect(() => {
     if (!itemParam || !rows.length) return
     const it = rows.find(r => r.id === itemParam)
-    if (it) { setDetail(it); setTab(['report', 'documento'].includes(it.kind) ? 'docs' : 'todo') }
+    if (!it) return
+    setDetail(it)
+    const ref = ['report', 'documento'].includes(it.kind) ? docsRef : todoRef
+    requestAnimationFrame(() => ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
   }, [itemParam, idsKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const open = useMemo(() => rows.filter(i => ['task', 'richiesta'].includes(i.kind) && i.status === 'aperto'), [rows])
@@ -178,29 +177,31 @@ export default function Wealth() {
     )
   }
 
-  const list = tab === 'todo' ? todo : docs
+  const itemGrid = (list: WealthItem[]) => (
+    <div className="grid g2" style={{ gap: 12 }}>
+      {list.map(i => <ItemCard key={i.id} i={i} canManage={canManage} isPlayer={isPlayer}
+        people={people[i.id] || []} onOpen={() => setDetail(i)}
+        onEdit={() => setEdit(i)} onRespond={() => setRespond(i)} onComplete={() => complete(i)}
+        onDelete={async () => { await deleteRow('crm_wealth_items', i.id); reload() }} />)}
+    </div>
+  )
+  const addBtn = (kind: 'task' | 'report') => canManage && (
+    <button className="btn btn-primary btn-sm" onClick={() => setEdit({ kind, status: 'aperto' })}>
+      <Icon name="plus" size={13} /> {tr('Aggiungi')}
+    </button>
+  )
+  const emptyHint = tr('Il tuo wealth manager caricherà qui task, scadenze e report.')
 
   return (
-    <div className="grid" style={{ gap: 18 }}>
-      <div className="flex gap" style={{ alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-        <div className="pill-tabs" style={{ alignSelf: 'start' }}>
-          {TABS.map(t => (
-            <button key={t.k} className={`pill-tab ${tab === t.k ? 'active' : ''}`} onClick={() => setTab(t.k)}
-              style={tab === t.k ? { background: ACCENT, color: '#fff', borderColor: ACCENT } : undefined}>
-              <Icon name={t.icon} size={13} /> {tr(t.l)}
-            </button>
-          ))}
-        </div>
-        <span style={{ flex: 1 }} />
-        {advisor?.agency_logo_url && (
-          <span className="flex gap" style={{ alignItems: 'center', gap: 8 }}>
-            <span className="faint" style={{ fontSize: 11.5 }}>{tr('Seguito da')}</span>
-            <span style={{ background: '#fff', borderRadius: 8, padding: '4px 8px', display: 'flex', border: '1px solid var(--border)' }}>
-              <img src={advisor.agency_logo_url} alt={advisor.name || ''} style={{ height: 18, objectFit: 'contain' }} />
-            </span>
+    <div className="grid" style={{ gap: 22 }}>
+      {advisor?.agency_logo_url && (
+        <div className="flex gap" style={{ alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
+          <span className="t-meta">{tr('Seguito da')}</span>
+          <span style={{ background: '#fff', borderRadius: 8, padding: '4px 8px', display: 'flex', border: '1px solid var(--border)' }}>
+            <img src={advisor.agency_logo_url} alt={advisor.name || ''} style={{ height: 18, objectFit: 'contain' }} />
           </span>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* task e richieste per l'atleta: sempre in evidenza */}
       {open.length > 0 && (
@@ -230,42 +231,31 @@ export default function Wealth() {
         </div>
       )}
 
-      {tab === 'riepilogo'
-        ? <Summary ov={ov} rows={rows} canManage={canManage} onEdit={() => setEditOv(true)} />
-        : (
-          <div>
-            <div className="flex between" style={{ alignItems: 'center', marginBottom: 12 }}>
-              <div className="flex gap" style={{ alignItems: 'center', gap: 9 }}>
-                <span style={{ width: 3, height: 15, background: ACCENT, borderRadius: 2 }} />
-                <span style={{ ...kicker, color: 'var(--text)' }}>{tr(TABS.find(t => t.k === tab)?.l || '')}</span>
-              </div>
-              {canManage && (
-                <button className="btn btn-sm" style={{ background: ACCENT, color: '#fff', fontWeight: 800, border: 'none' }}
-                  onClick={() => setEdit({ kind: tab === 'todo' ? 'task' : 'report', status: 'aperto' })}>
-                  <Icon name="plus" size={13} /> {tr('Aggiungi')}
-                </button>
-              )}
+      <div ref={todoRef} style={{ scrollMarginTop: 16 }}>
+        <Section title={tr('Da fare')} sub={todo.length > 0 ? String(todo.length) : undefined} action={addBtn('task')}>
+          {todo.length === 0 ? (
+            <div className="card">
+              <Empty icon={<Icon name="check" size={30} strokeWidth={1.4} />} title={tr('Niente da fare')}
+                hint={canManage ? tr("Aggiungi un task, una richiesta di documenti o una scadenza per l'atleta.") : emptyHint} />
             </div>
+          ) : itemGrid(todo)}
+        </Section>
+      </div>
 
-            {list.length === 0 ? (
-              <div className="card">
-                <Empty icon={<Icon name={tab === 'todo' ? 'check' : 'archive'} size={30} strokeWidth={1.4} />}
-                  title={tab === 'todo' ? tr('Niente da fare') : tr('Nessun documento')}
-                  hint={canManage
-                    ? (tab === 'todo' ? tr("Aggiungi un task, una richiesta di documenti o una scadenza per l'atleta.") : tr('Carica un report o un documento per l\'atleta.'))
-                    : tr('Il tuo wealth manager caricherà qui task, scadenze e report.')} />
-              </div>
-            ) : (
-              <div className="grid g2" style={{ gap: 12 }}>
-                {list.map(i => <ItemCard key={i.id} i={i} canManage={canManage} isPlayer={isPlayer}
-                  people={people[i.id] || []} onOpen={() => setDetail(i)}
-                  onEdit={() => setEdit(i)} onRespond={() => setRespond(i)} onComplete={() => complete(i)}
-                  onDelete={async () => { await deleteRow('crm_wealth_items', i.id); reload() }} />)}
-              </div>
-            )}
-            {tab === 'docs' && <div style={{ marginTop: 12 }}><ChatDocs channel="wealth" accent={ACCENT} /></div>}
-          </div>
-        )}
+      {/* il quadro ha già il suo titolo: niente seconda etichetta sopra */}
+      <Summary ov={ov} rows={rows} canManage={canManage} onEdit={() => setEditOv(true)} />
+
+      <div ref={docsRef} style={{ scrollMarginTop: 16 }}>
+        <Section title={tr('Documenti')} sub={docs.length > 0 ? String(docs.length) : undefined} action={addBtn('report')}>
+          {docs.length === 0 ? (
+            <div className="card">
+              <Empty icon={<Icon name="archive" size={30} strokeWidth={1.4} />} title={tr('Nessun documento')}
+                hint={canManage ? tr('Carica un report o un documento per l\'atleta.') : emptyHint} />
+            </div>
+          ) : itemGrid(docs)}
+          <ChatDocs channel="wealth" accent={ACCENT} />
+        </Section>
+      </div>
 
       {detailModal}
       {edit && athleteId && (

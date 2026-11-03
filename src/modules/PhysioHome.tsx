@@ -48,12 +48,12 @@ export default function PhysioHome({ goto }: { goto?: (r: string) => void }) {
         <div className="flex gap" style={{ alignItems: 'center', gap: 15, flexWrap: 'wrap' }}>
           {me?.photo_url
             ? <img src={me.photo_url} alt="" style={{ width: 58, height: 58, borderRadius: 15, objectFit: 'cover' }} />
-            : <div style={{ width: 58, height: 58, borderRadius: 15, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 22, color: '#fff' }}>
+            : <div style={{ width: 58, height: 58, borderRadius: 15, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 22, color: '#fff' }}>
                 {(me?.name || 'F').slice(0, 1)}
               </div>}
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ ...kicker, color: ACCENT }}>{t('Fisioterapista')}</div>
-            <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: -0.3, marginTop: 2 }}>
+            <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: -0.3, marginTop: 2 }}>
               {me?.name || t('Benvenuto')}
             </div>
             <div className="faint" style={{ fontSize: 12.5, marginTop: 2 }}>
@@ -78,7 +78,7 @@ export default function PhysioHome({ goto }: { goto?: (r: string) => void }) {
             {athletes.map(a => (
               <button key={a.api_player_id} className="card" style={{ textAlign: 'left', cursor: 'pointer' }}
                 onClick={() => { setAthleteId(a.api_player_id); goto?.('performance') }}>
-                <div style={{ fontWeight: 700 }}>{a.name || t('Atleta')}</div>
+                <div style={{ fontWeight: 600 }}>{a.name || t('Atleta')}</div>
               </button>
             ))}
           </div>

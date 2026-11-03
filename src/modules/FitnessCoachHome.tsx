@@ -91,14 +91,14 @@ export default function FitnessCoachHome({ goto }: { goto?: (r: string) => void 
         <div className="flex gap" style={{ alignItems: 'center', gap: 15, flexWrap: 'wrap' }}>
           {coach?.photo_url
             ? <img src={coach.photo_url} alt="" style={{ width: 58, height: 58, borderRadius: 15, objectFit: 'cover' }} />
-            : <div style={{ width: 58, height: 58, borderRadius: 15, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 22, color: '#fff' }}>
+            : <div style={{ width: 58, height: 58, borderRadius: 15, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 22, color: '#fff' }}>
                 {name.slice(0, 1)}
               </div>}
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ ...kicker, color: ACCENT }}>{t('Preparatore atletico')}</div>
-            <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: -0.4, marginTop: 2 }}>{name}</div>
+            <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: -0.4, marginTop: 2 }}>{name}</div>
             {coach?.availability && (
-              <div className="faint" style={{ fontSize: 12, marginTop: 4 }}>{coach.availability}</div>
+              <div className="faint" style={{ fontSize: 12.5, marginTop: 4 }}>{coach.availability}</div>
             )}
           </div>
           {goto && (
@@ -121,16 +121,16 @@ export default function FitnessCoachHome({ goto }: { goto?: (r: string) => void 
         <div className="card" style={{ borderColor: 'rgba(154,134,0,.35)' }}>
           <div className="flex between" style={{ alignItems: 'center', marginBottom: 10 }}>
             <div style={{ ...kicker, color: 'var(--gold)' }}>{t('Richieste da gestire')}</div>
-            <span className="faint" style={{ fontSize: 12 }}>{requests.length}</span>
+            <span className="faint" style={{ fontSize: 12.5 }}>{requests.length}</span>
           </div>
           <div className="grid" style={{ gap: 8 }}>
             {requests.slice(0, 5).map(r => (
               <div key={r.id} className="flex between" style={{ alignItems: 'center', gap: 10, border: '1px solid var(--border)', borderRadius: 10, padding: '9px 11px' }}>
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 13.5, fontWeight: 700 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600 }}>
                     {list.find(a => a.api_player_id === r.player_id)?.name || t('Atleta')}
                   </div>
-                  <div className="faint" style={{ fontSize: 11.5 }}>
+                  <div className="faint" style={{ fontSize: 12.5 }}>
                     {r.type === 'programma' ? t('Richiede un programma') : t('Vuole prenotare un allenamento')} · {fmtDate(r.created_at)}
                   </div>
                 </div>
@@ -151,8 +151,8 @@ export default function FitnessCoachHome({ goto }: { goto?: (r: string) => void 
                 <div className="flex gap" style={{ alignItems: 'center', gap: 9 }}>
                   <span style={{ width: 3, height: 26, background: ACCENT, borderRadius: 2 }} />
                   <div>
-                    <div style={{ fontSize: 13.5, fontWeight: 700 }}>{p.name || t('Seduta')}</div>
-                    <div className="faint" style={{ fontSize: 11.5 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600 }}>{p.name || t('Seduta')}</div>
+                    <div className="faint" style={{ fontSize: 12.5 }}>
                       {list.find(a => a.api_player_id === p.player_id)?.name} {p.start_time ? `· ${p.start_time}` : ''}
                     </div>
                   </div>
@@ -171,7 +171,7 @@ export default function FitnessCoachHome({ goto }: { goto?: (r: string) => void 
             <span style={{ width: 3, height: 15, background: ACCENT, borderRadius: 2 }} />
             <span style={{ ...kicker, color: 'var(--text)' }}>{t('I miei atleti')}</span>
           </div>
-          <span className="faint" style={{ fontSize: 12 }}>{(list.length === 1 ? t('{n} seguito') : t('{n} seguiti')).replace('{n}', String(list.length))}</span>
+          <span className="faint" style={{ fontSize: 12.5 }}>{(list.length === 1 ? t('{n} seguito') : t('{n} seguiti')).replace('{n}', String(list.length))}</span>
         </div>
 
         {list.length === 0 ? (
@@ -198,12 +198,12 @@ export default function FitnessCoachHome({ goto }: { goto?: (r: string) => void 
                             {(a.name || '?').slice(0, 1)}
                           </div>}
                       <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: 15.5, fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</div>
-                        <div className="faint" style={{ fontSize: 11.5 }}>
+                        <div style={{ fontSize: 15, fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</div>
+                        <div className="faint" style={{ fontSize: 12.5 }}>
                           {last ? `${t('Ultima scheda')} · ${fmtDate(last.program_date)}` : t('Nessuna scheda')}
                         </div>
                         {nextMatch[a.api_player_id] && (
-                          <div className="faint" style={{ fontSize: 11.5, marginTop: 2 }}>
+                          <div className="faint" style={{ fontSize: 12.5, marginTop: 2 }}>
                             <Icon name="calendar" size={10} /> {nextMatch[a.api_player_id]}
                           </div>
                         )}
@@ -211,7 +211,7 @@ export default function FitnessCoachHome({ goto }: { goto?: (r: string) => void 
                     </div>
 
                     {warn && (
-                      <div style={{ marginTop: 10, fontSize: 11.5, fontWeight: 700, color: 'var(--gold)' }}>
+                      <div style={{ marginTop: 10, fontSize: 12.5, fontWeight: 600, color: 'var(--gold)' }}>
                         <Icon name="bell" size={11} /> {warn}
                       </div>
                     )}
@@ -241,8 +241,8 @@ export default function FitnessCoachHome({ goto }: { goto?: (r: string) => void 
 function Metric({ label, value, tone }: { label: string; value: string; tone?: string }) {
   return (
     <div>
-      <div style={{ ...kicker, fontSize: 10, color: 'var(--text-dim)' }}>{label}</div>
-      <div style={{ fontSize: 22, fontWeight: 900, marginTop: 2, borderBottom: `2px solid ${tone || ACCENT}`, display: 'inline-block', paddingBottom: 2 }}>
+      <div style={{ ...kicker, fontSize: 11, color: 'var(--text-dim)' }}>{label}</div>
+      <div style={{ fontSize: 22, fontWeight: 800, marginTop: 2, borderBottom: `2px solid ${tone || ACCENT}`, display: 'inline-block', paddingBottom: 2 }}>
         {value}
       </div>
     </div>

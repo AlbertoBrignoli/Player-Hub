@@ -100,7 +100,7 @@ export default function AgentProfile() {
         <div className="flex gap" style={{ alignItems: 'center', gap: 14 }}>
           {p.photo_url
             ? <img src={p.photo_url} alt="" style={{ width: 56, height: 56, borderRadius: 14, objectFit: 'cover' }} />
-            : <div style={{ width: 56, height: 56, borderRadius: 14, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: '#fff', fontSize: 20 }}>
+            : <div style={{ width: 56, height: 56, borderRadius: 14, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: '#fff', fontSize: 22 }}>
                 {(p.name || 'A').slice(0, 1)}
               </div>}
           <div style={{ minWidth: 0 }}>
@@ -132,12 +132,12 @@ export default function AgentProfile() {
         <div className="flex gap" style={{ alignItems: 'center', gap: 15, flexWrap: 'wrap' }}>
           {p.photo_url
             ? <img src={p.photo_url} alt="" style={{ width: 58, height: 58, borderRadius: 15, objectFit: 'cover' }} />
-            : <div style={{ width: 58, height: 58, borderRadius: 15, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 22, color: '#fff' }}>
+            : <div style={{ width: 58, height: 58, borderRadius: 15, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 22, color: '#fff' }}>
                 {(p.name || 'A').slice(0, 1)}
               </div>}
           <div style={{ minWidth: 0, flex: '1 1 200px' }}>
             <div style={{ ...kicker, color: ACCENT }}>{byAdmin ? t('Procuratore · modifica AUVI') : t('Procuratore')}</div>
-            <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: -0.3, marginTop: 2 }}>
+            <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: -0.3, marginTop: 2 }}>
               {p.name || t('Il mio profilo')}
             </div>
             <div className="faint" style={{ fontSize: 12.5, marginTop: 2 }}>
@@ -156,8 +156,8 @@ export default function AgentProfile() {
             </div>
           )}
           <div>
-            <div style={{ ...kicker, fontSize: 10, color: 'var(--text-dim)' }}>{t('Assistiti')}</div>
-            <div style={{ fontSize: 22, fontWeight: 900, borderBottom: `2px solid ${ACCENT}`, display: 'inline-block' }}>
+            <div style={{ ...kicker, fontSize: 11, color: 'var(--text-dim)' }}>{t('Assistiti')}</div>
+            <div style={{ fontSize: 22, fontWeight: 800, borderBottom: `2px solid ${ACCENT}`, display: 'inline-block' }}>
               {byAdmin ? linked.length : athletes.length}
             </div>
           </div>
@@ -191,7 +191,7 @@ export default function AgentProfile() {
       {/* --- agenzia --- */}
       <div className="card">
         <div className="card-head"><div className="card-title">{t('Agenzia')}</div></div>
-        <div className="faint" style={{ fontSize: 12, marginBottom: 12 }}>
+        <div className="faint" style={{ fontSize: 12.5, marginBottom: 12 }}>
           {t("I dati della società per cui lavori: li vede l'agenzia AUVI e l'atleta che segui.")}
         </div>
         <div className="grid g2" style={{ gap: 10 }}>
@@ -212,7 +212,7 @@ export default function AgentProfile() {
         <button className="btn btn-primary" disabled={busy} onClick={save}>
           <Icon name="check" size={14} /> {busy ? t('Salvo…') : t('Salva profilo')}
         </button>
-        {msg && <span className="faint" style={{ fontSize: 13 }}>{msg}</span>}
+        {msg && <span className="faint" style={{ fontSize: 12.5 }}>{msg}</span>}
       </div>
     </div>
   )
@@ -221,8 +221,8 @@ export default function AgentProfile() {
 function Info({ k, v, href }: { k: string; v?: string; href?: string }) {
   return (
     <div>
-      <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.8px', fontWeight: 700 }}>{k}</div>
-      <div style={{ fontSize: 13.5, marginTop: 2 }}>
+      <div className="t-label">{k}</div>
+      <div style={{ fontSize: 14, marginTop: 2 }}>
         {v ? (href ? <a href={href} style={{ color: ACCENT }} {...(href.startsWith('http') ? { target: '_blank', rel: 'noreferrer' } : {})}>{v}</a> : v) : '—'}
       </div>
     </div>

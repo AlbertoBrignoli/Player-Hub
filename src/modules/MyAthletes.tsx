@@ -75,27 +75,27 @@ function initials(n: string | null | undefined) {
 const STYLE = `
 .ma-head { display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
   background: var(--surface); border:1px solid var(--border); border-radius: var(--radius); padding:18px 20px; }
-.ma-count { font-size:34px; font-weight:900; line-height:1; letter-spacing:-.02em; color: var(--text); }
-.ma-kicker { font-size:11px; letter-spacing:1.6px; text-transform:uppercase; font-weight:800; color: var(--text-dim); }
+.ma-count { font-size: 34px; font-weight: 800; line-height:1; letter-spacing:-.02em; color: var(--text); }
+.ma-kicker { font-size: 11px; letter-spacing:1.6px; text-transform:uppercase; font-weight:800; color: var(--text-dim); }
 .ma-actions { display:flex; gap:8px; flex-wrap:wrap; }
 .ma-roster { display:grid; gap:10px; grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr)); }
 .ma-card { display:flex; align-items:center; gap:12px; background: var(--surface); border:1px solid var(--border);
   border-radius: var(--radius-sm); padding:12px 14px; }
 .ma-av { width:44px; height:44px; border-radius:50%; flex-shrink:0; object-fit:cover; background: var(--bg-2); }
 .ma-ini { width:44px; height:44px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center;
-  background: var(--yellow); color: var(--ink); font-weight:900; font-size:15px; }
-.ma-name { font-weight:800; font-size:15px; color: var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.ma-sub { font-size:12px; color: var(--text-faint); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  background: var(--yellow); color: var(--ink); font-weight: 800; font-size: 15px; }
+.ma-name { font-weight:800; font-size: 15px; color: var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ma-sub { font-size: 12.5px; color: var(--text-faint); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .ma-card-btns { display:flex; gap:6px; margin-left:auto; flex-shrink:0; }
 .ma-row { display:flex; align-items:center; justify-content:space-between; gap:10px; border:1px solid var(--border);
   border-radius: var(--radius-xs); padding:10px 12px; background: var(--surface); }
-.ma-code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight:800; letter-spacing:1.5px; font-size:14px; color: var(--text); }
-.ma-bigcode { text-align:center; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size:30px; font-weight:900;
+.ma-code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight:800; letter-spacing:1.5px; font-size: 14px; color: var(--text); }
+.ma-bigcode { text-align:center; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 30px; font-weight: 800;
   letter-spacing:3px; color: var(--ink); background: var(--yellow-soft); border-radius: var(--radius-sm); padding:20px 10px; margin:6px 0 14px; }
 .ma-share { display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; }
 .ma-section { display:grid; gap:10px; }
 .ma-mail { flex-basis:100%; display:flex; align-items:center; gap:8px; border-top:1px solid var(--border); padding-top:10px; margin-top:2px; min-width:0; }
-.ma-mail-a { font-size:13px; font-weight:700; color: var(--text); text-decoration:none; word-break:break-all; min-width:0; }
+.ma-mail-a { font-size: 12.5px; font-weight:700; color: var(--text); text-decoration:none; word-break:break-all; min-width:0; }
 @media (max-width: 520px) {
   .ma-card-btns .ma-lbl { display:none; }
 }
@@ -107,7 +107,7 @@ function Section({ title, count, children }: { title: string; count?: number; ch
     <div className="ma-section">
       <div className="flex between" style={{ alignItems: 'center' }}>
         <span className="ma-kicker">{t(title)}</span>
-        {count != null && <span className="faint" style={{ fontSize: 12 }}>{count}</span>}
+        {count != null && <span className="faint" style={{ fontSize: 12.5 }}>{count}</span>}
       </div>
       {children}
     </div>
@@ -182,7 +182,7 @@ export function MyAthletes() {
           <div className="ma-kicker">{t('I miei atleti')}</div>
           <div className="flex" style={{ alignItems: 'baseline', gap: 8, marginTop: 6 }}>
             <span className="ma-count">{roster.length}</span>
-            <span className="faint" style={{ fontSize: 13 }}>{roster.length === 1 ? t('atleta collegato') : t('atleti collegati')}</span>
+            <span className="faint" style={{ fontSize: 12.5 }}>{roster.length === 1 ? t('atleta collegato') : t('atleti collegati')}</span>
           </div>
         </div>
         {ctas}
@@ -218,7 +218,7 @@ export function MyAthletes() {
                   <div className="ma-mail">
                     <Icon name="mail" size={15} />
                     <div style={{ minWidth: 0, flex: 1 }}>
-                      <div className="faint" style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase' }}>{t('Manda documenti e comunicazioni a')}</div>
+                      <div className="t-label">{t('Manda documenti e comunicazioni a')}</div>
                       <a className="ma-mail-a" href={`mailto:${mail[a.api_player_id]}`} style={{ display: 'block' }}>{mail[a.api_player_id]}</a>
                     </div>
                     <button className="btn btn-ghost btn-sm" title={t('Copia')} onClick={() => copyText(mail[a.api_player_id], t('Indirizzo copiato'), t)}>
@@ -248,7 +248,7 @@ export function MyAthletes() {
                         : i.status === 'used' ? <Badge>{i.player_name ? t('Usato da {name}').replace('{name}', i.player_name) : t('Usato')}</Badge>
                         : <Badge tone="red">{t('Revocato')}</Badge>}
                     </div>
-                    <div className="faint" style={{ fontSize: 11.5, marginTop: 3 }}>
+                    <div className="faint" style={{ fontSize: 12.5, marginTop: 3 }}>
                       {i.label ? i.label + ' · ' : ''}{fmtDateTime(i.created_at)}
                     </div>
                   </div>
@@ -275,8 +275,8 @@ export function MyAthletes() {
             {reqs.map(r => (
               <div key={r.id} className="ma-row">
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontWeight: 700, fontSize: 13.5 }}>{nameOf(r.player_id)}</div>
-                  <div className="faint" style={{ fontSize: 11.5 }}>
+                  <div style={{ fontWeight: 600, fontSize: 14 }}>{nameOf(r.player_id)}</div>
+                  <div className="faint" style={{ fontSize: 12.5 }}>
                     {t(ROLE_LABEL[r.requester_role] || r.requester_role)} · {fmtDateTime(r.created_at)}
                   </div>
                 </div>
@@ -323,7 +323,7 @@ function InviteSheet({ onClose }: { onClose: () => void }) {
       footer={code ? <button className="btn" onClick={onClose}>{t('Fatto')}</button> : undefined}>
       {!code ? (
         <>
-          <div className="faint" style={{ fontSize: 13, marginBottom: 12 }}>
+          <div className="faint" style={{ fontSize: 12.5, marginBottom: 12 }}>
             {t("Crei un codice personale da mandare all'atleta. Quando lo inserisce nel suo Player Hub (Collegamenti) sei collegato: è la sua conferma.")}
           </div>
           <Field label={t('Per chi? (facoltativo)')}>
@@ -336,7 +336,7 @@ function InviteSheet({ onClose }: { onClose: () => void }) {
         </>
       ) : (
         <>
-          <div className="faint" style={{ fontSize: 13 }}>
+          <div className="faint" style={{ fontSize: 12.5 }}>
             {t("Manda questo codice all'atleta")}{label.trim() ? <> (<b style={{ color: 'var(--text)' }}>{label.trim()}</b>)</> : null}.
           </div>
           <div className="ma-bigcode">{code}</div>
@@ -351,7 +351,7 @@ function InviteSheet({ onClose }: { onClose: () => void }) {
               <Icon name="copy" size={14} /> {t('Copia')}
             </button>
           </div>
-          <div className="faint" style={{ fontSize: 11.5, marginTop: 12 }}>
+          <div className="faint" style={{ fontSize: 12.5, marginTop: 12 }}>
             {t('Il codice è monouso: lo trovi anche in "I miei inviti".')}
           </div>
         </>

@@ -41,11 +41,11 @@ export function InstagramConnect({ athleteId, onSynced }: { athleteId: number; o
     if (isAdmin) supabase.rpc('crm_ig_app_status').then(({ data }) => setAppReady(!!(data as any)?.app_id && !!(data as any)?.has_secret))
   }, [isAdmin])
 
-  // ritorno da Instagram: #/commercial?tab=profilo&ig=ok|error&msg=…
+  // ritorno da Instagram: #/commercial?tab=profilo&ig=ok|error&msg=… (Commercial lo gira su #/cp-profile)
   useEffect(() => {
     if (igParam === 'ok') { toast(t('Instagram collegato!')); load(); onSynced?.() }
     else if (igParam === 'error') toast(`${t('Collegamento non riuscito')}: ${t(msgParam || '')}`, 'err')
-    if (igParam) history.replaceState(null, '', location.pathname + '#/commercial?tab=profilo')
+    if (igParam) history.replaceState(null, '', location.pathname + '#/cp-profile')
   }, [igParam]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function connect() {
@@ -127,7 +127,7 @@ export function InstagramConnect({ athleteId, onSynced }: { athleteId: number; o
             {isAdmin && !appReady && (
               <div className="ig-setup">
                 <div><b>{t('Prima configura l\'app Instagram di AUVI')}</b><br />{t('Si fa una volta sola, poi tutti gli atleti possono collegarsi con questo pulsante.')}</div>
-                <button className="btn btn-sm btn-primary" onClick={() => goto('commercial?tab=gestione&sub=impostazioni')}>{t('Configura ora')} →</button>
+                <button className="btn btn-sm btn-primary" onClick={() => goto('cp-admin?sub=impostazioni')}>{t('Configura ora')} →</button>
               </div>
             )}
             <button className="ig-btn" disabled={!!busy || (isAdmin && !appReady)} onClick={connect}>

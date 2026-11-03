@@ -90,7 +90,7 @@ function AccessRequestsBoard() {
                 <span style={{ width: 3, height: 15, background: ACCENT, borderRadius: 2 }} />
                 <span style={{ ...kicker, color: 'var(--text)' }}>{t('Richieste in attesa')}</span>
               </div>
-              <span className="faint" style={{ fontSize: 12 }}>{pending.length}</span>
+              <span className="faint" style={{ fontSize: 12.5 }}>{pending.length}</span>
             </div>
 
             {pending.length === 0 ? (
@@ -104,16 +104,16 @@ function AccessRequestsBoard() {
                   <div key={r.id} className="card" style={{ padding: 0, overflow: 'hidden' }}>
                     <div style={{ height: 3, background: ACCENT }} />
                     <div style={{ padding: 16 }}>
-                      <div style={{ ...kicker, fontSize: 9.5, color: ACCENT }}>
+                      <div style={{ ...kicker, fontSize: 11, color: ACCENT }}>
                         {t(ROLE_LABEL[r.requester_role] || r.requester_role)}
                       </div>
-                      <div style={{ fontSize: 16, fontWeight: 800, marginTop: 3 }}>
+                      <div style={{ fontSize: 15, fontWeight: 800, marginTop: 3 }}>
                         {r.requester_name || t('Professionista')}
                       </div>
                       {r.requester_email && (
-                        <div className="faint" style={{ fontSize: 11.5 }}>{r.requester_email}</div>
+                        <div className="faint" style={{ fontSize: 12.5 }}>{r.requester_email}</div>
                       )}
-                      <div className="faint" style={{ fontSize: 13, marginTop: 3 }}>
+                      <div className="faint" style={{ fontSize: 12.5, marginTop: 3 }}>
                         {t("chiede di accedere all'area di")} <b style={{ color: 'var(--text)' }}>{athleteName(r.player_id)}</b>
                       </div>
                       {r.message && (
@@ -121,7 +121,7 @@ function AccessRequestsBoard() {
                           {r.message}
                         </div>
                       )}
-                      <div className="faint" style={{ fontSize: 11.5, marginTop: 6 }}>{fmtDateTime(r.created_at)}</div>
+                      <div className="faint" style={{ fontSize: 12.5, marginTop: 6 }}>{fmtDateTime(r.created_at)}</div>
 
                       <div className="flex gap" style={{ marginTop: 13, flexWrap: 'wrap' }}>
                         <button className="btn btn-sm" style={{ background: 'var(--green)', color: '#fff', fontWeight: 800, border: 'none' }}
@@ -147,11 +147,11 @@ function AccessRequestsBoard() {
           <div style={{ ...kicker, color: 'var(--text-dim)', marginBottom: 10 }}>{t('Storico')}</div>
           <div className="grid" style={{ gap: 7 }}>
             {storico.map(r => (
-              <div key={r.id} className="flex between" style={{ alignItems: 'center', gap: 10, fontSize: 13 }}>
+              <div key={r.id} className="flex between" style={{ alignItems: 'center', gap: 10, fontSize: 12.5 }}>
                 <span>
                   {r.requester_name || t(ROLE_LABEL[r.requester_role] || '')} · {athleteName(r.player_id)}
                 </span>
-                <span style={{ fontSize: 11.5, fontWeight: 800,
+                <span style={{ fontSize: 12.5, fontWeight: 800,
                                color: r.status === 'approvata' ? 'var(--green)' : 'var(--red)' }}>
                   {r.status === 'approvata' ? t('APPROVATA') : t('RIFIUTATA')}
                 </span>
@@ -195,7 +195,7 @@ function AcceptProInvite() {
         <div style={{ flex: 1, minWidth: 200 }}>
           <Input value={code} onChange={e => setCode(e.target.value.toUpperCase())}
             onKeyDown={e => { if (e.key === 'Enter') accept() }}
-            placeholder={t('ES. AUVI-1A2B3C')} style={{ letterSpacing: 2, fontWeight: 700, background: 'var(--surface)' }} />
+            placeholder={t('ES. AUVI-1A2B3C')} style={{ letterSpacing: 2, fontWeight: 600, background: 'var(--surface)' }} />
         </div>
         <button className="btn btn-primary" disabled={busy || !code.trim()} onClick={accept}>
           {busy ? t('Collego…') : t('Collega')}
@@ -245,7 +245,7 @@ export function RequestForm({ onDone, mine = [], bare }: {
       <div className="grid g2" style={{ gap: 10 }}>
         <Field label={t('Codice atleta')}>
           <Input value={code} onChange={e => setCode(e.target.value.toUpperCase())}
-            placeholder={t('ES. ABC-123XYZ')} style={{ letterSpacing: 2, fontWeight: 700 }} />
+            placeholder={t('ES. ABC-123XYZ')} style={{ letterSpacing: 2, fontWeight: 600 }} />
         </Field>
         <Field label={t('Messaggio (facoltativo)')}>
           <Textarea rows={1} value={msg} onChange={e => setMsg(e.target.value)}
@@ -332,7 +332,7 @@ function CodesManager({ athleteId, athleteName }: { athleteId: number | null; at
           <Icon name="plus" size={15} /> {t('Genera codice')}
         </button>
       </div>
-      <div className="faint" style={{ fontSize: 11.5, marginTop: -6, marginBottom: codes.length ? 12 : 0 }}>
+      <div className="faint" style={{ fontSize: 12.5, marginTop: -6, marginBottom: codes.length ? 12 : 0 }}>
         {t('Con la figura selezionata il codice vale anche come invito alla registrazione: il professionista entra dal login con "codice invito" e trova subito la sua vista dedicata. Senza figura, il codice serve solo a collegare un professionista già registrato.')}
       </div>
 
@@ -351,8 +351,8 @@ function CodesManager({ athleteId, athleteName }: { athleteId: number | null; at
                 <div style={{ minWidth: 0 }}>
                   <code style={{ fontSize: 14, fontWeight: 800, letterSpacing: 1.5, color: ACCENT,
                     textDecoration: revoked ? 'line-through' : 'none' }}>{c.code}</code>
-                  <div className="faint" style={{ fontSize: 11.5, marginTop: 2 }}>
-                    {c.role ? t(ROLE_LABEL[c.role] || c.role) + ' · ' : ''}{c.label ? c.label + ' · ' : ''}<span style={{ color: badge.col, fontWeight: 700 }}>{badge.t}</span>
+                  <div className="faint" style={{ fontSize: 12.5, marginTop: 2 }}>
+                    {c.role ? t(ROLE_LABEL[c.role] || c.role) + ' · ' : ''}{c.label ? c.label + ' · ' : ''}<span style={{ color: badge.col, fontWeight: 600 }}>{badge.t}</span>
                   </div>
                 </div>
                 <span className="flex gap" style={{ alignItems: 'center', gap: 6, flexShrink: 0 }}>

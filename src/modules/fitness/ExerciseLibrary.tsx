@@ -703,18 +703,18 @@ const EXL_CSS = `
 .exl-card-media { position: relative; aspect-ratio: 4 / 3; background: var(--bg-2); overflow: hidden; }
 .exl-card-media img { width: 100%; height: 100%; object-fit: contain; display: block; background: var(--surface); }
 .exl-ph { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; background: var(--bg-2); color: var(--text-faint); padding: 10px; text-align: center; }
-.exl-ph-cat { font-family: var(--font-display); font-stretch: 125%; text-transform: uppercase; font-size: 9.5px; font-weight: 700; letter-spacing: .6px; color: var(--text-dim); }
-.exl-ph-name { font-size: 13px; font-weight: 700; color: var(--text); max-width: 90%; }
-.exl-tag { position: absolute; top: 8px; left: 8px; font-family: var(--font-display); font-stretch: 125%; font-size: 9px; font-weight: 800; letter-spacing: .6px; padding: 3px 7px; border-radius: 6px; background: var(--surface); color: var(--ink); border: 1px solid var(--ink); }
+.exl-ph-cat { font-family: var(--font-display); font-stretch: 125%; text-transform: uppercase; font-size: 11px; font-weight: 700; letter-spacing: .6px; color: var(--text-dim); }
+.exl-ph-name { font-size: 12.5px; font-weight: 700; color: var(--text); max-width: 90%; }
+.exl-tag { position: absolute; top: 8px; left: 8px; font-family: var(--font-display); font-stretch: 125%; font-size: 11px; font-weight: 800; letter-spacing: .6px; padding: 3px 7px; border-radius: 6px; background: var(--surface); color: var(--ink); border: 1px solid var(--ink); }
 .exl-tag.auvi { background: var(--yellow); border-color: var(--yellow); }
 .exl-tag.static { position: static; flex: 0 0 auto; }
-.exl-vid { position: absolute; top: 8px; right: 8px; font-size: 9px; font-weight: 800; letter-spacing: .6px; padding: 3px 7px; border-radius: 6px; background: var(--surface); color: var(--text-dim); border: 1px solid var(--border); }
+.exl-vid { position: absolute; top: 8px; right: 8px; font-size: 11px; font-weight: 800; letter-spacing: .6px; padding: 3px 7px; border-radius: 6px; background: var(--surface); color: var(--text-dim); border: 1px solid var(--border); }
 .exl-card-body { padding: 10px 11px 12px; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.exl-card-name { font-size: 13.5px; font-weight: 700; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.exl-card-name { font-size: 14px; font-weight: 700; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .exl-card-en { font-size: 11px; color: var(--text-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .exl-card-meta { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 4px; }
-.exl-cat { font-size: 10.5px; font-weight: 700; color: var(--ink); background: var(--yellow-soft); border-radius: 6px; padding: 2px 7px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-.exl-card-line { font-size: 11.5px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.exl-cat { font-size: 11px; font-weight: 700; color: var(--ink); background: var(--yellow-soft); border-radius: 6px; padding: 2px 7px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.exl-card-line { font-size: 12.5px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .exl-sep { margin: 0 5px; color: var(--text-faint); }
 .exl-dots { display: inline-flex; gap: 3px; flex: 0 0 auto; }
 .exl-dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--border-2); }
@@ -729,34 +729,34 @@ const EXL_CSS = `
 .exl-d-media { border-radius: var(--radius-sm); overflow: hidden; background: var(--bg-2); aspect-ratio: 16 / 10; }
 .exl-d-media img, .exl-d-media video { width: 100%; height: 100%; object-fit: contain; display: block; background: var(--surface); }
 .exl-d-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
-.exl-d-name { font-family: var(--font-display); font-stretch: 125%; text-transform: uppercase; font-size: 19px; font-weight: 800; line-height: 1.15; }
+.exl-d-name { font-family: var(--font-display); font-stretch: 125%; text-transform: uppercase; font-size: 18px; font-weight: 800; line-height: 1.15; }
 .exl-d-en { font-size: 12.5px; margin-top: 3px; }
 .exl-d-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-.exl-d-diff { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--text-dim); }
+.exl-d-diff { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--text-dim); }
 .exl-d-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(170px, 100%), 1fr)); gap: 12px; padding: 14px; background: var(--surface-2); border-radius: var(--radius-sm); }
-.exl-k { font-size: 10.5px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-faint); }
-.exl-v { font-size: 13px; margin-top: 2px; }
-.exl-bars { display: flex; align-items: flex-end; gap: 3px; margin-top: 5px; font-size: 12px; }
+.exl-k { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-faint); }
+.exl-v { font-size: 12.5px; margin-top: 2px; }
+.exl-bars { display: flex; align-items: flex-end; gap: 3px; margin-top: 5px; font-size: 12.5px; }
 .exl-bars i { width: 7px; border-radius: 2px; background: var(--border-2); }
 .exl-bars i:nth-child(1) { height: 8px; } .exl-bars i:nth-child(2) { height: 12px; } .exl-bars i:nth-child(3) { height: 16px; }
 .exl-bars i.on { background: var(--ink); }
 .exl-bars span { margin-left: 6px; }
-.exl-d-desc { font-size: 13.5px; color: var(--text-dim); }
+.exl-d-desc { font-size: 14px; color: var(--text-dim); }
 .exl-sec-t { font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; font-weight: 700; color: var(--text-dim); margin-bottom: 8px; }
-.exl-ol, .exl-ul { padding-left: 20px; display: flex; flex-direction: column; gap: 5px; font-size: 13.5px; }
+.exl-ol, .exl-ul { padding-left: 20px; display: flex; flex-direction: column; gap: 5px; font-size: 14px; }
 .exl-ol li::marker { font-weight: 700; }
 .exl-ul-warn li::marker { color: var(--red); }
-.exl-d-source { font-size: 11.5px; border-top: 1px solid var(--border); padding-top: 10px; }
+.exl-d-source { font-size: 12.5px; border-top: 1px solid var(--border); padding-top: 10px; }
 
 .exl-sugg { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
-.exl-sugg .exl-chip { min-height: 28px; padding: 3px 10px; font-size: 11.5px; }
+.exl-sugg .exl-chip { min-height: 28px; padding: 3px 10px; font-size: 12.5px; }
 .exl-up { display: flex; gap: 10px; align-items: center; }
 .exl-up-prev { width: 64px; height: 64px; border-radius: 10px; overflow: hidden; background: var(--bg-2); display: grid; place-items: center; color: var(--text-faint); flex: 0 0 auto; }
 .exl-up-prev img, .exl-up-prev video, .exl-up-prev .exl-ph { width: 100%; height: 100%; object-fit: cover; }
 .exl-up-main { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-width: 0; flex: 1; }
 .exl-up-main label.btn { cursor: pointer; }
 .exl-disabled { opacity: .55; pointer-events: none; }
-.exl-up-hint { font-size: 11.5px; width: 100%; }
+.exl-up-hint { font-size: 12.5px; width: 100%; }
 .exl-prog { width: 100%; height: 6px; border-radius: 999px; background: var(--bg-2); overflow: hidden; }
 .exl-prog i { display: block; height: 100%; background: var(--yellow); box-shadow: inset 0 0 0 1px var(--ink); transition: width .2s; }
 `

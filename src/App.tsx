@@ -77,7 +77,7 @@ export default function App() {
   const isCoach = profile.role === 'preparatore'
   // L'agente vede solo le competenze del procuratore.
   const agentAllowed = ['my-athletes', 'settings', 'agent-home', 'dashboard', 'performance', 'profile', 'editorial', 'media',
-                        'contracts', 'documents', 'sponsors', 'commercial', 'fitness',
+                        'contracts', 'documents', 'sponsors', 'commercial', 'cp-opps', 'cp-kit', 'cp-profile', 'fitness',
                         'agenda', 'tasks', 'messages', 'agent-profile', 'insurance', 'legaltax', 'services', 'access-requests', 'my-team', 'archivio', 'my-files', 'wealth', 'item']
   const isAgent = profile.role === 'agente'
   // L'assicuratore vede solo la sua area: polizze, scadenze e chat.
@@ -160,6 +160,10 @@ export default function App() {
       case 'media': return <Media />
       case 'sponsors': return <Sponsors />
       case 'commercial': return <Commercial />
+      case 'cp-opps': return <Commercial page="opportunita" />
+      case 'cp-kit': return <Commercial page="mediakit" />
+      case 'cp-profile': return <Commercial page="profilo" />
+      case 'cp-admin': return <Commercial page="gestione" />
       case 'agenda': return <Agenda goto={setRoute} />
       case 'tasks': return <Tasks />
       case 'messages': return <Messages />

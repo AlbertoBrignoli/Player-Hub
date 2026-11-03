@@ -13,7 +13,7 @@ import { whatsappUrl } from '../lib/ics'
 const ALL_SPEC = ['Performance', 'Strength', 'Return To Play', 'Speed', 'Mobility', 'Recovery', 'Prevenzione infortuni']
 const ALL_SERV = ['Allenamento Online', 'Allenamento in presenza', 'Programmi personalizzati', 'Test atletici', 'Valutazioni', 'Video Analisi']
 const label: React.CSSProperties = { fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: 'var(--text-dim)', fontWeight: 700, margin: '22px 2px 10px' }
-const chip = (on: boolean): React.CSSProperties => ({ padding: '7px 13px', borderRadius: 999, cursor: 'pointer', fontSize: 13, border: on ? '1.5px solid var(--ink)' : '1px solid var(--border)', background: on ? 'var(--yellow-soft)' : 'transparent' })
+const chip = (on: boolean): React.CSSProperties => ({ padding: '7px 13px', borderRadius: 999, cursor: 'pointer', fontSize: 12.5, border: on ? '1.5px solid var(--ink)' : '1px solid var(--border)', background: on ? 'var(--yellow-soft)' : 'transparent' })
 
 const empty = (tid: string): CoachProfile => ({ trainer_id: tid, verified: true, specializations: [], services: [], contacts: {} })
 
@@ -130,10 +130,10 @@ export default function FitnessCoachProfile({ goto }: { goto?: (r: string) => vo
           : <div style={{ width: 76, height: 76, borderRadius: 18, background: 'var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 26 }}>{(p.name || 'C').slice(0, 1)}</div>}
         <div style={{ flex: 1, minWidth: 180 }}>
           <div className="flex gap" style={{ alignItems: 'center' }}>
-            <div style={{ fontSize: 21, fontWeight: 800 }}>{p.name || t('Preparatore')}</div>
-            {p.verified && <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--green)', border: '1px solid var(--green)', borderRadius: 999, padding: '2px 8px' }}>✓ AUVI</span>}
+            <div style={{ fontSize: 22, fontWeight: 800 }}>{p.name || t('Preparatore')}</div>
+            {p.verified && <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--green)', border: '1px solid var(--green)', borderRadius: 999, padding: '2px 8px' }}>✓ AUVI</span>}
           </div>
-          <div className="faint" style={{ fontSize: 13.5, marginTop: 2 }}>{p.headline || t('Preparatore Atletico')}{p.experience ? ` · ${p.experience}` : ''}</div>
+          <div className="faint" style={{ fontSize: 14, marginTop: 2 }}>{p.headline || t('Preparatore Atletico')}{p.experience ? ` · ${p.experience}` : ''}</div>
         </div>
         {isCoach && <button className="btn" onClick={() => setEditing(true)}><Icon name="edit" size={14} /> {t('Modifica')}</button>}
       </div>
@@ -146,7 +146,7 @@ export default function FitnessCoachProfile({ goto }: { goto?: (r: string) => vo
           <button className="btn" onClick={() => request('messaggio')}>{t('Invia messaggio')}</button>
         </div>
       )}
-      {sentReq && <div style={{ color: 'var(--green)', fontSize: 13, marginTop: 8 }}>{sentReq}</div>}
+      {sentReq && <div style={{ color: 'var(--green)', fontSize: 12.5, marginTop: 8 }}>{sentReq}</div>}
 
       {(p.bio_method || p.bio_philosophy) && <>
         <div style={label}>{t('Biografia')}</div>

@@ -47,7 +47,7 @@ export default function PhysioOffice() {
       <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 18, background: 'var(--bg-2)', border: '1px solid var(--border)', padding: '22px' }}>
         <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 5, background: ACCENT }} />
         <div style={{ ...kicker, color: ACCENT }}>{t('Il mio ufficio')}</div>
-        <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: -0.3, marginTop: 2 }}>{t('Spazio clinico')}</div>
+        <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: -0.3, marginTop: 2 }}>{t('Spazio clinico')}</div>
         <div className="faint" style={{ fontSize: 12.5, marginTop: 2 }}>{t('Seleziona un atleta per gestire valutazioni, trattamenti ed esercizi.')}</div>
       </div>
 
@@ -61,8 +61,8 @@ export default function PhysioOffice() {
           <div className="grid g2" style={{ gap: 10 }}>
             {athletes.map(a => (
               <button key={a.player_id} className="card" style={{ display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left', cursor: 'pointer' }} onClick={() => setSel(a)}>
-                <div style={{ width: 40, height: 40, borderRadius: 11, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: '#fff' }}>{(a.name || 'A').slice(0, 1)}</div>
-                <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontWeight: 700 }}>{a.name}</div><div className="faint" style={{ fontSize: 11.5 }}>{t('Apri cartella clinica')}</div></div>
+                <div style={{ width: 40, height: 40, borderRadius: 11, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: '#fff' }}>{(a.name || 'A').slice(0, 1)}</div>
+                <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontWeight: 600 }}>{a.name}</div><div className="faint" style={{ fontSize: 12.5 }}>{t('Apri cartella clinica')}</div></div>
                 <Icon name="chevron-right" size={16} />
               </button>
             ))}
@@ -106,7 +106,7 @@ function Workspace({ physioId, athlete, onBack }: { physioId: string; athlete: A
     <div className="grid" style={{ gap: 16 }}>
       <div className="flex gap" style={{ alignItems: 'center', gap: 12 }}>
         <button className="btn btn-sm" onClick={onBack}><Icon name="chevron-left" size={14} /> {t('Atleti')}</button>
-        <div><div style={{ ...kicker, color: ACCENT }}>{t('Cartella clinica')}</div><div style={{ fontSize: 20, fontWeight: 900 }}>{athlete.name}</div></div>
+        <div><div style={{ ...kicker, color: ACCENT }}>{t('Cartella clinica')}</div><div style={{ fontSize: 22, fontWeight: 800 }}>{athlete.name}</div></div>
       </div>
 
       <div className="flex gap" style={{ gap: 8, flexWrap: 'wrap' }}>
@@ -140,12 +140,12 @@ function RecordCard({ tab, r, onEdit, onDel }: { tab: Tab; r: any; onEdit: () =>
     <div className="card">
       <div className="flex between" style={{ alignItems: 'flex-start', gap: 10 }}>
         <div style={{ minWidth: 0 }}>
-          <div style={{ fontWeight: 700 }}>{title}</div>
+          <div style={{ fontWeight: 600 }}>{title}</div>
           {sub && <div className="faint" style={{ fontSize: 12.5, marginTop: 2 }}>{sub}</div>}
-          {tab === 'val' && (r.pain_scale != null) && <div className="faint" style={{ fontSize: 12, marginTop: 2 }}>{t('Dolore')}: {r.pain_scale}/10 · ROM: {r.rom || '—'} · {t('Forza')}: {r.strength || '—'}</div>}
-          {tab === 'trt' && <div className="faint" style={{ fontSize: 12, marginTop: 2 }}>{t('Durata')}: {r.duration || '—'} · {t('Dolore')}: {r.pain_level != null ? r.pain_level + '/10' : '—'} · {r.progress || ''}</div>}
-          {r.notes && <div style={{ fontSize: 13, marginTop: 6 }}>{r.notes}</div>}
-          {tab === 'exe' && r.description && <div style={{ fontSize: 13, marginTop: 6 }}>{r.description}</div>}
+          {tab === 'val' && (r.pain_scale != null) && <div className="faint" style={{ fontSize: 12.5, marginTop: 2 }}>{t('Dolore')}: {r.pain_scale}/10 · ROM: {r.rom || '—'} · {t('Forza')}: {r.strength || '—'}</div>}
+          {tab === 'trt' && <div className="faint" style={{ fontSize: 12.5, marginTop: 2 }}>{t('Durata')}: {r.duration || '—'} · {t('Dolore')}: {r.pain_level != null ? r.pain_level + '/10' : '—'} · {r.progress || ''}</div>}
+          {r.notes && <div style={{ fontSize: 12.5, marginTop: 6 }}>{r.notes}</div>}
+          {tab === 'exe' && r.description && <div style={{ fontSize: 12.5, marginTop: 6 }}>{r.description}</div>}
         </div>
         <div className="flex gap" style={{ gap: 8, flex: '0 0 auto' }}>
           <button className="btn btn-sm" onClick={onEdit}>{t('Modifica')}</button>

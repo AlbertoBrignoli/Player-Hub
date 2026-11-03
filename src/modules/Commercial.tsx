@@ -11,7 +11,7 @@ import { useAthlete } from '../lib/athlete'
 import { useLang } from '../lib/i18n'
 import { supabase, AGENCY_NAME } from '../lib/supabase'
 import { Modal, Field, Input, Textarea, Select, Badge, Empty, Spinner, Stat, ConfirmButton, Tabs } from '../components/ui'
-import { useRouteParam } from '../lib/route'
+import { useRouteParam, goto } from '../lib/route'
 import Icon from '../components/Icon'
 import { InstagramConnect, IgAppSetup } from '../components/InstagramConnect'
 import MediaKitDeckDialog from '../components/MediaKitDeckDialog'
@@ -42,13 +42,22 @@ const collabStatusLabel = (s: string) => ({ attiva: 'Attiva', completata: 'Compl
 const fmtN = (n: any) => (n == null || n === '' ? '—' : Number(n).toLocaleString('it-IT'))
 
 // ═════════════════════════════════════════════════════════════════════════════
-export default function Commercial() {
+// Le sezioni sono schede di Business (menu → schede, due livelli): ognuna ha la sua route.
+export default function Commercial({ page = 'valore' }: { page?: TabKey }) {
   const { t: tr } = useLang()
   const { isAdmin, role, profile: user } = useAuth()
   const { athleteId } = useAthlete()
   const routeTab = useRouteParam('tab')
-  const [tab, setTab] = useState<TabKey>(() => toTab(routeTab) || 'valore')
-  useEffect(() => { const k = toTab(routeTab); if (k) setTab(k) }, [routeTab])
+  const tab: TabKey = page === 'gestione' && !isAdmin ? 'valore' : page
+  const setTab = (k: TabKey) => goto(CP_ROUTE[k])
+  // vecchi link #/commercial?tab=… → la scheda giusta di Business
+  useEffect(() => {
+    const k = toTab(routeTab)
+    if (!k || k === page) return
+    // gli altri parametri restano (es. ritorno da Instagram: ig=ok, sub=impostazioni)
+    const q = new URLSearchParams(window.location.hash.split('?')[1] || ''); q.delete('tab')
+    goto(CP_ROUTE[k] + (q.toString() ? '?' + q.toString() : ''))
+  }, [routeTab]) // eslint-disable-line react-hooks/exhaustive-deps
   const [loading, setLoading] = useState(true)
   const [player, setPlayer] = useState<Player | null>(null)
   const [stats, setStats] = useState<any[]>([])
@@ -132,19 +141,11 @@ export default function Commercial() {
 
   // Opportunità che aspettano una risposta dell'atleta (stessa regola di OppModal.canRespond)
   const toAnswer = opps.filter(o => ['nuova', 'in_valutazione'].includes(o.status) && !o.athlete_response).length
-  const TABS: { key: TabKey; label: string; badge?: number }[] = [
-    { key: 'valore', label: tr('Valore') },
-    { key: 'opportunita', label: tr('Opportunità'), badge: toAnswer },
-    { key: 'mediakit', label: tr('Media Kit') },
-    { key: 'profilo', label: tr('Profilo') },
-    ...(isAdmin ? [{ key: 'gestione' as TabKey, label: tr('Gestione') }] : []),
-  ]
   // Le raccomandazioni e i rimandi interni usano ancora le vecchie sezioni: le traduco nelle nuove schede
   const go = (section: string) => { const k = toTab(section); if (k) setTab(k) }
 
   return (
     <div className="grid" style={{ gap: 16 }}>
-      <Tabs tabs={TABS} value={tab === 'gestione' && !isAdmin ? 'valore' : tab} onChange={setTab} />
 
       {prof && !prof.onboarding_completed && tab !== 'gestione' && (
         <div className="card" style={{ borderColor: 'var(--gold)', cursor: 'pointer' }} onClick={() => setWizard(true)}>
@@ -183,7 +184,7 @@ export default function Commercial() {
 }
 
 // ── Schede e deep link (#/commercial?tab=…) ──────────────────────────────────
-type TabKey = 'valore' | 'opportunita' | 'mediakit' | 'profilo' | 'gestione'
+export type TabKey = 'valore' | 'opportunita' | 'mediakit' | 'profilo' | 'gestione'
 // Accetta le chiavi nuove e quelle delle vecchie 9 schede (link e raccomandazioni esistenti)
 const TAB_ALIAS: Record<string, TabKey> = {
   valore: 'valore', overview: 'valore', brandfit: 'valore',
@@ -193,6 +194,10 @@ const TAB_ALIAS: Record<string, TabKey> = {
   gestione: 'gestione', admin: 'gestione',
 }
 function toTab(k: string | null | undefined): TabKey | null { return (k && TAB_ALIAS[k]) || null }
+/** route di Business per ogni sezione */
+export const CP_ROUTE: Record<TabKey, string> = {
+  valore: 'commercial', opportunita: 'cp-opps', mediakit: 'cp-kit', profilo: 'cp-profile', gestione: 'cp-admin',
+}
 
 function Section({ title }: { title: string }) {
   return (
@@ -958,7 +963,7 @@ function Onboarding({ profile, save, onDone, onLater }: any) {
 // ═════════════════════════════════════════════════════════════════════════════
 function AdminPanel({ athleteId, cfg, cats, opps, collabs, perf, userName, reload }: any) {
   const { t: tr } = useLang()
-  // #/commercial?tab=gestione&sub=impostazioni (es. dal riquadro "Collega Instagram")
+  // #/cp-admin?sub=impostazioni (es. dal riquadro "Collega Instagram")
   const routeSub = useRouteParam('sub')
   const [sub, setSub] = useState<'pipeline' | 'brand' | 'impostazioni'>(routeSub === 'impostazioni' ? 'impostazioni' : 'pipeline')
   useEffect(() => { if (routeSub === 'impostazioni') setSub('impostazioni') }, [routeSub])

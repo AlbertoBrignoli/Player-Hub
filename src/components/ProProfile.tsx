@@ -110,11 +110,11 @@ export default function ProProfileModal({ role, proId, roleLabel, fallback, onCl
           <div className="flex gap" style={{ alignItems: 'center', gap: 14 }}>
             {d.photo_url
               ? <img src={d.photo_url} alt={name || ''} style={{ width: 72, height: 72, borderRadius: 18, objectFit: 'cover', flexShrink: 0 }} />
-              : <div style={{ width: 72, height: 72, borderRadius: 18, flexShrink: 0, display: 'grid', placeItems: 'center', fontWeight: 900, fontSize: 24, background: 'var(--bg-2)', border: '1px solid var(--border)' }}>{initials(name)}</div>}
+              : <div style={{ width: 72, height: 72, borderRadius: 18, flexShrink: 0, display: 'grid', placeItems: 'center', fontWeight: 800, fontSize: 24, background: 'var(--bg-2)', border: '1px solid var(--border)' }}>{initials(name)}</div>}
             <div style={{ minWidth: 0, flex: 1 }}>
-              <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: -.3 }}>{name || '—'}</div>
-              {title && <div className="faint" style={{ fontSize: 13.5, marginTop: 2 }}>{title}</div>}
-              {d.verified && <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--green)', marginTop: 4 }}><Icon name="check" size={12} /> {t('Profilo verificato')}</div>}
+              <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: -.3 }}>{name || '—'}</div>
+              {title && <div className="faint" style={{ fontSize: 14, marginTop: 2 }}>{title}</div>}
+              {d.verified && <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--green)', marginTop: 4 }}><Icon name="check" size={12} /> {t('Profilo verificato')}</div>}
             </div>
             {logo && <img src={logo} alt="" style={{ height: 40, maxWidth: 90, objectFit: 'contain', flexShrink: 0 }} />}
           </div>
@@ -134,7 +134,7 @@ export default function ProProfileModal({ role, proId, roleLabel, fallback, onCl
             </div>
           )}
           {about.length === 0 && place.length === 0 && (
-            <div className="faint" style={{ fontSize: 13 }}>{t('Il professionista non ha ancora completato il suo profilo.')}</div>
+            <div className="faint" style={{ fontSize: 12.5 }}>{t('Il professionista non ha ancora completato il suo profilo.')}</div>
           )}
         </div>
       )}
@@ -146,10 +146,10 @@ function Section({ title, rows }: { title: string; rows: (readonly [string, stri
   const { t } = useLang()
   return (
     <div className="grid" style={{ gap: 10 }}>
-      <div style={{ fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', fontWeight: 800, color: 'var(--text-dim)' }}>{title}</div>
+      <div className="t-label">{title}</div>
       {rows.map(([l, v]) => (
         <div key={l}>
-          <div className="faint" style={{ fontSize: 11.5, fontWeight: 700 }}>{t(l)}</div>
+          <div className="faint" style={{ fontSize: 12.5, fontWeight: 600 }}>{t(l)}</div>
           <div style={{ fontSize: 14, lineHeight: 1.45, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{v}</div>
         </div>
       ))}

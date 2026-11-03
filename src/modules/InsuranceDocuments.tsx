@@ -77,7 +77,7 @@ export default function InsuranceDocuments() {
     return (
       <div className="grid" style={{ gap: 16 }}>
         <div className="card">
-          <div style={{ fontSize: 11, letterSpacing: 1.4, textTransform: 'uppercase', fontWeight: 800, color: ACCENT }}>{t('Documenti')}</div>
+          <div className="t-label" style={{ color: ACCENT }}>{t('Documenti')}</div>
           <div className="faint" style={{ fontSize: 12.5, marginTop: 2 }}>{t('Una cartella per ogni tuo atleta. Solo i tuoi documenti assicurativi.')}</div>
         </div>
         {athletes.length === 0 ? (
@@ -92,7 +92,7 @@ export default function InsuranceDocuments() {
                   <span style={{ display: 'inline-flex', color: ACCENT }}><Icon name="folder" size={22} /></span>
                   {a.photo_url
                     ? <img src={a.photo_url} alt="" style={{ width: 34, height: 34, borderRadius: '50%', objectFit: 'cover' }} />
-                    : <span className="avatar" style={{ width: 34, height: 34, fontSize: 13 }}>{initials(a.name)}</span>}
+                    : <span className="avatar" style={{ width: 34, height: 34, fontSize: 12.5 }}>{initials(a.name)}</span>}
                   <span style={{ fontSize: 15, fontWeight: 800 }}>{a.name}</span>
                 </span>
                 <Icon name="chevron-right" size={18} />
@@ -109,7 +109,7 @@ export default function InsuranceDocuments() {
     <div className="grid" style={{ gap: 16 }}>
       {/* breadcrumb */}
       <div className="card flex between wrap gap" style={{ alignItems: 'center' }}>
-        <div className="flex gap" style={{ alignItems: 'center', gap: 6, flexWrap: 'wrap', fontSize: 13.5 }}>
+        <div className="flex gap" style={{ alignItems: 'center', gap: 6, flexWrap: 'wrap', fontSize: 14 }}>
           <button className="btn btn-ghost btn-sm" onClick={() => { setAtleta(null); setStack([]) }}><Icon name="folder" size={13} /> {t('Atleti')}</button>
           <span className="faint">/</span>
           <button className="btn btn-ghost btn-sm" onClick={() => setStack([])} style={{ fontWeight: stack.length ? 400 : 800 }}>{atleta.name}</button>
@@ -237,9 +237,9 @@ function UploadDialog({ onClose, onDone, playerId, folderId, uid }: {
         <Field label={t("File (puoi selezionarne più di uno)")}>
           <input type="file" multiple accept="image/*,application/pdf"
             onChange={e => setFiles(Array.from(e.target.files || []))}
-            style={{ fontSize: 13 }} />
+            style={{ fontSize: 12.5 }} />
         </Field>
-        {files.length > 0 && <div className="faint" style={{ fontSize: 12 }}>{(files.length > 1 ? t('{n} file selezionati') : t('{n} file selezionato')).replace('{n}', String(files.length))}</div>}
+        {files.length > 0 && <div className="faint" style={{ fontSize: 12.5 }}>{(files.length > 1 ? t('{n} file selezionati') : t('{n} file selezionato')).replace('{n}', String(files.length))}</div>}
         <Field label={t("Data scadenza (facoltativa) — finisce nell'area Scadenze")}>
           <Input type="date" value={scadenza} onChange={e => setScadenza(e.target.value)} />
         </Field>

@@ -65,7 +65,7 @@ const DR_CSS = `
 .dr-step.on .dr-dot { background: var(--ink); color: var(--yellow); }
 .dr-step.ok .dr-dot { background: #12A150; color: #fff; }
 .dr-step.late .dr-dot { background: var(--red); color: #fff; }
-.dr-k { font-size: 10px; font-weight: 800; letter-spacing: .7px; text-transform: uppercase; color: var(--text-faint); }
+.dr-k { font-size: 11px; font-weight: 800; letter-spacing: .7px; text-transform: uppercase; color: var(--text-faint); }
 .dr-v { font-size: 12.5px; font-weight: 700; color: var(--text); overflow-wrap: anywhere; }
 .dr-s { font-size: 11px; color: var(--text-dim); overflow-wrap: anywhere; }
 `

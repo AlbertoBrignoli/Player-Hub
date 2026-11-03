@@ -85,7 +85,7 @@ export default function CoachOffice() {
           <Metric label={t('Da incassare')} value={fmtMoney(daIncassareTot)} tone={daIncassareTot ? 'var(--gold)' : undefined} />
           <Metric label={t('Clienti')} value={String(clients.filter(c => !c.archived).length)} />
         </div>
-        <div className="faint" style={{ fontSize: 11.5, marginTop: 14 }}>
+        <div className="faint" style={{ fontSize: 12.5, marginTop: 14 }}>
           {t('Sezione privata: questi dati non sono visibili ad AUVI né agli atleti.')}
         </div>
       </div>
@@ -139,7 +139,7 @@ export default function CoachOffice() {
               <div className="grid" style={{ gap: 8 }}>
                 {daIncassare.map(s => (
                   <div key={s.id} className="flex between" style={{ alignItems: 'center', gap: 10 }}>
-                    <div className="faint" style={{ fontSize: 13 }}>
+                    <div className="faint" style={{ fontSize: 12.5 }}>
                       {clientName(s.client_id)} · {fmtDate(s.session_date)} · <b style={{ color: 'var(--text)' }}>{fmtMoney(s.price)}</b>
                     </div>
                     <button className="btn btn-sm" onClick={() => markDone(s, true)}>{t('Incassa')}</button>
@@ -156,8 +156,8 @@ export default function CoachOffice() {
                 <div key={s.id} className="card" style={{ padding: 12 }}>
                   <div className="flex between" style={{ alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 14, fontWeight: 700 }}>{s.title || t('Seduta')} · <span className="faint">{clientName(s.client_id)}</span></div>
-                      <div className="faint" style={{ fontSize: 12 }}>{fmtDate(s.session_date)}{s.price ? ` · ${fmtMoney(s.price)}` : ''}</div>
+                      <div style={{ fontSize: 14, fontWeight: 600 }}>{s.title || t('Seduta')} · <span className="faint">{clientName(s.client_id)}</span></div>
+                      <div className="faint" style={{ fontSize: 12.5 }}>{fmtDate(s.session_date)}{s.price ? ` · ${fmtMoney(s.price)}` : ''}</div>
                     </div>
                     <div className="flex gap" style={{ alignItems: 'center' }}>
                       {s.status === 'fatta' && <Badge tone={s.paid ? 'green' : 'gold'}>{s.paid ? t('Incassata') : t('Da incassare')}</Badge>}
@@ -191,11 +191,11 @@ export default function CoachOffice() {
                   <div key={c.id} className="card" style={{ padding: 0, overflow: 'hidden', opacity: c.archived ? .55 : 1 }}>
                     <div style={{ height: 3, background: ACCENT }} />
                     <div style={{ padding: 15 }}>
-                      <div style={{ fontSize: 15.5, fontWeight: 800 }}>{c.name}</div>
-                      <div className="faint" style={{ fontSize: 12, marginTop: 3 }}>
+                      <div style={{ fontSize: 15, fontWeight: 800 }}>{c.name}</div>
+                      <div className="faint" style={{ fontSize: 12.5, marginTop: 3 }}>
                         {c.contact || t('Nessun contatto')} · {(n === 1 ? t('{n} seduta') : t('{n} sedute')).replace('{n}', String(n))}
                       </div>
-                      {c.rate ? <div style={{ ...kicker, fontSize: 10.5, color: ACCENT, marginTop: 5 }}>{fmtMoney(c.rate)} / {t('seduta')}</div> : null}
+                      {c.rate ? <div style={{ ...kicker, fontSize: 11, color: ACCENT, marginTop: 5 }}>{fmtMoney(c.rate)} / {t('seduta')}</div> : null}
                       <div className="flex gap" style={{ marginTop: 12, flexWrap: 'wrap' }}>
                         <button className="btn btn-sm" onClick={() => setEditS({ session_date: today(), status: 'programmata', client_id: c.id, price: c.rate })}>
                           <Icon name="plus" size={12} /> {t('Seduta')}
@@ -233,10 +233,10 @@ export default function CoachOffice() {
                   <div className="flex gap" style={{ alignItems: 'center', gap: 11, minWidth: 0 }}>
                     <span style={{ width: 3, height: 30, borderRadius: 2, background: isIn ? IN : OUT }} />
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 14, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <div style={{ fontSize: 14, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {l.description || (l.category ? t(l.category) : (isIn ? t('Entrata') : t('Uscita')))}
                       </div>
-                      <div className="faint" style={{ fontSize: 11.5 }}>{fmtDate(l.entry_date)}{l.category ? ` · ${t(l.category)}` : ''}</div>
+                      <div className="faint" style={{ fontSize: 12.5 }}>{fmtDate(l.entry_date)}{l.category ? ` · ${t(l.category)}` : ''}</div>
                     </div>
                   </div>
                   <div className="flex gap" style={{ alignItems: 'center', gap: 10 }}>
@@ -262,8 +262,8 @@ export default function CoachOffice() {
 function Metric({ label, value, tone }: { label: string; value: string; tone?: string }) {
   return (
     <div>
-      <div style={{ ...kicker, fontSize: 10, color: 'var(--text-dim)' }}>{label}</div>
-      <div style={{ fontSize: 21, fontWeight: 900, marginTop: 2, borderBottom: `2px solid ${tone || ACCENT}`, display: 'inline-block', paddingBottom: 2 }}>{value}</div>
+      <div style={{ ...kicker, fontSize: 11, color: 'var(--text-dim)' }}>{label}</div>
+      <div style={{ fontSize: 22, fontWeight: 800, marginTop: 2, borderBottom: `2px solid ${tone || ACCENT}`, display: 'inline-block', paddingBottom: 2 }}>{value}</div>
     </div>
   )
 }
@@ -350,7 +350,7 @@ function ClientForm({ value, uid, onClose, onSaved }: { value: Partial<CoachClie
       <Field label={t('Contatto')}><Input value={f.contact || ''} onChange={e => set('contact', e.target.value)} placeholder={t('Telefono o email')} /></Field>
       <Field label={t('Tariffa a seduta (€)')}><Input type="number" value={f.rate ?? ''} onChange={e => set('rate', e.target.value)} /></Field>
       <Field label={t('Note')}><Textarea rows={2} value={f.notes || ''} onChange={e => set('notes', e.target.value)} /></Field>
-      <label className="flex gap" style={{ gap: 8, fontSize: 13, cursor: 'pointer', marginTop: 4 }}>
+      <label className="flex gap" style={{ gap: 8, fontSize: 12.5, cursor: 'pointer', marginTop: 4 }}>
         <input type="checkbox" checked={!!f.archived} onChange={e => set('archived', e.target.checked)} /> {t('Cliente archiviato')}
       </label>
     </Modal>
@@ -449,12 +449,12 @@ function CoachCalendar({ sessions, clientName, onPick }: {
         <div style={{ marginTop: 12 }}>
           <div style={{ ...kicker, color: 'var(--text-dim)', marginBottom: 8 }}>{fmtDate(sel)}</div>
           {(byDay[sel] || []).length === 0
-            ? <div className="faint" style={{ fontSize: 13 }}>{t('Nessun impegno in questo giorno.')}</div>
+            ? <div className="faint" style={{ fontSize: 12.5 }}>{t('Nessun impegno in questo giorno.')}</div>
             : (byDay[sel] || []).map(s => (
               <div key={s.id} className="flex between" style={{ alignItems: 'center', gap: 10, padding: '7px 0', borderTop: '1px solid var(--border)' }}>
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 13.5, fontWeight: 700 }}>{s.title || t('Seduta')}{s.start_time ? ` · ${s.start_time}` : ''}</div>
-                  <div className="faint" style={{ fontSize: 12 }}>{clientName(s.client_id)}{s.location ? ` · ${s.location}` : ''}</div>
+                  <div style={{ fontSize: 14, fontWeight: 600 }}>{s.title || t('Seduta')}{s.start_time ? ` · ${s.start_time}` : ''}</div>
+                  <div className="faint" style={{ fontSize: 12.5 }}>{clientName(s.client_id)}{s.location ? ` · ${s.location}` : ''}</div>
                 </div>
                 <button className="btn btn-ghost btn-sm" onClick={() => onPick(s)}>{t('Apri')}</button>
               </div>

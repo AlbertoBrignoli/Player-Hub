@@ -82,12 +82,12 @@ export default function TaxAdvisorHome({ goto }: { goto?: (r: string) => void })
         <div className="flex gap" style={{ alignItems: 'center', gap: 15, flexWrap: 'wrap' }}>
           {me.photo_url
             ? <img src={me.photo_url} alt="" style={{ width: 60, height: 60, borderRadius: 15, objectFit: 'cover' }} />
-            : <div style={{ width: 60, height: 60, borderRadius: 15, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 23, color: '#fff' }}>
+            : <div style={{ width: 60, height: 60, borderRadius: 15, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 23, color: '#fff' }}>
                 {nome.slice(0, 1)}
               </div>}
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ ...kicker, color: ACCENT }}>{t('Commercialista')}</div>
-            <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: -0.4, marginTop: 2 }}>{nome}</div>
+            <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: -0.4, marginTop: 2 }}>{nome}</div>
             <div className="faint" style={{ fontSize: 12.5, marginTop: 2 }}>
               {[me.title, me.agency_name].filter(Boolean).join(' · ') || t('Completa il tuo profilo')}
             </div>
@@ -118,7 +118,7 @@ export default function TaxAdvisorHome({ goto }: { goto?: (r: string) => void })
             <span style={{ width: 3, height: 15, background: ACCENT, borderRadius: 2 }} />
             <span style={{ ...kicker, color: 'var(--text)' }}>{t('Atleti seguiti')}</span>
           </div>
-          <span className="faint" style={{ fontSize: 12 }}>
+          <span className="faint" style={{ fontSize: 12.5 }}>
             {(rows.length === 1 ? t('{n} atleta') : t('{n} atleti')).replace('{n}', String(rows.length))}
           </span>
         </div>
@@ -145,12 +145,12 @@ export default function TaxAdvisorHome({ goto }: { goto?: (r: string) => void })
                           {(a.name || '?').slice(0, 1)}
                         </div>}
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 16, fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</div>
-                      <div className="faint" style={{ fontSize: 12 }}>
+                      <div style={{ fontSize: 15, fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</div>
+                      <div className="faint" style={{ fontSize: 12.5 }}>
                         {[a.position, a.team_name].filter(Boolean).join(' · ') || t('Atleta')}
                       </div>
                       {nextMatch[a.api_player_id] && (
-                        <div className="faint" style={{ fontSize: 11.5, marginTop: 3 }}>
+                        <div className="faint" style={{ fontSize: 12.5, marginTop: 3 }}>
                           <Icon name="calendar" size={10} /> {nextMatch[a.api_player_id]}
                         </div>
                       )}
@@ -185,7 +185,7 @@ export default function TaxAdvisorHome({ goto }: { goto?: (r: string) => void })
 function Metric({ label, value, small }: { label: string; value: string; small?: boolean }) {
   return (
     <div style={{ minWidth: 0 }}>
-      <div style={{ ...kicker, fontSize: 10, color: 'var(--text-dim)' }}>{label}</div>
+      <div style={{ ...kicker, fontSize: 11, color: 'var(--text-dim)' }}>{label}</div>
       <div style={{ fontSize: small ? 13.5 : 22, fontWeight: small ? 600 : 900, marginTop: 2,
                     borderBottom: `2px solid ${ACCENT}`, display: 'inline-block', paddingBottom: 2 }}>
         {value}

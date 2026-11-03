@@ -75,12 +75,12 @@ export default function WealthProfile() {
         <div className="flex gap" style={{ alignItems: 'center', gap: 15, flexWrap: 'wrap' }}>
           {p.photo_url
             ? <img src={p.photo_url} alt="" style={{ width: 58, height: 58, borderRadius: 15, objectFit: 'cover' }} />
-            : <div style={{ width: 58, height: 58, borderRadius: 15, background: WEALTH_ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 22, color: '#fff' }}>
+            : <div style={{ width: 58, height: 58, borderRadius: 15, background: WEALTH_ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 22, color: '#fff' }}>
                 {(p.name || 'W').slice(0, 1)}
               </div>}
           <div style={{ minWidth: 0, flex: '1 1 200px' }}>
             <div style={{ ...kicker, color: WEALTH_ACCENT }}>{byAdmin ? t('Wealth manager · modifica AUVI') : 'Wealth manager'}</div>
-            <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: -0.3, marginTop: 2 }}>{p.name || t('Il mio profilo')}</div>
+            <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: -0.3, marginTop: 2 }}>{p.name || t('Il mio profilo')}</div>
             <div className="faint" style={{ fontSize: 12.5, marginTop: 2 }}>
               {[p.title, p.agency_name !== p.name ? p.agency_name : null].filter(Boolean).join(' · ') || t('Completa i tuoi dati')}
             </div>
@@ -97,8 +97,8 @@ export default function WealthProfile() {
             </div>
           )}
           <div>
-            <div style={{ ...kicker, fontSize: 10, color: 'var(--text-dim)' }}>{t('Atleti')}</div>
-            <div style={{ fontSize: 22, fontWeight: 900, borderBottom: `2px solid ${WEALTH_ACCENT}`, display: 'inline-block' }}>
+            <div style={{ ...kicker, fontSize: 11, color: 'var(--text-dim)' }}>{t('Atleti')}</div>
+            <div style={{ fontSize: 22, fontWeight: 800, borderBottom: `2px solid ${WEALTH_ACCENT}`, display: 'inline-block' }}>
               {byAdmin ? linked.length : athletes.length}
             </div>
           </div>
@@ -130,7 +130,7 @@ export default function WealthProfile() {
 
       <div className="card">
         <div className="card-head"><div className="card-title">{t('Società')}</div></div>
-        <div className="faint" style={{ fontSize: 12, marginBottom: 12 }}>
+        <div className="faint" style={{ fontSize: 12.5, marginBottom: 12 }}>
           {t("I dati della società: li vede l'agenzia AUVI e l'atleta che segui.")}
         </div>
         <div className="grid g2" style={{ gap: 10 }}>
@@ -147,7 +147,7 @@ export default function WealthProfile() {
         <button className="btn btn-primary" disabled={busy} onClick={save}>
           <Icon name="check" size={14} /> {busy ? t('Salvo…') : t('Salva profilo')}
         </button>
-        {msg && <span className="faint" style={{ fontSize: 13 }}>{msg}</span>}
+        {msg && <span className="faint" style={{ fontSize: 12.5 }}>{msg}</span>}
       </div>
     </div>
   )
