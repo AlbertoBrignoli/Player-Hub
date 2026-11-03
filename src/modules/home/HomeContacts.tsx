@@ -92,8 +92,6 @@ export default function HomeContacts({ goto, title }: { goto: (r: string) => voi
     return () => { ok = false }
   }, [athleteId])
 
-  if (refs.length === 0) return null
-
   const chat = (key: string) => {
     try { sessionStorage.setItem('chat_channel', key) } catch { /* no-op */ }
     goto('messages')
@@ -103,6 +101,12 @@ export default function HomeContacts({ goto, title }: { goto: (r: string) => voi
     <section className="home-sec">
       <div className="home-h">{title}</div>
       <div className="home-contacts">
+        {/* il consulente dedicato AUVI è sempre il primo: un tocco apre direttamente la sua chat */}
+        <button className="home-contact" onClick={() => chat('team')} aria-label={t('Scrivi al tuo consulente AUVI')}>
+          <span className="home-contact-av home-contact-auvi"><img src="/brand/auvi-mark-yellow.svg" alt="" /></span>
+          <span className="home-contact-n">AUVI</span>
+          <span className="home-contact-r home-trunc">{t('Consulente')}</span>
+        </button>
         {refs.map(r => (
           <button key={r.key} className="home-contact" onClick={() => setOpenRef(r)} aria-label={`${t('Profilo di')} ${r.name}`}>
             {r.photo

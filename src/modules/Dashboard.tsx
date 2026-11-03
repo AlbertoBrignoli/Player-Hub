@@ -140,6 +140,8 @@ button.home-card:active, .home-qa:active, .home-contact:active { transform: scal
 .home-contact { flex: 0 0 92px; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 6px 2px; background: none; border: 0; cursor: pointer; text-align: center; min-width: 0; }
 .home-contact-av { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--border-2); }
 .home-contact:hover .home-contact-av { box-shadow: 0 0 0 2px var(--ink); }
+.home-contact-auvi { display: grid; place-items: center; background: var(--ink); box-shadow: 0 0 0 2px var(--yellow); }
+.home-contact-auvi img { width: 46%; height: auto; }
 .home-contact-ini { display: grid; place-items: center; background: var(--bg-2); color: var(--text); font-weight: 700; font-size: 15px; }
 .home-contact-n { font-size: 12.5px; font-weight: 600; color: var(--text); max-width: 100%; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
 .home-contact-r { font-size: 11px; color: var(--text-faint); max-width: 100%; }

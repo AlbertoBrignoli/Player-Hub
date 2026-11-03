@@ -66,7 +66,7 @@ export default function HomeServices({ goto }: { goto: (r: string) => void }) {
               </span>
             )}
             <span className="home-svc-cta">
-              {count > 0 ? t('Scopri i {n} servizi').replace('{n}', String(count)) : t('Scopri i servizi')}
+              {t('Scopri i servizi')}
               <Icon name="chevron-right" size={16} strokeWidth={2.2} />
             </span>
           </span>

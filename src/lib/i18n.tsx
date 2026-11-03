@@ -3832,5 +3832,8 @@ const EN: Record<string, string> = {
   'Preparazione, recupero, consulenze, viaggi, famiglia: scopri cosa possiamo fare per te.': 'Training, recovery, advisory, travel, family: discover what we can do for you.',
   'Scopri i {n} servizi': 'Discover {n} services',
   'Scopri i servizi': 'Discover the services',
+  'Il tuo consulente AUVI': 'Your AUVI advisor',
+  'Scrivi al tuo consulente AUVI': 'Message your AUVI advisor',
+  'Consulente': 'Advisor',
 }
 

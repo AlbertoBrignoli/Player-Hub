@@ -51,6 +51,11 @@ export default function MyTeam({ goto }: { goto?: (r: string) => void }) {
   const isRoster = ROSTER_ROLES.includes(role || '')
   // Chi può aprire tutte le aree: agenzia e atleta. Un professionista apre solo la sua.
   const canOpenAll = isAdmin || !PRO.includes(role || '')
+  // chat con il consulente AUVI = canale 'team' (Management) della pagina Chat
+  const openAdvisorChat = () => {
+    try { sessionStorage.setItem('chat_channel', 'team') } catch { /* modalità privata */ }
+    goto?.('messages')
+  }
   // gli inviti ai professionisti li gestiscono l'agenzia e l'atleta
   const canInvite = isAdmin || role === 'player'
 
@@ -125,16 +130,16 @@ export default function MyTeam({ goto }: { goto?: (r: string) => void }) {
             {t('Le persone che lavorano al tuo fianco: apri la scheda per entrare nella loro area.')}
           </div>
         </div>
-        {/* l'advisor AUVI segue tutto: sta nell'intestazione, non tra i professionisti */}
-        <a className="mt-advisor" href="mailto:info@auviagency.com" title="info@auviagency.com">
+        {/* il consulente dedicato AUVI segue tutto: sta nell'intestazione e un tocco apre la sua chat */}
+        <button className="mt-advisor" onClick={openAdvisorChat}>
           <span className="mt-advisor-mark"><img src="/brand/auvi-mark-yellow.svg" alt="" /></span>
-          <span style={{ minWidth: 0 }}>
-            <span className="t-label" style={{ display: 'block' }}>{t('Il tuo advisor')}</span>
+          <span style={{ minWidth: 0, textAlign: 'left' }}>
+            <span className="t-label" style={{ display: 'block' }}>{t('Il tuo consulente AUVI')}</span>
             <span className="t-item" style={{ display: 'block' }}>AUVI Agency</span>
-            <span className="t-meta" style={{ display: 'block' }}>{t('Gestione a 360°')}</span>
+            <span className="t-meta" style={{ display: 'block' }}>{t('Scrivi in chat')}</span>
           </span>
-          <Icon name="mail" size={16} />
-        </a>
+          <span className="mt-advisor-go"><Icon name="message" size={16} /></span>
+        </button>
         {/* collegamenti = inviti e accessi: un'azione di servizio, non un'area del team */}
         {canInvite && goto && (
           <button className="btn btn-sm" style={{ flexShrink: 0 }} onClick={() => goto('access-requests')}>
@@ -270,8 +275,9 @@ function ArchiveTile({ icon, title, sub, onClick }: { icon: string; title: strin
 }
 
 const MT_CSS = `
-.mt-advisor { display: flex; align-items: center; gap: 12px; padding: 10px 14px 10px 10px; border-radius: 14px;
-  background: var(--surface-2); border: 1px solid var(--border); color: var(--text); text-decoration: none; flex-shrink: 0; }
+.mt-advisor { display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 10px; min-height: 64px; border-radius: 14px; cursor: pointer; font: inherit;
+  background: var(--surface-2); border: 1px solid var(--border); color: var(--text); flex-shrink: 0; }
+.mt-advisor-go { width: 36px; height: 36px; border-radius: 50%; background: var(--yellow); color: var(--ink); display: grid; place-items: center; flex-shrink: 0; margin-left: 4px; }
 .mt-advisor:hover { border-color: var(--border-2); }
 .mt-advisor-mark { width: 44px; height: 44px; border-radius: 12px; background: var(--ink); display: grid; place-items: center; flex-shrink: 0; }
 .mt-advisor-mark img { width: 24px; }

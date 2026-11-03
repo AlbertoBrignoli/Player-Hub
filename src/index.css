@@ -273,8 +273,8 @@ p { text-wrap: pretty; }
 .modal-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 14px 22px calc(14px + env(safe-area-inset-bottom)); border-top: 1px solid var(--border); position: sticky; bottom: 0; background: var(--surface); }
 .close-x { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; color: var(--text-dim); font-size: 20px; }
 .close-x:hover { background: var(--surface-2); color: var(--text); }
-@media (max-width: 880px) {
-  /* su telefono le finestre salgono dal basso come un foglio iOS */
+@media (max-width: 640px) {
+  /* su iPhone le finestre salgono dal basso come un foglio iOS (su iPad restano al centro) */
   .overlay { place-items: end center; padding: 0; }
   .modal { max-width: none !important; border-radius: 22px 22px 0 0; max-height: 92dvh; animation: sheet-in .26s cubic-bezier(.2,.8,.2,1); }
 }
@@ -876,3 +876,29 @@ input[type="time"]::-webkit-date-and-time-value { text-align: left; }
 .ig-sheet { position: fixed; inset: 0; z-index: 1000; background: rgba(10,10,10,.55); display: flex; align-items: flex-end; justify-content: center; }
 .ig-sheet-in { width: 100%; max-width: 520px; background: var(--card); color: var(--text); border-radius: 22px 22px 0 0; padding: 18px 18px calc(22px + env(safe-area-inset-bottom)); display: grid; gap: 16px; animation: ig-up .22s ease-out; }
 @keyframes ig-up { from { transform: translateY(30px); opacity: 0 } to { transform: none; opacity: 1 } }
+
+/* ============================================================
+   Spazi alla Apple (iPhone e iPad) — v12.26
+   - margini laterali: 16 su iPhone, 24 su iPad verticale, 28 su iPad orizzontale
+   - niente sotto la barra di stato o l'indicatore home (safe area)
+   - su schermi touch ogni cosa da toccare è alta almeno 44 pt
+   ============================================================ */
+.sidebar { padding-top: calc(24px + env(safe-area-inset-top)); padding-bottom: calc(18px + env(safe-area-inset-bottom)); padding-left: calc(14px + env(safe-area-inset-left)); }
+/* iPad verticale e iPhone grandi in orizzontale: layout telefono ma con margini da iPad */
+@media (min-width: 641px) and (max-width: 880px) {
+  .content { padding: 24px 24px calc(104px + env(safe-area-inset-bottom)); }
+  .topbar { padding-left: 24px; padding-right: 24px; }
+}
+/* iPad orizzontale (e finestre medie): barra laterale più stretta, margini 28 */
+@media (min-width: 881px) and (max-width: 1280px) {
+  .sidebar { width: 232px; }
+  .content { padding: 24px 28px 64px; }
+  .topbar { padding-left: 28px; padding-right: 28px; }
+}
+/* touch (iPad e iPhone): righe del menu da 44 pt e testo un po' più grande, come le liste iOS */
+@media (pointer: coarse) {
+  .nav-item { min-height: var(--tap); font-size: 15px; }
+  .pill-tab, .mk-tab { min-height: 40px; }
+  .crumb button { min-height: 40px; }
+  .wa-item { min-height: 72px; }
+}
