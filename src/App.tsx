@@ -78,13 +78,13 @@ export default function App() {
   // L'agente vede solo le competenze del procuratore.
   const agentAllowed = ['my-athletes', 'settings', 'agent-home', 'dashboard', 'performance', 'profile', 'editorial', 'media',
                         'contracts', 'documents', 'sponsors', 'commercial', 'cp-opps', 'cp-kit', 'cp-profile', 'fitness',
-                        'agenda', 'tasks', 'messages', 'agent-profile', 'insurance', 'legaltax', 'services', 'access-requests', 'my-team', 'archivio', 'my-files', 'wealth', 'item']
+                        'agenda', 'tasks', 'messages', 'agent-profile', 'insurance', 'legaltax', 'services', 'services-extra', 'services-req', 'access-requests', 'my-team', 'archivio', 'my-files', 'wealth', 'item']
   const isAgent = profile.role === 'agente'
   // L'assicuratore vede solo la sua area: polizze, scadenze e chat.
   const insurerAllowed = ['my-athletes', 'settings', 'insurer-home', 'insurance', 'insurer-profile', 'documents', 'agenda', 'messages', 'access-requests', 'my-team', 'my-files', 'wealth', 'item']
   const isInsurer = profile.role === 'assicuratore'
   // Il commercialista vede solo la sua area.
-  const taxAllowed = ['my-athletes', 'settings', 'tax-home', 'legaltax', 'tax-profile', 'services', 'documents', 'agenda', 'messages', 'access-requests', 'my-team', 'my-files', 'wealth', 'item']
+  const taxAllowed = ['my-athletes', 'settings', 'tax-home', 'legaltax', 'tax-profile', 'services', 'services-extra', 'services-req', 'documents', 'agenda', 'messages', 'access-requests', 'my-team', 'my-files', 'wealth', 'item']
   const isTax = profile.role === 'commercialista'
   // Il fisioterapista vede la sua area: home, profilo, chat e collegamenti.
   const physioAllowed = ['agenda', 'my-athletes', 'settings', 'physio-home', 'physio-profile', 'physio-office', 'messages', 'access-requests', 'my-team', 'my-files', 'wealth', 'item']
@@ -132,6 +132,8 @@ export default function App() {
       case 'access-requests': return <AccessRequests />
       case 'legaltax': return <LegalTax />
       case 'services': return <Services />
+      case 'services-extra': return <Services scope="extra" />
+      case 'services-req': return <Services scope="requests" />
       case 'my-team': return <MyTeam goto={setRoute} />
       case 'my-files': return <MyFiles />
       case 'backstage': return <Backstage />

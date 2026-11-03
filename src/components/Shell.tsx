@@ -15,7 +15,7 @@ import { Modal, Field, Input, Tabs, Empty } from './ui'
 // Schermate home dei vari ruoli: qui compare l'invito ad attivare le notifiche.
 const HOME_ROUTES = ['dashboard', 'brandhome', 'agent-home', 'insurer-home', 'tax-home', 'physio-home', 'partner-home', 'wealth-home']
 
-export const APP_VERSION = 'v12.16'
+export const APP_VERSION = 'v12.17'
 
 export interface NavDef {
   key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[]
@@ -60,12 +60,17 @@ export const NAV: { group: string; items: NavDef[] }[] = [
     ]},
     { key: 'performance', label: 'Atleta', icon: 'activity', tabs: [
       { key: 'performance', label: 'Performance' },
-      { key: 'fitness', label: 'Preparazione' },
       { key: 'profile', label: 'Profilo' },
+    ]},
+    // Servizi: di campo (con la preparazione atletica) ed extra campo, più le richieste fatte
+    { key: 'services', label: 'Servizi AUVI', icon: 'layers', tabs: [
+      { key: 'services', label: 'Campo' },
+      { key: 'fitness', label: 'Preparazione', roles: ['admin', 'player', 'creator'] },
+      { key: 'services-extra', label: 'Extra campo' },
+      { key: 'services-req', label: 'Richieste' },
     ]},
   ]},
   { group: 'Altro', items: [
-    { key: 'services', label: 'Servizi AUVI', icon: 'layers' },
     { key: 'mail', label: 'Posta', icon: 'mail', mailbox: true },
     { key: 'my-files', label: 'I miei file', icon: 'folder', adminOnly: true },
     { key: 'access-requests', label: 'Collegamenti', icon: 'key' },
@@ -137,7 +142,7 @@ export const PRO_ROLES: Record<ProRole, { home: string; profile: string; area: N
       { key: 'legaltax', label: 'Fisco e legale', icon: 'briefcase' },
       { key: 'documents', label: 'Documenti', icon: 'archive' },
     ],
-    extra: [{ key: 'services', label: 'Richieste servizi', icon: 'layers' }],
+    extra: [{ key: 'services-req', label: 'Richieste servizi', icon: 'layers' }],
     tab: { key: 'legaltax', label: 'Fisco', icon: 'briefcase' },
   },
   // wealth manager (Delian & Co.): quadro del patrimonio, task e documenti dell'atleta
@@ -247,6 +252,8 @@ const TITLES: Record<string, { t: string; s: string }> = {
   insurance: { t: 'Insurance', s: 'Polizze, documenti e scadenze' },
   legaltax: { t: 'Legal & Tax', s: 'Pagamenti, documenti e richieste' },
   services: { t: 'Servizi AUVI', s: 'Servizi e partner a tua disposizione' },
+  'services-extra': { t: 'Servizi AUVI', s: 'Consulenze, lifestyle, famiglia e convenzioni' },
+  'services-req': { t: 'Richieste', s: 'I servizi che hai chiesto e a che punto sono' },
   'my-team': { t: 'Il mio team', s: 'Il tuo team di lavoro' },
   'my-files': { t: 'I miei file', s: 'Documenti ricevuti in chat e cartelle' },
   backstage: { t: 'Backstage', s: 'Il tuo profilo privato: chi sei davvero, per chi scegli tu' },

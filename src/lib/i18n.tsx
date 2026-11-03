@@ -3806,5 +3806,13 @@ const EN: Record<string, string> = {
   'Proposte, il broker e perché assicurarti': 'Offers, your broker and why get insured',
   'Polizze sport': 'Sports policies',
   'Polizze personali': 'Personal policies',
+  'Servizi di campo': 'On-pitch services',
+  'Servizi extra campo': 'Off-pitch services',
+  'Preparazione, recupero, nutrizione e analisi: tutto quello che serve in campo.': 'Training, recovery, nutrition and analysis: everything you need on the pitch.',
+  'Consulenze, famiglia, viaggi, immagine e convenzioni: la tua vita fuori dal campo.': 'Advisory, family, travel, image and partner deals: your life off the pitch.',
+  'Campo': 'On-pitch',
+  'Extra campo': 'Off-pitch',
+  'Consulenze, lifestyle, famiglia e convenzioni': 'Advisory, lifestyle, family and partner deals',
+  'I servizi che hai chiesto e a che punto sono': 'The services you asked for and where they stand',
 }
 
