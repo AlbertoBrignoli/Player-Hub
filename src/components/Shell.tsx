@@ -15,7 +15,7 @@ import { Modal, Field, Input, Tabs, Empty } from './ui'
 // Schermate home dei vari ruoli: qui compare l'invito ad attivare le notifiche.
 const HOME_ROUTES = ['dashboard', 'brandhome', 'agent-home', 'insurer-home', 'tax-home', 'physio-home', 'partner-home', 'wealth-home']
 
-export const APP_VERSION = 'v12.48'
+export const APP_VERSION = 'v12.49'
 
 export interface NavDef {
   key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[]
@@ -399,6 +399,15 @@ export default function Shell({ route, setRoute, right, children }: {
               { key: 'commercial', label: 'Business', icon: 'briefcase' },
               { key: 'performance', label: 'Atleta', icon: 'activity' },
             ]
+  // tastiera aperta (campo di testo attivo): body.kb-open nasconde la barra in basso su telefono
+  useEffect(() => {
+    const isField = (el: EventTarget | null) => el instanceof HTMLElement &&
+      (el.tagName === 'TEXTAREA' || el.isContentEditable || (el.tagName === 'INPUT' && !['checkbox', 'radio', 'button', 'submit', 'range', 'file'].includes((el as HTMLInputElement).type)))
+    const on = (e: FocusEvent) => { if (isField(e.target)) document.body.classList.add('kb-open') }
+    const off = () => setTimeout(() => { if (!isField(document.activeElement)) document.body.classList.remove('kb-open') }, 50)
+    document.addEventListener('focusin', on); document.addEventListener('focusout', off)
+    return () => { document.removeEventListener('focusin', on); document.removeEventListener('focusout', off); document.body.classList.remove('kb-open') }
+  }, [])
   const tabbarKeys = new Set(tabbarItems.map(t => t.key))
   // atleta e AUVI: la barra ha 5 sezioni piene, il menu completo si apre dal tondo in alto
   const fullTabbar = !isPro && !isBrand && !isPartner

@@ -912,3 +912,11 @@ input[type="time"]::-webkit-date-and-time-value { text-align: left; }
 /* Barra in basso: chiara come le pagine, voce attiva in giallo AUVI */
 .tab-item.active { color: var(--ink); }
 .tab-item.active .tab-ico { background: var(--yellow); color: var(--ink); }
+
+/* Telefono: mentre scrivi (tastiera aperta) o dentro una conversazione la barra in basso sparisce,
+   così il campo resta sopra la tastiera e la chat usa tutto lo spazio */
+@media (max-width: 880px) {
+  body.kb-open .tabbar, body:has(.wa.open) .tabbar { display: none; }
+  body:has(.wa.open) .content { padding-bottom: calc(10px + env(safe-area-inset-bottom)); }
+  .content { overflow-x: clip; }
+}

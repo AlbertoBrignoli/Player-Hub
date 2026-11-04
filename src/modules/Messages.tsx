@@ -228,9 +228,10 @@ function DirectChat({ switcher }: { switcher?: React.ReactNode }) {
   // e in chiaro a quale atleta sta scrivendo: il selettore in alto è troppo defilato.
   const toAthlete = isAdmin || isPro || isBrand
   const athlete = athletes.find(a => a.api_player_id === athleteId)
-  const placeholder = tr('Scrivi a {name}…').replace('{name}', toAthlete
+  // nel campo solo il nome (una riga, niente "· Management" che andrebbe a capo su telefono)
+  const placeholder = tr('Scrivi a {name}…').replace('{name}', (toAthlete
     ? (athlete?.name || tr('giocatore'))
-    : (active?.label || 'AUVI'))
+    : (active?.label || 'AUVI')).split(' · ')[0].split(' ')[0])
 
   // Foto del canale: AUVI per il management, il professionista, il logo del brand;
   // per chi scrive all'atleta (professionisti, brand) la foto dell'atleta.

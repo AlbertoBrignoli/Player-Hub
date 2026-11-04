@@ -235,7 +235,7 @@ export default function StaffChat({ openThread, switcher }: { openThread?: strin
               }}
               empty={<Empty icon={<Icon name="message" size={28} strokeWidth={1.4} />} title={t('Nessun messaggio')} hint={canWrite ? t('Scrivi il primo messaggio.') : ''} />} />
             {canWrite ? (
-              <WaComposer value={text} placeholder={t('Scrivi allo staff… (@ per taggare)')}
+              <WaComposer value={text} placeholder={t('Scrivi allo staff…')}
                 onChange={v => { setText(v); if (v.endsWith('@') && !picking) setPicking(true) }}
                 onSend={send} busy={busy} canSend={!!text.trim() || !!attach.pending} attach={attach}
                 onKeyDown={e => { if (e.key === 'Escape') setPicking(false) }}

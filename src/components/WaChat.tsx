@@ -146,8 +146,9 @@ export function WaComposer({ value, onChange, onSend, placeholder, busy, canSend
   useLayoutEffect(() => {
     const el = ref.current
     if (!el) return
+    // cresce con il testo, mai più basso di una riga intera (44) e mai oltre 140; +2 = bordo
     el.style.height = 'auto'
-    el.style.height = Math.min(el.scrollHeight, 140) + 'px'
+    el.style.height = Math.min(Math.max(el.scrollHeight + 2, 44), 140) + 'px'
   }, [value])
   return (
     <div className="wa-comp-wrap">
@@ -172,7 +173,7 @@ export function WaComposer({ value, onChange, onSend, placeholder, busy, canSend
 }
 
 export const WA_CSS = `
-.wa { display: grid; grid-template-columns: minmax(280px, 360px) 1fr; height: calc(100vh - 210px); min-height: 460px;
+.wa { display: grid; grid-template-columns: minmax(280px, 360px) minmax(0, 1fr); max-width: 100%; height: calc(100vh - 210px); min-height: 460px;
   background: var(--surface); border: 1px solid var(--border); border-radius: 20px; overflow: hidden; }
 .wa-list { display: flex; flex-direction: column; min-height: 0; border-right: 1px solid var(--border); background: var(--surface); }
 .wa-list-head { padding: 16px 16px 10px; display: grid; gap: 10px; }
@@ -236,7 +237,7 @@ export const WA_CSS = `
 .wa-attach .btn, .wa-tagbtn { width: 42px; height: 42px; padding: 0 !important; border-radius: 50%; display: grid; place-items: center; border: 0; background: transparent; color: var(--text-dim); flex-shrink: 0; cursor: pointer; }
 .wa-attach .btn:hover, .wa-tagbtn:hover { background: var(--surface-2); color: var(--text); }
 .wa-tagbtn.on { background: var(--yellow); color: var(--ink); font-weight: 800; width: auto; min-width: 42px; padding: 0 10px !important; border-radius: 999px; display: inline-flex; gap: 3px; }
-.wa-input { flex: 1; min-width: 0; resize: none; border: 1px solid var(--border); background: var(--bg); border-radius: 22px; padding: 10px 16px; font: inherit; font-size: 14px; line-height: 1.4; color: var(--text); outline: none; max-height: 140px; }
+.wa-input { flex: 1; min-width: 0; box-sizing: border-box; display: block; resize: none; border: 1px solid var(--border); background: var(--bg); border-radius: 22px; padding: 11px 16px; font: inherit; font-size: 14px; line-height: 20px; min-height: 44px; color: var(--text); outline: none; max-height: 140px; overflow-y: auto; }
 .wa-input:focus { border-color: var(--ink); background: var(--surface); }
 .wa-send { width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--yellow); color: var(--ink); display: grid; place-items: center; cursor: pointer; flex-shrink: 0; transition: transform .12s, opacity .12s; }
 .wa-send:not(:disabled):active { transform: scale(.94); }
@@ -248,7 +249,12 @@ export const WA_CSS = `
 .wa-blank-mark img { width: 38px; }
 .wa-readonly { padding: 12px; text-align: center; font-size: 12.5px; color: var(--text-faint); background: var(--surface); border-top: 1px solid var(--border); }
 @media (max-width: 760px) {
-  .wa { grid-template-columns: 1fr; height: calc(100dvh - 190px - var(--tabbar-h)); border-radius: 20px; min-height: 380px; }
+  /* minmax(0,1fr): una riga lunga non allarga più la pagina oltre lo schermo */
+  .wa { grid-template-columns: minmax(0, 1fr); height: calc(100dvh - 190px - var(--tabbar-h)); border-radius: 20px; min-height: 380px; }
+  /* dentro una conversazione si scrive: niente barra in basso (come WhatsApp), la chat prende lo spazio */
+  .wa.open { height: calc(100dvh - 118px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); }
+  /* iOS ingrandisce la pagina se il campo è sotto 16px: qui 16px, niente zoom quando tocchi */
+  .wa-input { font-size: 16px; line-height: 22px; }
   .wa.open .wa-list { display: none; }
   .wa:not(.open) .wa-thread { display: none; }
   .wa-list { border-right: 0; }
