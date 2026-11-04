@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { useAuth } from './auth/AuthContext'
 import Login from './auth/Login'
 import { useLang } from './lib/i18n'
@@ -6,63 +7,75 @@ import { Spinner } from './components/ui'
 import { useHashRoute } from './lib/route'
 
 import Dashboard from './modules/Dashboard'
-import Performance from './modules/Performance'
-import Profile from './modules/Profile'
-import Fitness from './modules/Fitness'
-import FitnessCoachProfile from './modules/FitnessCoachProfile'
-import Contracts from './modules/Contracts'
-import Documents from './modules/Documents'
-import InsuranceDocuments from './modules/InsuranceDocuments'
-import Editorial from './modules/Editorial'
-import Media from './modules/Media'
-import Sponsors from './modules/Sponsors'
-import Commercial from './modules/Commercial'
-import Agenda from './modules/Agenda'
-import Tasks from './modules/Tasks'
-import Messages from './modules/Messages'
-import Mail from './modules/Mail'
-import Settings from './modules/Settings'
 import PasswordSetup from './components/PasswordSetup'
 import { ProPhotoGate } from './components/ProImages'
-import MediaKit from './modules/MediaKit'
-import BrandCard from './modules/BrandCard'
-import BrandHome from './modules/BrandHome'
-import CoachOffice from './modules/CoachOffice'
-import AgentProfile from './modules/AgentProfile'
-import Insurance from './modules/Insurance'
-import InsurerProfile from './modules/InsurerProfile'
-import AccessRequests from './modules/AccessRequests'
-import LegalTax from './modules/LegalTax'
-import Services from './modules/Services'
-import TaxAdvisorProfile from './modules/TaxAdvisorProfile'
-import Wealth from './modules/Wealth'
-import ItemPage from './modules/ItemPage'
-import WealthProfile from './modules/WealthProfile'
-import PhysioProfile from './modules/PhysioProfile'
-import PhysioOffice from './modules/PhysioOffice'
-import NutriProfile from './modules/NutriProfile'
-import NutriMenu from './modules/NutriMenu'
-import BrandCampaigns from './modules/BrandCampaigns'
-import MyTeam from './modules/MyTeam'
-import MyFiles from './modules/MyFiles'
-import Backstage from './modules/Backstage'
 import { FEATURES } from './lib/features'
 import ErrorBoundary from './components/ErrorBoundary'
-import Archivio from './modules/Archivio'
-import TalentSearch from './modules/TalentSearch'
-import MyAthletes from './modules/MyAthletes'
-import ProHome from './modules/ProHome'
-import ExerciseLibrary from './modules/fitness/ExerciseLibrary'
-import TrainingBuilder from './modules/fitness/TrainingBuilder'
-import PartnerHome from './modules/PartnerHome'
-import InstallPage from './modules/InstallPage'
+
+// Ogni sezione si scarica solo quando la apri (la Home resta subito pronta): primo avvio più veloce da telefono
+// Dopo una nuova versione i file vecchi non esistono più: se una sezione non si scarica, ricarica l'app una volta
+const lazyPage = <T,>(load: () => Promise<{ default: T }>) => lazy(() => load().then(m => {
+  try { sessionStorage.removeItem('chunk-retry') } catch { /* modalità privata */ }
+  return m as any
+}, err => {
+  let tried = false
+  try { tried = sessionStorage.getItem('chunk-retry') === '1'; sessionStorage.setItem('chunk-retry', '1') } catch { /* modalità privata */ }
+  if (!tried) window.location.reload()
+  throw err
+}))
+const Performance = lazyPage(() => import('./modules/Performance'))
+const Profile = lazyPage(() => import('./modules/Profile'))
+const Fitness = lazyPage(() => import('./modules/Fitness'))
+const FitnessCoachProfile = lazyPage(() => import('./modules/FitnessCoachProfile'))
+const Contracts = lazyPage(() => import('./modules/Contracts'))
+const Documents = lazyPage(() => import('./modules/Documents'))
+const InsuranceDocuments = lazyPage(() => import('./modules/InsuranceDocuments'))
+const Editorial = lazyPage(() => import('./modules/Editorial'))
+const Media = lazyPage(() => import('./modules/Media'))
+const Sponsors = lazyPage(() => import('./modules/Sponsors'))
+const Commercial = lazyPage(() => import('./modules/Commercial'))
+const Agenda = lazyPage(() => import('./modules/Agenda'))
+const Tasks = lazyPage(() => import('./modules/Tasks'))
+const Messages = lazyPage(() => import('./modules/Messages'))
+const Mail = lazyPage(() => import('./modules/Mail'))
+const Settings = lazyPage(() => import('./modules/Settings'))
+const MediaKit = lazyPage(() => import('./modules/MediaKit'))
+const BrandCard = lazyPage(() => import('./modules/BrandCard'))
+const BrandHome = lazyPage(() => import('./modules/BrandHome'))
+const CoachOffice = lazyPage(() => import('./modules/CoachOffice'))
+const AgentProfile = lazyPage(() => import('./modules/AgentProfile'))
+const Insurance = lazyPage(() => import('./modules/Insurance'))
+const InsurerProfile = lazyPage(() => import('./modules/InsurerProfile'))
+const AccessRequests = lazyPage(() => import('./modules/AccessRequests'))
+const LegalTax = lazyPage(() => import('./modules/LegalTax'))
+const Services = lazyPage(() => import('./modules/Services'))
+const TaxAdvisorProfile = lazyPage(() => import('./modules/TaxAdvisorProfile'))
+const Wealth = lazyPage(() => import('./modules/Wealth'))
+const ItemPage = lazyPage(() => import('./modules/ItemPage'))
+const WealthProfile = lazyPage(() => import('./modules/WealthProfile'))
+const PhysioProfile = lazyPage(() => import('./modules/PhysioProfile'))
+const PhysioOffice = lazyPage(() => import('./modules/PhysioOffice'))
+const NutriProfile = lazyPage(() => import('./modules/NutriProfile'))
+const NutriMenu = lazyPage(() => import('./modules/NutriMenu'))
+const BrandCampaigns = lazyPage(() => import('./modules/BrandCampaigns'))
+const MyTeam = lazyPage(() => import('./modules/MyTeam'))
+const MyFiles = lazyPage(() => import('./modules/MyFiles'))
+const Backstage = lazyPage(() => import('./modules/Backstage'))
+const Archivio = lazyPage(() => import('./modules/Archivio'))
+const TalentSearch = lazyPage(() => import('./modules/TalentSearch'))
+const MyAthletes = lazyPage(() => import('./modules/MyAthletes'))
+const ProHome = lazyPage(() => import('./modules/ProHome'))
+const ExerciseLibrary = lazyPage(() => import('./modules/fitness/ExerciseLibrary'))
+const TrainingBuilder = lazyPage(() => import('./modules/fitness/TrainingBuilder'))
+const PartnerHome = lazyPage(() => import('./modules/PartnerHome'))
+const InstallPage = lazyPage(() => import('./modules/InstallPage'))
 
 export default function App() {
   const { session, profile, loading } = useAuth()
   const [routeState, setRoute] = useHashRoute()
 
   // pagina pubblica d'invito (QR code): si apre anche senza accesso
-  if (/^\/(scarica|download|install|app)\/?$/.test(window.location.pathname)) return <InstallPage />
+  if (/^\/(scarica|download|install|app)\/?$/.test(window.location.pathname)) return <Suspense fallback={<Spinner />}><InstallPage /></Suspense>
   if (loading) return <Spinner />
   if (!session) return <Login />
 
@@ -175,7 +188,7 @@ export default function App() {
 
   return (
     <>
-      <Shell route={route} setRoute={setRoute}><ErrorBoundary resetKey={route}>{view}</ErrorBoundary></Shell>
+      <Shell route={route} setRoute={setRoute}><ErrorBoundary resetKey={route}><Suspense fallback={<Spinner />}>{view}</Suspense></ErrorBoundary></Shell>
       <PasswordSetup />
       <ProPhotoGate />
     </>
