@@ -15,7 +15,7 @@ import { Modal, Field, Input, Tabs, Empty } from './ui'
 // Schermate home dei vari ruoli: qui compare l'invito ad attivare le notifiche.
 const HOME_ROUTES = ['dashboard', 'brandhome', 'agent-home', 'insurer-home', 'tax-home', 'physio-home', 'partner-home', 'wealth-home']
 
-export const APP_VERSION = 'v12.50'
+export const APP_VERSION = 'v12.51'
 
 export interface NavDef {
   key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[]
@@ -399,6 +399,34 @@ export default function Shell({ route, setRoute, right, children }: {
               { key: 'commercial', label: 'Business', icon: 'briefcase' },
               { key: 'performance', label: 'Atleta', icon: 'activity' },
             ]
+  // Misure vere per le schermate a tutto schermo su telefono (chat): altezza della barra in alto,
+  // della barra in basso e dello schermo visibile (che si accorcia quando si apre la tastiera)
+  useEffect(() => {
+    const root = document.documentElement
+    const measure = () => {
+      const top = document.querySelector('.topbar') as HTMLElement | null
+      const bar = document.querySelector('.tabbar') as HTMLElement | null
+      root.style.setProperty('--topbar-real', `${top?.getBoundingClientRect().height || 64}px`)
+      root.style.setProperty('--tabbar-real', `${bar && getComputedStyle(bar).display !== 'none' ? bar.getBoundingClientRect().height : 0}px`)
+      const vv = window.visualViewport
+      root.style.setProperty('--vvh', `${vv ? vv.height : window.innerHeight}px`)
+      root.style.setProperty('--vvtop', `${vv ? vv.offsetTop : 0}px`)
+    }
+    measure()
+    const ro = new ResizeObserver(measure)
+    document.querySelectorAll('.topbar, .tabbar').forEach(el => ro.observe(el))
+    window.visualViewport?.addEventListener('resize', measure)
+    window.visualViewport?.addEventListener('scroll', measure)
+    window.addEventListener('resize', measure)
+    const mo = new MutationObserver(measure)
+    mo.observe(document.body, { attributes: true, attributeFilter: ['class'] })
+    return () => {
+      ro.disconnect(); mo.disconnect()
+      window.visualViewport?.removeEventListener('resize', measure)
+      window.visualViewport?.removeEventListener('scroll', measure)
+      window.removeEventListener('resize', measure)
+    }
+  }, [])
   // tastiera aperta (campo di testo attivo): body.kb-open nasconde la barra in basso su telefono
   useEffect(() => {
     const isField = (el: EventTarget | null) => el instanceof HTMLElement &&

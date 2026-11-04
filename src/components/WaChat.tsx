@@ -143,6 +143,7 @@ export function WaComposer({ value, onChange, onSend, placeholder, busy, canSend
 }) {
   const { t } = useLang()
   const ref = useRef<HTMLTextAreaElement>(null)
+  const touch = typeof window !== 'undefined' && !!window.matchMedia?.('(pointer: coarse)').matches
   useLayoutEffect(() => {
     const el = ref.current
     if (!el) return
@@ -157,12 +158,13 @@ export function WaComposer({ value, onChange, onSend, placeholder, busy, canSend
       <div className="wa-comp">
         <span className="wa-attach">{attach.button}</span>
         {extra}
-        <textarea ref={ref} rows={1} className="wa-input" placeholder={placeholder} value={value}
+        <textarea ref={ref} rows={1} className="wa-input" placeholder={placeholder} value={value} enterKeyHint={touch ? 'enter' : 'send'}
           onChange={e => onChange(e.target.value)}
           onKeyDown={e => {
             onKeyDown?.(e)
             if (e.defaultPrevented) return
-            if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); if (canSend && !busy) onSend() }
+            // come WhatsApp: su telefono e iPad Invio va a capo (si manda col tasto giallo), su PC Invio manda
+            if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing && !touch) { e.preventDefault(); if (canSend && !busy) onSend() }
           }} />
         <button className="wa-send" disabled={busy || !canSend} onClick={onSend} aria-label={t('Invia')} title={t('Invia')}>
           {busy ? <span className="wa-spin" /> : <Icon name="send" size={19} strokeWidth={2} />}
@@ -237,7 +239,7 @@ export const WA_CSS = `
 .wa-attach .btn, .wa-tagbtn { width: 42px; height: 42px; padding: 0 !important; border-radius: 50%; display: grid; place-items: center; border: 0; background: transparent; color: var(--text-dim); flex-shrink: 0; cursor: pointer; }
 .wa-attach .btn:hover, .wa-tagbtn:hover { background: var(--surface-2); color: var(--text); }
 .wa-tagbtn.on { background: var(--yellow); color: var(--ink); font-weight: 800; width: auto; min-width: 42px; padding: 0 10px !important; border-radius: 999px; display: inline-flex; gap: 3px; }
-.wa-input { flex: 1; min-width: 0; box-sizing: border-box; display: block; resize: none; border: 1px solid var(--border); background: var(--bg); border-radius: 22px; padding: 11px 16px; font: inherit; font-size: 14px; line-height: 20px; min-height: 44px; color: var(--text); outline: none; max-height: 140px; overflow-y: auto; }
+.wa-input { field-sizing: content; flex: 1; min-width: 0; box-sizing: border-box; display: block; white-space: pre-wrap; overflow-wrap: anywhere; resize: none; border: 1px solid var(--border); background: var(--bg); border-radius: 22px; padding: 11px 16px; font: inherit; font-size: 14px; line-height: 20px; min-height: 44px; color: var(--text); outline: none; max-height: 140px; overflow-y: auto; }
 .wa-input:focus { border-color: var(--ink); background: var(--surface); }
 .wa-send { width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--yellow); color: var(--ink); display: grid; place-items: center; cursor: pointer; flex-shrink: 0; transition: transform .12s, opacity .12s; }
 .wa-send:not(:disabled):active { transform: scale(.94); }
@@ -249,10 +251,16 @@ export const WA_CSS = `
 .wa-blank-mark img { width: 38px; }
 .wa-readonly { padding: 12px; text-align: center; font-size: 12.5px; color: var(--text-faint); background: var(--surface); border-top: 1px solid var(--border); }
 @media (max-width: 760px) {
-  /* minmax(0,1fr): una riga lunga non allarga più la pagina oltre lo schermo */
-  .wa { grid-template-columns: minmax(0, 1fr); height: calc(100dvh - 190px - var(--tabbar-h)); border-radius: 20px; min-height: 380px; }
-  /* dentro una conversazione si scrive: niente barra in basso (come WhatsApp), la chat prende lo spazio */
-  .wa.open { height: calc(100dvh - 118px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); }
+  /* Telefono: la chat è a tutto schermo come WhatsApp. Va dalla barra in alto al fondo dello schermo
+     visibile (o alla barra in basso nell'elenco), senza bordi né angoli; con la tastiera aperta si accorcia
+     (--vvh = schermo visibile) e il campo di scrittura resta subito sopra. Misure da Shell. */
+  .wa { position: fixed; left: 0; right: 0; z-index: 30; min-height: 0; border: 0; border-radius: 0;
+    grid-template-columns: minmax(0, 1fr);
+    top: calc(var(--vvtop, 0px) + var(--topbar-real, 64px));
+    height: calc(var(--vvh, 100dvh) - var(--topbar-real, 64px) - var(--tabbar-real, 0px)); }
+  .wa.open { height: calc(var(--vvh, 100dvh) - var(--topbar-real, 64px)); }
+  .wa.open .wa-comp { padding-bottom: calc(8px + env(safe-area-inset-bottom)); }
+  body.kb-open .wa.open .wa-comp { padding-bottom: 8px; }
   /* iOS ingrandisce la pagina se il campo è sotto 16px: qui 16px, niente zoom quando tocchi */
   .wa-input { font-size: 16px; line-height: 22px; }
   .wa.open .wa-list { display: none; }
