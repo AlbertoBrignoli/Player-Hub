@@ -10,6 +10,7 @@ import { defaultWeek } from '../components/WeekPlan'
 import { QuickAddModal, useQuickAddPermissions } from '../components/QuickAdd'
 import HomeContacts from './home/HomeContacts'
 import HomeServices from './home/HomeServices'
+import { useWaiting } from '../components/Waiting'
 import { fmtDate, fmtMatchTime, daysUntil, isImageFile } from '../lib/format'
 import type { Player, EventItem, Contract, Match, StatsMatch, EditorialEntry, MediaItem } from '../lib/types'
 
@@ -39,6 +40,13 @@ const HOME_CSS = `
 .home { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 28px; align-items: start; }
 .home-col { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
 .home-sec { min-width: 0; width: 100%; }
+/* riga Oggi: prossimo impegno a sinistra, "N cose ti aspettano" a destra */
+.home-today { display: flex; align-items: stretch; gap: 8px; }
+.home-today-next { flex: 1; min-width: 0; display: grid; gap: 1px; text-align: left; padding: 10px 14px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface); cursor: pointer; font: inherit; color: var(--text); }
+.home-today-k { font-size: var(--fs-meta); font-weight: var(--w-bold); color: var(--text-dim); }
+.home-today-t { font-size: var(--fs-body); font-weight: var(--w-semi); }
+.home-today-wait { flex-shrink: 0; display: inline-flex; align-items: center; gap: 4px; padding: 0 14px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface); font: inherit; font-size: var(--fs-meta); font-weight: var(--w-bold); color: var(--text-dim); cursor: pointer; }
+.home-today-wait.on { background: var(--yellow); border-color: var(--yellow); color: var(--ink); }
 .home-group { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .home-group > .home-h { margin-bottom: 0; }
 .home-trunc { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -277,6 +285,8 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
     ]).then(([a, b]) => setOpenTasks((a.count || 0) + (b.count || 0)))
   }, [athleteId])
   const isPlayer = role === 'player'
+  // "Oggi": quante cose aspettano l'atleta in tutta l'app (elenco completo nella pagina Da fare)
+  const waiting = useWaiting()
   const [hasMailbox, setHasMailbox] = useState(false)
   useEffect(() => {
     if (!athleteId) { setHasMailbox(false); return }
@@ -423,42 +433,28 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
     </nav>
   )
 
-  // ---- 3 da fare ora: solo ciò che non ha già un posto in Home ----
-  // (foto → icona Foto delle azioni rapide; prossimo contenuto → tabellone partita)
-  const todo = accessPending > 0 || proposals > 0 || planMissing ? (
+  // ---- 3 oggi: la sintesi del giorno (come WHOOP/Oura): il prossimo impegno e quante cose ti aspettano ----
+  const nextEv = events[0]
+  const todo = (
     <section className="home-sec">
-      <div className="home-todo">
-        {planMissing && (
-          <button className="ed-action prio" onClick={() => goto('agenda?plan=1')}>
-            <div className="ed-action-num"><Icon name="upload" size={18} /></div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div className="ed-action-t">{t('Carica il programma della settimana')}</div>
-              <div className="ed-action-s">{t('Il PDF o la foto del club: lo leggo io, tu spunti e salvi. Al resto pensa il tuo team.')}</div>
-            </div>
-            <Icon name="chevron-right" size={18} style={{ color: 'var(--text-faint)', flexShrink: 0 }} />
-          </button>
-        )}
-        {proposals > 0 && (
-          <button className="ed-action prio" onClick={() => goto('agenda')}>
-            <div className="ed-action-num">{proposals}</div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div className="ed-action-t">{t('Proposte da confermare')}</div>
-              <div className="ed-action-s">{t('Impegni proposti dal tuo team: conferma, chiedi una modifica o rifiuta')}</div>
-            </div>
-            <Icon name="chevron-right" size={18} style={{ color: 'var(--text-faint)', flexShrink: 0 }} />
-          </button>
-        )}
-        {accessPending > 0 && <button className="ed-action prio" onClick={() => goto('access-requests')}>
-          <div className="ed-action-num">{accessPending}</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div className="ed-action-t">{t('Richieste di accesso')}</div>
-            <div className="ed-action-s">{t('Professionisti che chiedono di entrare nella tua area')}</div>
-          </div>
-          <Icon name="chevron-right" size={18} style={{ color: 'var(--text-faint)', flexShrink: 0 }} />
-        </button>}
+      <div className="home-today">
+        <button className="home-today-next" onClick={() => goto(nextEv ? `agenda?event=${nextEv.id}` : 'agenda')}>
+          <span className="home-today-k">{t('Oggi')}</span>
+          <span className="home-today-t home-trunc">
+            {nextEv
+              ? `${new Date(nextEv.start_at).toLocaleString(locale, { weekday: 'short', hour: '2-digit', minute: '2-digit', timeZone: athleteTz || undefined }).replace('.', '')} · ${nextEv.title}`
+              : t('Nessun impegno in programma.')}
+          </span>
+        </button>
+        <button className={`home-today-wait ${waiting.total ? 'on' : ''}`} onClick={() => goto('tasks')}>
+          {waiting.total
+            ? (waiting.total === 1 ? t('1 cosa ti aspetta') : t('{n} cose ti aspettano').replace('{n}', String(waiting.total)))
+            : t('Sei in pari')}
+          <Icon name="chevron-right" size={14} />
+        </button>
       </div>
     </section>
-  ) : null
+  )
 
   // ---- 4 tabellone prossima partita ----
   let hero: ReactNode

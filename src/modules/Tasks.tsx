@@ -12,6 +12,8 @@ import { undoable } from '../lib/toast'
 import { fmtDate, daysUntil } from '../lib/format'
 import type { Task } from '../lib/types'
 import { useLang } from '../lib/i18n'
+import { useWaiting, WaitingList } from '../components/Waiting'
+import { Section } from '../components/ui'
 
 const COLS: { key: Task['status']; label: string }[] = [
   { key: 'todo', label: 'Da fare' }, { key: 'doing', label: 'In corso' }, { key: 'done', label: 'Completate' },
@@ -33,6 +35,9 @@ export default function Tasks() {
       .then(({ data }) => setDocReqs((data as TaxItem[]) || []))
   }, [athleteId])
   const requesters = useRequesters(docReqs)
+  // tutto quello che aspetta l'atleta nel resto dell'app (i task stanno già qui sotto)
+  const waiting = useWaiting()
+  const elsewhere = waiting.items.filter(i => i.key !== 'tasks')
 
   if (loading) return <Spinner />
 
@@ -44,6 +49,11 @@ export default function Tasks() {
 
   return (
     <div className="grid" style={{ gap: 16 }}>
+      {!waiting.loading && (
+        <Section title={tr('Ti aspettano')}>
+          <WaitingList items={elsewhere} goto={goto} />
+        </Section>
+      )}
       <div className="flex between">
         <div className="muted">{tr('{n} attività aperte').replace('{n}', String(rows.filter(t => t.status !== 'done').length + docReqs.filter(r => r.status === 'aperto').length))}</div>
         {isAdmin && <button className="btn btn-primary" onClick={() => setEdit(empty())}>{tr('+ Nuova task')}</button>}
