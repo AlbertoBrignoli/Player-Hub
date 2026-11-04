@@ -236,7 +236,8 @@ export default function Agenda({ goto }: { goto?: (r: string) => void }) {
           {canPlan && athleteId != null && (
             <button className="btn btn-primary" onClick={() => setPlanOpen(true)}><Icon name="upload" size={14} /> {tr('Programma settimana')}</button>
           )}
-          {canAdd && <button className={'btn' + (canPlan ? '' : ' btn-primary')} onClick={() => setEdit(emptyEv(defType))}>+ {canPlan ? tr('Impegno') : addLabel}</button>}
+          {/* atleta e AUVI aggiungono dal cerchio Impegno in Home: qui solo il programma (niente tasto fuori schermo) */}
+          {canAdd && !canPlan && <button className="btn btn-primary" onClick={() => setEdit(emptyEv(defType))}>+ {addLabel}</button>}
         </div>
       </div>
 
