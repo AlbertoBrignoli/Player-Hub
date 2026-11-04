@@ -3940,5 +3940,16 @@ const EN: Record<string, string> = {
   'Aggiornamenti sulle tue richieste': 'Updates on your requests',
   'Media e contenuti': 'Media and content',
   'Foto da approvare, grafiche, post': 'Photos to approve, graphics, posts',
+  "Ciao {name}, benvenuto in Player Hub": "Hi {name}, welcome to Player Hub",
+  "Benvenuto in Player Hub": "Welcome to Player Hub",
+  "La Home ti dice cosa ti aspetta oggi: prossimo impegno, cose da fare da smarcare, la tua partita e i numeri della stagione.": "Home tells you what's ahead today: your next appointment, things to tick off, your match and your season numbers.",
+  "Dalla Home vedi gli atleti che segui, cosa ti chiedono e cosa hai in programma.": "From Home you see the athletes you follow, what they ask you and what's on your schedule.",
+  "Il tuo team, in un posto solo": "Your team, all in one place",
+  "In Il mio team trovi tutte le persone che lavorano con te. In Chat scrivi a ognuno, come su WhatsApp.": "In My team you find everyone who works with you. In Chat you can write to each of them, just like on WhatsApp.",
+  "Scrivi all'atleta e allo staff in Chat, proponi impegni e segui le richieste dal tuo ufficio.": "Write to the athlete and the staff in Chat, propose appointments and follow requests from your office.",
+  "Non perdere niente": "Don't miss a thing",
+  "Attiva le notifiche: ti avvisiamo quando qualcuno ti scrive, ti propone un impegno o ti chiede qualcosa. Puoi scegliere cosa ricevere dalle Impostazioni.": "Turn on notifications: we'll let you know when someone writes to you, proposes an appointment or asks you something. You can choose what to receive in Settings.",
+  "Salta": "Skip",
+  "Inizia": "Get started",
 }
 

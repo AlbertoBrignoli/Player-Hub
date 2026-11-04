@@ -8,6 +8,7 @@ import { useHashRoute } from './lib/route'
 
 import Dashboard from './modules/Dashboard'
 import PasswordSetup from './components/PasswordSetup'
+import { OnboardingGate } from './components/Onboarding'
 import { ProPhotoGate } from './components/ProImages'
 import { FEATURES } from './lib/features'
 import ErrorBoundary from './components/ErrorBoundary'
@@ -190,6 +191,7 @@ export default function App() {
     <>
       <Shell route={route} setRoute={setRoute}><ErrorBoundary resetKey={route}><Suspense fallback={<Spinner />}>{view}</Suspense></ErrorBoundary></Shell>
       <PasswordSetup />
+      <OnboardingGate />
       <ProPhotoGate />
     </>
   )
