@@ -9,6 +9,7 @@ import type { AllowedEmail, Profile } from '../lib/types'
 import CalendarSync from '../components/CalendarSync'
 import { InstallInviteCard } from '../components/InstallGuide'
 import { useLang } from '../lib/i18n'
+import { toast } from '../lib/toast'
 
 export default function Settings() {
   const { isAdmin } = useAuth()
@@ -25,6 +26,7 @@ export default function Settings() {
   if (!isAdmin) {
     return (
       <div className="grid" style={{ gap: 16 }}>
+        <NotifyPrefsCard />
         <CalendarSync />
         <InstallInviteCard />
         <SecurityCard />
@@ -46,6 +48,7 @@ export default function Settings() {
 
   return (
     <div className="grid" style={{ gap: 16 }}>
+      <NotifyPrefsCard />
       <CalendarSync />
         <InstallInviteCard />
       <SecurityCard />
@@ -205,6 +208,87 @@ function SecurityCard() {
         </button>
       </div>
       {msg && <div className={msg.ok ? 'msg-ok' : 'msg-err'}>{msg.text}</div>}
+    </div>
+  )
+}
+
+// Notifiche sul telefono: ognuno sceglie quali tipi ricevere e un silenzio notturno (es. prima della partita).
+// In app, sotto la campanella, le notifiche restano tutte. Salvate in crm_notify_prefs (le legge send-push).
+const NOTIFY_KINDS: { k: string; l: string; s: string }[] = [
+  { k: 'chat', l: 'Chat', s: 'Messaggi dal team e da AUVI' },
+  { k: 'impegni', l: 'Impegni e allenamenti', s: 'Proposte, conferme, cambi di orario' },
+  { k: 'task', l: 'Da fare', s: 'Task assegnati a te' },
+  { k: 'documenti', l: 'Documenti e pratiche', s: 'Fisco, polizze, contratti, patrimonio' },
+  { k: 'servizi', l: 'Servizi AUVI', s: 'Aggiornamenti sulle tue richieste' },
+  { k: 'media', l: 'Media e contenuti', s: 'Foto da approvare, grafiche, post' },
+]
+type Prefs = { muted: string[]; quiet: boolean; quiet_from: number; quiet_to: number }
+function NotifyPrefsCard() {
+  const { t } = useLang()
+  const { session } = useAuth()
+  const uid = session?.user.id
+  const [p, setP] = useState<Prefs>({ muted: [], quiet: false, quiet_from: 23, quiet_to: 7 })
+  useEffect(() => {
+    if (!uid) return
+    supabase.from('crm_notify_prefs').select('muted, quiet, quiet_from, quiet_to').eq('user_id', uid).maybeSingle()
+      .then(({ data }) => { if (data) setP(data as Prefs) })
+  }, [uid])
+  async function save(next: Prefs) {
+    setP(next)
+    if (!uid) return
+    const { error } = await supabase.from('crm_notify_prefs').upsert({
+      user_id: uid, ...next, tz: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Rome', updated_at: new Date().toISOString(),
+    })
+    if (error) toast(error.message, 'err')
+  }
+  const hours = Array.from({ length: 24 }, (_, h) => h)
+  return (
+    <div className="card">
+      <div className="card-head"><div className="card-title">{t('Notifiche sul telefono')}</div></div>
+      <div className="t-meta" style={{ marginTop: -8, marginBottom: 12 }}>{t('Scegli cosa ricevere. In app, sotto la campanella, trovi comunque tutto.')}</div>
+      <div className="np-list">
+        {NOTIFY_KINDS.map(k => {
+          const on = !p.muted.includes(k.k)
+          return (
+            <label key={k.k} className="np-row">
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span className="t-item" style={{ display: 'block', fontSize: 'var(--fs-body)' }}>{t(k.l)}</span>
+                <span className="t-meta" style={{ display: 'block' }}>{t(k.s)}</span>
+              </span>
+              <input type="checkbox" className="np-switch" checked={on}
+                onChange={() => save({ ...p, muted: on ? [...p.muted, k.k] : p.muted.filter(x => x !== k.k) })} />
+            </label>
+          )
+        })}
+        <label className="np-row">
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <span className="t-item" style={{ display: 'block', fontSize: 'var(--fs-body)' }}>{t('Silenzio notturno')}</span>
+            <span className="t-meta" style={{ display: 'block' }}>{t('Niente notifiche sul telefono in queste ore')}</span>
+          </span>
+          <input type="checkbox" className="np-switch" checked={p.quiet} onChange={() => save({ ...p, quiet: !p.quiet })} />
+        </label>
+        {p.quiet && (
+          <div className="flex gap" style={{ gap: 8, padding: '4px 0 2px', alignItems: 'center' }}>
+            <span className="t-meta">{t('dalle')}</span>
+            <Select value={p.quiet_from} onChange={e => save({ ...p, quiet_from: Number(e.target.value) })} style={{ width: 90 }}>
+              {hours.map(h => <option key={h} value={h}>{String(h).padStart(2, '0')}:00</option>)}
+            </Select>
+            <span className="t-meta">{t('alle')}</span>
+            <Select value={p.quiet_to} onChange={e => save({ ...p, quiet_to: Number(e.target.value) })} style={{ width: 90 }}>
+              {hours.map(h => <option key={h} value={h}>{String(h).padStart(2, '0')}:00</option>)}
+            </Select>
+          </div>
+        )}
+      </div>
+      <style>{`
+        .np-list { display: grid; }
+        .np-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; cursor: pointer; }
+        .np-row + .np-row { border-top: 1px solid var(--border); }
+        .np-switch { appearance: none; -webkit-appearance: none; width: 46px; height: 28px; border-radius: 999px; background: var(--border-2); position: relative; cursor: pointer; flex-shrink: 0; transition: background .2s; }
+        .np-switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(10,10,10,.25); transition: transform .2s; }
+        .np-switch:checked { background: var(--ink); }
+        .np-switch:checked::after { transform: translateX(18px); background: var(--yellow); }
+      `}</style>
     </div>
   )
 }

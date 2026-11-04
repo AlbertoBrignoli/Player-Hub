@@ -129,6 +129,31 @@ Deno.serve(async (req: Request) => {
   })
   if (!targets.length) return new Response('no targets')
 
+  // Preferenze di chi riceve (crm_notify_prefs): tipi spenti e silenzio notturno.
+  // Valgono solo per il telefono: la notifica in app (campanella) resta comunque.
+  const r = String(record.route || '')
+  const kind = /^messages/.test(r) ? 'chat'
+    : /^(agenda|fitness)/.test(r) ? 'impegni'
+    : /^(tasks|dashboard)/.test(r) ? 'task'
+    : /^(legaltax|documents|insurance|wealth|contracts|item)/.test(r) ? 'documenti'
+    : /^(services|partner-home)/.test(r) ? 'servizi'
+    : /^(media|editorial)/.test(r) ? 'media' : null
+  const ids = [...new Set(targets.map((s: any) => s.user_id))]
+  const { data: prefs } = await supa.from('crm_notify_prefs').select('*').in('user_id', ids)
+  const byUser = new Map((prefs || []).map((p: any) => [p.user_id, p]))
+  const quietNow = (p: any) => {
+    if (!p?.quiet) return false
+    const h = Number(new Intl.DateTimeFormat('en-GB', { hour: '2-digit', hour12: false, timeZone: p.tz || 'Europe/Rome' }).format(new Date())) % 24
+    return p.quiet_from > p.quiet_to ? (h >= p.quiet_from || h < p.quiet_to) : (h >= p.quiet_from && h < p.quiet_to)
+  }
+  targets = targets.filter((s: any) => {
+    const p = byUser.get(s.user_id)
+    if (!p) return true
+    if (kind && (p.muted || []).includes(kind)) return false
+    return !quietNow(p)
+  })
+  if (!targets.length) return new Response('muted by prefs')
+
   const payload = JSON.stringify({
     title: record.title,
     body: record.body || '',
