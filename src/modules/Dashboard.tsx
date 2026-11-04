@@ -39,6 +39,12 @@ const HOME_CSS = `
 .home { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 28px; align-items: start; }
 .home-col { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
 .home-sec { min-width: 0; width: 100%; }
+/* riga Oggi: il prossimo impegno, un tocco lo apre */
+.home-today { width: 100%; display: flex; align-items: center; gap: 12px; text-align: left; padding: 10px 14px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface); cursor: pointer; font: inherit; color: var(--text); }
+.home-today:hover { border-color: var(--border-2); }
+.home-today-ic { width: 32px; height: 32px; border-radius: 12px; background: var(--yellow); color: var(--ink); display: grid; place-items: center; flex-shrink: 0; }
+.home-today-k { font-size: var(--fs-meta); font-weight: var(--w-bold); color: var(--text-dim); }
+.home-today-t { font-size: var(--fs-body); font-weight: var(--w-semi); }
 .home-group { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .home-group > .home-h { margin-bottom: 0; }
 .home-trunc { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -486,6 +492,25 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
     </section>
   ) : null
 
+  // ---- Oggi: la sintesi del giorno in una riga (come WHOOP/Oura): il prossimo impegno ----
+  const nextEv = events[0]
+  const today = (
+    <section className="home-sec">
+      <button className="home-today" onClick={() => goto(nextEv ? `agenda?event=${nextEv.id}` : 'agenda')}>
+        <span className="home-today-ic"><Icon name="calendar" size={16} /></span>
+        <span style={{ flex: 1, minWidth: 0, display: 'grid', gap: 1 }}>
+          <span className="home-today-k">{t('Oggi')}</span>
+          <span className="home-today-t home-trunc">
+            {nextEv
+              ? `${new Date(nextEv.start_at).toLocaleString(locale, { weekday: 'short', hour: '2-digit', minute: '2-digit', timeZone: athleteTz || undefined }).replace('.', '')} · ${nextEv.title}`
+              : t('Nessun impegno in programma.')}
+          </span>
+        </span>
+        <Icon name="chevron-right" size={16} style={{ color: 'var(--text-faint)', flexShrink: 0 }} />
+      </button>
+    </section>
+  )
+
   // ---- 4 tabellone prossima partita ----
   let hero: ReactNode
   if (nextMatch?.match_date) {
@@ -616,6 +641,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
           {identity}
           {quick}
         </div></div>
+        <div className="home-o2">{today}</div>
         {todo && <div className="home-o2">{todo}</div>}
         {/* Atleta: prossima partita e numeri della stagione, sotto lo stesso titolo del menu */}
         <div className="home-o3 home-group">
