@@ -3914,5 +3914,10 @@ const EN: Record<string, string> = {
   'Scegli le azioni della Home': 'Choose your Home actions',
   'Le tue azioni rapide': 'Your quick actions',
   'Scegline fino a 5: compaiono nella Home in questo ordine.': 'Pick up to 5: they appear on Home in this order.',
+  'Sezioni': 'Sections',
+  'Cerca in tutta l\'app': 'Search the whole app',
+  'Impegni, contratti, documenti, messaggi, servizi…': 'Commitments, contracts, documents, messages, services…',
+  'Cerco…': 'Searching…',
+  'scade': 'expires',
 }
 
