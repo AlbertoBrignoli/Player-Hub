@@ -276,15 +276,15 @@ function UploadMenu({ onClose, onDone }: { onClose: () => void; onDone: () => vo
 }
 
 const NM_CSS = `
-.nm-hero { position: relative; overflow: hidden; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; border-radius: 18px; background: var(--bg-2); border: 1px solid var(--border); padding: 20px 22px; }
+.nm-hero { position: relative; overflow: hidden; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; border-radius: 20px; background: var(--bg-2); border: 1px solid var(--border); padding: 20px 22px; }
 .nm-hero-bar { position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: ${ACCENT}; }
-.nm-kicker { font-size: 11px; letter-spacing: 1.6px; text-transform: uppercase; font-weight: 800; color: ${ACCENT}; }
+.nm-kicker { font-size: 12.5px; font-weight: 800; color: ${ACCENT}; }
 .nm-title { font-size: 22px; font-weight: 800; letter-spacing: -.3px; margin-top: 2px; }
 .nm-search { display: flex; align-items: center; gap: 8px; padding: 0 12px; height: 38px; border-radius: 12px; border: 1px solid var(--border); background: var(--card); color: var(--text-dim); flex: 1; max-width: 320px; min-width: 180px; }
 .nm-search input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; font: inherit; font-size: 14px; color: var(--text); }
 .nm-slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
 @media (max-width: 700px) { .nm-slots { grid-template-columns: 1fr; } }
-.nm-slot { background: var(--card); border: 1px solid var(--border); border-top: 3px solid ${ACCENT}; border-radius: 16px; padding: 14px; display: grid; gap: 10px; align-content: start; }
+.nm-slot { background: var(--card); border: 1px solid var(--border); border-top: 3px solid ${ACCENT}; border-radius: 20px; padding: 14px; display: grid; gap: 10px; align-content: start; }
 .nm-slot-h { display: flex; align-items: baseline; gap: 8px; }
 .nm-slot-h b { font-size: 15px; }
 .nm-slot-h span { font-size: 12.5px; color: var(--text-dim); font-weight: 700; }
@@ -295,8 +295,8 @@ const NM_CSS = `
 .nm-it-x { border: 0; background: none; width: 24px; height: 24px; margin-right: 3px; border-radius: 999px; display: grid; place-items: center; color: var(--text-dim); cursor: pointer; }
 .nm-it-x:hover { background: rgba(229,63,0,.1); color: var(--red); }
 .nm-add { display: flex; gap: 6px; }
-.nm-add input { flex: 1; min-width: 0; height: 36px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-2); padding: 0 10px; font: inherit; font-size: 12.5px; color: var(--text); }
-.nm-group { font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; font-weight: 800; color: var(--text-dim); margin: 6px 2px 8px; }
+.nm-add input { flex: 1; min-width: 0; height: 36px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-2); padding: 0 10px; font: inherit; font-size: 12.5px; color: var(--text); }
+.nm-group { font-size: 12.5px; font-weight: 800; color: var(--text-dim); margin: 6px 2px 8px; }
 .nm-prev { display: grid; gap: 6px; padding: 8px 0; border-top: 1px solid var(--border); }
 .nm-prev b { font-size: 12.5px; }
 .nm-pv { border: 1px solid var(--border); background: var(--bg-2); border-radius: 999px; padding: 5px 10px; font: inherit; font-size: 12.5px; color: var(--text-dim); cursor: pointer; text-decoration: line-through; }

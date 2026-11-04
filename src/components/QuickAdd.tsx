@@ -275,7 +275,7 @@ export default function QuickAdd({ controlled, initialKind, onClose }: {
 
 const QA_CSS = `
 .qa-types { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 2px 0 16px; }
-.qa-type { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 6px; min-height: 64px; border-radius: 14px;
+.qa-type { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 6px; min-height: 64px; border-radius: 20px;
   border: 1.5px solid var(--border); background: var(--surface); color: var(--text-dim); font: inherit; font-weight: 600; font-size: var(--fs-meta); cursor: pointer; }
 .qa-type.on { border-color: var(--ink); background: var(--ink); color: var(--yellow); }
 .qa-people { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 2px 0 4px; }

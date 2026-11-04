@@ -103,14 +103,14 @@ export default function NotificationBell({ goto }: { goto: (route: string) => vo
               <button className="btn btn-sm" onClick={activatePush}><Icon name="smartphone" size={13} /> {t('Attiva sul dispositivo')}</button>
             )}
           </div>
-          {pushMsg && <div className="faint" style={{ padding: '8px 16px', fontSize: 12, borderBottom: '1px solid var(--border)' }}>{pushMsg}</div>}
+          {pushMsg && <div className="faint" style={{ padding: '8px 16px', fontSize: 12.5, borderBottom: '1px solid var(--border)' }}>{pushMsg}</div>}
           {items.length === 0 ? (
-            <div className="faint" style={{ padding: '14px 16px', fontSize: 13 }}>{t('Nessuna notifica.')}</div>
+            <div className="faint" style={{ padding: '14px 16px', fontSize: 12.5 }}>{t('Nessuna notifica.')}</div>
           ) : items.map(n => (
             <button className={`notif-item ${!n.read_at ? 'notif-new' : ''}`} key={n.id} onClick={() => onItem(n)}>
               <div className="notif-title">{n.title}</div>
               {isSuper && n.player_id && (
-                <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: .6, textTransform: 'uppercase', color: 'var(--text-dim)', marginTop: 2 }}>
+                <div className="t-label" style={{ marginTop: 2 }}>
                   {athletes.find(a => a.api_player_id === n.player_id)?.name || t('Atleta')}
                 </div>
               )}

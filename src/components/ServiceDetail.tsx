@@ -15,7 +15,7 @@ const T = {
   green: '#12A150', // = var(--green); hex perché usato con suffisso alpha
 }
 const kicker: React.CSSProperties = {
-  fontSize: 11, letterSpacing: 1.8, textTransform: 'uppercase', fontWeight: 800,
+  fontSize: 11, fontWeight: 800,
 }
 
 export type FieldDef = {
@@ -123,19 +123,19 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
     return (
       <div className="grid" style={{ gap: 18, color: T.text }}>
         <style>{sentAnim}</style>
-        <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 18, padding: '28px 22px', textAlign: 'center' }}>
+        <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 20, padding: '28px 22px', textAlign: 'center' }}>
           <div style={{ width: 66, height: 66, borderRadius: '50%', margin: '0 auto', background: `${T.green}22`,
             border: `2px solid ${T.green}`, color: T.green, display: 'flex', alignItems: 'center',
             justifyContent: 'center', animation: 'auviPop .35s ease' }}>
             <Icon name="check" size={30} />
           </div>
-          <div style={{ fontSize: 21, fontWeight: 900, marginTop: 16 }}>{t("Richiesta inviata")}</div>
-          <div style={{ fontSize: 13, color: T.dim, marginTop: 4 }}>
+          <div style={{ fontSize: 22, fontWeight: 800, marginTop: 16 }}>{t("Richiesta inviata")}</div>
+          <div style={{ fontSize: 12.5, color: T.dim, marginTop: 4 }}>
             {service.partner_name ? t('Ci occupiamo noi di attivare {name}.').replace('{name}', service.partner_name) : t('Ci pensiamo noi da qui.')}
           </div>
         </div>
 
-        <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 16, padding: 18 }}>
+        <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 20, padding: 18 }}>
           {[
             { t: t('Richiesta inviata'), s: t('Le risposte sono arrivate al tuo advisor'), done: true },
             { t: t('Il tuo advisor ti scrive'), s: t('Entro 24 ore'), done: false },
@@ -151,21 +151,21 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
                 {i < arr.length - 1 && <span style={{ width: 2, height: 26, background: T.border }} />}
               </div>
               <div style={{ paddingBottom: i < arr.length - 1 ? 8 : 0 }}>
-                <div style={{ fontSize: 13.5, fontWeight: 700 }}>{r.t}</div>
-                <div style={{ fontSize: 12, color: T.dim }}>{r.s}</div>
+                <div style={{ fontSize: 14, fontWeight: 600 }}>{r.t}</div>
+                <div style={{ fontSize: 12.5, color: T.dim }}>{r.s}</div>
               </div>
             </div>
           ))}
         </div>
 
         {given.length > 0 && (
-          <div style={{ background: T.cardDark, border: `1px solid ${T.border}`, borderRadius: 16, padding: 18 }}>
-            <div style={{ ...kicker, fontSize: 10, color: accent, marginBottom: 12 }}>{t("Riepilogo per il partner")}</div>
+          <div style={{ background: T.cardDark, border: `1px solid ${T.border}`, borderRadius: 20, padding: 18 }}>
+            <div style={{ ...kicker, fontSize: 11, color: accent, marginBottom: 12 }}>{t("Riepilogo per il partner")}</div>
             <div className="grid" style={{ gap: 10 }}>
               {given.map(f => (
                 <div key={f.key}>
-                  <div style={{ fontSize: 11.5, color: T.muted }}>{t(f.label)}</div>
-                  <div style={{ fontSize: 13.5, marginTop: 1 }}>{fmt(answers[f.key])}</div>
+                  <div style={{ fontSize: 12.5, color: T.muted }}>{t(f.label)}</div>
+                  <div style={{ fontSize: 14, marginTop: 1 }}>{fmt(answers[f.key])}</div>
                 </div>
               ))}
             </div>
@@ -196,17 +196,17 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
       <div className="grid" style={{ gap: 18, color: T.text }}>
         <button onClick={() => (step === 0 ? setMode('detail') : setStep(s => s - 1))}
           className="flex gap" style={{ alignItems: 'center', gap: 8, alignSelf: 'start', background: 'none',
-            border: 'none', color: T.dim, cursor: 'pointer', fontSize: 13, fontWeight: 600, padding: 0 }}>
+            border: 'none', color: T.dim, cursor: 'pointer', fontSize: 12.5, fontWeight: 600, padding: 0 }}>
           ← {t('Indietro')}
         </button>
 
         <div>
-          <div style={{ ...kicker, fontSize: 10, color: accent }}>{t("Questionario · 3 minuti")}</div>
-          <div style={{ fontSize: 20, fontWeight: 900, marginTop: 4 }}>{L('title')}</div>
+          <div style={{ ...kicker, fontSize: 11, color: accent }}>{t("Questionario · 3 minuti")}</div>
+          <div style={{ fontSize: 22, fontWeight: 800, marginTop: 4 }}>{L('title')}</div>
         </div>
 
         <div>
-          <div style={{ fontSize: 11.5, color: T.dim, marginBottom: 6 }}>{t('Passo {n} di {tot}').replace('{n}', String(step + 1)).replace('{tot}', String(steps.length))}</div>
+          <div style={{ fontSize: 12.5, color: T.dim, marginBottom: 6 }}>{t('Passo {n} di {tot}').replace('{n}', String(step + 1)).replace('{tot}', String(steps.length))}</div>
           <div className="flex gap" style={{ gap: 5 }}>
             {steps.map((_, i) => (
               <span key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: i <= step ? T.text : T.border }} />
@@ -216,14 +216,14 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
 
         {cur && (
           <>
-            <div style={{ ...kicker, fontSize: 10, color: accent }}>{t(cur.title)}</div>
+            <div style={{ ...kicker, fontSize: 11, color: accent }}>{t(cur.title)}</div>
             <div className="grid" style={{ gap: 18 }}>
               {cur.fields.map(f => (
                 <div key={f.key}>
-                  <div style={{ fontSize: 13.5, fontWeight: 700, marginBottom: 3 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 3 }}>
                     {t(f.label)}{f.required && <span style={{ color: accent }}> *</span>}
                   </div>
-                  {f.help && <div style={{ fontSize: 11.5, color: T.muted, marginBottom: 7 }}>{t(f.help)}</div>}
+                  {f.help && <div style={{ fontSize: 12.5, color: T.muted, marginBottom: 7 }}>{t(f.help)}</div>}
 
                   {f.type === 'textarea' && (
                     <Textarea rows={3} value={answers[f.key] || ''} placeholder={f.placeholder ? t(f.placeholder) : undefined}
@@ -271,7 +271,7 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
             background: T.text, color: '#fff', fontWeight: 800, fontSize: 14, opacity: missing.length ? 0.45 : 1 }}>
           {busy ? t('Invio…') : last ? t('Invia richiesta') : t('Continua')}
         </button>
-        <div style={{ fontSize: 11.5, color: T.muted, textAlign: 'center' }}>
+        <div style={{ fontSize: 12.5, color: T.muted, textAlign: 'center' }}>
           {t('Le risposte vanno solo al tuo advisor e al partner.')}
         </div>
       </div>
@@ -287,7 +287,7 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
     <div className="grid" style={{ gap: 16, color: T.text }}>
       <button onClick={onBack}
         className="flex gap" style={{ alignItems: 'center', gap: 8, alignSelf: 'start', background: 'none',
-          border: 'none', color: T.dim, cursor: 'pointer', fontSize: 13, fontWeight: 600, padding: 0 }}>
+          border: 'none', color: T.dim, cursor: 'pointer', fontSize: 12.5, fontWeight: 600, padding: 0 }}>
         ← {t('Tutti i servizi')}
       </button>
 
@@ -304,7 +304,7 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
           </>
         )}
         <div style={{ position: 'relative' }}>
-          <div style={{ ...kicker, fontSize: 10, opacity: .85, color: 'var(--yellow)' }}>
+          <div style={{ ...kicker, fontSize: 11, opacity: .85, color: 'var(--yellow)' }}>
             {t('Servizio AUVI')} · {service.verified ? t('Partner verificato') : t('Su richiesta')}
           </div>
           {service.logo_url ? (
@@ -320,10 +320,10 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
             </div>
           ) : (!service.cover_url && (
             <div style={{ marginTop: 12, width: 52, height: 52, borderRadius: 12, background: 'rgba(255,255,255,.1)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 900,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 900,
               color: '#fff' }}>{initials(heroName)}</div>
           ))}
-          <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: -0.5, lineHeight: 1.1, marginTop: 12 }}>
+          <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: -0.5, lineHeight: 1.1, marginTop: 12 }}>
             {heroName}
           </div>
           {service.partner_name && service.partner_name !== heroName && (
@@ -332,7 +332,7 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
             </div>
           )}
           {service.hero_claim && (
-            <div style={{ ...kicker, fontSize: 10.5, marginTop: 6, color: 'var(--yellow)' }}>{L('hero_claim')}</div>
+            <div style={{ ...kicker, fontSize: 11, marginTop: 6, color: 'var(--yellow)' }}>{L('hero_claim')}</div>
           )}
         </div>
       </div>
@@ -340,17 +340,17 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
       {longDesc && <div style={{ fontSize: 15, lineHeight: 1.55, color: T.dim }}>{longDesc}</div>}
 
       {service.about && (
-        <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 16, padding: 18 }}>
-          <div style={{ ...kicker, fontSize: 10.5, color: accent, marginBottom: 8 }}>{t("Il metodo")}</div>
-          <div style={{ fontSize: 13.5, lineHeight: 1.6 }}>{L('about')}</div>
+        <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 20, padding: 18 }}>
+          <div style={{ ...kicker, fontSize: 11, color: accent, marginBottom: 8 }}>{t("Il metodo")}</div>
+          <div style={{ fontSize: 14, lineHeight: 1.6 }}>{L('about')}</div>
         </div>
       )}
 
       {/* citazione */}
       {service.quote && (
         <div style={{ padding: '4px 4px 4px 16px', borderLeft: `3px solid ${accent}` }}>
-          <div style={{ fontSize: 16, fontStyle: 'italic', lineHeight: 1.5 }}>{L('quote')}</div>
-          {service.quote_by && <div style={{ fontSize: 12, color: T.muted, marginTop: 6 }}>— {service.quote_by}</div>}
+          <div style={{ fontSize: 15, fontStyle: 'italic', lineHeight: 1.5 }}>{L('quote')}</div>
+          {service.quote_by && <div style={{ fontSize: 12.5, color: T.muted, marginTop: 6 }}>- {service.quote_by}</div>}
         </div>
       )}
 
@@ -359,8 +359,8 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
         <div className="flex gap" style={{ gap: 12, overflowX: 'auto', paddingBottom: 4 }}>
           {(L('highlights') || service.highlights).map((h: any, i: number) => (
             <div key={i} style={{ flex: '0 0 75%', maxWidth: 300, background: T.card,
-              border: `1px solid ${T.border}`, borderRadius: 14, padding: 16 }}>
-              <div style={{ ...kicker, fontSize: 10, color: accent }}>{h.title}</div>
+              border: `1px solid ${T.border}`, borderRadius: 20, padding: 16 }}>
+              <div style={{ ...kicker, fontSize: 11, color: accent }}>{h.title}</div>
               <div style={{ fontSize: 12.5, color: T.dim, marginTop: 6, lineHeight: 1.5 }}>{h.text}</div>
             </div>
           ))}
@@ -369,8 +369,8 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
 
       {/* cosa include */}
       {(L('includes') || service.includes) && (L('includes') || service.includes).length > 0 && (
-        <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 16, padding: 18 }}>
-          <div style={{ ...kicker, fontSize: 10.5, color: accent, marginBottom: 12 }}>{t("Cosa include")}</div>
+        <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 20, padding: 18 }}>
+          <div style={{ ...kicker, fontSize: 11, color: accent, marginBottom: 12 }}>{t("Cosa include")}</div>
           <div className="grid" style={{ gap: 10 }}>
             {(L('includes') || service.includes).map((it: string, i: number) => (
               <div key={i} className="flex gap" style={{ gap: 10, alignItems: 'flex-start' }}>
@@ -378,7 +378,7 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
                   border: `1.5px solid ${accent}`, color: accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Icon name="check" size={12} />
                 </span>
-                <div style={{ fontSize: 13.5, lineHeight: 1.4 }}>{it}</div>
+                <div style={{ fontSize: 14, lineHeight: 1.4 }}>{it}</div>
               </div>
             ))}
           </div>
@@ -387,7 +387,7 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
 
       {/* nota partner + SLA */}
       {(service.partner_note || service.sla) && (
-        <div style={{ background: T.cardDark, border: `1px solid ${T.border}`, borderRadius: 16, padding: 16 }}>
+        <div style={{ background: T.cardDark, border: `1px solid ${T.border}`, borderRadius: 20, padding: 16 }}>
           {service.sla && (
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 800,
               color: T.green, background: `${T.green}1f`, border: `1px solid ${T.green}55`,
@@ -396,15 +396,15 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
             </span>
           )}
           {service.partner_note && (
-            <div style={{ fontSize: 12, color: T.dim, marginTop: service.sla ? 10 : 0, lineHeight: 1.5 }}>{L('partner_note')}</div>
+            <div style={{ fontSize: 12.5, color: T.dim, marginTop: service.sla ? 10 : 0, lineHeight: 1.5 }}>{L('partner_note')}</div>
           )}
         </div>
       )}
 
       {/* contatti */}
       {(service.contact_email || service.contact_phone || service.partner_website) && (
-        <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 16, padding: 18 }}>
-          <div style={{ ...kicker, fontSize: 10.5, color: T.muted, marginBottom: 10 }}>{t("Contatti")}</div>
+        <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 20, padding: 18 }}>
+          <div style={{ ...kicker, fontSize: 11, color: T.muted, marginBottom: 10 }}>{t("Contatti")}</div>
           <div className="flex gap" style={{ flexWrap: 'wrap', gap: 10 }}>
             {service.partner_website && (
               <a className="btn btn-ghost btn-sm" href={service.partner_website} target="_blank" rel="noreferrer">
@@ -422,7 +422,7 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
               </span>
             )}
           </div>
-          <div style={{ fontSize: 11.5, color: T.muted, marginTop: 10 }}>
+          <div style={{ fontSize: 12.5, color: T.muted, marginTop: 10 }}>
             {t("La richiesta passa comunque da AUVI: ti seguiamo noi fino all'avvio del percorso.")}
           </div>
         </div>
@@ -437,7 +437,7 @@ export default function ServiceDetail({ service, playerId, canRequest, onBack, o
               background: T.text, color: '#fff', fontWeight: 800, fontSize: 15 }}>
             {t('Compila il questionario')}
           </button>
-          <div style={{ fontSize: 11.5, color: T.muted, textAlign: 'center', marginTop: 8 }}>
+          <div style={{ fontSize: 12.5, color: T.muted, textAlign: 'center', marginTop: 8 }}>
             ◷ {t('circa 3 minuti · il partner costruisce il pacchetto su di te · nessun impegno')}
           </div>
         </div>
@@ -451,7 +451,7 @@ function Chip({ on, accent, onClick, children, min }: {
 }) {
   return (
     <button onClick={onClick}
-      style={{ padding: '9px 14px', borderRadius: 999, cursor: 'pointer', fontSize: 13, fontWeight: 700,
+      style={{ padding: '9px 14px', borderRadius: 999, cursor: 'pointer', fontSize: 12.5, fontWeight: 700,
         minWidth: min, justifyContent: 'center', display: 'inline-flex', alignItems: 'center',
         border: `1px solid ${on ? accent : 'var(--border-2)'}`,
         background: on ? 'var(--ink)' : 'transparent', color: on ? '#fff' : 'var(--text-dim)' }}>

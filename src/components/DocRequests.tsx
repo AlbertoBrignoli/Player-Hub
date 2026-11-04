@@ -60,12 +60,12 @@ export function RequestSteps({ item, who }: { item: TaxItem; who?: string | null
 
 const DR_CSS = `
 .dr-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
-.dr-step { display: flex; flex-direction: column; gap: 1px; padding: 8px 10px; border-radius: 10px; background: var(--surface-2, rgba(0,0,0,.04)); min-width: 0; }
+.dr-step { display: flex; flex-direction: column; gap: 1px; padding: 8px 10px; border-radius: 12px; background: var(--surface-2, rgba(0,0,0,.04)); min-width: 0; }
 .dr-dot { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: var(--border); color: var(--text-dim); margin-bottom: 3px; }
 .dr-step.on .dr-dot { background: var(--ink); color: var(--yellow); }
 .dr-step.ok .dr-dot { background: #12A150; color: #fff; }
 .dr-step.late .dr-dot { background: var(--red); color: #fff; }
-.dr-k { font-size: 11px; font-weight: 800; letter-spacing: .7px; text-transform: uppercase; color: var(--text-faint); }
+.dr-k { font-size: 12.5px; font-weight: 800; color: var(--text-faint); }
 .dr-v { font-size: 12.5px; font-weight: 700; color: var(--text); overflow-wrap: anywhere; }
 .dr-s { font-size: 11px; color: var(--text-dim); overflow-wrap: anywhere; }
 `

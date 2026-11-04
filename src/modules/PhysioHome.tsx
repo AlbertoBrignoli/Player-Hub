@@ -11,7 +11,7 @@ import { useLang } from '../lib/i18n'
 const ACCENT = '#2C7A8A'
 
 const kicker: React.CSSProperties = {
-  fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase', fontWeight: 800,
+  fontSize: 11, fontWeight: 800,
 }
 
 export default function PhysioHome({ goto }: { goto?: (r: string) => void }) {
@@ -42,13 +42,13 @@ export default function PhysioHome({ goto }: { goto?: (r: string) => void }) {
   return (
     <div className="grid" style={{ gap: 18 }}>
       {/* --- scheda personale --- */}
-      <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 18,
+      <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 20,
                     background: 'var(--bg-2)', border: '1px solid var(--border)', padding: '22px' }}>
         <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 5, background: ACCENT }} />
         <div className="flex gap" style={{ alignItems: 'center', gap: 15, flexWrap: 'wrap' }}>
           {me?.photo_url
-            ? <img src={me.photo_url} alt="" style={{ width: 58, height: 58, borderRadius: 15, objectFit: 'cover' }} />
-            : <div style={{ width: 58, height: 58, borderRadius: 15, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 22, color: '#fff' }}>
+            ? <img src={me.photo_url} alt="" style={{ width: 58, height: 58, borderRadius: 20, objectFit: 'cover' }} />
+            : <div style={{ width: 58, height: 58, borderRadius: 20, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 22, color: '#fff' }}>
                 {(me?.name || 'F').slice(0, 1)}
               </div>}
           <div style={{ minWidth: 0, flex: 1 }}>

@@ -64,10 +64,10 @@ export default function BrandCampaigns() {
   return (
     <div style={{ maxWidth: 900 }} className="grid">
       <div className="card mk-social-head" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-        <div className="mk-ig-badge" style={{ background: 'var(--grad)' }}><Icon name="image" size={20} /></div>
+        <div className="mk-ig-badge" style={{ background: 'var(--ink)', color: 'var(--yellow)' }}><Icon name="image" size={20} /></div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className="ed-kicker">{t('Campagne & contenuti')}</div>
-          <div style={{ fontWeight: 750, fontSize: 17 }}>{t('Proponi contenuti a {name}').replace('{name}', athleteName)}</div>
+          <div style={{ fontWeight: 800, fontSize: 18 }}>{t('Proponi contenuti a {name}').replace('{name}', athleteName)}</div>
           <div className="faint" style={{ fontSize: 12.5, marginTop: 2 }}>
             {t('Carica lo shooting, prepara caption e hashtag: l’atleta li trova pronti nel suo calendario, con un tap per scaricare e copiare.')}
           </div>
@@ -107,7 +107,7 @@ function Section({ title, items, onOpen }: { title: string; items: EditorialEntr
           return (
             <button key={e.id} className="card" style={{ textAlign: 'left', cursor: 'pointer', border: '1px solid var(--border)' }} onClick={() => onOpen(e)}>
               <div className="flex between" style={{ alignItems: 'flex-start', gap: 8 }}>
-                <div style={{ fontWeight: 700 }}>{e.title}</div>
+                <div style={{ fontWeight: 600 }}>{e.title}</div>
                 <Badge tone={st.tone}>{t(st.label)}</Badge>
               </div>
               <div className="flex gap wrap" style={{ marginTop: 8, alignItems: 'center' }}>
@@ -240,7 +240,7 @@ function ContentEditor({ entry, brandId, brandName, athleteId, athleteName, uid,
         </div>
       }>
       <div className="grid" style={{ gap: 14 }}>
-        <Field label={t("Titolo del contenuto")}><Input value={title} onChange={ev => setTitle(ev.target.value)} placeholder={t("Es. Shooting UA — lancio scarpe")} /></Field>
+        <Field label={t("Titolo del contenuto")}><Input value={title} onChange={ev => setTitle(ev.target.value)} placeholder={t("Es. Shooting UA - lancio scarpe")} /></Field>
         <div className="grid g2" style={{ gap: 12 }}>
           <Field label={t("Formato")}>
             <Select value={type} onChange={ev => setType(ev.target.value as EditorialEntry['type'])}>
@@ -262,7 +262,7 @@ function ContentEditor({ entry, brandId, brandName, athleteId, athleteName, uid,
 
         <div>
           <div className="flex between" style={{ marginBottom: 6 }}>
-            <div style={{ fontWeight: 650 }}>{t('Materiale dello shooting')} <span className="faint" style={{ fontWeight: 400, fontSize: 12 }}>{media.length ? `· ${media.length} file` : ''}</span></div>
+            <div style={{ fontWeight: 600 }}>{t('Materiale dello shooting')} <span className="faint" style={{ fontWeight: 400, fontSize: 12.5 }}>{media.length ? `· ${media.length} file` : ''}</span></div>
             <button className="btn btn-primary btn-sm" disabled={uploading} onClick={() => fileRef.current?.click()}>
               <Icon name="upload" size={13} /> {uploading ? t('Carico…') : t('Carica foto/video')}
             </button>

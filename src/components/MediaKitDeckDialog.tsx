@@ -128,7 +128,7 @@ export default function MediaKitDeckDialog({ player, prof, saveProf, lang, tease
       <style>{CSS}</style>
       {loading ? <Spinner /> : (
         <div className="grid" style={{ gap: 16 }}>
-          <div className="faint" style={{ fontSize: 13 }}>{t('12 slide nel formato AUVI: le pagine dell\'agenzia restano fisse, quelle dell\'atleta si riempiono con dati e foto del Player Hub.')}</div>
+          <div className="faint" style={{ fontSize: 12.5 }}>{t('12 slide nel formato AUVI: le pagine dell\'agenzia restano fisse, quelle dell\'atleta si riempiono con dati e foto del Player Hub.')}</div>
           <div>
             <div className="mkd-h">{t('Foto (dalla sezione Media)')}</div>
             <div className="mkd-slots">
@@ -150,7 +150,7 @@ export default function MediaKitDeckDialog({ player, prof, saveProf, lang, tease
             <Textarea rows={6} value={bio} onChange={e => setBio(e.target.value)} />
           </Field>
           <div className="grid" style={{ gap: 10 }}>
-            <label className="flex gap" style={{ alignItems: 'center', gap: 8, fontWeight: 700, fontSize: 14 }}>
+            <label className="flex gap" style={{ alignItems: 'center', gap: 8, fontWeight: 600, fontSize: 14 }}>
               <input type="checkbox" checked={withStory} onChange={e => setWithStory(e.target.checked)} /> {t('Includi la slide del momento storico')}
             </label>
             {withStory && (<>
@@ -166,7 +166,7 @@ export default function MediaKitDeckDialog({ player, prof, saveProf, lang, tease
               <Field label={t('Fonte')}><Input value={story.source || ''} placeholder={t('Es. Fonte: testata, data')} onChange={e => setStory({ ...story, source: e.target.value })} /></Field>
             </>)}
           </div>
-          <div className="faint" style={{ fontSize: 12 }}>
+          <div className="faint" style={{ fontSize: 12.5 }}>
             {teaser ? t('Versione teaser: fascia follower, senza engagement e reach.') : t('Versione completa: follower, engagement e reach di Instagram.')}
           </div>
         </div>
@@ -187,12 +187,12 @@ function defaultBio(player: any, prof: any, lang: string) {
 }
 
 const CSS = `
-.mkd-h { font-size: 11px; letter-spacing: 1.4px; text-transform: uppercase; font-weight: 800; color: var(--text-faint); margin-bottom: 8px; }
+.mkd-h { font-size: 12.5px; font-weight: 800; color: var(--text-faint); margin-bottom: 8px; }
 .mkd-slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
-.mkd-slot { display: grid; gap: 4px; text-align: left; border: 1px solid var(--border); background: var(--surface); border-radius: 14px; padding: 8px; cursor: pointer; color: var(--text); }
+.mkd-slot { display: grid; gap: 4px; text-align: left; border: 1px solid var(--border); background: var(--surface); border-radius: 20px; padding: 8px; cursor: pointer; color: var(--text); }
 .mkd-slot b { font-size: 12.5px; } .mkd-slot > span:last-child { font-size: 11px; color: var(--text-faint); }
-.mkd-img { aspect-ratio: 16/10; border-radius: 10px; background: var(--bg-2) center/cover; display: grid; place-items: center; color: var(--text-faint); }
+.mkd-img { aspect-ratio: 16/10; border-radius: 12px; background: var(--bg-2) center/cover; display: grid; place-items: center; color: var(--text-faint); }
 .mkd-pick { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 6px; }
-.mkd-pick button { aspect-ratio: 4/3; border: 3px solid transparent; border-radius: 10px; background: var(--bg-2) center/cover; cursor: pointer; }
+.mkd-pick button { aspect-ratio: 4/3; border: 3px solid transparent; border-radius: 12px; background: var(--bg-2) center/cover; cursor: pointer; }
 .mkd-pick button.on { border-color: var(--yellow); }
 `

@@ -42,7 +42,7 @@ const list = (a: string[] = [], lang: string) => {
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 function band(n?: number | null) {
   if (!n) return ''
-  const b = [[1e6, '1M+'], [5e5, '500K–1M'], [1e5, '100K–500K'], [5e4, '50K–100K'], [1e4, '10K–50K']] as const
+  const b = [[1e6, '1M+'], [5e5, '500K-1M'], [1e5, '100K-500K'], [5e4, '50K-100K'], [1e4, '10K-50K']] as const
   for (const [v, l] of b) if (n >= v) return l
   return '<10K'
 }
@@ -221,7 +221,7 @@ export async function renderMediaKitDeck(d: DeckData, fileName: string, onProgre
     <div style="${abs(1040, 496, 'width:800px;')}${P(34, D)}">${t('Indica chi è, quali brand e attività preferisce e quando è disponibile. Mantiene il controllo sulle proprie scelte e sulle collaborazioni che accetta.', 'Shares who they are, which brands and activities they prefer and when they’re available. Stays in control of their choices and of the collaborations they accept.')}</div>
     <div style="${abs(116, 751, 'width:1700px;')}${P(32, D)}">${t('Budget complessivo, attività, tempi, diritti d’immagine e fee sono definiti prima dell’avvio. Le fee variano in base all’abbonamento sottoscritto. Ogni extra richiede approvazione: nessuna sorpresa.', 'Overall budget, activities, timing, image rights and fees are agreed before kick-off. Fees vary with the subscription plan. Any extra needs approval: no surprises.')}</div>
     <div style="${abs(116, 881, 'width:1700px;')}${P(31, D)}">${t('AUVI fornisce piattaforma, know-how e servizi. Il valore lo costruiscono insieme brand e atleta.', 'AUVI provides platform, know-how and services. Brand and athlete build the value together.')}</div>
-    <div style="${abs(116, 960)}${T(28, Y)}">${t('Win–win: i protagonisti siete voi', 'Win–win: you are the protagonists')}</div>` })
+    <div style="${abs(116, 960)}${T(28, Y)}">${t('Win-win: i protagonisti siete voi', 'Win-win: you are the protagonists')}</div>` })
 
   // 10 · foto incorniciata
   if (fin) slides.push({ bg: '#000', html: `
@@ -234,7 +234,7 @@ export async function renderMediaKitDeck(d: DeckData, fileName: string, onProgre
   const row = (y: number, k: string, v: string) => `<div style="${abs(1238, y)}${T(20, Y)}">${k}</div><div style="${abs(1473, y - 4)}${P(26, '#fff')}">${v}</div>`
   slides.push({ bg: '#000', html: chrome(Y, 'MARKETING &amp; STRATEGY AGENCY') + `
     <div style="${abs(1238, 640)}${T(40, '#fff')}">AUVI AGENCY SRL</div>
-    ${row(724, t('Sede legale', 'Registered office'), 'Via Chiossetto, 7<br>00122 – Milano (MI)')}
+    ${row(724, t('Sede legale', 'Registered office'), 'Via Chiossetto, 7<br>00122 - Milano (MI)')}
     ${row(808, t('P.IVA', 'VAT no.'), '14273980962')}${row(856, 'PEC', 'auviagency@legalmail.it')}
     ${row(904, 'Mail', 'info@auviagency.com')}${row(952, 'Web', 'auviagency.com')}` })
 

@@ -115,7 +115,7 @@ export default function Login() {
     if (otpErr) { setNotice(friendlyError(otpErr, t)); return }
     setInviteCode('')
     setNotice(data.player
-      ? t('Codice valido — sarai collegato a {name}! Ti abbiamo inviato il link per completare la registrazione. Controlla la posta (anche lo spam).').replace('{name}', data.player)
+      ? t('Codice valido - sarai collegato a {name}! Ti abbiamo inviato il link per completare la registrazione. Controlla la posta (anche lo spam).').replace('{name}', data.player)
       : t('Codice valido! Ti abbiamo inviato il link per completare la registrazione. Controlla la posta (anche lo spam).'))
   }
 
@@ -146,7 +146,7 @@ export default function Login() {
           <div className="ph-login__claimBlock">
             <p className="ph-login__kicker">{t('IL TUO SPAZIO RISERVATO')}</p>
             <h1 className="ph-login__claim">OWN YOUR<br />IMAGE</h1>
-            <p className="ph-login__reason">{t('Contratti, compensi, sponsor, agenda, servizi: tutto in un unico posto. Tu pensi a giocare — Player Hub tiene insieme la tua carriera e la fa crescere.')}</p>
+            <p className="ph-login__reason">{t('Contratti, compensi, sponsor, agenda, servizi: tutto in un unico posto. Tu pensi a giocare - Player Hub tiene insieme la tua carriera e la fa crescere.')}</p>
             <div className="ph-login__partners">
               <p className="ph-login__partnersLabel">{t('PARTNER NEL TUO HUB')}</p>
               <ul className="ph-login__chips">

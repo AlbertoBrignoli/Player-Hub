@@ -15,7 +15,7 @@ import { useLang } from '../lib/i18n'
 const ACCENT = 'var(--ink)'
 
 const kicker: React.CSSProperties = {
-  fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase', fontWeight: 800,
+  fontSize: 11, fontWeight: 800,
 }
 
 export const ROLE_LABEL: Record<string, string> = {
@@ -234,7 +234,7 @@ export function RequestForm({ onDone, mine = [], bare }: {
   }
 
   return (
-    <div style={bare ? undefined : { position: 'relative', overflow: 'hidden', borderRadius: 18,
+    <div style={bare ? undefined : { position: 'relative', overflow: 'hidden', borderRadius: 20,
                   background: 'var(--bg-2)', border: '1px solid var(--border)', padding: '22px' }}>
       {!bare && <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 5, background: ACCENT }} />}
       {!bare && <div style={{ ...kicker, color: ACCENT }}>{t('Collegati a un atleta')}</div>}
@@ -347,7 +347,7 @@ function CodesManager({ athleteId, athleteName }: { athleteId: number | null; at
                         : { t: t('Attivo'), col: 'var(--green)' }
             return (
               <div key={c.id} className="flex between" style={{ alignItems: 'center', gap: 10,
-                border: '1px solid var(--border)', borderRadius: 10, padding: '10px 12px', opacity: revoked ? .55 : 1 }}>
+                border: '1px solid var(--border)', borderRadius: 12, padding: '10px 12px', opacity: revoked ? .55 : 1 }}>
                 <div style={{ minWidth: 0 }}>
                   <code style={{ fontSize: 14, fontWeight: 800, letterSpacing: 1.5, color: ACCENT,
                     textDecoration: revoked ? 'line-through' : 'none' }}>{c.code}</code>

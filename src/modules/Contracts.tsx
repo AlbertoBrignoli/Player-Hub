@@ -113,7 +113,7 @@ function ContractForm({ value, onClose, onSaved }: { value: Partial<Contract>; o
         <button className="btn btn-ghost" onClick={onClose}>{t('Annulla')}</button>
         <button className="btn btn-primary" disabled={busy || !f.title} onClick={save}>{busy ? t('Salvo…') : t('Salva')}</button>
       </>}>
-      <Field label={t('Titolo')}><Input value={f.title || ''} onChange={e => set('title', e.target.value)} placeholder={t('es. Contratto Olympiacos 2024–2027')} /></Field>
+      <Field label={t('Titolo')}><Input value={f.title || ''} onChange={e => set('title', e.target.value)} placeholder={t('es. Contratto Olympiacos 2024-2027')} /></Field>
       <div className="row2">
         <Field label={t('Controparte / Club')}><Input value={f.counterpart || ''} onChange={e => set('counterpart', e.target.value)} /></Field>
         <Field label={t('Tipo')}>

@@ -108,7 +108,7 @@ export default function CalendarSync() {
           </div>
 
           <div className="cal-sync-url" aria-label={t('Link del calendario')}>{httpsUrl}</div>
-          <div className="faint" style={{ fontSize: 11.5, marginTop: 6 }}>
+          <div className="faint" style={{ fontSize: 12.5, marginTop: 6 }}>
             {t('Il link è personale: chi lo possiede vede il tuo calendario. Se lo hai condiviso per errore, rigeneralo.')}
           </div>
 

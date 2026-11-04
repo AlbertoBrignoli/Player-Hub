@@ -14,7 +14,7 @@ import type { Player, ShippingInfo, EquipmentInfo, ClubContacts } from '../lib/t
 type Tab = 'spedizioni' | 'equipment' | 'contatti'
 
 const grid: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(220px, 100%), 1fr))', gap: 14 }
-const section: React.CSSProperties = { fontSize: 11, letterSpacing: 1.4, textTransform: 'uppercase', color: 'var(--text-dim)', margin: '20px 0 12px', fontWeight: 700 }
+const section: React.CSSProperties = { fontSize: 11, color: 'var(--text-dim)', margin: '20px 0 12px', fontWeight: 700 }
 
 export default function Profile() {
   const { athleteId } = useAthlete()
@@ -169,7 +169,7 @@ export default function Profile() {
               <Field label={t("Nome")}><Input value={s('ref_name')} onChange={ev => setS('ref_name', ev.target.value)} /></Field>
               <Field label={t("Relazione")}>
                 <Select value={s('ref_relation')} onChange={ev => setS('ref_relation', ev.target.value)}>
-                  <option value="">—</option>
+                  <option value="">-</option>
                   <option value="Moglie/Compagna">{t("Moglie/Compagna")}</option>
                   <option value="Genitore">{t("Genitore")}</option>
                   <option value="Fratello/Sorella">{t("Fratello/Sorella")}</option>

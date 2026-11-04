@@ -1,4 +1,4 @@
-// Motore del Commercial Score — rule-based e tracciabile.
+// Motore del Commercial Score - rule-based e tracciabile.
 // Ogni componente restituisce i fattori usati e i dati mancanti; i pesi
 // arrivano da cp_config (DB) e non sono mai hardcoded nell'interfaccia.
 import type { Player } from './types'
@@ -24,7 +24,7 @@ export const COMP_META = [
 export const DISCLAIMER = 'Stima indicativa basata sui dati disponibili. Non rappresenta un prezzo garantito o una valutazione finanziaria definitiva.'
 
 const clamp = (n: number, lo = 0, hi = 100) => Math.max(lo, Math.min(hi, n))
-const fmtN = (n: any) => (n == null || n === '' ? '—' : Number(n).toLocaleString('it-IT'))
+const fmtN = (n: any) => (n == null || n === '' ? '-' : Number(n).toLocaleString('it-IT'))
 
 // Media pesata sui soli fattori disponibili; i mancanti finiscono in `missing`.
 function wavg(parts: { val: number | null; w: number; label: string; note: string }[]): CompResult {
@@ -36,7 +36,7 @@ function wavg(parts: { val: number | null; w: number; label: string; note: strin
   return { score: clamp(Math.round(score)), factors: present.map(p => ({ label: p.label, note: p.note, val: Math.round(p.val as number) })), missing }
 }
 
-// ── SPORT VALUE — da player + player_stats_api (stagione corrente) ──────────
+// ── SPORT VALUE - da player + player_stats_api (stagione corrente) ──────────
 export function computeSport(player: Player | null, stats: any[], sportExtra: any = {}): CompResult {
   const season = stats.reduce((best: string | null, s: any) => (!best || String(s.season) > best ? String(s.season) : best), null)
   const cur = stats.filter(s => String(s.season) === season)
@@ -73,7 +73,7 @@ export function computeSport(player: Player | null, stats: any[], sportExtra: an
   ])
 }
 
-// ── AUDIENCE VALUE — instagram dal player, altri canali dal profilo ──────────
+// ── AUDIENCE VALUE - instagram dal player, altri canali dal profilo ──────────
 export function computeAudience(player: Player | null, aud: any = {}): CompResult {
   const ig = { followers: player?.instagram_followers || aud?.instagram?.followers || 0, er: player?.instagram_engagement ?? aud?.instagram?.er ?? null, reach: player?.instagram_reach || null }
   const total = (Number(ig.followers) || 0) + (Number(aud?.tiktok?.followers) || 0) + (Number(aud?.youtube?.followers) || 0)
@@ -98,7 +98,7 @@ export function computeAudience(player: Player | null, aud: any = {}): CompResul
   ])
 }
 
-// ── CONTENT VALUE — dal calendario editoriale reale (crm_editorial) ─────────
+// ── CONTENT VALUE - dal calendario editoriale reale (crm_editorial) ─────────
 export function computeContent(editorial: any[], contentExtra: any = {}): CompResult {
   const cutoff = Date.now() - 90 * 24 * 3600 * 1000
   const recent = (editorial || []).filter(e => e.entry_date && new Date(e.entry_date).getTime() > cutoff && new Date(e.entry_date).getTime() <= Date.now())
@@ -139,7 +139,7 @@ export function computeBrandFitScore(profile: any): CompResult {
   ])
 }
 
-// ── REPUTATION — fascia sintetica da AUVI (mai il dato interno) + storico ───
+// ── REPUTATION - fascia sintetica da AUVI (mai il dato interno) + storico ───
 export function computeReputation(reliabilityBand: number | null, collabs: any[], perf: any[]): CompResult {
   const completed = collabs.filter(c => c.status === 'completata')
   const onTime = perf.filter(p => p.on_time !== null && p.on_time !== undefined)
@@ -155,7 +155,7 @@ export function computeReputation(reliabilityBand: number | null, collabs: any[]
   ])
 }
 
-// ── READINESS — checklist di completezza operativa ───────────────────────────
+// ── READINESS - checklist di completezza operativa ───────────────────────────
 export function computeReadiness(profile: any, player: Player | null): CompResult {
   const aud = profile?.audience || {}
   const hasAudience = !!(player?.instagram_followers || aud?.tiktok?.followers || aud?.youtube?.followers)

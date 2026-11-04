@@ -22,7 +22,7 @@ const OK = '#12A150'
 const BUCKET = 'wealth-docs'
 
 const kicker: React.CSSProperties = {
-  fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase', fontWeight: 800,
+  fontSize: 11, fontWeight: 800,
 }
 
 const KINDS = [
@@ -305,7 +305,7 @@ function Summary({ ov, rows, canManage, onEdit }: { ov: Overview | null; rows: W
                        : tr('Il tuo wealth manager compilerà qui il quadro del tuo patrimonio.')}
           </div>
         ) : <>
-          <div style={{ fontSize: 34, fontWeight: 800, letterSpacing: -1, marginTop: 6 }}>{total ? fmtMoney(total, cur) : '—'}</div>
+          <div style={{ fontSize: 34, fontWeight: 800, letterSpacing: -1, marginTop: 6 }}>{total ? fmtMoney(total, cur) : '-'}</div>
           <div className="faint" style={{ fontSize: 12.5, marginTop: 2 }}>
             {tr('patrimonio seguito')} · {tr('aggiornato il {date}').replace('{date}', fmtDate(ov.updated_at))}
           </div>
@@ -327,9 +327,9 @@ function Summary({ ov, rows, canManage, onEdit }: { ov: Overview | null; rows: W
           )}
 
           <div className="flex gap" style={{ gap: 26, marginTop: 18, flexWrap: 'wrap' }}>
-            <Metric label={tr('Profilo di rischio')} value={ov.risk_profile ? tr(ov.risk_profile) : '—'} tone={ACCENT} />
-            <Metric label={tr('Orizzonte')} value={ov.horizon || '—'} />
-            <Metric label={tr('Prossimo incontro')} value={ov.next_meeting ? fmtDate(ov.next_meeting) : '—'}
+            <Metric label={tr('Profilo di rischio')} value={ov.risk_profile ? tr(ov.risk_profile) : '-'} tone={ACCENT} />
+            <Metric label={tr('Orizzonte')} value={ov.horizon || '-'} />
+            <Metric label={tr('Prossimo incontro')} value={ov.next_meeting ? fmtDate(ov.next_meeting) : '-'}
               tone={meetDays !== null && meetDays >= 0 && meetDays <= 7 ? WARN : undefined} />
           </div>
           {ov.goals && (
@@ -407,7 +407,7 @@ function ItemCard({ i, canManage, isPlayer, people, onOpen, onEdit, onRespond, o
             <div style={{ fontSize: 15, fontWeight: 800, marginTop: 2 }}>{i.title}</div>
             {i.period && <div className="faint" style={{ fontSize: 12.5 }}>{i.period}</div>}
           </div>
-          {t && <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', color: t.c, whiteSpace: 'nowrap' }}>
+          {t && <span style={{ fontSize: 11, fontWeight: 800, color: t.c, whiteSpace: 'nowrap' }}>
             {tr(t.l).replace('{n}', String(t.n))}</span>}
         </div>
         {i.description && <div className="faint" style={{ fontSize: 12.5, marginTop: 9, whiteSpace: 'pre-wrap' }}>{i.description}</div>}
@@ -474,7 +474,7 @@ function Info({ k, v }: { k: string; v?: any }) {
   return (
     <div>
       <div className="t-label">{k}</div>
-      <div style={{ fontSize: 12.5, marginTop: 1 }}>{v || '—'}</div>
+      <div style={{ fontSize: 12.5, marginTop: 1 }}>{v || '-'}</div>
     </div>
   )
 }
@@ -538,7 +538,7 @@ function ItemForm({ value, playerId, onClose, onSaved }: {
         </Field>
         <Field label={tr('Categoria')}>
           <Select value={f.category || ''} onChange={e => set('category', e.target.value)}>
-            <option value="">{tr('— seleziona —')}</option>
+            <option value="">{tr('- seleziona -')}</option>
             {CATEGORIES.map(c => <option key={c} value={c}>{tr(c)}</option>)}
           </Select>
         </Field>
@@ -666,7 +666,7 @@ function OverviewForm({ value, playerId, onClose, onSaved }: {
         <Field label={tr('Altro')}><Input type="number" value={f.other_assets ?? ''} onChange={e => set('other_assets', e.target.value)} /></Field>
         <Field label={tr('Profilo di rischio')}>
           <Select value={f.risk_profile || ''} onChange={e => set('risk_profile', e.target.value)}>
-            <option value="">{tr('— seleziona —')}</option>
+            <option value="">{tr('- seleziona -')}</option>
             {RISK.map(r => <option key={r} value={r}>{tr(r)}</option>)}
           </Select>
         </Field>

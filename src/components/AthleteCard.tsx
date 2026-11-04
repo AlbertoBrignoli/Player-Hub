@@ -197,10 +197,10 @@ export default function AthleteCard({ d }: { d: CardData }) {
 
   return (
     <div style={{ marginBottom: 18 }}>
-      <div style={{ borderRadius: 18, overflow: 'hidden', background: '#0A0A0A', aspectRatio: '1200 / 630', position: 'relative' }}>
+      <div style={{ borderRadius: 20, overflow: 'hidden', background: '#0A0A0A', aspectRatio: '1200 / 630', position: 'relative' }}>
         {url
           ? <img src={url} alt={`${d.name} · Player Hub`} style={{ width: '100%', height: '100%', display: 'block' }} />
-          : <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', color: 'rgba(255,255,255,.5)', fontSize: 13 }}>{t('Preparo il biglietto…')}</div>}
+          : <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', color: 'rgba(255,255,255,.5)', fontSize: 12.5 }}>{t('Preparo il biglietto…')}</div>}
       </div>
       <div className="flex gap" style={{ gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
         <button className="btn btn-sm btn-primary" onClick={share}><Icon name="send" size={13} /> {t('Condividi')}</button>
@@ -323,7 +323,7 @@ function MediaPicker({ title, onClose, onPick }: { title: string; onClose: () =>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: 8, maxHeight: '60vh', overflowY: 'auto' }}>
               {shown.map(m => (
                 <button key={m.id} onClick={() => choose(m)} disabled={!!busy}
-                  style={{ aspectRatio: '1', padding: 0, border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden', cursor: 'pointer', background: 'var(--bg-2)', position: 'relative' }}>
+                  style={{ aspectRatio: '1', padding: 0, border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden', cursor: 'pointer', background: 'var(--bg-2)', position: 'relative' }}>
                   {urls[m.storage_path] && <img src={urls[m.storage_path]} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />}
                   {busy === m.id && <span style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', background: 'rgba(0,0,0,.4)' }}><Spinner /></span>}
                 </button>

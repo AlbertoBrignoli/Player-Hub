@@ -9,7 +9,7 @@ export function SFact({ k, v, big }: { k: string; v: any; big?: boolean }) {
   return (
     <div>
       <div className="faint" style={{ fontSize: 11 }}>{t(k)}</div>
-      <div style={{ fontWeight: 750, fontSize: big ? 20 : 15 }}>{v ?? '—'}</div>
+      <div style={{ fontWeight: 800, fontSize: big ? 20 : 15 }}>{v ?? '-'}</div>
     </div>
   )
 }
@@ -21,8 +21,8 @@ export function SPct({ k, pct, n, d }: { k: string; pct: number | null; n?: numb
   return (
     <div title={n != null && d != null ? `${n}/${d}` : undefined}>
       <div className="faint" style={{ fontSize: 11 }}>{t(k)}</div>
-      <div style={{ fontWeight: 750, fontSize: 17, color }}>{val == null ? '—' : `${val}%`}</div>
-      {n != null && d != null && <div className="faint" style={{ fontSize: 10.5 }}>{n}/{d}</div>}
+      <div style={{ fontWeight: 800, fontSize: 18, color }}>{val == null ? '-' : `${val}%`}</div>
+      {n != null && d != null && <div className="faint" style={{ fontSize: 11 }}>{n}/{d}</div>}
     </div>
   )
 }
@@ -30,7 +30,7 @@ export function SPct({ k, pct, n, d }: { k: string; pct: number | null; n?: numb
 // Griglia statistiche di una singola partita: legge dal record `matches`
 // (tutti i dati che API-Football fornisce) e mostra SOLO le voci pertinenti al
 // RUOLO del giocatore: Portiere, Difensore, Centrocampista, Attaccante.
-// Una voce che API non fornisce per quella partita non compare (niente "—").
+// Una voce che API non fornisce per quella partita non compare (niente "-").
 export function LastMatchGrid({ m }: { m: any }) {
   const { t } = useLang()
   const role = roleOf(m.position) // G / D / M / F
@@ -62,7 +62,7 @@ export function LastMatchGrid({ m }: { m: any }) {
     if (m.penalty_saved) F('Rigori parati', m.penalty_saved)
     duels()
   } else {
-    // GIOCATORE DI MOVIMENTO — sempre gol/assist
+    // GIOCATORE DI MOVIMENTO - sempre gol/assist
     F('Gol / Assist', `${m.goals ?? 0} / ${m.assists ?? 0}`, true)
     if (role === 'F') {           // ATTACCANTE
       shots(); dribbling(); keyPass(); duels()
@@ -73,7 +73,7 @@ export function LastMatchGrid({ m }: { m: any }) {
     } else if (role === 'D') {    // DIFENSORE
       duels(); tackles(); interc()
       F('Tiri respinti', m.blocks)
-    } else {                      // ruolo non noto — set generale
+    } else {                      // ruolo non noto - set generale
       shots(); duels(); tackles(); interc()
     }
   }
@@ -129,7 +129,7 @@ export function SeasonBlock({ stats }: { stats: StatsMatch[] }) {
         <SPct k="Azioni riuscite" pct={tot.azioni} />
         <SFact k="Intercetti / partita" v={tot.intercetti} />
         <SFact k="Recuperi / partita" v={tot.recuperi} />
-        <SFact k="Minuti / partita" v={tot.partite ? Math.round(tot.minuti / tot.partite) + '′' : '—'} />
+        <SFact k="Minuti / partita" v={tot.partite ? Math.round(tot.minuti / tot.partite) + '′' : '-'} />
       </div>
       {comps.length > 1 && (
         <div className="grid g2" style={{ gap: 10 }}>
@@ -137,7 +137,7 @@ export function SeasonBlock({ stats }: { stats: StatsMatch[] }) {
             const a = agg(stats.filter(s => s.competition === c))
             return (
               <div className="card" key={c} style={{ background: 'var(--bg-2)' }}>
-                <div style={{ fontWeight: 700, marginBottom: 8, fontSize: 13.5 }}>
+                <div style={{ fontWeight: 600, marginBottom: 8, fontSize: 14 }}>
                   {c} <Badge>{t('{n} partite').replace('{n}', String(a.partite))}</Badge>
                 </div>
                 <div className="grid g3" style={{ gap: 8 }}>

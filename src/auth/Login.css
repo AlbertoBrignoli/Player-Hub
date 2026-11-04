@@ -68,7 +68,7 @@
 }
 .ph-login__form { width: 100%; max-width: 380px; animation: ph-riseIn .8s .18s ease both; }
 .ph-login__tile {
-  width: 56px; height: 56px; border-radius: 16px; background: var(--ph-accent);
+  width: 56px; height: 56px; border-radius: 20px; background: var(--ph-accent);
   display: flex; align-items: center; justify-content: center; margin-bottom: 30px;
 }
 .ph-login__tile img { width: 26px; height: 26px; object-fit: contain; filter: brightness(0); }
@@ -82,7 +82,7 @@
   font-size: 10px; font-weight: 800; letter-spacing: 2px; color: var(--ph-text-3);
 }
 .ph-login__field input {
-  height: 52px; padding: 0 16px; border-radius: 14px; border: 1px solid var(--ph-border);
+  height: 52px; padding: 0 16px; border-radius: 20px; border: 1px solid var(--ph-border);
   background: var(--ph-field); color: var(--ph-text); font: 500 15px "Inter", sans-serif;
   outline: none; transition: border-color .18s, box-shadow .18s;
 }
@@ -112,7 +112,7 @@
 .ph-login__link:hover { color: var(--ph-accent); }
 
 .ph-login__notice {
-  margin: 20px 0 0; padding: 14px 16px; border-radius: 14px; border: 1px solid #2e2e3a;
+  margin: 20px 0 0; padding: 14px 16px; border-radius: 20px; border: 1px solid #2e2e3a;
   background: var(--ph-field); font-size: 13px; line-height: 1.45; color: var(--ph-text-2);
 }
 .ph-login__footer { margin-top: 36px; padding-top: 24px; border-top: 1px solid var(--ph-divider); }

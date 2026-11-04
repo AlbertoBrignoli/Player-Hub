@@ -54,7 +54,7 @@ export default function Settings() {
       <div className="card">
         <div className="card-head"><div className="card-title">{t('Chi può accedere a questo spazio')}</div></div>
         <div className="faint" style={{ fontSize: 12.5, marginBottom: 14 }}>
-          {t("Solo gli indirizzi in questa lista possono entrare. Aggiungi qui l'email personale dell'atleta per dargli accesso — riceverà un link magico al primo login.")}
+          {t("Solo gli indirizzi in questa lista possono entrare. Aggiungi qui l'email personale dell'atleta per dargli accesso - riceverà un link magico al primo login.")}
         </div>
         <div className="flex gap wrap" style={{ alignItems: 'flex-end' }}>
           <div style={{ flex: 2, minWidth: 200 }}><Field label="Email"><Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="giocatore@email.com" /></Field></div>
@@ -72,7 +72,7 @@ export default function Settings() {
                 <tr key={r.email}>
                   <td><b>{r.email}</b></td>
                   <td><Badge tone={r.role === 'admin' ? 'blue' : r.role === 'creator' ? 'gold' : r.role === 'brand' ? 'green' : 'accent'}>{r.role === 'admin' ? 'AUVI · Advisor' : r.role === 'creator' ? 'Team · Creator' : r.role === 'brand' ? 'Brand' : t('Giocatore')}</Badge></td>
-                  <td className="muted">{r.note || '—'}</td>
+                  <td className="muted">{r.note || '-'}</td>
                   <td>{connected(r.email) ? <Badge tone="green">{t('Attivo')}</Badge> : <Badge tone="gold">{t('In attesa 1° login')}</Badge>}</td>
                   <td className="faint">{fmtDate(r.created_at)}</td>
                   <td className="right"><ConfirmButton onConfirm={async () => { await supabase.from('crm_allowed_emails').delete().eq('email', r.email); reload() }}>{t('Revoca')}</ConfirmButton></td>
@@ -85,7 +85,7 @@ export default function Settings() {
 
       <div className="card">
         <div className="card-head"><div className="card-title">{t('Come aggiungere un nuovo atleta')}</div></div>
-        <ol className="muted" style={{ fontSize: 13, lineHeight: 1.9, paddingLeft: 18 }}>
+        <ol className="muted" style={{ fontSize: 12.5, lineHeight: 1.9, paddingLeft: 18 }}>
           <li>{t("Inserisci i dati dell'atleta in")} <b>{t('questo stesso')}</b> {t('progetto Supabase (riga')} <code>player</code> + record <code>crm_*</code>). {t('Nessun nuovo progetto, nessun nuovo deploy.')}</li>
           <li>{t("Autorizza qui sopra l'email dell'atleta con ruolo")} <b>{t('Giocatore')}</b> {t('(e le email dei professionisti collegati).')}</li>
           <li>{t("L'atleta comparirà nel selettore in alto e, grazie alla RLS, vedrà solo i propri dati.")}</li>
@@ -134,7 +134,7 @@ function SocialCard() {
       instagram_connected: connected,
     }).eq('api_player_id', athleteId)
     setBusy(false)
-    setMsg(error ? error.message : t('Numeri social di {name} salvati — visibili ai brand nel Media Kit.').replace('{name}', athleteName))
+    setMsg(error ? error.message : t('Numeri social di {name} salvati - visibili ai brand nel Media Kit.').replace('{name}', athleteName))
   }
 
   const athleteName = athletes.find(a => a.api_player_id === athleteId)?.name || t('atleta')
@@ -191,7 +191,7 @@ function SecurityCard() {
     <div className="card">
       <div className="card-head"><div className="card-title">{t('Sicurezza · la tua password')}</div></div>
       <div className="faint" style={{ fontSize: 12.5, marginBottom: 14 }}>
-        {t('Account:')} <b>{profile?.email || session?.user.email}</b> — {t('imposta (o cambia) la password per entrare direttamente con email e password. Il link via email resta disponibile se la dimentichi.')}
+        {t('Account:')} <b>{profile?.email || session?.user.email}</b> - {t('imposta (o cambia) la password per entrare direttamente con email e password. Il link via email resta disponibile se la dimentichi.')}
       </div>
       <div className="flex gap wrap" style={{ alignItems: 'flex-end' }}>
         <div style={{ flex: 1, minWidth: 180 }}>

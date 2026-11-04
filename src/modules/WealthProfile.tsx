@@ -15,7 +15,7 @@ import { igUrl } from './home/HomeContacts'
 export const WEALTH_ACCENT = '#1F4E79' // blu profondo: area patrimonio, distinta dal fisco (terra)
 
 const kicker: React.CSSProperties = {
-  fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase', fontWeight: 800,
+  fontSize: 11, fontWeight: 800,
 }
 
 type P = Record<string, any>
@@ -69,13 +69,13 @@ export default function WealthProfile() {
 
   return (
     <div className="grid" style={{ gap: 18 }}>
-      <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 18,
+      <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 20,
                     background: 'var(--bg-2)', border: '1px solid var(--border)', padding: '22px' }}>
         <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 5, background: WEALTH_ACCENT }} />
         <div className="flex gap" style={{ alignItems: 'center', gap: 15, flexWrap: 'wrap' }}>
           {p.photo_url
-            ? <img src={p.photo_url} alt="" style={{ width: 58, height: 58, borderRadius: 15, objectFit: 'cover' }} />
-            : <div style={{ width: 58, height: 58, borderRadius: 15, background: WEALTH_ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 22, color: '#fff' }}>
+            ? <img src={p.photo_url} alt="" style={{ width: 58, height: 58, borderRadius: 20, objectFit: 'cover' }} />
+            : <div style={{ width: 58, height: 58, borderRadius: 20, background: WEALTH_ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 22, color: '#fff' }}>
                 {(p.name || 'W').slice(0, 1)}
               </div>}
           <div style={{ minWidth: 0, flex: '1 1 200px' }}>
@@ -107,7 +107,7 @@ export default function WealthProfile() {
 
       {byAdmin && (
         <div className="faint" style={{ fontSize: 12.5 }}>
-          {t('Segue')}: {linked.map(id => athletes.find(x => x.api_player_id === id)?.name || `#${id}`).join(', ') || '—'}
+          {t('Segue')}: {linked.map(id => athletes.find(x => x.api_player_id === id)?.name || `#${id}`).join(', ') || '-'}
           {p.advisor_id && !joined && <> · {t("Non è ancora entrato nell'app: lo stai preparando tu.")}</>}
         </div>
       )}

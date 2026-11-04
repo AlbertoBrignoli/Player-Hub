@@ -246,7 +246,7 @@ export default function ExerciseLibrary({ mode = 'browse', onPick }: { mode?: 'b
           <div>
             <h1 className="exl-title">{t('Libreria esercizi')}</h1>
             <div className="faint exl-sub">
-              {count != null ? (count === 1 ? t('{n} esercizio') : t('{n} esercizi')).replace('{n}', String(count)) : '—'}{!full ? ` · ${t('selezione AUVI per il calcio')}` : ` · ${t('catalogo completo')}`}
+              {count != null ? (count === 1 ? t('{n} esercizio') : t('{n} esercizi')).replace('{n}', String(count)) : '-'}{!full ? ` · ${t('selezione AUVI per il calcio')}` : ` · ${t('catalogo completo')}`}
             </div>
           </div>
         ) : (
@@ -629,12 +629,12 @@ function ExerciseForm({ initial, facets, uid, onClose, onSaved }: {
         </Field>
         <Field label={t('Livello')}>
           <Select value={f.difficulty} onChange={e => set('difficulty', e.target.value)}>
-            <option value="">—</option>{EX_DIFFICULTIES.map(c => <option key={c} value={c}>{t(c)}</option>)}
+            <option value="">-</option>{EX_DIFFICULTIES.map(c => <option key={c} value={c}>{t(c)}</option>)}
           </Select>
         </Field>
         <Field label={t('Lateralità')}>
           <Select value={f.laterality} onChange={e => set('laterality', e.target.value)}>
-            <option value="">—</option>{EX_LATERALITY.map(([k, l]) => <option key={k} value={k}>{t(l)}</option>)}
+            <option value="">-</option>{EX_LATERALITY.map(([k, l]) => <option key={k} value={k}>{t(l)}</option>)}
           </Select>
         </Field>
       </div>
@@ -705,15 +705,15 @@ const EXL_CSS = `
 .exl-ph { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; background: var(--bg-2); color: var(--text-faint); padding: 10px; text-align: center; }
 .exl-ph-cat { font-family: var(--font-display); font-stretch: 125%; text-transform: uppercase; font-size: 11px; font-weight: 700; letter-spacing: .6px; color: var(--text-dim); }
 .exl-ph-name { font-size: 12.5px; font-weight: 700; color: var(--text); max-width: 90%; }
-.exl-tag { position: absolute; top: 8px; left: 8px; font-family: var(--font-display); font-stretch: 125%; font-size: 11px; font-weight: 800; letter-spacing: .6px; padding: 3px 7px; border-radius: 6px; background: var(--surface); color: var(--ink); border: 1px solid var(--ink); }
+.exl-tag { position: absolute; top: 8px; left: 8px; font-family: var(--font-display); font-stretch: 125%; font-size: 11px; font-weight: 800; letter-spacing: .6px; padding: 3px 7px; border-radius: 8px; background: var(--surface); color: var(--ink); border: 1px solid var(--ink); }
 .exl-tag.auvi { background: var(--yellow); border-color: var(--yellow); }
 .exl-tag.static { position: static; flex: 0 0 auto; }
-.exl-vid { position: absolute; top: 8px; right: 8px; font-size: 11px; font-weight: 800; letter-spacing: .6px; padding: 3px 7px; border-radius: 6px; background: var(--surface); color: var(--text-dim); border: 1px solid var(--border); }
+.exl-vid { position: absolute; top: 8px; right: 8px; font-size: 11px; font-weight: 800; letter-spacing: .6px; padding: 3px 7px; border-radius: 8px; background: var(--surface); color: var(--text-dim); border: 1px solid var(--border); }
 .exl-card-body { padding: 10px 11px 12px; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .exl-card-name { font-size: 14px; font-weight: 700; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .exl-card-en { font-size: 11px; color: var(--text-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .exl-card-meta { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 4px; }
-.exl-cat { font-size: 11px; font-weight: 700; color: var(--ink); background: var(--yellow-soft); border-radius: 6px; padding: 2px 7px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.exl-cat { font-size: 11px; font-weight: 700; color: var(--ink); background: var(--yellow-soft); border-radius: 8px; padding: 2px 7px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .exl-card-line { font-size: 12.5px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .exl-sep { margin: 0 5px; color: var(--text-faint); }
 .exl-dots { display: inline-flex; gap: 3px; flex: 0 0 auto; }
@@ -751,7 +751,7 @@ const EXL_CSS = `
 .exl-sugg { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
 .exl-sugg .exl-chip { min-height: 28px; padding: 3px 10px; font-size: 12.5px; }
 .exl-up { display: flex; gap: 10px; align-items: center; }
-.exl-up-prev { width: 64px; height: 64px; border-radius: 10px; overflow: hidden; background: var(--bg-2); display: grid; place-items: center; color: var(--text-faint); flex: 0 0 auto; }
+.exl-up-prev { width: 64px; height: 64px; border-radius: 12px; overflow: hidden; background: var(--bg-2); display: grid; place-items: center; color: var(--text-faint); flex: 0 0 auto; }
 .exl-up-prev img, .exl-up-prev video, .exl-up-prev .exl-ph { width: 100%; height: 100%; object-fit: cover; }
 .exl-up-main { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-width: 0; flex: 1; }
 .exl-up-main label.btn { cursor: pointer; }

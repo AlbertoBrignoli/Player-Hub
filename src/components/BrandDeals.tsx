@@ -97,7 +97,7 @@ export default function BrandDeals({ compact = false }: { compact?: boolean }) {
   return (
     <div className="grid" style={{ gap: 16 }}>
       <style>{BD_CSS}</style>
-      {compact && <div style={{ fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', fontWeight: 800 }}>Brand</div>}
+      {compact && <div className="t-label" style={{ color: 'inherit' }}>Brand</div>}
       {!compact && <div className="bd-intro">
         <div className="bd-steps">
           <span><b>1</b> {t('Attiva il codice')}</span>
@@ -283,9 +283,9 @@ function DealEditor({ deal, athleteId, athleteName, onClose, onSaved }: {
       <div className="grid g2" style={{ gap: 12 }}>
         <Field label={t('Brand')}><Input value={f.brand_name} onChange={e => set('brand_name', e.target.value)} placeholder="CiaoGym" /></Field>
         <Field label={t('Sconto (etichetta)')}><Input value={f.discount_label} onChange={e => set('discount_label', e.target.value)} placeholder="-20%" /></Field>
-        <Field label={t('Codice sconto per tutti gli atleti')}><Input value={f.code} onChange={e => set('code', e.target.value)} placeholder="AUVI20" style={{ fontFamily: 'ui-monospace, monospace', textTransform: 'uppercase' }} /></Field>
+        <Field label={t('Codice sconto per tutti gli atleti')}><Input value={f.code} onChange={e => set('code', e.target.value)} placeholder="AUVI20" style={{ fontFamily: 'ui-monospace, monospace' }} /></Field>
         <Field label={athleteName ? t('Codice personale di {name} (facoltativo)').replace('{name}', athleteName) : t('Codice personale (scegli un atleta)')}>
-          <Input value={personal} disabled={!athleteId} onChange={e => setPersonal(e.target.value)} placeholder="BRIGNOLI15" style={{ fontFamily: 'ui-monospace, monospace', textTransform: 'uppercase' }} />
+          <Input value={personal} disabled={!athleteId} onChange={e => setPersonal(e.target.value)} placeholder="BRIGNOLI15" style={{ fontFamily: 'ui-monospace, monospace' }} />
         </Field>
         <div style={{ gridColumn: '1 / -1' }}>
           <Field label={t('Link dello shop')}><Input value={f.shop_url} onChange={e => set('shop_url', e.target.value)} placeholder="https://…" /></Field>
@@ -311,7 +311,7 @@ function DealEditor({ deal, athleteId, athleteName, onClose, onSaved }: {
           </div>
         </Field>
         <Field label={t('Ordine')}><Input type="number" value={f.sort} onChange={e => set('sort', e.target.value)} /></Field>
-        <label className="flex gap" style={{ alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 700, alignSelf: 'end', paddingBottom: 10 }}>
+        <label className="flex gap" style={{ alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 600, alignSelf: 'end', paddingBottom: 10 }}>
           <input type="checkbox" checked={!!f.active} onChange={e => set('active', e.target.checked)} /> {t('Visibile agli atleti')}
         </label>
       </div>
@@ -321,37 +321,37 @@ function DealEditor({ deal, athleteId, athleteName, onClose, onSaved }: {
 
 const BD_CSS = `
 .bd-intro { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-.bd-steps { display: flex; gap: 6px; flex-wrap: wrap; font-size: 12px; color: var(--text-dim); font-weight: 600; }
+.bd-steps { display: flex; gap: 6px; flex-wrap: wrap; font-size: 12.5px; color: var(--text-dim); font-weight: 600; }
 .bd-steps span { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); }
-.bd-steps b { width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; background: var(--text); color: var(--bg, #fff); font-size: 10.5px; }
+.bd-steps b { width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; background: var(--text); color: var(--bg, #fff); font-size: 11px; }
 .bd-card { border: 1px solid var(--border); border-radius: 20px; overflow: hidden; background: var(--surface); display: flex; flex-direction: column; }
 .bd-cover { position: relative; height: 230px; display: block; cursor: pointer; text-decoration: none; }
 .bd-cover:hover .bd-img { transform: scale(1.03); }
 .bd-img { transition: transform .4s ease; }
-.bd-go { position: absolute; top: 12px; left: 12px; background: rgba(0,0,0,.55); color: #fff; font-size: 12px; font-weight: 800; padding: 6px 11px; border-radius: 999px; backdrop-filter: blur(6px); }
+.bd-go { position: absolute; top: 12px; left: 12px; background: rgba(0,0,0,.55); color: #fff; font-size: 12.5px; font-weight: 800; padding: 6px 11px; border-radius: 999px; backdrop-filter: blur(6px); }
 .bd-url { font-weight: 600; opacity: .6; font-size: 12.5px; margin-left: 6px; }
 a.bd-cta { text-decoration: none; display: inline-flex; align-items: center; }
 .bd-img { position: absolute; inset: 0; background-size: cover; background-position: center 28%; }
 .bd-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,.05) 30%, rgba(0,0,0,.78) 100%); }
-.bd-badge { position: absolute; top: 12px; right: 12px; background: var(--yellow, #F5D400); color: #111; font-weight: 900; font-size: 15px; padding: 6px 12px; border-radius: 999px; letter-spacing: -.2px; }
+.bd-badge { position: absolute; top: 12px; right: 12px; background: var(--yellow, #F5D400); color: #111; font-weight: 800; font-size: 15px; padding: 6px 12px; border-radius: 999px; letter-spacing: -.2px; }
 .bd-head { position: absolute; left: 16px; right: 16px; bottom: 14px; color: #fff; display: grid; gap: 6px; }
 .bd-logo { height: 26px; max-width: 60%; object-fit: contain; object-position: left; }
-.bd-name { font-size: 24px; font-weight: 900; letter-spacing: -.5px; }
-.bd-tag { font-size: 13px; opacity: .9; }
+.bd-name { font-size: 24px; font-weight: 800; letter-spacing: -.5px; }
+.bd-tag { font-size: 12.5px; opacity: .9; }
 .bd-body { padding: 14px 16px 16px; display: grid; gap: 12px; }
-.bd-gift { display: grid; gap: 3px; text-align: left; cursor: pointer; padding: 14px; border-radius: 14px; border: 0; background: #111; color: #fff; }
-.bd-gift-k { font-size: 10.5px; letter-spacing: 1.4px; text-transform: uppercase; font-weight: 800; color: var(--yellow, #F5D400); }
-.bd-gift-t { font-size: 17px; font-weight: 900; letter-spacing: -.3px; }
+.bd-gift { display: grid; gap: 3px; text-align: left; cursor: pointer; padding: 14px; border-radius: 20px; border: 0; background: #111; color: #fff; }
+.bd-gift-k { font-size: 12.5px; font-weight: 800; color: var(--yellow, #F5D400); }
+.bd-gift-t { font-size: 18px; font-weight: 800; letter-spacing: -.3px; }
 .bd-gift-s { font-size: 12.5px; opacity: .8; font-weight: 600; }
-.bd-desc { font-size: 13.5px; line-height: 1.5; color: var(--text-dim); }
+.bd-desc { font-size: 14px; line-height: 1.5; color: var(--text-dim); }
 .bd-cta { width: 100%; justify-content: center; padding: 13px 16px; font-size: 15px; }
-.bd-code { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 2px 10px; text-align: left; cursor: pointer; padding: 12px 14px; border-radius: 14px; border: 2px dashed var(--text); background: var(--bg-2); color: var(--text); animation: bdIn .35s ease; }
-.bd-code-l { font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; font-weight: 800; color: var(--text-dim); grid-column: 1; }
-.bd-code-v { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 22px; font-weight: 900; letter-spacing: 1.5px; grid-column: 1; overflow-wrap: anywhere; }
+.bd-code { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 2px 10px; text-align: left; cursor: pointer; padding: 12px 14px; border-radius: 20px; border: 2px dashed var(--text); background: var(--bg-2); color: var(--text); animation: bdIn .35s ease; }
+.bd-code-l { font-size: 12.5px; font-weight: 800; color: var(--text-dim); grid-column: 1; }
+.bd-code-v { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 22px; font-weight: 800; letter-spacing: 1.5px; grid-column: 1; overflow-wrap: anywhere; }
 .bd-code-c { grid-column: 2; grid-row: 1 / span 2; display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 800; }
-.bd-terms { font-size: 11.5px; color: var(--text-faint, var(--text-dim)); }
-.bd-admin { display: flex; align-items: center; justify-content: space-between; gap: 8px; border-top: 1px solid var(--border); padding-top: 10px; font-size: 12px; color: var(--text-dim); }
-.bd-acts { display: flex; flex-wrap: wrap; gap: 6px; font-size: 11.5px; }
+.bd-terms { font-size: 12.5px; color: var(--text-faint, var(--text-dim)); }
+.bd-admin { display: flex; align-items: center; justify-content: space-between; gap: 8px; border-top: 1px solid var(--border); padding-top: 10px; font-size: 12.5px; color: var(--text-dim); }
+.bd-acts { display: flex; flex-wrap: wrap; gap: 6px; font-size: 12.5px; }
 .bd-acts span { padding: 3px 8px; border-radius: 999px; background: var(--bg-2); border: 1px solid var(--border); }
 @keyframes bdIn { from { transform: scale(.96); opacity: 0 } to { transform: none; opacity: 1 } }
 `

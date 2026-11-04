@@ -118,7 +118,7 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
                 <MiniFact k={t('Altezza')} v={player.height ? `${String(player.height).replace(/\s*cm/i, '')} cm` : null} />
                 {player.weight && <MiniFact k={t('Peso')} v={`${String(player.weight).replace(/\s*kg/i, '')} kg`} />}
                 <MiniFact k={t('Piede')} v={player.preferred_foot === 'Right' ? t('Destro') : player.preferred_foot === 'Left' ? t('Sinistro') : player.preferred_foot} />
-                <MiniFact k={t('Maglia')} v={shirt ? '#' + shirt : '—'} />
+                <MiniFact k={t('Maglia')} v={shirt ? '#' + shirt : '-'} />
               </div>
               {prof?.birth?.place && (
                 <div className="faint" style={{ fontSize: 12.5, marginTop: 8 }}>
@@ -131,7 +131,7 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
             {player.stadium_photo_url && <img className="stadium-photo" src={player.stadium_photo_url} alt="" />}
             <div className="stadium-overlay">
               <div className="t-label">{t('Casa · stagione {s}').replace('{s}', currentSeason)}</div>
-              <div style={{ fontWeight: 800, fontSize: 15 }}>{player.stadium_name || '—'}</div>
+              <div style={{ fontWeight: 800, fontSize: 15 }}>{player.stadium_name || '-'}</div>
               {player.stadium_capacity && <div className="faint" style={{ fontSize: 12.5 }}>{t('{n} posti').replace('{n}', player.stadium_capacity.toLocaleString(lang === 'en' ? 'en-GB' : 'it-IT'))}</div>}
             </div>
           </div>
@@ -177,13 +177,13 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
       {/* Ultime 5: andamento voto */}
       {last5.length > 0 && (
         <div className="card">
-          <div className="card-head"><div className="card-title">{t("Ultime 5 · andamento rating")}</div><div className="card-hint">{t('scala 0–10')}</div></div>
+          <div className="card-head"><div className="card-title">{t("Ultime 5 · andamento rating")}</div><div className="card-hint">{t('scala 0-10')}</div></div>
           <div className="chart">
             {last5.map(m => {
               const r = Number(m.rating) || 0
               return (
                 <div className="chart-col" key={m.id}>
-                  <div className="chart-v" style={{ color: r >= 7 ? 'var(--green)' : r >= 6 ? 'var(--text)' : 'var(--red)' }}>{r ? r.toFixed(1) : '—'}</div>
+                  <div className="chart-v" style={{ color: r >= 7 ? 'var(--green)' : r >= 6 ? 'var(--text)' : 'var(--red)' }}>{r ? r.toFixed(1) : '-'}</div>
                   <div className="chart-bar" style={{ height: `${(r / maxR) * 100}%` }} />
                   <div className="chart-x">{(m.opponent || m.away_team || '').slice(0, 3).toUpperCase()}</div>
                 </div>
@@ -206,7 +206,7 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
         ) : played.length > 0 ? (
           <div className="grid g4" style={{ gap: 10 }}>
             <Stat icon={<Icon name="check" size={13} />} label={t("Presenze")} value={played.length} sub={t("{n}' giocati").replace('{n}', String(played.reduce((a, m) => a + (m.minutes || 0), 0)))} />
-            <Stat icon={<Icon name="star" size={13} />} label={t("Rating medio")} value={avgRating ? avgRating.toFixed(2) : '—'} tone="var(--accent)" />
+            <Stat icon={<Icon name="star" size={13} />} label={t("Rating medio")} value={avgRating ? avgRating.toFixed(2) : '-'} tone="var(--accent)" />
             <Stat icon={<Icon name="ball" size={13} />} label={t("Gol")} value={played.reduce((a, m) => a + (m.goals || 0), 0)} />
             <Stat icon={<Icon name="send" size={13} />} label={t("Assist")} value={played.reduce((a, m) => a + (m.assists || 0), 0)} />
           </div>
@@ -295,5 +295,5 @@ export default function Performance({ goto }: { goto?: (r: string) => void }) {
 }
 
 function MiniFact({ k, v }: { k: string; v: any }) {
-  return <div><div className="faint" style={{ fontSize: 11 }}>{k}</div><div style={{ fontWeight: 800, fontSize: 15 }}>{v ?? '—'}</div></div>
+  return <div><div className="faint" style={{ fontSize: 11 }}>{k}</div><div style={{ fontWeight: 800, fontSize: 15 }}>{v ?? '-'}</div></div>
 }

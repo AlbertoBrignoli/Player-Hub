@@ -30,7 +30,7 @@ export function InstagramConnect({ athleteId, onSynced }: { athleteId: number; o
   const igParam = useRouteParam('ig')
   const msgParam = useRouteParam('msg')
   const canManage = role === 'player' || isAdmin || role === 'creator' || role === 'agente'
-  const num = (n: number | null | undefined) => n == null ? '—' : Number(n).toLocaleString(lang === 'en' ? 'en-GB' : 'it-IT')
+  const num = (n: number | null | undefined) => n == null ? '-' : Number(n).toLocaleString(lang === 'en' ? 'en-GB' : 'it-IT')
 
   async function load() {
     const { data } = await supabase.rpc('crm_ig_status', { p_player: athleteId })
@@ -103,12 +103,12 @@ export function InstagramConnect({ athleteId, onSynced }: { athleteId: number; o
       {live && (
         <div className="ig-stats">
           <div><b>{num(st.followers)}</b><span>{t('Follower')}</span></div>
-          <div><b>{st.engagement != null ? `${st.engagement}%` : '—'}</b><span>{t('Engagement')}</span></div>
+          <div><b>{st.engagement != null ? `${st.engagement}%` : '-'}</b><span>{t('Engagement')}</span></div>
           <div><b>{num(st.reach)}</b><span>{t('Reach media/post')}</span></div>
         </div>
       )}
       {live && st.last_sync_status === 'error' && st.last_sync_error && (
-        <div style={{ fontSize: 12, color: 'var(--red)' }}>{st.last_sync_error}</div>
+        <div style={{ fontSize: 12.5, color: 'var(--red)' }}>{st.last_sync_error}</div>
       )}
 
       {canManage && (
@@ -133,7 +133,7 @@ export function InstagramConnect({ athleteId, onSynced }: { athleteId: number; o
             <button className="ig-btn" disabled={!!busy || (isAdmin && !appReady)} onClick={connect}>
               <Icon name="instagram" size={18} /> {busy === 'connect' ? t('Apro Instagram…') : t('Collega Instagram')}
             </button>
-            <div className="faint" style={{ fontSize: 11.5, lineHeight: 1.5 }}>
+            <div className="faint" style={{ fontSize: 12.5, lineHeight: 1.5 }}>
               {t('Serve un profilo professionale (Business o Creator): su Instagram vai in Impostazioni › Tipo di account e strumenti › Passa a un account professionale. È gratis e non cambia nulla per chi ti segue.')}
             </div>
           </>
@@ -168,8 +168,8 @@ export function IgAppSetup() {
   return (
     <div className="card">
       <div className="flex between" style={{ alignItems: 'center', gap: 8, marginBottom: 6 }}>
-        <div style={{ fontWeight: 700 }}>{t('App Instagram di AUVI')}</div>
-        <span style={{ fontSize: 12, fontWeight: 800, color: ready ? 'var(--green)' : 'var(--gold)' }}>
+        <div style={{ fontWeight: 600 }}>{t('App Instagram di AUVI')}</div>
+        <span style={{ fontSize: 12.5, fontWeight: 800, color: ready ? 'var(--green)' : 'var(--gold)' }}>
           {ready ? t('Pronta: gli atleti possono collegarsi') : t('Da configurare')}
         </span>
       </div>
@@ -184,7 +184,7 @@ export function IgAppSetup() {
           <li>{t('Vai su developers.facebook.com › Le mie app › Crea app, tipo "Business".')}</li>
           <li>{t('Aggiungi il prodotto "Instagram" e scegli "API setup with Instagram login".')}</li>
           <li>{t('In "Set up Instagram business login" › Business login settings, incolla questo Redirect URI:')}<br />
-            <code style={{ userSelect: 'all', fontSize: 11.5 }}>{IG_REDIRECT}</code></li>
+            <code style={{ userSelect: 'all', fontSize: 12.5 }}>{IG_REDIRECT}</code></li>
           <li>{t('Copia "Instagram app ID" e "Instagram app secret" (non quelli dell\'app Facebook) e incollali qui sotto.')}</li>
           <li>{t('In App roles › Roles › Instagram Testers aggiungi l\'Instagram di ogni atleta: l\'atleta accetta l\'invito da Instagram (Impostazioni › App e siti web › Inviti). Così non serve la revisione di Meta.')}</li>
         </ol>
@@ -205,12 +205,12 @@ const IG_CSS = `
   background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%); }
 .ig-user { font-weight: 700; color: var(--text-dim); margin-left: 4px; }
 .ig-live { color: var(--green); font-weight: 700; }
-.ig-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 13px 16px; border: 0; border-radius: 14px; cursor: pointer;
+.ig-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 13px 16px; border: 0; border-radius: 20px; cursor: pointer;
   font-weight: 800; font-size: 15px; color: #fff; background: linear-gradient(90deg, #f58529, #dd2a7b 45%, #8134af 75%, #515bd4); }
 .ig-btn:disabled { opacity: .6; cursor: default; }
-.ig-setup { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 12px 14px; border-radius: 12px; background: var(--bg-2); border: 1px dashed var(--gold, #c9a227); font-size: 13px; line-height: 1.45; }
+.ig-setup { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 12px 14px; border-radius: 12px; background: var(--bg-2); border: 1px dashed var(--gold, #c9a227); font-size: 12.5px; line-height: 1.45; }
 .ig-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .ig-stats div { background: var(--bg-2); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; display: grid; gap: 2px; }
-.ig-stats b { font-size: 18px; font-weight: 900; }
-.ig-stats span { font-size: 11.5px; color: var(--text-dim); }
+.ig-stats b { font-size: 18px; font-weight: 800; }
+.ig-stats span { font-size: 12.5px; color: var(--text-dim); }
 `

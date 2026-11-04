@@ -86,7 +86,7 @@ export function missingAddress(s: ShippingInfo | null | undefined): string[] {
 function AddressLines({ a }: { a: ShippingInfo }) {
   const { t } = useLang()
   return (
-    <div style={{ fontSize: 13.5, lineHeight: 1.55 }}>
+    <div style={{ fontSize: 14, lineHeight: 1.55 }}>
       <div style={{ fontWeight: 800 }}>{a.recipient_name}</div>
       <div>{a.address}{a.address2 ? ` · ${a.address2}` : ''}</div>
       <div>{[a.cap, a.city, a.province ? `(${a.province})` : ''].filter(Boolean).join(' ')}</div>
@@ -302,14 +302,14 @@ export function GiftOfferView({ offerId, onBack }: { offerId: string; onBack: ()
             </div>
             {ship && (ship.recipient_name || ship.address || ship.city)
               ? <AddressLines a={ship} />
-              : <div className="faint" style={{ fontSize: 13 }}>{t('Nessun indirizzo salvato.')}</div>}
+              : <div className="faint" style={{ fontSize: 12.5 }}>{t('Nessun indirizzo salvato.')}</div>}
             {tried && missAddr.length > 0 && (
               <div className="gf-err">{t('Mancano')}: {missAddr.map(m => t(m)).join(', ')}</div>
             )}
             <button className="btn" style={{ justifySelf: 'start' }} onClick={() => goto(`profile?tab=spedizioni&back=${addrBack}`)}>
               <Icon name="pin" size={14} /> {t('Inserisci o aggiorna indirizzo di spedizione')}
             </button>
-            <div className="faint" style={{ fontSize: 11.5 }}>{t('La tua selezione resta salvata mentre aggiorni l\'indirizzo.')}</div>
+            <div className="faint" style={{ fontSize: 12.5 }}>{t('La tua selezione resta salvata mentre aggiorni l\'indirizzo.')}</div>
           </div>
         </section>
       )}
@@ -320,13 +320,13 @@ export function GiftOfferView({ offerId, onBack }: { offerId: string; onBack: ()
           <StepHead n={3} title={t('Riepiloga e invia')} />
           <div className="card grid" style={{ gap: 14 }}>
             {chosen.length === 0
-              ? <div className="faint" style={{ fontSize: 13 }}>{t('Nessun capo selezionato.')}</div>
+              ? <div className="faint" style={{ fontSize: 12.5 }}>{t('Nessun capo selezionato.')}</div>
               : <div className="gf-sum">{chosen.map(i => (
                   <div key={i.id} className="gf-sum-row">
                     <div className="gf-sum-ph"><ItemPhoto item={i} /></div>
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontWeight: 800, fontSize: 13.5 }}>{i.name}</div>
-                      <div className="faint" style={{ fontSize: 12 }}>{[i.color, draft.sel[i.id] ? `${t('Taglia')} ${draft.sel[i.id]}` : null].filter(Boolean).join(' · ')}</div>
+                      <div style={{ fontWeight: 800, fontSize: 14 }}>{i.name}</div>
+                      <div className="faint" style={{ fontSize: 12.5 }}>{[i.color, draft.sel[i.id] ? `${t('Taglia')} ${draft.sel[i.id]}` : null].filter(Boolean).join(' · ')}</div>
                       {!draft.sel[i.id]?.trim() && <div className="gf-err">{t('Taglia mancante')}</div>}
                     </div>
                   </div>))}
@@ -347,12 +347,12 @@ export function GiftOfferView({ offerId, onBack }: { offerId: string; onBack: ()
             {expired
               ? <div className="gf-deadline gf-expired"><Icon name="lock" size={14} /> {t('Offerta scaduta')}</div>
               : <>
-                  <div className="faint" style={{ fontSize: 12 }}>{t('Verifica capi, taglie e indirizzo prima di confermare.')}</div>
+                  <div className="faint" style={{ fontSize: 12.5 }}>{t('Verifica capi, taglie e indirizzo prima di confermare.')}</div>
                   <button className="btn btn-primary gf-send" disabled={sending} onClick={send}>
                     <Icon name="send" size={15} /> {sending ? t('Invio…') : t('Invia la tua scelta')}
                   </button>
                 </>}
-            <div className="faint" style={{ fontSize: 11.5 }}>
+            <div className="faint" style={{ fontSize: 12.5 }}>
               {t('La richiesta è soggetta a conferma di disponibilità da parte di AUVI. Eventuali contenuti social si concordano con AUVI.')}
             </div>
           </div>
@@ -368,7 +368,7 @@ function StepHead({ n, title, hint, right }: { n: number; title: string; hint?: 
     <div className="flex between" style={{ alignItems: 'flex-end', gap: 10 }}>
       <div>
         <div className="gf-step"><b>{n}</b> {t('Passaggio {n}').replace('{n}', String(n))}</div>
-        <div style={{ fontSize: 18, fontWeight: 900, letterSpacing: -0.3 }}>{title}</div>
+        <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: -0.3 }}>{title}</div>
         {hint && <div className="faint" style={{ fontSize: 12.5 }}>{hint}</div>}
       </div>
       {right}
@@ -406,11 +406,11 @@ function AdminPanel({ offer, items, badPhotos, requests, onChanged }: {
         <button className="btn btn-sm" disabled={saving} onClick={saveDeadline}>{t('Salva')}</button>
         {wall && <button className="btn btn-sm btn-ghost" onClick={() => setWall('')}>{t('Nessuna scadenza')}</button>}
       </div>
-      {offer.deadline && <div className="faint" style={{ fontSize: 12 }}>
+      {offer.deadline && <div className="faint" style={{ fontSize: 12.5 }}>
         {t('Invii aperti fino al {date} (ora di Roma), poi bloccati anche lato server.').replace('{date}', fmtDeadline(offer, lang, true))}</div>}
       <div style={{ fontSize: 12.5 }}>
         <b>{t('Destinatari')}:</b> {offer.recipients.map(p => `${nameOf(p)}${requests.some(r => r.player_id === p) ? ' ✓' : ''}`).join(' · ')}
-        {waiting.length > 0 && <span className="faint"> — {t('in attesa: {names}').replace('{names}', waiting.map(nameOf).join(', '))}</span>}
+        {waiting.length > 0 && <span className="faint"> - {t('in attesa: {names}').replace('{names}', waiting.map(nameOf).join(', '))}</span>}
       </div>
       {notes.map(i => (
         <div key={i.id} className="gf-problems">
@@ -467,8 +467,8 @@ export function GiftRequestCard({ req, offer, playerName, onChanged, highlight }
       <div className="flex between" style={{ alignItems: 'flex-start', gap: 10, flexWrap: 'wrap' }}>
         <div style={{ minWidth: 0 }}>
           <div className="gf-kick">{offer?.brand_name || 'Brand'} · {offer?.title ? t(offer.title) : t('Gifting')}</div>
-          <div style={{ fontSize: 17, fontWeight: 900 }}>{playerName}</div>
-          <div className="faint" style={{ fontSize: 12 }}>
+          <div style={{ fontSize: 18, fontWeight: 800 }}>{playerName}</div>
+          <div className="faint" style={{ fontSize: 12.5 }}>
             {t('Inviata il {date}').replace('{date}', fmtWhen(req.created_at, lang))}
             {' · '}{adv === undefined ? '…' : adv ? `${t('Advisor')}: ${adv.name}` : <span className="gf-warn-t">{t('Advisor da assegnare')}</span>}
           </div>
@@ -489,8 +489,8 @@ export function GiftRequestCard({ req, offer, playerName, onChanged, highlight }
           <div key={i.id} className="gf-sum-row">
             <div className="gf-sum-ph"><ItemPhoto item={i} /></div>
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontWeight: 800, fontSize: 13.5 }}>{i.name}</div>
-              <div className="faint" style={{ fontSize: 12 }}>
+              <div style={{ fontWeight: 800, fontSize: 14 }}>{i.name}</div>
+              <div className="faint" style={{ fontSize: 12.5 }}>
                 {[i.color, `${t('Taglia')} ${i.size}${i.size_to_confirm ? ` (${t('da confermare')})` : ''}`].filter(Boolean).join(' · ')}
               </div>
               {i.needs_confirm && <div className="gf-tbc">{t('Disponibilità per questo gifting da confermare con AUVI')}</div>}
@@ -500,7 +500,7 @@ export function GiftRequestCard({ req, offer, playerName, onChanged, highlight }
         ))}
       </div>
 
-      {req.notes && <div><div className="gf-lab">{t('Note del giocatore')}</div><div style={{ fontSize: 13.5, whiteSpace: 'pre-wrap' }}>{req.notes}</div></div>}
+      {req.notes && <div><div className="gf-lab">{t('Note del giocatore')}</div><div style={{ fontSize: 14, whiteSpace: 'pre-wrap' }}>{req.notes}</div></div>}
       <div>
         <div className="gf-lab">{t('Indirizzo confermato all\'invio')}</div>
         <AddressLines a={req.address} />
@@ -549,7 +549,7 @@ export function GiftRequestsList({ playerId, openId, title }: { playerId?: numbe
   const nameOf = (p: number) => athletes.find(a => a.api_player_id === p)?.name || `#${p}`
   return (
     <section className="grid" style={{ gap: 10 }}>
-      <div style={{ fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', fontWeight: 800 }}>{title || t('Richieste brand')}</div>
+      <div className="t-label" style={{ color: 'inherit' }}>{title || t('Richieste brand')}</div>
       {sorted.map(r => <GiftRequestCard key={r.id} req={r} offer={offers[r.offer_id]} playerName={nameOf(r.player_id)}
         highlight={r.id === openId} onChanged={load} />)}
     </section>
@@ -558,49 +558,49 @@ export function GiftRequestsList({ playerId, openId, title }: { playerId?: numbe
 
 const GF_CSS = `
 .gf-hero { border-radius: 20px; padding: 20px 18px; background: #111; color: #fff; display: grid; gap: 8px; }
-.gf-kick { font-size: 11px; letter-spacing: 1.6px; text-transform: uppercase; font-weight: 800; opacity: .7; }
-.gf-title { font-size: 24px; font-weight: 900; letter-spacing: -.5px; line-height: 1.15; }
+.gf-kick { font-size: 12.5px; font-weight: 800; opacity: .7; }
+.gf-title { font-size: 24px; font-weight: 800; letter-spacing: -.5px; line-height: 1.15; }
 .gf-desc { font-size: 14px; line-height: 1.5; opacity: .85; max-width: 640px; }
-.gf-deadline { display: inline-flex; align-items: center; gap: 7px; justify-self: start; margin-top: 4px; padding: 7px 12px; border-radius: 999px; background: var(--yellow, #F5D400); color: #111; font-weight: 800; font-size: 13px; }
+.gf-deadline { display: inline-flex; align-items: center; gap: 7px; justify-self: start; margin-top: 4px; padding: 7px 12px; border-radius: 999px; background: var(--yellow, #F5D400); color: #111; font-weight: 800; font-size: 12.5px; }
 .gf-expired { background: #E5484D; color: #fff; }
 .gf-step { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; letter-spacing: 1.4px; text-transform: uppercase; font-weight: 800; color: var(--text-dim); margin-bottom: 2px; }
 .gf-step b { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: var(--text); color: var(--bg, #fff); font-size: 11px; letter-spacing: 0; }
-.gf-count { font-size: 12px; font-weight: 800; padding: 5px 10px; border-radius: 999px; background: var(--text); color: var(--bg, #fff); white-space: nowrap; }
+.gf-count { font-size: 12.5px; font-weight: 800; padding: 5px 10px; border-radius: 999px; background: var(--text); color: var(--bg, #fff); white-space: nowrap; }
 .gf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr)); gap: 12px; }
-@media (max-width: 520px) { .gf-grid { grid-template-columns: 1fr 1fr; gap: 10px; } .gf-title { font-size: 21px; } }
-.gf-item { border: 1px solid var(--border); border-radius: 16px; overflow: hidden; background: var(--surface); display: flex; flex-direction: column; transition: border-color .15s, box-shadow .15s; }
+@media (max-width: 520px) { .gf-grid { grid-template-columns: 1fr 1fr; gap: 10px; } .gf-title { font-size: 22px; } }
+.gf-item { border: 1px solid var(--border); border-radius: 20px; overflow: hidden; background: var(--surface); display: flex; flex-direction: column; transition: border-color .15s, box-shadow .15s; }
 .gf-item.on { border-color: var(--text); box-shadow: 0 0 0 1px var(--text); }
 .gf-item.warn { border-color: #E5484D; box-shadow: 0 0 0 1px #E5484D; }
 .gf-pick { position: relative; display: block; width: 100%; padding: 0; border: 0; background: none; cursor: pointer; }
 .gf-pick:disabled { cursor: default; }
 .gf-photo { aspect-ratio: 2000 / 2460; background: #F2F2F0; display: grid; place-items: center; overflow: hidden; }
 .gf-photo img { width: 100%; height: 100%; object-fit: contain; display: block; }
-.gf-ph { display: grid; justify-items: center; gap: 6px; color: #9a9a96; font-size: 11.5px; font-weight: 700; }
+.gf-ph { display: grid; justify-items: center; gap: 6px; color: #9a9a96; font-size: 12.5px; font-weight: 700; }
 .gf-check { position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,.92); color: #111; border: 1px solid rgba(0,0,0,.12); }
 .gf-item.on .gf-check { background: #111; color: #fff; border-color: #111; }
 .gf-info { padding: 10px 12px 12px; display: grid; gap: 6px; align-content: start; flex: 1; }
-.gf-name { font-weight: 900; font-size: 14px; line-height: 1.2; }
-.gf-color { font-size: 12px; color: var(--text-dim); font-weight: 600; }
+.gf-name { font-weight: 800; font-size: 14px; line-height: 1.2; }
+.gf-color { font-size: 12.5px; color: var(--text-dim); font-weight: 600; }
 .gf-tbc { font-size: 11px; line-height: 1.35; font-weight: 700; color: #8a6d00; background: rgba(245,212,0,.18); border-radius: 8px; padding: 4px 7px; }
 .gf-sizes { display: flex; flex-wrap: wrap; gap: 5px; }
-.gf-sizes button { min-width: 38px; padding: 7px 8px; border-radius: 9px; border: 1px solid var(--border); background: var(--bg-2, transparent); color: var(--text); font-weight: 800; font-size: 12.5px; cursor: pointer; }
+.gf-sizes button { min-width: 38px; padding: 7px 8px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-2, transparent); color: var(--text); font-weight: 800; font-size: 12.5px; cursor: pointer; }
 .gf-sizes button.on { background: var(--text); color: var(--bg, #fff); border-color: var(--text); }
 .gf-link { font-size: 12.5px; font-weight: 800; color: var(--text); text-decoration: underline; text-underline-offset: 3px; margin-top: auto; }
-.gf-err { font-size: 12px; font-weight: 700; color: #E5484D; }
-.gf-note { font-size: 13px; line-height: 1.5; padding: 10px 12px; border-radius: 12px; background: var(--bg-2); border: 1px solid var(--border); }
-.gf-lab { font-size: 11px; letter-spacing: 1.3px; text-transform: uppercase; font-weight: 800; color: var(--text-dim); margin-bottom: 4px; }
+.gf-err { font-size: 12.5px; font-weight: 700; color: #E5484D; }
+.gf-note { font-size: 12.5px; line-height: 1.5; padding: 10px 12px; border-radius: 12px; background: var(--bg-2); border: 1px solid var(--border); }
+.gf-lab { font-size: 12.5px; font-weight: 800; color: var(--text-dim); margin-bottom: 4px; }
 .gf-problems { font-size: 12.5px; line-height: 1.5; padding: 10px 12px; border-radius: 12px; background: rgba(229,72,77,.08); border: 1px solid rgba(229,72,77,.35); }
 .gf-problems ul { margin: 4px 0 0 18px; padding: 0; }
 .gf-send { width: 100%; justify-content: center; padding: 14px 16px; font-size: 15px; }
-.gf-ok { display: flex; gap: 10px; align-items: flex-start; padding: 14px; border-radius: 14px; background: rgba(48,164,108,.12); border: 1px solid rgba(48,164,108,.4); font-weight: 700; font-size: 14px; line-height: 1.45; }
+.gf-ok { display: flex; gap: 10px; align-items: flex-start; padding: 14px; border-radius: 20px; background: rgba(48,164,108,.12); border: 1px solid rgba(48,164,108,.4); font-weight: 700; font-size: 14px; line-height: 1.45; }
 .gf-sum { display: grid; gap: 10px; }
 .gf-sum-row { display: grid; grid-template-columns: 62px 1fr; gap: 12px; align-items: center; }
-.gf-sum-ph { width: 62px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); }
+.gf-sum-ph { width: 62px; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); }
 .gf-req { display: grid; gap: 14px; scroll-margin-top: 80px; }
 .gf-req.hl { box-shadow: 0 0 0 2px var(--yellow, #F5D400); }
-.gf-status { color: #fff; font-weight: 800; font-size: 12px; padding: 6px 11px; border-radius: 999px; white-space: nowrap; }
+.gf-status { color: #fff; font-weight: 800; font-size: 12.5px; padding: 6px 11px; border-radius: 999px; white-space: nowrap; }
 .gf-track { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-.gf-track div { display: grid; gap: 5px; font-size: 10.5px; font-weight: 700; color: var(--text-faint, var(--text-dim)); }
+.gf-track div { display: grid; gap: 5px; font-size: 11px; font-weight: 700; color: var(--text-faint, var(--text-dim)); }
 .gf-track span { height: 4px; border-radius: 4px; background: var(--border); }
 .gf-track div.on { color: var(--text); }
 .gf-track div.on span { background: var(--text); }

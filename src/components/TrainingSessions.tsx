@@ -42,7 +42,7 @@ function useFmt() {
 
 const STATUS: Record<string, { l: string; c: string; bg: string }> = {
   da_confermare: { l: 'In attesa di conferma', c: '#8A6D00', bg: 'rgba(154,134,0,.12)' },
-  modifica_richiesta: { l: 'Nuovo orario proposto', c: '#B0006D', bg: 'rgba(221,0,136,.10)' },
+  modifica_richiesta: { l: 'Nuovo orario proposto', c: 'var(--gold)', bg: 'var(--yellow-soft)' },
   confermata: { l: 'Confermato', c: ACCENT, bg: 'rgba(63,127,0,.12)' },
   rifiutata: { l: 'Non può', c: '#C23A00', bg: 'rgba(229,63,0,.10)' },
 }
@@ -513,19 +513,19 @@ export function AthleteTrainings() {
 }
 
 const TR_CSS = `
-.tr-cal { background: var(--card, var(--bg-2)); border: 1px solid var(--border); border-radius: 18px; padding: 16px; }
+.tr-cal { background: var(--card, var(--bg-2)); border: 1px solid var(--border); border-radius: 20px; padding: 16px; }
 .tr-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
-.tr-kick { font-size: 11px; letter-spacing: 1.4px; text-transform: uppercase; font-weight: 800; color: ${ACCENT}; }
+.tr-kick { font-size: 12.5px; font-weight: 800; color: ${ACCENT}; }
 .tr-sub { font-size: 12.5px; color: var(--text-dim); margin-top: 2px; }
 .tr-nav { display: flex; align-items: center; gap: 6px; font-weight: 800; font-size: 14px; text-transform: capitalize; }
-.tr-nav button { width: 32px; height: 32px; border-radius: 10px; border: 1px solid var(--border); background: transparent; display: grid; place-items: center; cursor: pointer; color: var(--text); }
+.tr-nav button { width: 32px; height: 32px; border-radius: 12px; border: 1px solid var(--border); background: transparent; display: grid; place-items: center; cursor: pointer; color: var(--text); }
 .tr-alert { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
-.tr-alert button { display: flex; align-items: center; gap: 8px; text-align: left; padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(221,0,136,.3); background: rgba(221,0,136,.07); color: var(--text); font-size: 12.5px; cursor: pointer; }
+.tr-alert button { display: flex; align-items: center; gap: 8px; text-align: left; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--yellow-soft); background: var(--yellow-soft); color: var(--text); font-size: 12.5px; cursor: pointer; }
 .tr-alert button > span:nth-child(2) { flex: 1; min-width: 0; }
-.tr-alert-go { font-weight: 800; color: #B0006D; font-size: 12.5px; }
+.tr-alert-go { font-weight: 800; color: var(--ink); font-size: 12.5px; }
 .tr-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
 .tr-wd { font-size: 11px; font-weight: 700; color: var(--text-faint); text-align: center; padding-bottom: 2px; text-transform: uppercase; }
-.tr-day { aspect-ratio: 1 / 1; min-height: 40px; border-radius: 11px; border: 1px solid transparent; background: var(--surface-2, rgba(0,0,0,.03)); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; cursor: pointer; color: var(--text); padding: 0; }
+.tr-day { aspect-ratio: 1 / 1; min-height: 40px; border-radius: 12px; border: 1px solid transparent; background: var(--surface-2, rgba(0,0,0,.03)); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; cursor: pointer; color: var(--text); padding: 0; }
 .tr-day.past { opacity: .45; }
 .tr-day.today .tr-n { color: ${ACCENT}; font-weight: 800; }
 .tr-day.sel { border-color: ${ACCENT}; background: rgba(63,127,0,.10); }
@@ -554,7 +554,7 @@ const TR_CSS = `
 .tr-row2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 10px; }
 @media (max-width: 480px) { .tr-row2 { grid-template-columns: 1fr; gap: 0; } }
 .tr-modes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.tr-modeb { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; padding: 12px; border-radius: 14px; border: 1.5px solid var(--border); background: transparent; cursor: pointer; text-align: left; color: var(--text); }
+.tr-modeb { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; padding: 12px; border-radius: 20px; border: 1.5px solid var(--border); background: transparent; cursor: pointer; text-align: left; color: var(--text); }
 .tr-modeb b { font-size: 14px; }
 .tr-modeb span { font-size: 12.5px; color: var(--text-dim); }
 .tr-modeb.on { border-color: ${ACCENT}; background: rgba(63,127,0,.10); }
@@ -566,9 +566,9 @@ const TR_CSS = `
 .tr-sh-who { font-size: 14px; color: var(--text-dim); }
 .tr-sh-line { display: flex; align-items: center; gap: 6px; font-size: 14px; overflow-wrap: anywhere; }
 .tr-link { color: ${ACCENT}; font-weight: 700; }
-.tr-sh-note { font-size: 12.5px; padding: 8px 11px; background: var(--surface-2, rgba(0,0,0,.04)); border-radius: 10px; overflow-wrap: anywhere; }
-.tr-counter { margin-top: 6px; padding: 12px 14px; border-radius: 14px; border: 1px solid rgba(221,0,136,.3); background: rgba(221,0,136,.07); }
-.tr-counter-k { font-size: 11px; font-weight: 800; letter-spacing: .8px; text-transform: uppercase; color: #B0006D; }
+.tr-sh-note { font-size: 12.5px; padding: 8px 11px; background: var(--surface-2, rgba(0,0,0,.04)); border-radius: 12px; overflow-wrap: anywhere; }
+.tr-counter { margin-top: 6px; padding: 12px 14px; border-radius: 20px; border: 1px solid var(--yellow-soft); background: var(--yellow-soft); }
+.tr-counter-k { font-size: 12.5px; font-weight: 800; color: var(--ink); }
 .tr-counter-v { font-size: 18px; font-weight: 800; text-transform: capitalize; margin-top: 2px; }
 .tr-counter-n { font-size: 12.5px; margin-top: 4px; overflow-wrap: anywhere; }
 .tr-acts { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }

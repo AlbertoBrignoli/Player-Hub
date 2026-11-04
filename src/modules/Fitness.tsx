@@ -14,7 +14,7 @@ import { CoachTrainingCalendar, AthleteTrainings } from '../components/TrainingS
 import type { FitnessProgram, FitnessExercise, FitnessFeedback, FitnessLibraryItem } from '../lib/types'
 
 const ACCENT = '#3F7F00' // verde fitness (scurito per il tema chiaro)
-const label: React.CSSProperties = { fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: 'var(--text-dim)', fontWeight: 700, margin: '18px 0 10px' }
+const label: React.CSSProperties = { fontSize: 11, color: 'var(--text-dim)', fontWeight: 700, margin: '18px 0 10px' }
 const grid = (min = 150): React.CSSProperties => ({ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(min(${min}px, 100%), 1fr))`, gap: 12 })
 const todayKey = () => new Date().toISOString().slice(0, 10)
 type T = (s: string) => string
@@ -541,7 +541,7 @@ function ProgramEditor({ program, athleteId, athleteName, trainerId, onClose, on
           )}
 
           {review && (
-            <Modal wide title={t('Anteprima scheda — pronta da inviare')} onClose={() => setReview(false)}
+            <Modal wide title={t('Anteprima scheda - pronta da inviare')} onClose={() => setReview(false)}
               footer={
                 <>
                   <button className="btn" onClick={() => setReview(false)} disabled={!!busy}>← {t('Modifica')}</button>
@@ -749,7 +749,7 @@ function ProgramDetail({ program, athleteId, onClose, onSaved }: {
           ? <button className="btn" onClick={async () => { const { data } = await supabase.storage.from('crm-media').createSignedUrl(program.pdf_path!, 300); if (data?.signedUrl) window.open(data.signedUrl, '_blank') }}><Icon name="download" size={14} /> {t('Apri scheda PDF')}</button>
           : <button className="btn" onClick={async () => {
               toast(t('Preparo il PDF…'))
-              try { await downloadPdf(program, exercises, t); toast(t('PDF pronto — salvalo dove vuoi')) }
+              try { await downloadPdf(program, exercises, t); toast(t('PDF pronto - salvalo dove vuoi')) }
               catch { toast(t('Non riesco a generare il PDF'), 'err') }
             }}><Icon name="download" size={14} /> {t('Scarica PDF')}</button>}
       </>}>
@@ -837,8 +837,8 @@ function ProgramDetail({ program, athleteId, onClose, onSaved }: {
       <div style={label}>{t('Come è andata?')}</div>
       <div className="card" style={{ padding: 16 }}>
         <FbQ title={t('Allenamento completato?')}>
-          {([['completato', '✅', 'Completato'], ['parziale', '⭕', 'Parziale'], ['non_completato', '❌', 'Non completato']] as const).map(([v, em, l]) => (
-            <TapBtn key={v} on={fb.status === v} onClick={() => setFb({ ...fb, status: v })}>{em} {t(l)}</TapBtn>
+          {([['completato', 'check', 'Completato'], ['parziale', 'rotate-ccw', 'Parziale'], ['non_completato', 'x', 'Non completato']] as const).map(([v, ic, l]) => (
+            <TapBtn key={v} on={fb.status === v} onClick={() => setFb({ ...fb, status: v })}><Icon name={ic} size={14} /> {t(l)}</TapBtn>
           ))}
         </FbQ>
         <FbQ title={t('Come ti sei sentito?')}>
@@ -919,7 +919,7 @@ function TrainerSummary({ athletes, athleteId }: { athletes: { api_player_id: nu
       <div className="card" style={{ padding: 6 }}>
         <div className="list">
           {rows.map(f => {
-            const name = athletes.find(a => a.api_player_id === f.fitness_programs?.player_id)?.name || '—'
+            const name = athletes.find(a => a.api_player_id === f.fitness_programs?.player_id)?.name || '-'
             const disc = f.discomfort && f.discomfort !== 'nessuno' ? f.discomfort : ''
             const issue = f.status !== 'completato' || !!disc
             return (
@@ -974,24 +974,24 @@ export function PrescriptionModal({ draft, item, isNew, onCancel, onConfirm }: {
         <Field label={t('Carico')}><Input value={d.load || ''} onChange={e => set('load', e.target.value)} placeholder="20" /></Field>
         <Field label={t('Unità carico')}>
           <Select value={d.load_unit || ''} onChange={e => set('load_unit', e.target.value)}>
-            <option value="">—</option>{LOAD_UNITS.map(([k, l]) => <option key={k} value={k}>{t(l)}</option>)}
+            <option value="">-</option>{LOAD_UNITS.map(([k, l]) => <option key={k} value={k}>{t(l)}</option>)}
           </Select>
         </Field>
         <Field label="RPE (1-10)">
           <Select value={d.rpe ?? ''} onChange={e => set('rpe', e.target.value ? Number(e.target.value) : null)}>
-            <option value="">—</option>{RPE_VALUES.map(v => <option key={v} value={v}>{String(v).replace('.', ',')}</option>)}
+            <option value="">-</option>{RPE_VALUES.map(v => <option key={v} value={v}>{String(v).replace('.', ',')}</option>)}
           </Select>
         </Field>
         <Field label="RIR (0-5)">
           <Select value={d.rir ?? ''} onChange={e => set('rir', e.target.value ? Number(e.target.value) : null)}>
-            <option value="">—</option>{[0, 1, 2, 3, 4, 5].map(v => <option key={v} value={v}>{v}</option>)}
+            <option value="">-</option>{[0, 1, 2, 3, 4, 5].map(v => <option key={v} value={v}>{v}</option>)}
           </Select>
         </Field>
         <Field label={t('Recupero')}><Input value={d.recovery || ''} onChange={e => set('recovery', e.target.value)} placeholder="90s" /></Field>
         <Field label={t('Tempo')}><Input value={d.tempo || ''} onChange={e => set('tempo', e.target.value)} placeholder="3-1-1-0" /></Field>
         <Field label={t('Lato')}>
           <Select value={d.side || ''} onChange={e => set('side', e.target.value)}>
-            <option value="">—</option>{SIDES.map(v => <option key={v} value={v}>{t(v)}</option>)}
+            <option value="">-</option>{SIDES.map(v => <option key={v} value={v}>{t(v)}</option>)}
             {legacySide && <option>{legacySide}</option>}
           </Select>
         </Field>

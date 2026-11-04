@@ -26,7 +26,7 @@ const OWNER: Record<ItemKind, string | null> = {
   wealth: 'wealth', tax: 'commercialista', insurance: 'assicuratore', contract: 'agente', event: null,
 }
 const ACCENT = '#1F4E79'
-const kicker: React.CSSProperties = { fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase', fontWeight: 800 }
+const kicker: React.CSSProperties = { fontSize: 11, fontWeight: 800 }
 
 // Persone taggate per un elenco di voci dello stesso tipo
 export function useItemPeople(kind: ItemKind, ids: string[]) {
@@ -47,11 +47,11 @@ export function PersonChip({ p, onRemove }: { p: Person; onRemove?: () => void }
   const { t: tr } = useLang()
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 8px 3px 3px', borderRadius: 999,
-      border: '1px solid var(--border)', background: 'var(--bg-2)', fontSize: 12 }}>
-      <span style={{ width: 20, height: 20, borderRadius: 10, background: ACCENT, color: '#fff', display: 'grid', placeItems: 'center', fontSize: 9, fontWeight: 800 }}>
+      border: '1px solid var(--border)', background: 'var(--bg-2)', fontSize: 12.5 }}>
+      <span style={{ width: 20, height: 20, borderRadius: 12, background: ACCENT, color: '#fff', display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 800 }}>
         {initials(p.name || ROLE_L[p.role] || '?')}
       </span>
-      <b style={{ fontWeight: 700 }}>{p.name || tr(ROLE_L[p.role] || p.role)}</b>
+      <b style={{ fontWeight: 600 }}>{p.name || tr(ROLE_L[p.role] || p.role)}</b>
       {p.name && <span className="faint">{tr(ROLE_L[p.role] || p.role)}</span>}
       {onRemove && <button onClick={onRemove} aria-label={tr('Rimuovi')}
         style={{ border: 0, background: 'none', cursor: 'pointer', color: 'inherit', padding: 0, display: 'flex' }}><Icon name="x" size={12} /></button>}
@@ -183,12 +183,12 @@ export function ItemThread({ kind, itemId, playerId, people, onPeople, hideThrea
                   return (
                     <div key={c.id} style={{ padding: '10px 12px', borderRadius: 12, background: mine ? 'var(--bg-2)' : 'transparent', border: '1px solid var(--border)' }}>
                       <div className="flex gap" style={{ gap: 8, alignItems: 'baseline', flexWrap: 'wrap' }}>
-                        <b style={{ fontSize: 13 }}>{mine ? tr('Tu') : (c.author_name || tr(ROLE_L[c.author_role || ''] || ''))}</b>
-                        {!mine && c.author_name && c.author_role && <span className="faint" style={{ fontSize: 11.5 }}>{tr(ROLE_L[c.author_role] || c.author_role)}</span>}
+                        <b style={{ fontSize: 12.5 }}>{mine ? tr('Tu') : (c.author_name || tr(ROLE_L[c.author_role || ''] || ''))}</b>
+                        {!mine && c.author_name && c.author_role && <span className="faint" style={{ fontSize: 12.5 }}>{tr(ROLE_L[c.author_role] || c.author_role)}</span>}
                         <span style={{ flex: 1 }} />
                         <span className="faint" style={{ fontSize: 11 }}>{fmtDateTime(c.created_at)}</span>
                       </div>
-                      {c.body && <div style={{ fontSize: 13.5, marginTop: 4, whiteSpace: 'pre-wrap' }}>{c.body}</div>}
+                      {c.body && <div style={{ fontSize: 14, marginTop: 4, whiteSpace: 'pre-wrap' }}>{c.body}</div>}
                       {!!c.attachments?.length && (
                         <div className="flex gap" style={{ marginTop: 8, flexWrap: 'wrap' }}>
                           {c.attachments.map(a => (
@@ -252,7 +252,7 @@ export function ItemPeopleModal({ kind, itemId, playerId, title, sub, children, 
 }) {
   return (
     <Modal title={title} onClose={onClose} wide>
-      {sub && <div style={{ ...kicker, fontSize: 9.5, color: ACCENT, marginBottom: 8 }}>{sub}</div>}
+      {sub && <div style={{ ...kicker, fontSize: 11, color: ACCENT, marginBottom: 8 }}>{sub}</div>}
       {children}
       <div style={{ marginTop: children ? 16 : 0 }}>
         <ItemThread kind={kind} itemId={itemId} playerId={playerId} people={people} onPeople={onPeople} hideThread={hideThread} />

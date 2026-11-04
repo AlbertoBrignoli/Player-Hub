@@ -109,10 +109,10 @@ export default function ProProfileModal({ role, proId, roleLabel, fallback, onCl
         <div className="grid" style={{ gap: 16 }}>
           <div className="flex gap" style={{ alignItems: 'center', gap: 14 }}>
             {d.photo_url
-              ? <img src={d.photo_url} alt={name || ''} style={{ width: 72, height: 72, borderRadius: 18, objectFit: 'cover', flexShrink: 0 }} />
-              : <div style={{ width: 72, height: 72, borderRadius: 18, flexShrink: 0, display: 'grid', placeItems: 'center', fontWeight: 800, fontSize: 24, background: 'var(--bg-2)', border: '1px solid var(--border)' }}>{initials(name)}</div>}
+              ? <img src={d.photo_url} alt={name || ''} style={{ width: 72, height: 72, borderRadius: 20, objectFit: 'cover', flexShrink: 0 }} />
+              : <div style={{ width: 72, height: 72, borderRadius: 20, flexShrink: 0, display: 'grid', placeItems: 'center', fontWeight: 800, fontSize: 24, background: 'var(--bg-2)', border: '1px solid var(--border)' }}>{initials(name)}</div>}
             <div style={{ minWidth: 0, flex: 1 }}>
-              <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: -.3 }}>{name || '—'}</div>
+              <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: -.3 }}>{name || '-'}</div>
               {title && <div className="faint" style={{ fontSize: 14, marginTop: 2 }}>{title}</div>}
               {d.verified && <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--green)', marginTop: 4 }}><Icon name="check" size={12} /> {t('Profilo verificato')}</div>}
             </div>

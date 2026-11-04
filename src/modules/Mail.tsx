@@ -139,18 +139,18 @@ export default function Mail() {
                     display: 'flex', gap: 12, width: '100%', textAlign: 'left', padding: '12px 14px', background: 'none',
                     border: 0, borderTop: i ? '1px solid var(--border)' : 0, cursor: 'pointer', color: 'inherit', alignItems: 'flex-start',
                   }}>
-                    <span style={{ width: 36, height: 36, borderRadius: 18, flexShrink: 0, display: 'grid', placeItems: 'center',
-                      background: 'var(--bg-2)', fontSize: 12, fontWeight: 800 }}>{initials(th.who)}</span>
+                    <span style={{ width: 36, height: 36, borderRadius: 20, flexShrink: 0, display: 'grid', placeItems: 'center',
+                      background: 'var(--bg-2)', fontSize: 12.5, fontWeight: 800 }}>{initials(th.who)}</span>
                     <span style={{ minWidth: 0, flex: 1 }}>
                       <span className="flex" style={{ display: 'flex', gap: 8, alignItems: 'baseline' }}>
                         <span style={{ fontWeight: th.unread ? 800 : 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
-                          {th.who}{th.msgs.length > 1 && <span style={{ color: 'var(--text-dim)', fontWeight: 500 }}> · {th.msgs.length}</span>}
+                          {th.who}{th.msgs.length > 1 && <span style={{ color: 'var(--text-dim)', fontWeight: 400 }}> · {th.msgs.length}</span>}
                         </span>
-                        <span style={{ fontSize: 11.5, color: 'var(--text-dim)', flexShrink: 0 }}>{fmtDateTime(th.last.created_at)}</span>
+                        <span style={{ fontSize: 12.5, color: 'var(--text-dim)', flexShrink: 0 }}>{fmtDateTime(th.last.created_at)}</span>
                       </span>
                       <span style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 2 }}>
                         {th.unread > 0 && <span style={{ width: 8, height: 8, borderRadius: 4, background: 'var(--accent)', flexShrink: 0 }} />}
-                        <span style={{ fontSize: 13.5, fontWeight: th.unread ? 700 : 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <span style={{ fontSize: 14, fontWeight: th.unread ? 700 : 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {th.first.subject || t('(senza oggetto)')}
                         </span>
                         {th.files && <Icon name="paperclip" size={12} />}
@@ -183,7 +183,7 @@ function AddressCard({ box }: { box: Box }) {
         <Icon name="mail" size={18} />
       </span>
       <div style={{ minWidth: 0, flex: '1 1 200px' }}>
-        <div style={{ fontSize: 11.5, color: 'var(--text-dim)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em' }}>{t('Il tuo indirizzo AUVI')}</div>
+        <div className="t-label">{t('Il tuo indirizzo AUVI')}</div>
         <div style={{ fontWeight: 800, wordBreak: 'break-all' }}>{box.address}</div>
         <div style={{ fontSize: 12.5, color: 'var(--text-dim)', marginTop: 2 }}>{t('Dallo a club, sponsor, staff e a chiunque lavori con te: tutto arriva qui.')}</div>
       </div>
@@ -202,7 +202,7 @@ function ThreadView({ th, onBack, onReply, onArchive }: { th: Thread; onBack: ()
         <button className="btn btn-sm" onClick={onArchive}><Icon name="archive" size={13} /> {th.archived ? t('Ripristina') : t('Archivia')}</button>
         <button className="btn btn-primary btn-sm" onClick={onReply}><Icon name="send" size={13} /> {t('Rispondi')}</button>
       </div>
-      <h2 style={{ margin: '4px 2px', fontSize: 19, lineHeight: 1.3 }}>{th.first.subject || t('(senza oggetto)')}</h2>
+      <h2 style={{ margin: '4px 2px', fontSize: 18, lineHeight: 1.3 }}>{th.first.subject || t('(senza oggetto)')}</h2>
       {th.msgs.map(m => <MailCard key={m.id} m={m} />)}
       <button className="btn btn-primary" onClick={onReply} style={{ justifySelf: 'start' }}><Icon name="send" size={14} /> {t('Rispondi')}</button>
     </div>
@@ -215,18 +215,18 @@ function MailCard({ m }: { m: Mail }) {
   return (
     <div className="card" style={{ padding: 14, ...(mine ? { background: 'var(--bg-2)' } : null) }}>
       <div className="flex" style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-        <span style={{ width: 32, height: 32, borderRadius: 16, flexShrink: 0, display: 'grid', placeItems: 'center',
+        <span style={{ width: 32, height: 32, borderRadius: 20, flexShrink: 0, display: 'grid', placeItems: 'center',
           background: mine ? 'var(--text)' : 'var(--bg-2)', color: mine ? 'var(--bg, #fff)' : 'inherit', fontSize: 11, fontWeight: 800 }}>
           {initials(m.from_name || m.from_addr)}
         </span>
         <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ display: 'flex', gap: 8, alignItems: 'baseline', flexWrap: 'wrap' }}>
             <b style={{ fontSize: 14 }}>{mine ? t('Tu') : (m.from_name || m.from_addr)}</b>
-            {!mine && m.from_name && <span style={{ fontSize: 12, color: 'var(--text-dim)', wordBreak: 'break-all' }}>{m.from_addr}</span>}
+            {!mine && m.from_name && <span style={{ fontSize: 12.5, color: 'var(--text-dim)', wordBreak: 'break-all' }}>{m.from_addr}</span>}
             <span style={{ flex: 1 }} />
-            <span style={{ fontSize: 11.5, color: 'var(--text-dim)' }}>{fmtDateTime(m.created_at)}</span>
+            <span style={{ fontSize: 12.5, color: 'var(--text-dim)' }}>{fmtDateTime(m.created_at)}</span>
           </div>
-          <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 1, wordBreak: 'break-all' }}>
+          <div style={{ fontSize: 12.5, color: 'var(--text-dim)', marginTop: 1, wordBreak: 'break-all' }}>
             {t('A')}: {m.to_addrs.join(', ')}{m.cc_addrs.length > 0 && <> · Cc: {m.cc_addrs.join(', ')}</>}
           </div>
         </div>
@@ -258,7 +258,7 @@ function HtmlBody({ html }: { html: string }) {
   }
   return <iframe ref={ref} title="mail" srcDoc={doc} sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
     onLoad={() => { fit(); setTimeout(fit, 400) }}
-    style={{ width: '100%', height: h, border: 0, borderRadius: 10, background: '#fff' }} />
+    style={{ width: '100%', height: h, border: 0, borderRadius: 12, background: '#fff' }} />
 }
 
 function FileChip({ f }: { f: MailFile }) {
@@ -270,12 +270,12 @@ function FileChip({ f }: { f: MailFile }) {
   }
   const ext = (f.name || '').split('.').pop()?.toUpperCase().slice(0, 4) || 'FILE'
   return (
-    <button onClick={open} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 10, cursor: 'pointer',
+    <button onClick={open} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 12, cursor: 'pointer',
       border: '1px solid var(--border)', background: 'var(--bg-2)', color: 'inherit', maxWidth: 260, textAlign: 'left' }}>
-      <span style={{ width: 30, height: 34, borderRadius: 6, flexShrink: 0, display: 'grid', placeItems: 'center', fontSize: 9, fontWeight: 900,
+      <span style={{ width: 30, height: 34, borderRadius: 8, flexShrink: 0, display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 900,
         background: ext === 'PDF' ? '#E5484D' : 'var(--text-dim)', color: '#fff' }}>{ext}</span>
       <span style={{ minWidth: 0 }}>
-        <span style={{ display: 'block', fontWeight: 700, fontSize: 12.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</span>
+        <span style={{ display: 'block', fontWeight: 600, fontSize: 12.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</span>
         <span style={{ display: 'block', fontSize: 11, opacity: .7 }}>{fmtSize(f.size)}</span>
       </span>
     </button>
@@ -344,7 +344,7 @@ function Composer({ box, init, onClose, onSent }: {
         : <button className="btn btn-ghost btn-sm" style={{ marginBottom: 8 }} onClick={() => setShowCc(true)}>+ Cc</button>}
       <Field label={t('Oggetto')}><Input value={subject} onChange={e => setSubject(e.target.value)} /></Field>
       <Field label={t('Messaggio')}><Textarea rows={8} value={text} onChange={e => setText(e.target.value)} autoFocus={!!init.to} /></Field>
-      {init.replyTo && <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>{t('Il messaggio originale viene citato sotto la tua risposta.')}</div>}
+      {init.replyTo && <div style={{ fontSize: 12.5, color: 'var(--text-dim)' }}>{t('Il messaggio originale viene citato sotto la tua risposta.')}</div>}
       <input ref={pick} type="file" hidden multiple onChange={e => { const l = Array.from(e.target.files || []); setFiles(fs => [...fs, ...l]); e.target.value = '' }} />
       {files.length > 0 && (
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>

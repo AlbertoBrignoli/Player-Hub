@@ -55,8 +55,8 @@ export default function ItemPage() {
       <div className="card">
         <div className="flex between" style={{ alignItems: 'flex-start', gap: 10, flexWrap: 'wrap' }}>
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase', fontWeight: 800, color: '#1F4E79' }}>{tr(area.label)}</div>
-            <div style={{ fontSize: 20, fontWeight: 900, marginTop: 2 }}>{row.title || '—'}</div>
+            <div className="t-label" style={{ color: '#1F4E79' }}>{tr(area.label)}</div>
+            <div style={{ fontSize: 22, fontWeight: 800, marginTop: 2 }}>{row.title || '-'}</div>
             {facts.length > 0 && <div className="faint" style={{ fontSize: 12.5, marginTop: 3 }}>{facts.join(' · ')}</div>}
           </div>
           {role && area.owners.includes(role) && (
@@ -65,7 +65,7 @@ export default function ItemPage() {
             </button>
           )}
         </div>
-        {(row.description || row.notes) && <div style={{ fontSize: 13.5, marginTop: 12, whiteSpace: 'pre-wrap' }}>{row.description || row.notes}</div>}
+        {(row.description || row.notes) && <div style={{ fontSize: 14, marginTop: 12, whiteSpace: 'pre-wrap' }}>{row.description || row.notes}</div>}
         {files.length > 0 && (
           <div className="flex gap" style={{ marginTop: 12, flexWrap: 'wrap' }}>
             {files.map(f => <FileBtn key={f.path} kind={k} f={f} />)}

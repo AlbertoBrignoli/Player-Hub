@@ -39,7 +39,7 @@ const OPP_STATUS: Record<string, { label: string; tone?: 'green' | 'red' | 'gold
   non_accettata: { label: 'Non accettata', tone: 'red' },
 }
 const collabStatusLabel = (s: string) => ({ attiva: 'Attiva', completata: 'Completata', annullata: 'Annullata' } as Record<string, string>)[s] || s
-const fmtN = (n: any) => (n == null || n === '' ? '—' : Number(n).toLocaleString('it-IT'))
+const fmtN = (n: any) => (n == null || n === '' ? '-' : Number(n).toLocaleString('it-IT'))
 
 // ═════════════════════════════════════════════════════════════════════════════
 // Le sezioni sono schede di Business (menu → schede, due livelli): ognuna ha la sua route.
@@ -260,7 +260,7 @@ function Overview({ score, snaps }: any) {
       <div className="card">
         <div className="t-label">{tr('Valore commerciale indicativo')}</div>
         <div style={{ fontFamily: 'var(--font-display)', fontSize: 30, fontWeight: 800, margin: '8px 0 2px' }}>
-          {fmtMoney(score.valueLo)} – {fmtMoney(score.valueHi)}
+          {fmtMoney(score.valueLo)} - {fmtMoney(score.valueHi)}
           <span className="muted" style={{ fontSize: 14, fontFamily: 'var(--font)', fontWeight: 400 }}> {tr('/anno')}</span>
         </div>
         <div className="faint" style={{ fontSize: 12.5, lineHeight: 1.55, marginTop: 8 }}>{tr(DISCLAIMER)}</div>
@@ -288,7 +288,7 @@ function Recos({ score, recos, goto }: any) {
             <div style={{ fontWeight: 600, fontSize: 14 }}>{tr(r.title)}</div>
             <div className="faint" style={{ fontSize: 12.5 }}>{tr(r.cta)}</div>
           </div>
-          <span className="faint" style={{ fontSize: 11, textTransform: 'uppercase', color: r.priority === 'alta' ? 'var(--red)' : r.priority === 'media' ? 'var(--gold)' : undefined }}>{tr(r.priority)}</span>
+          <span className="faint" style={{ fontSize: 11, color: r.priority === 'alta' ? 'var(--red)' : r.priority === 'media' ? 'var(--gold)' : undefined }}>{tr(r.priority)}</span>
           {r.section !== 'valore' && <button className="btn btn-sm" onClick={() => goto(r.section)}>{tr('Vai')}</button>}
         </div>
       ))}
@@ -329,7 +329,7 @@ function Valore({ score, snaps, relBand }: any) {
                 {m.key === 'reputation' && relLabel && <div style={{ fontSize: 12.5, marginBottom: 8 }}>{tr('Affidabilità:')} <b style={{ color: 'var(--green)' }}>{tr(relLabel)}</b></div>}
                 {c.factors.map((f: any, i: number) => (
                   <div key={i} className="flex between" style={{ fontSize: 12.5, padding: '3px 0' }}>
-                    <span className="muted">{tr(f.label)}{f.note ? <span className="faint"> — {f.note}</span> : null}</span>
+                    <span className="muted">{tr(f.label)}{f.note ? <span className="faint"> - {f.note}</span> : null}</span>
                     <b>{f.val}</b>
                   </div>
                 ))}
@@ -398,8 +398,8 @@ function MediaKitTab({ player, prof, topFits, collabs, cats, saveProf }: any) {
       <div className="faint" style={{ fontSize: 12.5, marginBottom: 14 }}>{tr('Si aggiorna da solo con i dati del profilo.')}</div>
       <div className="row2">
         <Field label={tr("Versione")}><Select value={version} onChange={e => setVersion(e.target.value as any)}>
-          <option value="completo">{tr('Completa — numeri e dettagli (uso interno / su richiesta)')}</option>
-          <option value="teaser">{tr('Teaser — per incuriosire il brand (senza numeri sensibili)')}</option>
+          <option value="completo">{tr('Completa - numeri e dettagli (uso interno / su richiesta)')}</option>
+          <option value="teaser">{tr('Teaser - per incuriosire il brand (senza numeri sensibili)')}</option>
         </Select></Field>
         <Field label={tr("Lingua")}><Select value={lang} onChange={e => setLang(e.target.value)}><option value="it">Italiano</option><option value="en">English</option></Select></Field>
       </div>
@@ -410,7 +410,7 @@ function MediaKitTab({ player, prof, topFits, collabs, cats, saveProf }: any) {
         </Select></Field>
         <div />
       </div>
-      {version === 'teaser' && <div className="faint" style={{ fontSize: 12.5, marginBottom: 10 }}>{tr('Il teaser mostra fascia follower, categorie affini e highlights — niente engagement, reach, demografia o storico campagne.')}</div>}
+      {version === 'teaser' && <div className="faint" style={{ fontSize: 12.5, marginBottom: 10 }}>{tr('Il teaser mostra fascia follower, categorie affini e highlights - niente engagement, reach, demografia o storico campagne.')}</div>}
       <div className="flex gap" style={{ flexWrap: 'wrap' }}>
         <button className="btn btn-primary" onClick={() => setDeck(true)}>
           <Icon name="download" size={15} /> {version === 'teaser' ? tr('Presentazione AUVI (teaser)') : tr('Presentazione AUVI')}
@@ -461,7 +461,7 @@ function MediaKitTab({ player, prof, topFits, collabs, cats, saveProf }: any) {
 
 // PDF con jsPDF (dipendenza già presente, stesso pattern dell'Area Fitness).
 // version 'teaser' = versione marketing per i brand: fascia follower, categorie
-// e highlights — MAI engagement, reach, demografia o storico campagne.
+// e highlights - MAI engagement, reach, demografia o storico campagne.
 async function makePdf(player: any, prof: any, topFits: any[], collabs: any[], cats: any[], lang: string, target: string | null, version: 'completo' | 'teaser' = 'completo') {
   const { jsPDF } = await import('jspdf')
   const t = (it: string, en: string) => (lang === 'en' ? en : it)
@@ -472,7 +472,7 @@ async function makePdf(player: any, prof: any, topFits: any[], collabs: any[], c
 
   doc.setFillColor(10, 10, 11); doc.rect(0, 0, W, 46, 'F')
   doc.setTextColor(255, 214, 10); doc.setFontSize(8); doc.setFont('helvetica', 'bold')
-  doc.text(`${AGENCY_NAME.toUpperCase()} — COMMERCIAL PROFILE · MEDIA KIT`, 14, 13)
+  doc.text(`${AGENCY_NAME.toUpperCase()} - COMMERCIAL PROFILE · MEDIA KIT`, 14, 13)
   doc.setTextColor(255, 255, 255); doc.setFontSize(24); doc.text(player?.name || '', 14, 26)
   doc.setFontSize(10); doc.setFont('helvetica', 'normal'); doc.setTextColor(170, 170, 178)
   doc.text(`${player?.team_name || ''} · ${player?.position || ''}${player?.age ? ` · ${player.age} ${t('anni', 'y.o.')}` : ''}`, 14, 34)
@@ -547,7 +547,7 @@ async function makePdf(player: any, prof: any, topFits: any[], collabs: any[], c
         doc.text(label, 90, y)
         y += 7
       } else {
-        doc.text(`${f.name} — ${f.pct}%`, 14, y)
+        doc.text(`${f.name} - ${f.pct}%`, 14, y)
         doc.setFillColor(235, 235, 239); doc.roundedRect(90, y - 3, 100, 3.6, 1.8, 1.8, 'F')
         if (f.key === target) doc.setFillColor(255, 214, 10); else doc.setFillColor(10, 10, 11)
         doc.roundedRect(90, y - 3, f.pct, 3.6, 1.8, 1.8, 'F')
@@ -572,7 +572,7 @@ async function makePdf(player: any, prof: any, topFits: any[], collabs: any[], c
     y += 4
     doc.setFillColor(10, 10, 11); doc.roundedRect(14, y, W - 28, 16, 2.5, 2.5, 'F')
     doc.setTextColor(255, 214, 10); doc.setFontSize(9); doc.setFont('helvetica', 'bold')
-    doc.text(t('Engagement, audience e storico campagne nel profilo commerciale completo — disponibile su richiesta.', 'Engagement, audience & campaign history in the full commercial profile — available upon request.'), 18, y + 9.5)
+    doc.text(t('Engagement, audience e storico campagne nel profilo commerciale completo - disponibile su richiesta.', 'Engagement, audience & campaign history in the full commercial profile - available upon request.'), 18, y + 9.5)
   }
   const fy = 285
   doc.setDrawColor(230, 230, 234); doc.line(14, fy - 6, W - 14, fy - 6)
@@ -624,7 +624,7 @@ function OppModal({ opp, cats, role, userName, onClose, reload }: any) {
     if (note.trim()) patch.athlete_note = note.trim()
     if (newStatus) patch.status = newStatus
     await supabase.from('cp_opportunities').update(patch).eq('id', opp.id)
-    await supabase.from('cp_opportunity_events').insert({ opportunity_id: opp.id, actor: userName || 'Atleta', kind: 'athlete_action', body: eventBody + (note.trim() ? ` — "${note.trim()}"` : '') })
+    await supabase.from('cp_opportunity_events').insert({ opportunity_id: opp.id, actor: userName || 'Atleta', kind: 'athlete_action', body: eventBody + (note.trim() ? ` - "${note.trim()}"` : '') })
     setBusy(false); onClose(); reload()
   }
   const cat = cats.find((c: any) => c.key === opp.category_key)
@@ -643,7 +643,7 @@ function OppModal({ opp, cats, role, userName, onClose, reload }: any) {
         <Badge tone={OPP_STATUS[opp.status]?.tone}>{tr(OPP_STATUS[opp.status]?.label || opp.status)}</Badge>
       </div>
       {row(tr('Descrizione'), opp.description)}
-      {(opp.fee_lo || opp.fee_hi) && row(tr('Compenso indicativo'), `${opp.fee_lo ? fmtMoney(Number(opp.fee_lo)) : ''}${opp.fee_hi ? ` – ${fmtMoney(Number(opp.fee_hi))}` : ''}${opp.fee_note ? ` (${opp.fee_note})` : ''}`)}
+      {(opp.fee_lo || opp.fee_hi) && row(tr('Compenso indicativo'), `${opp.fee_lo ? fmtMoney(Number(opp.fee_lo)) : ''}${opp.fee_hi ? ` - ${fmtMoney(Number(opp.fee_hi))}` : ''}${opp.fee_note ? ` (${opp.fee_note})` : ''}`)}
       {opp.activities?.length > 0 && row(tr('Attività richieste'), opp.activities.join(' · '))}
       {row(tr('Durata'), opp.duration)}
       {row(tr('Territorio'), opp.territory)}
@@ -654,10 +654,10 @@ function OppModal({ opp, cats, role, userName, onClose, reload }: any) {
       {opp.athlete_response && (
         <div className="card" style={{ padding: 12, marginBottom: 12 }}>
           <span className="muted" style={{ fontSize: 12.5 }}>{tr("Risposta dell'atleta:")} </span>
-          <b style={{ color: opp.athlete_response === 'interesse' ? 'var(--green)' : opp.athlete_response === 'rifiuto' ? 'var(--red)' : 'var(--blue)' }}>
+          <b style={{ color: opp.athlete_response === 'interesse' ? 'var(--green)' : opp.athlete_response === 'rifiuto' ? 'var(--red)' : 'var(--gold)' }}>
             {opp.athlete_response === 'interesse' ? tr('Interesse confermato') : opp.athlete_response === 'rifiuto' ? tr('Non interessato') : tr('Richiesta informazioni')}
           </b>
-          {opp.athlete_note ? <span className="muted" style={{ fontSize: 12.5 }}> — "{opp.athlete_note}"</span> : null}
+          {opp.athlete_note ? <span className="muted" style={{ fontSize: 12.5 }}> - "{opp.athlete_note}"</span> : null}
         </div>
       )}
       {events.length > 0 && (
@@ -729,7 +729,7 @@ function CollabModal({ collab, p, cats, role, onClose, reload }: any) {
           <div style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 800, color: 'var(--green)' }}>{fmtMoney(Number(collab.contract_value))}</div>
         </div>
       )}
-      {collab.activities?.length > 0 && <div style={{ marginBottom: 12, fontSize: 14 }}><span className="faint" style={{ fontSize: 11, textTransform: 'uppercase' }}>{tr('Attività')} · </span>{collab.activities.join(' · ')}</div>}
+      {collab.activities?.length > 0 && <div style={{ marginBottom: 12, fontSize: 14 }}><span className="faint" style={{ fontSize: 11 }}>{tr('Attività')} · </span>{collab.activities.join(' · ')}</div>}
       {collab.notes && <div className="muted" style={{ fontSize: 12.5, marginBottom: 12 }}>{collab.notes}</div>}
       {p && (
         <div style={{ marginBottom: 14 }}>
@@ -746,7 +746,7 @@ function CollabModal({ collab, p, cats, role, onClose, reload }: any) {
       )}
       {collab.brand_feedback && (
         <div className="card" style={{ padding: 12, marginBottom: 12 }}>
-          <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', marginBottom: 4 }}>{tr('Feedback del brand')}</div>
+          <div className="faint" style={{ fontSize: 11, marginBottom: 4 }}>{tr('Feedback del brand')}</div>
           <div style={{ fontSize: 12.5 }}>"{collab.brand_feedback}"</div>
         </div>
       )}
@@ -768,7 +768,7 @@ function PerformanceTab({ collabs, perf }: any) {
     <div className="grid g3">
       <Stat label={tr("Reach totale")} value={fmtN(sum('reach'))} />
       <Stat label={tr("Impression")} value={fmtN(sum('impressions'))} />
-      <Stat label={tr("ER medio")} value={ers.length ? `${(ers.reduce((a: number, b: number) => a + b, 0) / ers.length).toFixed(1)}%` : '—'} />
+      <Stat label={tr("ER medio")} value={ers.length ? `${(ers.reduce((a: number, b: number) => a + b, 0) / ers.length).toFixed(1)}%` : '-'} />
     </div>
     <div className="card">
       <div style={{ fontWeight: 600, marginBottom: 10 }}>{tr('Per campagna')}</div>
@@ -800,8 +800,8 @@ function DatiPreferenze({ prof, saveProf, openWizard }: any) {
   const [saved, setSaved] = useState(false)
   const plat = (p: string, label: string) => (
     <div className="row2" key={p} style={{ marginBottom: 4 }}>
-      <Field label={tr('{platform} — follower').replace('{platform}', label)}><Input type="number" value={aud?.[p]?.followers || ''} onChange={e => setAud({ ...aud, [p]: { ...(aud[p] || {}), followers: e.target.value ? Number(e.target.value) : null } })} /></Field>
-      <Field label={tr('{platform} — engagement %').replace('{platform}', label)}><Input type="number" step="0.1" value={aud?.[p]?.er || ''} onChange={e => setAud({ ...aud, [p]: { ...(aud[p] || {}), er: e.target.value ? Number(e.target.value) : null } })} /></Field>
+      <Field label={tr('{platform} - follower').replace('{platform}', label)}><Input type="number" value={aud?.[p]?.followers || ''} onChange={e => setAud({ ...aud, [p]: { ...(aud[p] || {}), followers: e.target.value ? Number(e.target.value) : null } })} /></Field>
+      <Field label={tr('{platform} - engagement %').replace('{platform}', label)}><Input type="number" step="0.1" value={aud?.[p]?.er || ''} onChange={e => setAud({ ...aud, [p]: { ...(aud[p] || {}), er: e.target.value ? Number(e.target.value) : null } })} /></Field>
     </div>
   )
   const toggle = (obj: any, setObj: any, key: string, label: string) => (
@@ -811,18 +811,18 @@ function DatiPreferenze({ prof, saveProf, openWizard }: any) {
   )
   return (<>
     <div className="card">
-      <div style={{ fontWeight: 600, marginBottom: 4 }}>{tr('Audience — altri canali')}</div>
+      <div style={{ fontWeight: 600, marginBottom: 4 }}>{tr('Audience - altri canali')}</div>
       <div className="faint" style={{ fontSize: 12.5, marginBottom: 12 }}>{tr('Instagram lo aggiorna AUVI: qui aggiungi gli altri canali.')}</div>
       {plat('tiktok', 'TikTok')}{plat('youtube', 'YouTube')}
       <div className="row2">
         <Field label={tr("Paesi principali audience")}><Input placeholder={tr("Es. Italia, Grecia, Spagna")} value={(aud.geo || []).join(', ')} onChange={e => setAud({ ...aud, geo: e.target.value.split(',').map(x => x.trim()).filter(Boolean) })} /></Field>
         <Field label={tr("Fascia età prevalente")}><Select value={aud.age_band || ''} onChange={e => setAud({ ...aud, age_band: e.target.value })}>
-          <option value="">—</option><option>13-17</option><option>18-24</option><option>25-34</option><option>35-44</option><option>45+</option>
+          <option value="">-</option><option>13-17</option><option>18-24</option><option>25-34</option><option>35-44</option><option>45+</option>
         </Select></Field>
       </div>
       <div className="row2">
         <Field label={tr("Genere prevalente")}><Select value={aud.gender_split || ''} onChange={e => setAud({ ...aud, gender_split: e.target.value })}>
-          <option value="">—</option><option>{tr('Prevalenza uomini')}</option><option>{tr('Prevalenza donne')}</option><option>{tr('Bilanciato')}</option>
+          <option value="">-</option><option>{tr('Prevalenza uomini')}</option><option>{tr('Prevalenza donne')}</option><option>{tr('Bilanciato')}</option>
         </Select></Field>
         <Field label={tr("Follower reali stimati %")}><Input type="number" placeholder={tr("Es. 92")} value={aud.authenticity || ''} onChange={e => setAud({ ...aud, authenticity: e.target.value ? Number(e.target.value) : null })} /></Field>
       </div>
@@ -882,7 +882,7 @@ function Onboarding({ profile, save, onDone, onLater }: any) {
   return (
     <div className="grid" style={{ gap: 16, maxWidth: 760 }}>
       <div className="card">
-        <div className="t-label" style={{ marginBottom: 6 }}>{tr('AUVI Commercial Profile — Onboarding')}</div>
+        <div className="t-label" style={{ marginBottom: 6 }}>{tr('AUVI Commercial Profile - Onboarding')}</div>
         <div style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 800 }}>{tr('Costruiamo il tuo profilo commerciale')}</div>
         <div className="muted" style={{ fontSize: 12.5, marginTop: 4 }}>{tr('5 passaggi, pochi minuti. Puoi salvare e completare quando vuoi.')}</div>
         <div className="flex gap" style={{ marginTop: 16 }}>
@@ -1013,7 +1013,7 @@ function AdminOpps({ athleteId, cats, opps, userName, reload }: any) {
             <div style={{ fontWeight: 600 }}>{o.brand_name}</div>
             <div className="muted" style={{ fontSize: 12.5 }}>
               {cats.find((c: any) => c.key === o.category_key)?.name || ''}
-              {(o.fee_lo || o.fee_hi) ? ` · ${o.fee_lo ? fmtMoney(Number(o.fee_lo)) : ''}${o.fee_hi ? '–' + fmtMoney(Number(o.fee_hi)) : ''}` : ''}
+              {(o.fee_lo || o.fee_hi) ? ` · ${o.fee_lo ? fmtMoney(Number(o.fee_lo)) : ''}${o.fee_hi ? '-' + fmtMoney(Number(o.fee_hi)) : ''}` : ''}
               {o.athlete_response ? ` · ${tr('risposta: {r}').replace('{r}', tr(o.athlete_response))}` : ''}
             </div>
           </div>
@@ -1060,7 +1060,7 @@ function OppForm({ athleteId, cats, value, userName, onClose, onSaved }: any) {
       footer={<><button className="btn btn-ghost" onClick={onClose}>{tr('Annulla')}</button><button className="btn btn-primary" disabled={busy || !f.brand_name} onClick={save}>{busy ? tr('Salvo…') : tr('Salva')}</button></>}>
       <div className="row2">
         <Field label={tr("Brand *")}><Input value={f.brand_name || ''} onChange={e => set('brand_name', e.target.value)} /></Field>
-        <Field label={tr("Categoria")}><Select value={f.category_key || ''} onChange={e => set('category_key', e.target.value)}><option value="">—</option>{cats.map((c: any) => <option key={c.key} value={c.key}>{c.name}</option>)}</Select></Field>
+        <Field label={tr("Categoria")}><Select value={f.category_key || ''} onChange={e => set('category_key', e.target.value)}><option value="">-</option>{cats.map((c: any) => <option key={c.key} value={c.key}>{c.name}</option>)}</Select></Field>
       </div>
       <Field label={tr("Descrizione")}><Textarea rows={2} value={f.description || ''} onChange={e => set('description', e.target.value)} /></Field>
       <div className="row2">
@@ -1098,7 +1098,7 @@ function PrivateNotesModal({ opp, onClose }: any) {
     setBusy(false); onClose()
   }
   return (
-    <Modal title={tr('Riservato — {brand}').replace('{brand}', opp.brand_name)} onClose={onClose}
+    <Modal title={tr('Riservato - {brand}').replace('{brand}', opp.brand_name)} onClose={onClose}
       footer={<><button className="btn btn-ghost" onClick={onClose}>{tr('Chiudi')}</button><button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? tr('Salvo…') : tr('Salva')}</button></>}>
       <div className="muted" style={{ fontSize: 12.5, marginBottom: 12, color: 'var(--red)' }}>{tr("Questi dati sono su una tabella riservata (RLS admin-only): l'atleta non può leggerli in nessun caso.")}</div>
       <Field label={tr("Margine AUVI (€)")}><Input type="number" value={f.margin ?? ''} onChange={e => setF({ ...f, margin: e.target.value })} /></Field>
@@ -1157,7 +1157,7 @@ function CollabForm({ athleteId, cats, value, onClose, onSaved }: any) {
       footer={<><button className="btn btn-ghost" onClick={onClose}>{tr('Annulla')}</button><button className="btn btn-primary" disabled={busy || !f.brand_name} onClick={save}>{busy ? tr('Salvo…') : tr('Salva')}</button></>}>
       <div className="row2">
         <Field label={tr("Brand *")}><Input value={f.brand_name || ''} onChange={e => set('brand_name', e.target.value)} /></Field>
-        <Field label={tr("Categoria")}><Select value={f.category_key || ''} onChange={e => set('category_key', e.target.value)}><option value="">—</option>{cats.map((c: any) => <option key={c.key} value={c.key}>{c.name}</option>)}</Select></Field>
+        <Field label={tr("Categoria")}><Select value={f.category_key || ''} onChange={e => set('category_key', e.target.value)}><option value="">-</option>{cats.map((c: any) => <option key={c.key} value={c.key}>{c.name}</option>)}</Select></Field>
       </div>
       <div className="row2">
         <Field label={tr("Valore contratto (€)")}><Input type="number" value={f.contract_value ?? ''} onChange={e => set('contract_value', e.target.value)} /></Field>
@@ -1192,13 +1192,13 @@ function PerfForm({ collab, existing, onClose, onSaved }: any) {
     setBusy(false); onSaved()
   }
   return (
-    <Modal title={tr('Performance — {brand}').replace('{brand}', collab.brand_name)} onClose={onClose} wide
+    <Modal title={tr('Performance - {brand}').replace('{brand}', collab.brand_name)} onClose={onClose} wide
       footer={<><button className="btn btn-ghost" onClick={onClose}>{tr('Annulla')}</button><button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? tr('Salvo…') : tr('Salva')}</button></>}>
       <div className="row2">{num('reach', 'Reach')}{num('impressions', 'Impression')}</div>
       <div className="row2">{num('engagement', 'Engagement %')}{num('views', 'Views')}</div>
       <div className="row2">{num('clicks', 'Click')}{num('conversions', 'Conversioni')}</div>
       <div className="row2">{num('posts_count', 'N. contenuti')}{num('quality', 'Qualità (1-10)')}</div>
-      <Field label={tr("Consegne puntuali")}><Select value={f.on_time == null ? '' : String(f.on_time)} onChange={e => setF({ ...f, on_time: e.target.value })}><option value="">—</option><option value="true">{tr("Sì")}</option><option value="false">{tr('No')}</option></Select></Field>
+      <Field label={tr("Consegne puntuali")}><Select value={f.on_time == null ? '' : String(f.on_time)} onChange={e => setF({ ...f, on_time: e.target.value })}><option value="">-</option><option value="true">{tr("Sì")}</option><option value="false">{tr('No')}</option></Select></Field>
       <Field label={tr("Feedback del brand")}><Input value={f.brand_feedback || ''} onChange={e => setF({ ...f, brand_feedback: e.target.value })} /></Field>
     </Modal>
   )
@@ -1236,7 +1236,7 @@ function AdminEval({ athleteId, reload }: any) {
       </div>
       <div className="row2">
         <Field label={tr("Puntualità (0-100)")}><Input type="number" value={f.punctuality ?? ''} onChange={e => setF({ ...f, punctuality: e.target.value })} /></Field>
-        <Field label={tr("Rating rischio")}><Select value={f.risk_rating || ''} onChange={e => setF({ ...f, risk_rating: e.target.value })}><option value="">—</option><option value="basso">{tr('Basso')}</option><option value="medio">{tr('Medio')}</option><option value="alto">{tr('Alto')}</option></Select></Field>
+        <Field label={tr("Rating rischio")}><Select value={f.risk_rating || ''} onChange={e => setF({ ...f, risk_rating: e.target.value })}><option value="">-</option><option value="basso">{tr('Basso')}</option><option value="medio">{tr('Medio')}</option><option value="alto">{tr('Alto')}</option></Select></Field>
       </div>
       <Field label={tr("Note interne")}><Textarea rows={3} value={f.internal_notes || ''} onChange={e => setF({ ...f, internal_notes: e.target.value })} /></Field>
       <button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? tr('Salvo…') : saved  ? tr('Salvato') : tr('Salva valutazione')}</button>
@@ -1371,11 +1371,11 @@ function AdminInstagram({ athleteId, reload }: any) {
           {result.ok ? (
             <div className="grid g3">
               <Stat label={tr("Follower")} value={Number(result.followers).toLocaleString(lang === 'en' ? 'en-GB' : 'it-IT')} sub={result.username ? `@${result.username}` : undefined} />
-              <Stat label={tr("Engagement")} value={result.er != null ? `${result.er}%` : '—'} />
-              <Stat label={tr("Reach media/post")} value={result.reach != null ? Number(result.reach).toLocaleString(lang === 'en' ? 'en-GB' : 'it-IT') : '—'} />
-              <Stat label={tr("Paesi audience")} value={(result.geo || []).join(', ') || '—'} />
-              <Stat label={tr("Fascia età")} value={result.age_band || '—'} />
-              <Stat label={tr("Genere")} value={result.gender_split || '—'} />
+              <Stat label={tr("Engagement")} value={result.er != null ? `${result.er}%` : '-'} />
+              <Stat label={tr("Reach media/post")} value={result.reach != null ? Number(result.reach).toLocaleString(lang === 'en' ? 'en-GB' : 'it-IT') : '-'} />
+              <Stat label={tr("Paesi audience")} value={(result.geo || []).join(', ') || '-'} />
+              <Stat label={tr("Fascia età")} value={result.age_band || '-'} />
+              <Stat label={tr("Genere")} value={result.gender_split || '-'} />
             </div>
           ) : (
             <div style={{ fontSize: 12.5, color: 'var(--red)' }}>{tr('Sync fallito:')} {result.error}</div>
@@ -1441,10 +1441,10 @@ function TeaserAdminCard({ player, prof, topFits }: any) {
     <div className="card">
       <div className="flex between" style={{ marginBottom: 4, flexWrap: 'wrap', gap: 8 }}>
         <div style={{ fontWeight: 600 }}>{tr("Teaser per i brand")}</div>
-        <Badge tone={f.published ? 'green' : 'gold'}>{f.published ? tr('Pubblicato — visibile ai brand') : tr('Bozza — non visibile')}</Badge>
+        <Badge tone={f.published ? 'green' : 'gold'}>{f.published ? tr('Pubblicato - visibile ai brand') : tr('Bozza - non visibile')}</Badge>
       </div>
       <div className="muted" style={{ fontSize: 12.5, marginBottom: 14 }}>
-        {tr("È l'unica vista commerciale che il brand vede in app: fascia follower, categorie affini e highlights. Engagement, reach, demografia e storico restano riservati — li condividi tu col PDF completo quando il brand si muove.")}
+        {tr("È l'unica vista commerciale che il brand vede in app: fascia follower, categorie affini e highlights. Engagement, reach, demografia e storico restano riservati - li condividi tu col PDF completo quando il brand si muove.")}
       </div>
       <button className="btn btn-sm" style={{ marginBottom: 12 }} onClick={autofill}>{tr("Compila dai dati del profilo")}</button>
       <div className="row2">
@@ -1497,7 +1497,7 @@ function AdminBrandSearches() {
           {(r.values_wanted || []).map((v: string) => <Badge key={v}>{tr(v)}</Badge>)}
           {(r.activities || []).map((a: string) => <Badge key={a} tone="blue">{tr(AVAIL_OPTS.find(x => x.key === a)?.label || a)}</Badge>)}
           {(r.markets || []).map((m: string) => <Badge key={m}>{tr(m)}</Badge>)}
-          {(r.age_min || r.age_max) && <Badge tone="gold">{tr('{range} anni').replace('{range}', `${r.age_min || '…'}–${r.age_max || '…'}`)}</Badge>}
+          {(r.age_min || r.age_max) && <Badge tone="gold">{tr('{range} anni').replace('{range}', `${r.age_min || '…'}-${r.age_max || '…'}`)}</Badge>}
         </div>
         {r.notes && <div className="muted" style={{ fontSize: 12.5, lineHeight: 1.6 }}>{r.notes}</div>}
       </div>

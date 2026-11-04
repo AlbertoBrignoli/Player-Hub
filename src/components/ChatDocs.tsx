@@ -55,8 +55,8 @@ export default function ChatDocs({ channel, playerId, accent }: { channel?: stri
       <div className="flex between" style={{ alignItems: 'center', marginBottom: 10, gap: 10 }}>
         <div className="flex gap" style={{ alignItems: 'center', gap: 9 }}>
           <span style={{ width: 3, height: 15, background: accent || 'var(--text)', borderRadius: 2 }} />
-          <span style={{ fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase', fontWeight: 800 }}>{t('Dalla chat')}</span>
-          <span className="faint" style={{ fontSize: 12 }}>{rows.length}</span>
+          <span className="t-label" style={{ color: 'inherit' }}>{t('Dalla chat')}</span>
+          <span className="faint" style={{ fontSize: 12.5 }}>{rows.length}</span>
         </div>
         {channel && <button className="btn btn-sm btn-ghost" onClick={() => toChat(channel)}><Icon name="message" size={13} /> {t('Apri la chat')}</button>}
       </div>
@@ -65,7 +65,7 @@ export default function ChatDocs({ channel, playerId, accent }: { channel?: stri
           const ext = (r.file_name || '').split('.').pop()?.toUpperCase().slice(0, 4) || 'FILE'
           return (
             <div className="row" key={r.id}>
-              <span style={{ width: 34, height: 38, borderRadius: 7, flexShrink: 0, display: 'grid', placeItems: 'center', fontSize: 9.5, fontWeight: 900,
+              <span style={{ width: 34, height: 38, borderRadius: 8, flexShrink: 0, display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 900,
                 background: ext === 'PDF' ? '#E5484D' : 'var(--text-dim)', color: '#fff' }}>
                 {isImage(r.file_mime) ? <Icon name="image" size={15} /> : ext}
               </span>

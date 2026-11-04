@@ -697,10 +697,10 @@ const TB_CSS = `
 .tb-ath { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); cursor: pointer; text-align: left; color: inherit; font: inherit; min-height: var(--tap); }
 .tb-ath:hover { border-color: var(--border-2); }
 .tb-ath.on { border-color: var(--ink); background: var(--yellow-soft); }
-.tb-ath-img { width: 32px; height: 32px; border-radius: 9px; object-fit: cover; flex: 0 0 auto; }
+.tb-ath-img { width: 32px; height: 32px; border-radius: 12px; object-fit: cover; flex: 0 0 auto; }
 .tb-ath-ini { display: grid; place-items: center; background: var(--bg-2); font-weight: 800; font-size: 12.5px; }
 .tb-ath-name { flex: 1; min-width: 0; font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tb-ath-check { width: 20px; height: 20px; border-radius: 6px; border: 1.5px solid var(--border-2); display: grid; place-items: center; flex: 0 0 auto; background: var(--surface); }
+.tb-ath-check { width: 20px; height: 20px; border-radius: 8px; border: 1.5px solid var(--border-2); display: grid; place-items: center; flex: 0 0 auto; background: var(--surface); }
 .tb-ath.on .tb-ath-check { background: var(--ink); border-color: var(--ink); color: var(--yellow); }
 .tb-seg { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
 .tb-seg button { text-align: left; padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); cursor: pointer; display: flex; flex-direction: column; gap: 2px; color: inherit; font: inherit; }
@@ -735,7 +735,7 @@ const TB_CSS = `
 .tb-ex.dragging { opacity: .4; }
 .tb-ex.over { border-color: var(--ink); }
 .tb-ex-n { width: 26px; height: 26px; border-radius: 8px; background: var(--yellow); color: var(--ink); font-weight: 800; font-size: 12.5px; display: grid; place-items: center; cursor: grab; font-variant-numeric: tabular-nums; margin-top: 2px; }
-.tb-ex-img { width: 56px; height: 56px; border-radius: 10px; overflow: hidden; background: var(--bg-2); display: block; }
+.tb-ex-img { width: 56px; height: 56px; border-radius: 12px; overflow: hidden; background: var(--bg-2); display: block; }
 .tb-ex-body { min-width: 0; }
 .tb-ex-name { font-weight: 700; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tb-ex-sub { font-size: 12.5px; color: var(--text-faint); margin-top: 1px; }

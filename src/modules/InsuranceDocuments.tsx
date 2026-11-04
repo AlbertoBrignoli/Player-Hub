@@ -10,7 +10,7 @@ import ChatDocs from '../components/ChatDocs'
 import { fmtDate, initials } from '../lib/format'
 
 const BUCKET = 'crm-documents'
-const ACCENT = '#1F6FEB'
+const ACCENT = '#0A0A0A' // accento unico AUVI
 
 type Folder = { id: string; name: string; parent_id: string | null }
 type Doc = { id: string; name: string; file_path: string | null; mime: string | null; size: number | null; created_at: string; folder_id: string | null }
@@ -87,7 +87,7 @@ export default function InsuranceDocuments() {
             {athletes.map(a => (
               <button key={a.api_player_id} onClick={() => { setAtleta(a as Athlete); setStack([]) }}
                 className="flex between" style={{ alignItems: 'center', gap: 12, cursor: 'pointer', textAlign: 'left',
-                  background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: 14, color: 'var(--text)' }}>
+                  background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 20, padding: 14, color: 'var(--text)' }}>
                 <span className="flex gap" style={{ alignItems: 'center', gap: 12, minWidth: 0 }}>
                   <span style={{ display: 'inline-flex', color: ACCENT }}><Icon name="folder" size={22} /></span>
                   {a.photo_url
@@ -144,7 +144,7 @@ export default function InsuranceDocuments() {
             ))}
             {files.map(d => (
               <div className="row" key={d.id}>
-                <div style={{ width: 34, height: 34, borderRadius: 9, background: 'var(--surface-2)', display: 'grid', placeItems: 'center' }}>
+                <div style={{ width: 34, height: 34, borderRadius: 12, background: 'var(--surface-2)', display: 'grid', placeItems: 'center' }}>
                   <Icon name={d.mime?.includes('image') ? 'image' : 'file'} size={16} strokeWidth={1.5} />
                 </div>
                 <div className="row-main">
@@ -240,7 +240,7 @@ function UploadDialog({ onClose, onDone, playerId, folderId, uid }: {
             style={{ fontSize: 12.5 }} />
         </Field>
         {files.length > 0 && <div className="faint" style={{ fontSize: 12.5 }}>{(files.length > 1 ? t('{n} file selezionati') : t('{n} file selezionato')).replace('{n}', String(files.length))}</div>}
-        <Field label={t("Data scadenza (facoltativa) — finisce nell'area Scadenze")}>
+        <Field label={t("Data scadenza (facoltativa) - finisce nell'area Scadenze")}>
           <Input type="date" value={scadenza} onChange={e => setScadenza(e.target.value)} />
         </Field>
       </div>
@@ -249,7 +249,7 @@ function UploadDialog({ onClose, onDone, playerId, folderId, uid }: {
 }
 
 function humanSize(n: number | null) {
-  if (!n) return '—'
+  if (!n) return '-'
   if (n < 1024) return n + ' B'
   if (n < 1048576) return (n / 1024).toFixed(0) + ' KB'
   return (n / 1048576).toFixed(1) + ' MB'

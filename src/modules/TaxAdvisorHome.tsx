@@ -12,7 +12,7 @@ import { fmtDate } from '../lib/format'
 const ACCENT = '#9A5530'
 
 const kicker: React.CSSProperties = {
-  fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase', fontWeight: 800,
+  fontSize: 11, fontWeight: 800,
 }
 
 type Ath = {
@@ -76,13 +76,13 @@ export default function TaxAdvisorHome({ goto }: { goto?: (r: string) => void })
   return (
     <div className="grid" style={{ gap: 20 }}>
       {/* --- La mia scheda --- */}
-      <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 18,
+      <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 20,
                     background: 'var(--bg-2)', border: '1px solid var(--border)', padding: '24px 22px' }}>
         <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 5, background: ACCENT }} />
         <div className="flex gap" style={{ alignItems: 'center', gap: 15, flexWrap: 'wrap' }}>
           {me.photo_url
-            ? <img src={me.photo_url} alt="" style={{ width: 60, height: 60, borderRadius: 15, objectFit: 'cover' }} />
-            : <div style={{ width: 60, height: 60, borderRadius: 15, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 23, color: '#fff' }}>
+            ? <img src={me.photo_url} alt="" style={{ width: 60, height: 60, borderRadius: 20, objectFit: 'cover' }} />
+            : <div style={{ width: 60, height: 60, borderRadius: 20, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 23, color: '#fff' }}>
                 {nome.slice(0, 1)}
               </div>}
           <div style={{ minWidth: 0, flex: 1 }}>
@@ -140,8 +140,8 @@ export default function TaxAdvisorHome({ goto }: { goto?: (r: string) => void })
                 <div style={{ padding: 16 }}>
                   <div className="flex gap" style={{ alignItems: 'center', gap: 12 }}>
                     {a.photo_url
-                      ? <img src={a.photo_url} alt="" style={{ width: 56, height: 56, borderRadius: 14, objectFit: 'cover' }} />
-                      : <div style={{ width: 56, height: 56, borderRadius: 14, background: 'var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>
+                      ? <img src={a.photo_url} alt="" style={{ width: 56, height: 56, borderRadius: 20, objectFit: 'cover' }} />
+                      : <div style={{ width: 56, height: 56, borderRadius: 20, background: 'var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>
                           {(a.name || '?').slice(0, 1)}
                         </div>}
                     <div style={{ minWidth: 0 }}>

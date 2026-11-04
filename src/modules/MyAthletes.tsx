@@ -204,7 +204,7 @@ export function MyAthletes() {
                   : <div className="ma-ini">{initials(a.name)}</div>}
                 <div style={{ minWidth: 0 }}>
                   <div className="ma-name">{a.name || t('Atleta {id}').replace('{id}', String(a.api_player_id))}</div>
-                  <div className="ma-sub">{[a.team_name, a.position].filter(Boolean).join(' · ') || '—'}</div>
+                  <div className="ma-sub">{[a.team_name, a.position].filter(Boolean).join(' · ') || '-'}</div>
                 </div>
                 <div className="ma-card-btns">
                   <button className="btn btn-ghost btn-sm" title="Chat" onClick={() => openChat(a.api_player_id)}>

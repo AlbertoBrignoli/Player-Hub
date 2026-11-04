@@ -134,16 +134,16 @@ export function InstallSteps({ onInstalled, forced }: { onInstalled?: () => void
 
 export const IG_CSS = `
 .ig-qr-wrap { display: grid; justify-items: center; gap: 10px; }
-.ig-qr { background: #fff; border-radius: 18px; padding: 12px; box-shadow: 0 10px 30px rgba(0,0,0,.18); }
+.ig-qr { background: #fff; border-radius: 20px; padding: 12px; box-shadow: 0 10px 30px rgba(0,0,0,.18); }
 .ig-qr svg { width: 100%; height: 100%; display: block; }
 .ig-steps { display: grid; gap: 12px; text-align: left; }
 .ig-lead { font-size: 14px; line-height: 1.45; }
 .ig-step { display: flex; gap: 12px; align-items: flex-start; font-size: 15px; line-height: 1.45; }
 .ig-step b { white-space: nowrap; }
-.ig-n { flex-shrink: 0; width: 28px; height: 28px; border-radius: 999px; background: var(--yellow, #FFEC00); color: #0A0A0A; display: grid; place-items: center; font-weight: 900; font-size: 14px; }
+.ig-n { flex-shrink: 0; width: 28px; height: 28px; border-radius: 999px; background: var(--yellow, #FFEC00); color: #0A0A0A; display: grid; place-items: center; font-weight: 800; font-size: 14px; }
 .ig-hint { font-size: 12.5px; opacity: .75; line-height: 1.4; }
 .ig-done { display: flex; align-items: center; gap: 8px; font-weight: 700; }
-.ig-big { width: 100%; justify-content: center; height: 50px; font-size: 16px; display: inline-flex; align-items: center; gap: 8px; }
+.ig-big { width: 100%; justify-content: center; height: 50px; font-size: 15px; display: inline-flex; align-items: center; gap: 8px; }
 .ig-arrow { text-align: center; font-size: 28px; animation: ig-bob 1.4s ease-in-out infinite; }
 @keyframes ig-bob { 0%,100% { transform: translateY(0) } 50% { transform: translateY(8px) } }
 `
@@ -165,7 +165,7 @@ export function InstallNudge() {
     <>
       <style>{IG_CSS}</style>
       <div className="nudge" role="region" aria-label={t('Installa Player Hub')} style={{ marginBottom: 16 }}>
-        <img src="/icons/icon-192.png?v=5" alt="" width={40} height={40} style={{ borderRadius: 10, flexShrink: 0 }} />
+        <img src="/icons/icon-192.png?v=5" alt="" width={40} height={40} style={{ borderRadius: 12, flexShrink: 0 }} />
         <div style={{ minWidth: 0 }}>
           <div className="nudge-t">{t('Metti Player Hub nella schermata Home')}</div>
           <div className="nudge-s">{t('Si apre come un\'app, a schermo intero, e ti arrivano le notifiche del tuo team.')}</div>
@@ -181,7 +181,7 @@ export function InstallNudge() {
         <div className="ig-sheet" role="dialog" aria-modal="true" onClick={() => setOpen(false)}>
           <div className="ig-sheet-in" onClick={e => e.stopPropagation()}>
             <div className="flex between" style={{ alignItems: 'center' }}>
-              <b style={{ fontSize: 17 }}>{t('Aggiungila alla Home in 3 tocchi')}</b>
+              <b style={{ fontSize: 18 }}>{t('Aggiungila alla Home in 3 tocchi')}</b>
               <button className="ev-ic" onClick={() => setOpen(false)} aria-label={t('Chiudi')}><Icon name="x" size={18} /></button>
             </div>
             <InstallSteps onInstalled={() => { setOpen(false); setHidden(true) }} />
@@ -204,7 +204,7 @@ export function InstallInviteCard() {
       <div className="flex gap" style={{ gap: 18, flexWrap: 'wrap', alignItems: 'center' }}>
         <QrCode size={150} download url={url} />
         <div style={{ flex: 1, minWidth: 220, display: 'grid', gap: 10 }}>
-          <div className="faint" style={{ fontSize: 13, lineHeight: 1.5 }}>
+          <div className="faint" style={{ fontSize: 12.5, lineHeight: 1.5 }}>
             {t('Fai inquadrare il QR o manda il link: la pagina riconosce il telefono e spiega come aggiungere Player Hub alla schermata Home. Scarica il QR per stamparlo o metterlo in una presentazione.')}
           </div>
           <code style={{ fontSize: 12.5, padding: '6px 10px', borderRadius: 8, background: 'var(--bg-2)', overflowWrap: 'anywhere' }}>{url.replace('https://', '')}</code>

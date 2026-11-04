@@ -13,7 +13,7 @@ import { useLang } from '../lib/i18n'
 const ACCENT = '#3F7F00' // verde fitness (scurito per il tema chiaro)
 
 const kicker: React.CSSProperties = {
-  fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase', fontWeight: 800,
+  fontSize: 11, fontWeight: 800,
 }
 const todayKey = () => new Date().toISOString().slice(0, 10)
 
@@ -84,14 +84,14 @@ export default function FitnessCoachHome({ goto }: { goto?: (r: string) => void 
     <div className="grid" style={{ gap: 20 }}>
       {/* --- HERO preparatore --- */}
       <div style={{
-        position: 'relative', overflow: 'hidden', borderRadius: 18,
+        position: 'relative', overflow: 'hidden', borderRadius: 20,
         background: 'var(--bg-2)', border: '1px solid var(--border)', padding: '24px 22px',
       }}>
         <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 5, background: ACCENT }} />
         <div className="flex gap" style={{ alignItems: 'center', gap: 15, flexWrap: 'wrap' }}>
           {coach?.photo_url
-            ? <img src={coach.photo_url} alt="" style={{ width: 58, height: 58, borderRadius: 15, objectFit: 'cover' }} />
-            : <div style={{ width: 58, height: 58, borderRadius: 15, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 22, color: '#fff' }}>
+            ? <img src={coach.photo_url} alt="" style={{ width: 58, height: 58, borderRadius: 20, objectFit: 'cover' }} />
+            : <div style={{ width: 58, height: 58, borderRadius: 20, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 22, color: '#fff' }}>
                 {name.slice(0, 1)}
               </div>}
           <div style={{ minWidth: 0, flex: 1 }}>
@@ -125,7 +125,7 @@ export default function FitnessCoachHome({ goto }: { goto?: (r: string) => void 
           </div>
           <div className="grid" style={{ gap: 8 }}>
             {requests.slice(0, 5).map(r => (
-              <div key={r.id} className="flex between" style={{ alignItems: 'center', gap: 10, border: '1px solid var(--border)', borderRadius: 10, padding: '9px 11px' }}>
+              <div key={r.id} className="flex between" style={{ alignItems: 'center', gap: 10, border: '1px solid var(--border)', borderRadius: 12, padding: '9px 11px' }}>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: 14, fontWeight: 600 }}>
                     {list.find(a => a.api_player_id === r.player_id)?.name || t('Atleta')}
@@ -193,8 +193,8 @@ export default function FitnessCoachHome({ goto }: { goto?: (r: string) => void 
                   <div style={{ padding: 16 }}>
                     <div className="flex gap" style={{ alignItems: 'center', gap: 12 }}>
                       {a.photo_url
-                        ? <img src={a.photo_url} alt="" style={{ width: 54, height: 54, borderRadius: 14, objectFit: 'cover' }} />
-                        : <div style={{ width: 54, height: 54, borderRadius: 14, background: 'var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>
+                        ? <img src={a.photo_url} alt="" style={{ width: 54, height: 54, borderRadius: 20, objectFit: 'cover' }} />
+                        : <div style={{ width: 54, height: 54, borderRadius: 20, background: 'var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>
                             {(a.name || '?').slice(0, 1)}
                           </div>}
                       <div style={{ minWidth: 0 }}>

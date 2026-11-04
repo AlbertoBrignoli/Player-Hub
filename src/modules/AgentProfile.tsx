@@ -16,7 +16,7 @@ import { igUrl } from './home/HomeContacts'
 const ACCENT = '#8A6D00' // oro sobrio: area procura, distinta da brand (rosso) e fitness (verde)
 
 const kicker: React.CSSProperties = {
-  fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase', fontWeight: 800,
+  fontSize: 11, fontWeight: 800,
 }
 
 type P = Record<string, any>
@@ -77,7 +77,7 @@ export default function AgentProfile() {
     const { data } = supabase.storage.from('agent-profiles').getPublicUrl(path)
     set(field, data.publicUrl)
     setUpl('')
-    setMsg(t('Immagine caricata — ricordati di salvare.'))
+    setMsg(t('Immagine caricata - ricordati di salvare.'))
   }
 
   async function save() {
@@ -99,8 +99,8 @@ export default function AgentProfile() {
       <div className="card" style={{ padding: 20 }}>
         <div className="flex gap" style={{ alignItems: 'center', gap: 14 }}>
           {p.photo_url
-            ? <img src={p.photo_url} alt="" style={{ width: 56, height: 56, borderRadius: 14, objectFit: 'cover' }} />
-            : <div style={{ width: 56, height: 56, borderRadius: 14, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: '#fff', fontSize: 22 }}>
+            ? <img src={p.photo_url} alt="" style={{ width: 56, height: 56, borderRadius: 20, objectFit: 'cover' }} />
+            : <div style={{ width: 56, height: 56, borderRadius: 20, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: '#fff', fontSize: 22 }}>
                 {(p.name || 'A').slice(0, 1)}
               </div>}
           <div style={{ minWidth: 0 }}>
@@ -126,13 +126,13 @@ export default function AgentProfile() {
   return (
     <div className="grid" style={{ gap: 18 }}>
       {/* --- intestazione --- */}
-      <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 18,
+      <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 20,
                     background: 'var(--bg-2)', border: '1px solid var(--border)', padding: '22px' }}>
         <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 5, background: ACCENT }} />
         <div className="flex gap" style={{ alignItems: 'center', gap: 15, flexWrap: 'wrap' }}>
           {p.photo_url
-            ? <img src={p.photo_url} alt="" style={{ width: 58, height: 58, borderRadius: 15, objectFit: 'cover' }} />
-            : <div style={{ width: 58, height: 58, borderRadius: 15, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 22, color: '#fff' }}>
+            ? <img src={p.photo_url} alt="" style={{ width: 58, height: 58, borderRadius: 20, objectFit: 'cover' }} />
+            : <div style={{ width: 58, height: 58, borderRadius: 20, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 22, color: '#fff' }}>
                 {(p.name || 'A').slice(0, 1)}
               </div>}
           <div style={{ minWidth: 0, flex: '1 1 200px' }}>
@@ -166,7 +166,7 @@ export default function AgentProfile() {
 
       {byAdmin && (
         <div className="faint" style={{ fontSize: 12.5 }}>
-          {t('Segue')}: {linked.map(id => athletes.find(x => x.api_player_id === id)?.name || `#${id}`).join(', ') || '—'}
+          {t('Segue')}: {linked.map(id => athletes.find(x => x.api_player_id === id)?.name || `#${id}`).join(', ') || '-'}
           {p.agent_id && !joined && <> · {t("Non è ancora entrato nell'app: lo stai preparando tu.")}</>}
         </div>
       )}
@@ -223,7 +223,7 @@ function Info({ k, v, href }: { k: string; v?: string; href?: string }) {
     <div>
       <div className="t-label">{k}</div>
       <div style={{ fontSize: 14, marginTop: 2 }}>
-        {v ? (href ? <a href={href} style={{ color: ACCENT }} {...(href.startsWith('http') ? { target: '_blank', rel: 'noreferrer' } : {})}>{v}</a> : v) : '—'}
+        {v ? (href ? <a href={href} style={{ color: ACCENT }} {...(href.startsWith('http') ? { target: '_blank', rel: 'noreferrer' } : {})}>{v}</a> : v) : '-'}
       </div>
     </div>
   )

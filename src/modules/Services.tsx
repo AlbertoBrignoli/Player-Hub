@@ -39,12 +39,12 @@ const T = {
 }
 
 const kicker: React.CSSProperties = {
-  fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', fontWeight: 800,
+  fontSize: 11, fontWeight: 800,
 }
 
 const STATUS: Record<string, { l: string; c: string; step: number }> = {
   aperta: { l: 'Inviata', c: 'var(--gold)', step: 1 },
-  in_carico: { l: 'In lavorazione', c: 'var(--blue)', step: 2 },
+  in_carico: { l: 'In lavorazione', c: 'var(--ink)', step: 2 },
   completata: { l: 'Completata', c: 'var(--green)', step: 3 },
   annullata: { l: 'Annullata', c: 'var(--red)', step: 3 },
 }
@@ -153,8 +153,8 @@ export default function Services() {
 
       {/* --- header --- */}
       <div>
-        <div style={{ ...kicker, color: T.muted, fontSize: 10, letterSpacing: 2.5 }}>{t('Servizi AUVI')}</div>
-        <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: -0.6, marginTop: 4 }}>
+        <div style={{ ...kicker, color: T.muted, fontSize: 11, letterSpacing: 2.5 }}>{t('Servizi AUVI')}</div>
+        <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: -0.6, marginTop: 4 }}>
           {isPlayer ? t('Ciao, {name}').replace('{name}', firstName) : t('Servizi e richieste')}
         </div>
         <div style={{ fontSize: 12.5, color: T.dim, marginTop: 4, maxWidth: 620 }}>
@@ -174,7 +174,7 @@ export default function Services() {
                 flex: 1, padding: '10px 14px', borderRadius: 12, cursor: 'pointer',
                 border: `1px solid ${on ? T.text : T.border}`,
                 background: on ? T.text : 'transparent',
-                color: on ? '#fff' : T.dim, fontWeight: 800, fontSize: 13,
+                color: on ? '#fff' : T.dim, fontWeight: 800, fontSize: 12.5,
               }}>
               {k === 'store' ? 'Store' : `${t('Richieste')}${reqs.length ? ` · ${reqs.length}` : ''}`}
             </button>
@@ -193,7 +193,7 @@ export default function Services() {
             <button onClick={() => setTab('requests')}
               style={{
                 textAlign: 'left', cursor: 'pointer', width: '100%',
-                background: T.card, border: `1px solid ${T.border}`, borderRadius: 16, padding: 14,
+                background: T.card, border: `1px solid ${T.border}`, borderRadius: 20, padding: 14,
               }}
               className="flex between">
               <div className="flex gap" style={{ alignItems: 'center', gap: 12, minWidth: 0 }}>
@@ -203,10 +203,10 @@ export default function Services() {
                   animation: 'auviPulse 2s infinite',
                 }} />
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 13.5, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {attive[0].service_title}
                   </div>
-                  <div style={{ fontSize: 11.5, color: T.dim }}>{t(st(attive[0].status).l)}</div>
+                  <div style={{ fontSize: 12.5, color: T.dim }}>{t(st(attive[0].status).l)}</div>
                 </div>
               </div>
               <span style={{ fontSize: 12.5, color: T.dim, whiteSpace: 'nowrap' }}>
@@ -243,7 +243,7 @@ export default function Services() {
 
           {verificati.filter(inCat).length > 0 && (
             <section>
-              <div style={{ ...kicker, fontSize: 12, color: T.text, marginBottom: 12 }}>{t('Partner verificati')}</div>
+              <div style={{ ...kicker, fontSize: 12.5, color: T.text, marginBottom: 12 }}>{t('Partner verificati')}</div>
               <div className="grid g3" style={{ gap: 12 }}>
                 {verificati.filter(inCat).map(s => (
                   <VerifiedCard key={s.id} s={s} onOpen={() => setOpen(s)} />
@@ -255,14 +255,14 @@ export default function Services() {
           {/* --- su richiesta --- */}
           {altri.filter(inCat).length > 0 && (
             <section>
-              <div style={{ ...kicker, fontSize: 12, color: T.text, marginBottom: 12 }}>{t('Su richiesta')}</div>
+              <div style={{ ...kicker, fontSize: 12.5, color: T.text, marginBottom: 12 }}>{t('Su richiesta')}</div>
               <div className="grid" style={{ gap: 8 }}>
                 {altri.filter(inCat).map(s => (
                   <button key={s.id} onClick={() => setOpen(s)}
                     className="flex between"
                     style={{
                       textAlign: 'left', cursor: 'pointer', width: '100%', gap: 12,
-                      background: T.card, border: `1px solid ${T.borderSoft}`, borderRadius: 14, padding: 12,
+                      background: T.card, border: `1px solid ${T.borderSoft}`, borderRadius: 20, padding: 12,
                     }}>
                     <div className="flex gap" style={{ alignItems: 'center', gap: 12, minWidth: 0 }}>
                       <div style={{
@@ -277,7 +277,7 @@ export default function Services() {
                         <div style={{ fontSize: 14, fontWeight: 800 }}>{svcField(s, 'title', lang)}</div>
                         {s.description && (
                           <div style={{
-                            fontSize: 12, color: T.dim, marginTop: 2,
+                            fontSize: 12.5, color: T.dim, marginTop: 2,
                             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 260,
                           }}>{svcField(s, 'description', lang)}</div>
                         )}
@@ -293,7 +293,7 @@ export default function Services() {
           {cat === 'Tutti' && <BrandDeals compact />}
 
           {services.length === 0 && (
-            <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 16, padding: 20 }}>
+            <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 20, padding: 20 }}>
               <Empty icon={<Icon name="star" size={30} strokeWidth={1.4} />} title={t("Nessun servizio")}
                 hint={t("Il catalogo non è ancora stato popolato.")} />
             </div>
@@ -319,7 +319,7 @@ function VerifiedCard({ s, onOpen }: { s: Service; onOpen: () => void }) {
     <button onClick={onOpen}
       style={{
         textAlign: 'left', cursor: 'pointer', width: '100%', padding: 0, overflow: 'hidden',
-        background: T.card, border: `1px solid ${T.border}`, borderRadius: 18,
+        background: T.card, border: `1px solid ${T.border}`, borderRadius: 20,
         display: 'flex', flexDirection: 'column',
       }}>
       <div style={{ position: 'relative', height: 170, background: s.cover_url ? 'var(--card-dark)' : `oklch(0.3 0.07 ${s.hue ?? 250})` }}>
@@ -351,12 +351,12 @@ function VerifiedCard({ s, onOpen }: { s: Service; onOpen: () => void }) {
         <span style={{
           position: 'absolute', left: 10, top: 10, display: 'flex', alignItems: 'center', gap: 6,
           background: 'rgba(11,11,14,.72)', color: '#4ade80', padding: '4px 9px', borderRadius: 999,
-          fontSize: 9.5, letterSpacing: 1.4, fontWeight: 800, textTransform: 'uppercase',
+          fontSize: 11, fontWeight: 800,
         }}>● {t('Verificato')}</span>
       </div>
       <div style={{ padding: 16 }}>
         {s.hero_claim && (
-          <div style={{ fontSize: 9, letterSpacing: 1.8, fontWeight: 800, textTransform: 'uppercase',
+          <div style={{ fontSize: 11, fontWeight: 800,
             color: accent }}>{svcField(s, 'hero_claim', lang)}</div>
         )}
         <div style={{ fontSize: 18, fontWeight: 800, marginTop: 4, letterSpacing: -0.3 }}>{svcField(s, 'title', lang)}</div>
@@ -385,10 +385,10 @@ function StudioHero({ studio, onOpen }: { studio: Service[]; onOpen: (s: Service
           background: 'linear-gradient(160deg, rgba(16,16,21,.35), rgba(16,16,21,.9))' }} />
         <div style={{ position: 'relative', color: '#fff' }}>
           <img src={AUVI_MARK} alt="AUVI" style={{ height: 22, opacity: .95 }} />
-          <div style={{ ...kicker, fontSize: 10, color: T.yellow, letterSpacing: 2, marginTop: 14 }}>
+          <div style={{ ...kicker, fontSize: 11, color: T.yellow, letterSpacing: 2, marginTop: 14 }}>
             {t('Il team creativo della tua agenzia')}
           </div>
-          <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: -0.6, marginTop: 6 }}>Own your image.</div>
+          <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: -0.6, marginTop: 6 }}>Own your image.</div>
           <div style={{ fontSize: 12.5, color: '#d5d5de', marginTop: 4 }}>
             {t("Diamo forza all'immagine, valore alle storie.")}
           </div>
@@ -401,15 +401,15 @@ function StudioHero({ studio, onOpen }: { studio: Service[]; onOpen: (s: Service
             style={{ textAlign: 'left', cursor: 'pointer', width: '100%', gap: 12,
               background: T.cardDark, border: 'none', padding: 14 }}>
             <div className="flex gap" style={{ alignItems: 'center', gap: 12, minWidth: 0 }}>
-              <div style={{ width: 40, height: 40, borderRadius: 10, background: T.yellow, color: 'var(--ink)',
+              <div style={{ width: 40, height: 40, borderRadius: 12, background: T.yellow, color: 'var(--ink)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <img src="/servizi/auvi-mark-white.png" alt="AUVI"
                   style={{ width: 22, height: 22, objectFit: 'contain', filter: 'brightness(0)' }} />
               </div>
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 14.5, fontWeight: 700, color: T.text }}>{svcField(s, 'title', lang)}</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: T.text }}>{svcField(s, 'title', lang)}</div>
                 {s.description && (
-                  <div style={{ fontSize: 12, color: T.dim, overflow: 'hidden', textOverflow: 'ellipsis',
+                  <div style={{ fontSize: 12.5, color: T.dim, overflow: 'hidden', textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap', maxWidth: 260 }}>{svcField(s, 'description', lang)}</div>
                 )}
               </div>
@@ -440,7 +440,7 @@ function RequestsView({ reqs, isPlayer, isAdmin, openReq, athleteName, onManage,
 
   if (reqs.length === 0) {
     return (
-      <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 16, padding: 20 }}>
+      <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 20, padding: 20 }}>
         <Empty icon={<Icon name="inbox" size={30} strokeWidth={1.4} />}
           title={t("Nessuna richiesta")}
           hint={isPlayer ? t('Apri lo Store e manda la tua prima richiesta.') : t('Non ci sono ancora richieste.')} />
@@ -467,7 +467,7 @@ function RequestsView({ reqs, isPlayer, isAdmin, openReq, athleteName, onManage,
             <button key={k} onClick={() => setFilter(k)}
               style={{ padding: '7px 13px', borderRadius: 999, cursor: 'pointer',
                 border: `1px solid ${on ? T.text : T.border}`, background: on ? T.text : 'transparent',
-                color: on ? '#fff' : T.dim, fontWeight: 700, fontSize: 12 }}>
+                color: on ? '#fff' : T.dim, fontWeight: 700, fontSize: 12.5 }}>
               {t(l)}
             </button>
           )
@@ -480,7 +480,7 @@ function RequestsView({ reqs, isPlayer, isAdmin, openReq, athleteName, onManage,
           return (
             <div key={r.id} style={{
               background: T.card, border: `1px solid ${T.border}`, borderLeft: `3px solid ${s.c}`,
-              borderRadius: 14, padding: 14 }}>
+              borderRadius: 20, padding: 14 }}>
               <div className="flex between" style={{ alignItems: 'flex-start', gap: 10 }}>
                 <div className="flex gap" style={{ alignItems: 'center', gap: 10, minWidth: 0 }}>
                   <span style={{
@@ -492,12 +492,12 @@ function RequestsView({ reqs, isPlayer, isAdmin, openReq, athleteName, onManage,
                   </span>
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontSize: 14, fontWeight: 800 }}>{r.service_title}</div>
-                    <div style={{ fontSize: 11.5, color: T.dim }}>
+                    <div style={{ fontSize: 12.5, color: T.dim }}>
                       {!isPlayer && `${athleteName(r)} · `}{t('Inviata {date}').replace('{date}', fmtDate(r.created_at))}
                     </div>
                   </div>
                 </div>
-                <span style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', color: s.c, whiteSpace: 'nowrap' }}>
+                <span style={{ fontSize: 11, fontWeight: 800, color: s.c, whiteSpace: 'nowrap' }}>
                   {t(s.l)}
                 </span>
               </div>
@@ -510,10 +510,10 @@ function RequestsView({ reqs, isPlayer, isAdmin, openReq, athleteName, onManage,
               </div>
 
               {r.internal_note && r.status !== 'aperta' && (
-                <div style={{ fontSize: 12, marginTop: 10, color: s.c }}>{r.internal_note}</div>
+                <div style={{ fontSize: 12.5, marginTop: 10, color: s.c }}>{r.internal_note}</div>
               )}
               {r.message && (
-                <div style={{ fontSize: 12, marginTop: 8, color: T.dim }}>{r.message}</div>
+                <div style={{ fontSize: 12.5, marginTop: 8, color: T.dim }}>{r.message}</div>
               )}
 
               <div className="flex gap wrap" style={{ gap: 8, marginTop: 12 }}>
@@ -624,12 +624,12 @@ export function ManageForm({ req, service, athlete, onClose, onSaved }: {
       </div>
       {rows.length > 0 ? (
         <div style={{ background: 'var(--bg-2)', border: `1px solid ${T.border}`, borderRadius: 12, padding: 12, marginBottom: 12 }}>
-          <div style={{ ...kicker, fontSize: 10, color: T.muted, marginBottom: 8 }}>{t('Risposte del questionario')}</div>
+          <div style={{ ...kicker, fontSize: 11, color: T.muted, marginBottom: 8 }}>{t('Risposte del questionario')}</div>
           <div className="grid" style={{ gap: 8 }}>
             {rows.map(r => (
               <div key={r.k}>
-                <div style={{ fontSize: 11.5, color: T.muted }}>{r.k}</div>
-                <div style={{ fontSize: 13.5, marginTop: 1 }}>{r.v}</div>
+                <div style={{ fontSize: 12.5, color: T.muted }}>{r.k}</div>
+                <div style={{ fontSize: 14, marginTop: 1 }}>{r.v}</div>
               </div>
             ))}
           </div>
@@ -658,7 +658,7 @@ export function ManageForm({ req, service, athlete, onClose, onSaved }: {
       </Field>
       {askCal && (
         <div style={{ background: 'var(--yellow-soft)', borderRadius: 12, padding: 12, marginBottom: 12 }}>
-          <label className="flex gap" style={{ alignItems: 'center', gap: 8, cursor: 'pointer', fontWeight: 700 }}>
+          <label className="flex gap" style={{ alignItems: 'center', gap: 8, cursor: 'pointer', fontWeight: 600 }}>
             <input type="checkbox" checked={toCal} onChange={e => setToCal(e.target.checked)} />
             {t("Metti nel calendario dell'atleta")}
           </label>

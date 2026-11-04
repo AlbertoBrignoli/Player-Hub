@@ -12,7 +12,7 @@ import { whatsappUrl } from '../lib/ics'
 const ACCENT = '#2C7A8A'
 
 const kicker: React.CSSProperties = {
-  fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase', fontWeight: 800,
+  fontSize: 11, fontWeight: 800,
 }
 
 type P = Record<string, any>
@@ -63,7 +63,7 @@ export default function PhysioProfile() {
     const { data } = supabase.storage.from('agent-profiles').getPublicUrl(path)
     set('photo_url', data.publicUrl)
     setUpl(false)
-    setMsg(t('Immagine caricata — ricordati di salvare.'))
+    setMsg(t('Immagine caricata - ricordati di salvare.'))
   }
 
   async function save() {
@@ -85,8 +85,8 @@ export default function PhysioProfile() {
       <div className="card" style={{ padding: 20 }}>
         <div className="flex gap" style={{ alignItems: 'center', gap: 14 }}>
           {p.photo_url
-            ? <img src={p.photo_url} alt="" style={{ width: 56, height: 56, borderRadius: 14, objectFit: 'cover' }} />
-            : <div style={{ width: 56, height: 56, borderRadius: 14, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: '#fff', fontSize: 22 }}>
+            ? <img src={p.photo_url} alt="" style={{ width: 56, height: 56, borderRadius: 20, objectFit: 'cover' }} />
+            : <div style={{ width: 56, height: 56, borderRadius: 20, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: '#fff', fontSize: 22 }}>
                 {(p.name || 'F').slice(0, 1)}
               </div>}
           <div style={{ minWidth: 0 }}>
@@ -110,13 +110,13 @@ export default function PhysioProfile() {
   return (
     <div className="grid" style={{ gap: 18 }}>
       {/* --- intestazione --- */}
-      <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 18,
+      <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 20,
                     background: 'var(--bg-2)', border: '1px solid var(--border)', padding: '22px' }}>
         <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 5, background: ACCENT }} />
         <div className="flex gap" style={{ alignItems: 'center', gap: 15, flexWrap: 'wrap' }}>
           {p.photo_url
-            ? <img src={p.photo_url} alt="" style={{ width: 58, height: 58, borderRadius: 15, objectFit: 'cover' }} />
-            : <div style={{ width: 58, height: 58, borderRadius: 15, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 22, color: '#fff' }}>
+            ? <img src={p.photo_url} alt="" style={{ width: 58, height: 58, borderRadius: 20, objectFit: 'cover' }} />
+            : <div style={{ width: 58, height: 58, borderRadius: 20, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 22, color: '#fff' }}>
                 {(p.name || 'F').slice(0, 1)}
               </div>}
           <div style={{ minWidth: 0, flex: 1 }}>
@@ -203,8 +203,8 @@ export default function PhysioProfile() {
         <div className="card-head"><div className="card-title">{t('Disponibilità')}</div></div>
         {A('availability', 'Modalità', 'Es. In studio, a domicilio, online, ritiri, trasferte internazionali…')}
         <div className="grid g2" style={{ gap: 10 }}>
-          {F('working_days', 'Giorni lavorativi', 'Es. Lun–Ven')}
-          {F('working_hours', 'Orari', 'Es. 09:00–19:00')}
+          {F('working_days', 'Giorni lavorativi', 'Es. Lun-Ven')}
+          {F('working_hours', 'Orari', 'Es. 09:00-19:00')}
         </div>
       </div>
 
@@ -230,7 +230,7 @@ function Info({ k, v, href }: { k: string; v?: string; href?: string }) {
     <div>
       <div className="t-label">{k}</div>
       <div style={{ fontSize: 14, marginTop: 2 }}>
-        {v ? (href ? <a href={href} style={{ color: ACCENT }} {...(href.startsWith('http') ? { target: '_blank', rel: 'noreferrer' } : {})}>{v}</a> : v) : '—'}
+        {v ? (href ? <a href={href} style={{ color: ACCENT }} {...(href.startsWith('http') ? { target: '_blank', rel: 'noreferrer' } : {})}>{v}</a> : v) : '-'}
       </div>
     </div>
   )

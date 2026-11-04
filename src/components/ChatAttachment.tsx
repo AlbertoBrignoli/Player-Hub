@@ -32,10 +32,10 @@ export function ChatAttachment({ path, name, mime, size, mine }: { path: string;
       border: '1px solid ' + (mine ? 'rgba(255,255,255,.2)' : 'var(--border)'), background: mine ? 'rgba(255,255,255,.08)' : 'var(--bg-2)',
       color: 'inherit', textAlign: 'left', maxWidth: 280,
     }}>
-      <span style={{ width: 36, height: 42, borderRadius: 7, flexShrink: 0, display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 900,
+      <span style={{ width: 36, height: 42, borderRadius: 8, flexShrink: 0, display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 900,
         background: ext === 'PDF' ? '#E5484D' : 'var(--text-dim)', color: '#fff' }}>{ext}</span>
       <span style={{ minWidth: 0 }}>
-        <span style={{ display: 'block', fontWeight: 700, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name || 'file'}</span>
+        <span style={{ display: 'block', fontWeight: 600, fontSize: 12.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name || 'file'}</span>
         <span style={{ display: 'block', fontSize: 11, opacity: .7 }}>{fmtSize(size)}</span>
       </span>
     </button>
@@ -59,7 +59,7 @@ export function useAttach(uid: string | undefined) {
   const chip = pending && (
     <div className="flex gap" style={{ alignItems: 'center', gap: 8, padding: '8px 14px 0', fontSize: 12.5 }}>
       <Icon name="paperclip" size={13} />
-      <span style={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{pending.name}</span>
+      <span style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{pending.name}</span>
       <span className="faint">{fmtSize(pending.size)}</span>
       <button className="btn btn-sm btn-ghost" style={{ marginLeft: 'auto' }} onClick={() => setPending(null)}><Icon name="x" size={13} /></button>
     </div>

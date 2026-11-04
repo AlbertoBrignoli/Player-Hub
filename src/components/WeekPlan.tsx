@@ -164,7 +164,7 @@ export default function WeekPlanModal({ playerId, tz, onClose, onSaved }: {
                 const w = addDays(defaultWeek(), off)
                 return (
                   <button key={w} className={`btn btn-sm ${w === week ? 'btn-primary' : ''}`} onClick={() => setWeek(w)}>
-                    {label(w)} – {label(addDays(w, 6))}
+                    {label(w)} - {label(addDays(w, 6))}
                   </button>
                 )
               })}
@@ -191,7 +191,7 @@ export default function WeekPlanModal({ playerId, tz, onClose, onSaved }: {
       {step === 'reading' && (
         <div style={{ textAlign: 'center', padding: '24px 0' }}>
           <div className="spinner" style={{ margin: '0 auto' }} />
-          <div style={{ fontWeight: 700, marginTop: 12 }}>{t('Leggo il programma…')}</div>
+          <div style={{ fontWeight: 600, marginTop: 12 }}>{t('Leggo il programma…')}</div>
           <div className="faint" style={{ fontSize: 12.5 }}>{t('Giorni, orari e luoghi di tutte le settimane: di solito meno di un minuto.')}</div>
         </div>
       )}
@@ -199,7 +199,7 @@ export default function WeekPlanModal({ playerId, tz, onClose, onSaved }: {
       {step === 'review' && (
         <div className="grid" style={{ gap: 12 }}>
           <div className="faint" style={{ fontSize: 12.5 }}>
-            {weeks.length > 1 ? t('Ho trovato {n} settimane').replace('{n}', String(weeks.length)) : `${t('Settimana')} ${label(week)} – ${label(addDays(week, 6))}`} · {t('✓ entra nel calendario, ✕ resta fuori. Correggi un orario se serve.')}
+            {weeks.length > 1 ? t('Ho trovato {n} settimane').replace('{n}', String(weeks.length)) : `${t('Settimana')} ${label(week)} - ${label(addDays(week, 6))}`} · {t('✓ entra nel calendario, ✕ resta fuori. Correggi un orario se serve.')}
             {plan?.file_path && <> · <button className="link-btn" onClick={openFile}>{t('vedi il file')}</button></>}
           </div>
           {note && <div className="wp-note">{note}</div>}
@@ -209,7 +209,7 @@ export default function WeekPlanModal({ playerId, tz, onClose, onSaved }: {
             return (
               <div key={w} className="wp-week">
                 <div className="wp-week-h">
-                  <div><b>{t('Settimana')} {label(w)} – {label(addDays(w, 6))}</b><span className="faint"> · {on}/{wi.length} {t('da inserire')}</span></div>
+                  <div><b>{t('Settimana')} {label(w)} - {label(addDays(w, 6))}</b><span className="faint"> · {on}/{wi.length} {t('da inserire')}</span></div>
                   {wi.length > 0 && (
                     <div className="flex" style={{ gap: 6 }}>
                       <button className="btn btn-sm" onClick={() => tickWeek(w, true)}>✓ {t('Tutto')}</button>
@@ -225,7 +225,7 @@ export default function WeekPlanModal({ playerId, tz, onClose, onSaved }: {
                         <span>{t(WD[i])} <span className="faint">{label(d)}</span></span>
                         <button className="btn btn-ghost btn-sm" onClick={() => setItems(xs => [...xs, mk({ date: d, start: '10:00', title: t('Allenamento') })])}>+ {t('Aggiungi')}</button>
                       </div>
-                      {rows.length === 0 ? <div className="faint" style={{ fontSize: 12 }}>{t('Riposo')}</div> : rows.map(r => (
+                      {rows.length === 0 ? <div className="faint" style={{ fontSize: 12.5 }}>{t('Riposo')}</div> : rows.map(r => (
                         <div key={r.key} className={`wp-row ${r.on ? '' : 'off'}`}>
                           <button type="button" className={`wp-tick ${r.on ? 'on' : ''}`} aria-pressed={r.on}
                             aria-label={r.on ? t('Inserito: tocca per togliere') : t('Escluso: tocca per inserire')}
@@ -233,7 +233,7 @@ export default function WeekPlanModal({ playerId, tz, onClose, onSaved }: {
                           <div className="wp-fields">
                             <div className="wp-line">
                               <input className="input wp-time" type="time" value={r.start} aria-label={t('Inizio')} onChange={e => set(r.key, { start: e.target.value })} />
-                              <span className="faint">–</span>
+                              <span className="faint">-</span>
                               <input className="input wp-time" type="time" value={r.end} aria-label={t('Fine')} onChange={e => set(r.key, { end: e.target.value })} />
                             </div>
                             <div className="wp-line2">
@@ -242,7 +242,7 @@ export default function WeekPlanModal({ playerId, tz, onClose, onSaved }: {
                               </select>
                               <input className="input" value={r.title} placeholder={t('Titolo')} onChange={e => set(r.key, { title: e.target.value })} />
                             </div>
-                            {(r.location || r.notes) && <div className="faint" style={{ fontSize: 11.5 }}>{[r.location, r.notes].filter(Boolean).join(' · ')}</div>}
+                            {(r.location || r.notes) && <div className="faint" style={{ fontSize: 12.5 }}>{[r.location, r.notes].filter(Boolean).join(' · ')}</div>}
                           </div>
                         </div>
                       ))}

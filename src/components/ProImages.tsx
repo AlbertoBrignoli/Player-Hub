@@ -148,14 +148,14 @@ export function ProPhotoGate() {
 
 const PI_CSS = `
 .pi { display: grid; gap: 12px; }
-.pi-box { display: flex; gap: 14px; align-items: flex-start; padding: 12px; border: 1px solid var(--border); border-radius: 14px; background: var(--bg-2); }
-.pi-ph, .pi-lg { flex-shrink: 0; width: 84px; height: 84px; border-radius: 18px; overflow: hidden; display: grid; place-items: center; cursor: pointer; background: var(--card); border: 2px dashed var(--border); color: var(--text-dim); }
+.pi-box { display: flex; gap: 14px; align-items: flex-start; padding: 12px; border: 1px solid var(--border); border-radius: 20px; background: var(--bg-2); }
+.pi-ph, .pi-lg { flex-shrink: 0; width: 84px; height: 84px; border-radius: 20px; overflow: hidden; display: grid; place-items: center; cursor: pointer; background: var(--card); border: 2px dashed var(--border); color: var(--text-dim); }
 .pi-ph img { width: 100%; height: 100%; object-fit: cover; }
 .pi-lg img { width: 100%; height: 100%; object-fit: contain; padding: 8px; background: #fff; }
 .pi-ph:has(img), .pi-lg:has(img) { border-style: solid; }
 .pi-tx { display: grid; gap: 7px; min-width: 0; justify-items: start; }
 .pi-h { font-weight: 800; font-size: 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.pi-req { font-size: 10.5px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; color: #fff; background: var(--red, #E53F00); padding: 2px 7px; border-radius: 999px; }
-.pi-opt { font-size: 10.5px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: var(--text-dim); border: 1px solid var(--border); padding: 1px 7px; border-radius: 999px; }
+.pi-req { font-size: 11px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; color: #fff; background: var(--red, #E53F00); padding: 2px 7px; border-radius: 999px; }
+.pi-opt { font-size: 11px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: var(--text-dim); border: 1px solid var(--border); padding: 1px 7px; border-radius: 999px; }
 .pi-s { font-size: 12.5px; color: var(--text-dim); line-height: 1.45; }
 `

@@ -178,7 +178,7 @@ function RequestDetail({ req, svc, athlete, onBack, onChanged }: {
 
   return (
     <div className="grid" style={{ gap: 16 }}>
-      <button onClick={onBack} className="flex gap" style={{ alignItems: 'center', gap: 8, alignSelf: 'start', background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', fontSize: 13, fontWeight: 600, padding: 0 }}>
+      <button onClick={onBack} className="flex gap" style={{ alignItems: 'center', gap: 8, alignSelf: 'start', background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', fontSize: 12.5, fontWeight: 600, padding: 0 }}>
         ← {t('Tutte le richieste')}
       </button>
 
@@ -186,9 +186,9 @@ function RequestDetail({ req, svc, athlete, onBack, onChanged }: {
         <div className="flex gap" style={{ gap: 14, alignItems: 'center' }}>
           {athlete?.photo_url ? <img src={athlete.photo_url} alt="" className="partner-ava lg" /> : <span className="partner-ava lg" />}
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 19, fontWeight: 800 }}>{req.player_name || athlete?.name}</div>
-            <div className="muted" style={{ fontSize: 13 }}>{[athlete?.position, athlete?.team_name, athlete?.age ? t('{n} anni').replace('{n}', String(athlete.age)) : null].filter(Boolean).join(' · ')}</div>
-            <div className="faint" style={{ fontSize: 12, marginTop: 2 }}>{req.service_title} · {t('inviata {date}').replace('{date}', fmtDate(req.created_at))}</div>
+            <div style={{ fontSize: 18, fontWeight: 800 }}>{req.player_name || athlete?.name}</div>
+            <div className="muted" style={{ fontSize: 12.5 }}>{[athlete?.position, athlete?.team_name, athlete?.age ? t('{n} anni').replace('{n}', String(athlete.age)) : null].filter(Boolean).join(' · ')}</div>
+            <div className="faint" style={{ fontSize: 12.5, marginTop: 2 }}>{req.service_title} · {t('inviata {date}').replace('{date}', fmtDate(req.created_at))}</div>
           </div>
           <Badge tone={st.tone}>{t(st.l)}</Badge>
         </div>
@@ -220,7 +220,7 @@ function RequestDetail({ req, svc, athlete, onBack, onChanged }: {
           <div className="grid" style={{ gap: 10 }}>
             {rows.map(r => (
               <div key={r.k}>
-                <div style={{ fontSize: 11.5, color: 'var(--text-faint)' }}>{r.k}</div>
+                <div style={{ fontSize: 12.5, color: 'var(--text-faint)' }}>{r.k}</div>
                 <div style={{ fontSize: 14, marginTop: 1 }}>{r.v}</div>
               </div>
             ))}
@@ -244,7 +244,7 @@ function RequestDetail({ req, svc, athlete, onBack, onChanged }: {
           <div className="card-hint">{t('dati API-Football')}</div>
         </div>
         {stats.length ? <ApiSeason rows={stats} matches={matches} role={athlete?.position} />
-          : <div className="faint" style={{ fontSize: 13 }}>{t('Statistiche di stagione non ancora disponibili.')}</div>}
+          : <div className="faint" style={{ fontSize: 12.5 }}>{t('Statistiche di stagione non ancora disponibili.')}</div>}
       </div>
 
       {matches.length > 0 && (
@@ -360,7 +360,7 @@ function CalendarActions({ req }: { req: Req }) {
             </Field>
           </div>
           <Field label={t('Link della call (Meet, Zoom, Teams)')}><Input value={meet} placeholder="https://meet.google.com/…" onChange={e => setMeet(e.target.value)} /></Field>
-          <Field label={t('Di cosa parliamo (facoltativo)')}><Input value={cnote} placeholder={t('Es. analisi OFI – Asteras')} onChange={e => setCnote(e.target.value)} /></Field>
+          <Field label={t('Di cosa parliamo (facoltativo)')}><Input value={cnote} placeholder={t('Es. analisi OFI - Asteras')} onChange={e => setCnote(e.target.value)} /></Field>
           <button className="btn btn-primary" disabled={busy} onClick={proposeCall} style={{ justifySelf: 'start' }}>
             {busy ? t('Invio…') : t("Proponi all'atleta")}
           </button>
@@ -369,7 +369,7 @@ function CalendarActions({ req }: { req: Req }) {
 
       {mode === 'report' && (
         <div className="grid" style={{ gap: 10, marginTop: 14 }}>
-          <Field label={t('Titolo')}><Input value={title} placeholder={t('Es. Report post-partita · OFI – Asteras')} onChange={e => setTitle(e.target.value)} /></Field>
+          <Field label={t('Titolo')}><Input value={title} placeholder={t('Es. Report post-partita · OFI - Asteras')} onChange={e => setTitle(e.target.value)} /></Field>
           <Field label={t("Documento (PDF, fino a {n} MB: si apre nell'app)").replace('{n}', String(MAX_UPLOAD_MB))}>
             <input type="file" className="input" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.png,.jpg,.jpeg"
               onChange={e => setFile(e.target.files?.[0] || null)} />
@@ -395,7 +395,7 @@ function CalendarActions({ req }: { req: Req }) {
                   <div className="row-title">{ev.title}</div>
                   <div className="row-sub">{ev.type === 'call' ? fmtDateTime(ev.start_at) : t('consegnato {date}').replace('{date}', fmtDate(ev.start_at))}
                     {ev.attachments?.length ? ' · ' + t('documento') : ''}{ev.link_url ? ' · link' : ''}</div>
-                  {ev.request_status === 'modifica_richiesta' && ev.change_note && <div className="row-sub" style={{ color: 'var(--magenta)' }}>«{ev.change_note}»</div>}
+                  {ev.request_status === 'modifica_richiesta' && ev.change_note && <div className="row-sub" style={{ color: 'var(--gold)' }}>«{ev.change_note}»</div>}
                 </div>
                 {st && <Badge tone={st.tone}>{t(st.l)}</Badge>}
                 {ev.type === 'call' && ev.request_status !== 'confermata' && (

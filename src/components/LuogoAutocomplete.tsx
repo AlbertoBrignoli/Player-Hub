@@ -78,7 +78,7 @@ export default function LuogoAutocomplete({ value, onChange, placeholder }: {
               className="flex gap"
               style={{ width: '100%', textAlign: 'left', gap: 10, alignItems: 'center', cursor: 'pointer',
                 border: 'none', borderBottom: i < items.length - 1 ? '1px solid var(--border)' : 'none',
-                background: 'transparent', color: 'var(--text)', padding: '10px 12px', fontSize: 13.5 }}
+                background: 'transparent', color: 'var(--text)', padding: '10px 12px', fontSize: 14 }}
               onMouseDown={e => e.preventDefault()}>
               <span style={{ color: 'var(--text-dim)', display: 'inline-flex', flexShrink: 0 }}><Icon name="pin" size={14} /></span>
               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.label}</span>

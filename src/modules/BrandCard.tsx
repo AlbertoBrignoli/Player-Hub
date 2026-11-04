@@ -61,7 +61,7 @@ export default function BrandCard({ goto }: { goto?: (r: string) => void }) {
             <Info k="Telefono" v={b.phone} />
             <Info k="Sito" v={b.website} />
           </div>
-          {b.notes && <div className="faint" style={{ fontSize: 13, marginTop: 12, borderTop: '1px solid var(--border)', paddingTop: 12 }}>{b.notes}</div>}
+          {b.notes && <div className="faint" style={{ fontSize: 12.5, marginTop: 12, borderTop: '1px solid var(--border)', paddingTop: 12 }}>{b.notes}</div>}
         </div>
       ))}
     </div>
@@ -155,7 +155,7 @@ function BrandForm({ brand, ownerId, onSaved, goto }: { brand: Brand | null; own
 
 function Info({ k, v }: { k: string; v: any }) {
   const { t } = useLang()
-  return <div><div className="faint" style={{ fontSize: 11 }}>{t(k)}</div><div style={{ fontWeight: 650, fontSize: 13.5 }}>{v || '—'}</div></div>
+  return <div><div className="faint" style={{ fontSize: 11 }}>{t(k)}</div><div style={{ fontWeight: 600, fontSize: 14 }}>{v || '-'}</div></div>
 }
 
 // Logo del brand: mostra l'immagine se caricata, altrimenti un monogramma pulito.

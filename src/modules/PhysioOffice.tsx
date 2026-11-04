@@ -9,7 +9,7 @@ import { useLang } from '../lib/i18n'
 // Il mio ufficio del fisioterapista: atleti collegati + spazio clinico
 // (valutazioni, trattamenti, esercizi). Dati privati del fisio (RLS: physio_id = auth.uid()).
 const ACCENT = '#2C7A8A'
-const kicker: React.CSSProperties = { fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase', fontWeight: 800 }
+const kicker: React.CSSProperties = { fontSize: 11, fontWeight: 800 }
 const today = () => new Date().toISOString().slice(0, 10)
 
 type Ath = { player_id: number; name: string }
@@ -44,7 +44,7 @@ export default function PhysioOffice() {
 
   return (
     <div className="grid" style={{ gap: 18 }}>
-      <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 18, background: 'var(--bg-2)', border: '1px solid var(--border)', padding: '22px' }}>
+      <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 20, background: 'var(--bg-2)', border: '1px solid var(--border)', padding: '22px' }}>
         <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 5, background: ACCENT }} />
         <div style={{ ...kicker, color: ACCENT }}>{t('Il mio ufficio')}</div>
         <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: -0.3, marginTop: 2 }}>{t('Spazio clinico')}</div>
@@ -61,7 +61,7 @@ export default function PhysioOffice() {
           <div className="grid g2" style={{ gap: 10 }}>
             {athletes.map(a => (
               <button key={a.player_id} className="card" style={{ display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left', cursor: 'pointer' }} onClick={() => setSel(a)}>
-                <div style={{ width: 40, height: 40, borderRadius: 11, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: '#fff' }}>{(a.name || 'A').slice(0, 1)}</div>
+                <div style={{ width: 40, height: 40, borderRadius: 12, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: '#fff' }}>{(a.name || 'A').slice(0, 1)}</div>
                 <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontWeight: 600 }}>{a.name}</div><div className="faint" style={{ fontSize: 12.5 }}>{t('Apri cartella clinica')}</div></div>
                 <Icon name="chevron-right" size={16} />
               </button>
@@ -134,16 +134,16 @@ function Workspace({ physioId, athlete, onBack }: { physioId: string; athlete: A
 
 function RecordCard({ tab, r, onEdit, onDel }: { tab: Tab; r: any; onEdit: () => void; onDel: () => void }) {
   const { t } = useLang()
-  const title = tab === 'exe' ? (r.name || t('Esercizio')) : (r.date || '—')
-  const sub = tab === 'val' ? (r.diagnosis || r.reason || '') : tab === 'trt' ? (r.techniques || '') : `${r.sets || '—'}×${r.reps || '—'} · ${r.frequency || ''}`
+  const title = tab === 'exe' ? (r.name || t('Esercizio')) : (r.date || '-')
+  const sub = tab === 'val' ? (r.diagnosis || r.reason || '') : tab === 'trt' ? (r.techniques || '') : `${r.sets || '-'}×${r.reps || '-'} · ${r.frequency || ''}`
   return (
     <div className="card">
       <div className="flex between" style={{ alignItems: 'flex-start', gap: 10 }}>
         <div style={{ minWidth: 0 }}>
           <div style={{ fontWeight: 600 }}>{title}</div>
           {sub && <div className="faint" style={{ fontSize: 12.5, marginTop: 2 }}>{sub}</div>}
-          {tab === 'val' && (r.pain_scale != null) && <div className="faint" style={{ fontSize: 12.5, marginTop: 2 }}>{t('Dolore')}: {r.pain_scale}/10 · ROM: {r.rom || '—'} · {t('Forza')}: {r.strength || '—'}</div>}
-          {tab === 'trt' && <div className="faint" style={{ fontSize: 12.5, marginTop: 2 }}>{t('Durata')}: {r.duration || '—'} · {t('Dolore')}: {r.pain_level != null ? r.pain_level + '/10' : '—'} · {r.progress || ''}</div>}
+          {tab === 'val' && (r.pain_scale != null) && <div className="faint" style={{ fontSize: 12.5, marginTop: 2 }}>{t('Dolore')}: {r.pain_scale}/10 · ROM: {r.rom || '-'} · {t('Forza')}: {r.strength || '-'}</div>}
+          {tab === 'trt' && <div className="faint" style={{ fontSize: 12.5, marginTop: 2 }}>{t('Durata')}: {r.duration || '-'} · {t('Dolore')}: {r.pain_level != null ? r.pain_level + '/10' : '-'} · {r.progress || ''}</div>}
           {r.notes && <div style={{ fontSize: 12.5, marginTop: 6 }}>{r.notes}</div>}
           {tab === 'exe' && r.description && <div style={{ fontSize: 12.5, marginTop: 6 }}>{r.description}</div>}
         </div>

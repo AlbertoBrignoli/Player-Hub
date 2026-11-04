@@ -79,7 +79,7 @@ async function uploadEntryGraphics(entry: EditorialEntry, files: File[], ctx: {
     if (status !== entry.status) await updateRow('crm_editorial', entry.id, { status })
     notify(ctx.isTeam ? 'player' : 'team', `Grafica caricata: ${entry.title}`,
       `${ok} file pront${ok > 1 ? 'i' : 'o'} nel calendario editoriale.`, 'editorial', ctx.athleteId)
-    toast((ok > 1 ? ctx.t('{n} grafiche caricate — anche in Media, Pubblicati') : ctx.t('{n} grafica caricata — anche in Media, Pubblicati')).replace('{n}', String(ok)))
+    toast((ok > 1 ? ctx.t('{n} grafiche caricate - anche in Media, Pubblicati') : ctx.t('{n} grafica caricata - anche in Media, Pubblicati')).replace('{n}', String(ok)))
   }
   return { ok, error }
 }
@@ -357,7 +357,7 @@ function EntryChip({ e, onOpen, preview, tz, full }: { e: EditorialEntry; onOpen
     const home = (mi.venue || '').toLowerCase() === 'home'
     const time = mi.kickoff ? fmtMatchTime(mi.kickoff, tz) : ''
     const played = mi.status === 'FT' && mi.team_score != null
-    const score = played ? (home ? `${mi.team_score}–${mi.opponent_score}` : `${mi.opponent_score}–${mi.team_score}`) : null
+    const score = played ? (home ? `${mi.team_score}-${mi.opponent_score}` : `${mi.opponent_score}-${mi.team_score}`) : null
     return (
       <button className={`cal-match cal-${e.status} ${full ? 'cal-w-full' : ''}`} onClick={() => onOpen(e)} title={e.title}>
         <div className="cal-match-top">
@@ -685,7 +685,7 @@ function EntryModal({ entry, onClose, onChanged }: {
       await supabase.from('crm_media')
         .update({ folder: 'Pubblicati', status: 'pubblicata' })
         .eq('editorial_id', entry.id).eq('kind', 'grafica')
-      toast(t('Contenuto pubblicato — grafiche archiviate in Media → Pubblicati'))
+      toast(t('Contenuto pubblicato - grafiche archiviate in Media → Pubblicati'))
     }
     onChanged()
   }
@@ -705,7 +705,7 @@ function EntryModal({ entry, onClose, onChanged }: {
     await supabase.from('crm_media').update({ status: 'pubblicata', folder: 'Pubblicati' })
       .eq('editorial_id', entry.id).eq('kind', 'grafica')
     notify(isTeam ? 'player' : 'team', `Pubblicato: ${entry.title}`,
-      'Contenuto confermato come pubblicato — lavoro completato', 'editorial', athleteId)
+      'Contenuto confermato come pubblicato - lavoro completato', 'editorial', athleteId)
     toast(t('Segnato come pubblicato')); onChanged()
   }
 
@@ -784,7 +784,7 @@ function EntryModal({ entry, onClose, onChanged }: {
               ) : (
                 <>
                   <img src={urls[firstGraphicImg.storage_path]} alt="" style={{ width: '100%', borderRadius: 12, display: 'block' }} />
-                  {entry.revision && <div className="faint" style={{ fontSize: 12.5, marginTop: 8 }}>{t('Hai già inviato una richiesta di modifiche — il team ci sta lavorando.')}</div>}
+                  {entry.revision && <div className="faint" style={{ fontSize: 12.5, marginTop: 8 }}>{t('Hai già inviato una richiesta di modifiche - il team ci sta lavorando.')}</div>}
                   <div className="flex gap" style={{ marginTop: 12 }}>
                     <button className="btn btn-primary" style={{ flex: 1 }} onClick={acceptGraphic}><Icon name="check" size={15} /> {t('Accetta')}</button>
                     <button className="btn" style={{ flex: 1 }} onClick={() => setShowAnnotator(true)}><Icon name="edit" size={15} /> {t('Chiedi modifiche')}</button>
@@ -975,13 +975,13 @@ function EntryModal({ entry, onClose, onChanged }: {
         {mi && (
           <More title={t('Info partita per le grafiche')}>
             <div className="grid g3" style={{ gap: 10 }}>
-              <Info k={t("Match")} v={`${mi.home_team ?? '—'} vs ${mi.away_team ?? '—'}`} />
+              <Info k={t("Match")} v={`${mi.home_team ?? '-'} vs ${mi.away_team ?? '-'}`} />
               <Info k={t("Competizione")} v={mi.league} />
               <Info k={t("Giornata")} v={mi.round} />
               <Info k={t("Calcio d'inizio")} v={mi.kickoff ? fmtMatchDateTime(mi.kickoff, athleteTz) : null} />
               <Info k={t("Stadio")} v={mi.stadium} />
               <Info k={t("Casa/Trasferta")} v={(mi.venue || '').toLowerCase() === 'home' ? t('In casa') : (mi.venue || '').toLowerCase() === 'away' ? t('Trasferta') : mi.venue} />
-              {mi.status === 'FT' && <Info k={t("Risultato")} v={`${mi.team_score ?? '—'}–${mi.opponent_score ?? '—'}`} />}
+              {mi.status === 'FT' && <Info k={t("Risultato")} v={`${mi.team_score ?? '-'}-${mi.opponent_score ?? '-'}`} />}
             </div>
           </More>
         )}
@@ -1118,7 +1118,7 @@ function More({ title, tone, children }: { title: string; tone?: string; childre
 }
 
 function Info({ k, v }: { k: string; v: any }) {
-  return <div><div className="faint" style={{ fontSize: 11 }}>{k}</div><div style={{ fontWeight: 600, fontSize: 14 }}>{v ?? '—'}</div></div>
+  return <div><div className="faint" style={{ fontSize: 11 }}>{k}</div><div style={{ fontWeight: 600, fontSize: 14 }}>{v ?? '-'}</div></div>
 }
 
 function NewEntryModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
@@ -1185,7 +1185,7 @@ function NewEntryModal({ onClose, onCreated }: { onClose: () => void; onCreated:
           <Textarea rows={3} value={brief} onChange={e => setBrief(e.target.value)}
             placeholder={t('Es. Post con mia moglie in formato carosello, foto al tramonto dopo la partita…')} />
         </Field>
-        <Field label={t('Copy (facoltativo — il team lo rifinisce, poi tu approvi)')}>
+        <Field label={t('Copy (facoltativo - il team lo rifinisce, poi tu approvi)')}>
           <Textarea rows={3} value={copy} onChange={e => setCopy(e.target.value)}
             placeholder={t('Se hai già in testa la didascalia, scrivila qui.')} />
         </Field>
@@ -1268,7 +1268,7 @@ function MediaPicker({ athleteId, excludeSourceIds, onClose, onConfirm }: {
         <div className="grid" style={{ gap: 18 }}>
           {folders.map(f => (
             <div key={f}>
-              <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.8px',
+              <div className="faint" style={{ fontSize: 11,
                 fontWeight: 700, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
                 <Icon name="folder" size={13} /> {f === 'Senza cartella' ? t(f) : f}
               </div>

@@ -10,7 +10,7 @@ import { useLang } from '../lib/i18n'
 const ACCENT = '#4D7C0F'
 
 const kicker: React.CSSProperties = {
-  fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase', fontWeight: 800,
+  fontSize: 11, fontWeight: 800,
 }
 
 type P = Record<string, any>
@@ -52,7 +52,7 @@ export default function NutriProfile() {
     const { data } = supabase.storage.from('agent-profiles').getPublicUrl(path)
     set('photo_url', data.publicUrl)
     setUpl(false)
-    setMsg(t('Immagine caricata — ricordati di salvare.'))
+    setMsg(t('Immagine caricata - ricordati di salvare.'))
   }
 
   async function save() {
@@ -69,13 +69,13 @@ export default function NutriProfile() {
 
   return (
     <div className="grid" style={{ gap: 18 }}>
-      <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 18,
+      <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 20,
                     background: 'var(--bg-2)', border: '1px solid var(--border)', padding: '22px' }}>
         <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 5, background: ACCENT }} />
         <div className="flex gap" style={{ alignItems: 'center', gap: 15, flexWrap: 'wrap' }}>
           {p.photo_url
-            ? <img src={p.photo_url} alt="" style={{ width: 58, height: 58, borderRadius: 15, objectFit: 'cover' }} />
-            : <div style={{ width: 58, height: 58, borderRadius: 15, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 22, color: '#fff' }}>
+            ? <img src={p.photo_url} alt="" style={{ width: 58, height: 58, borderRadius: 20, objectFit: 'cover' }} />
+            : <div style={{ width: 58, height: 58, borderRadius: 20, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 22, color: '#fff' }}>
                 {(p.name || 'N').slice(0, 1)}
               </div>}
           <div style={{ minWidth: 0, flex: 1 }}>

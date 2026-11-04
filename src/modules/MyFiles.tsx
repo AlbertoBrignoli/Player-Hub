@@ -128,7 +128,7 @@ export default function MyFiles() {
       <section className="grid" style={{ gap: 12, alignContent: 'start', minWidth: 0 }}>
         <div className="mf-top">
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: -.3 }}>{curFolder ? folderName(curFolder) : t('Tutti i file')}</div>
+            <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: -.3 }}>{curFolder ? folderName(curFolder) : t('Tutti i file')}</div>
             <div className="faint" style={{ fontSize: 12.5 }}>
               {curFolder?.system_key === 'chat'
                 ? t('Qui arrivano da soli i file che ricevi in chat.')
@@ -168,7 +168,7 @@ export default function MyFiles() {
                   <div style={{ minWidth: 0 }}>
                     <div className="mf-name">{f.name}</div>
                     <div className="mf-meta">
-                      {f.source === 'upload' ? t('Caricato da te') : <>{t('Da')} {f.from_name || '—'}{f.from_role ? ` · ${t(STAFF_ROLE[f.from_role] || (f.from_role === 'player' ? 'Atleta' : f.from_role))}` : ''}</>}
+                      {f.source === 'upload' ? t('Caricato da te') : <>{t('Da')} {f.from_name || '-'}{f.from_role ? ` · ${t(STAFF_ROLE[f.from_role] || (f.from_role === 'player' ? 'Atleta' : f.from_role))}` : ''}</>}
                       {athleteName(f.player_id) && <> · {athleteName(f.player_id)}</>}
                       {' · '}{fmtDate(f.created_at)}{f.size ? ` · ${fmtSize(f.size)}` : ''}
                     </div>
@@ -226,10 +226,10 @@ function FileThumb({ f }: { f: FileRow }) {
 const MF_CSS = `
 .mf { display: grid; grid-template-columns: 240px 1fr; gap: 14px; align-items: start; }
 .mf-side { padding: 10px; display: grid; gap: 2px; position: sticky; top: 12px; }
-.mf-side-h { font-size: 10.5px; letter-spacing: 1.4px; text-transform: uppercase; font-weight: 800; color: var(--text-dim); padding: 6px 10px; }
-.mf-f { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 10px; border-radius: 10px; border: 0; background: transparent; color: var(--text); cursor: pointer; text-align: left; font-size: 13.5px; font-weight: 600; }
+.mf-side-h { font-size: 12.5px; font-weight: 800; color: var(--text-dim); padding: 6px 10px; }
+.mf-f { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 10px; border-radius: 12px; border: 0; background: transparent; color: var(--text); cursor: pointer; text-align: left; font-size: 14px; font-weight: 600; }
 .mf-f span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mf-f b { font-size: 11.5px; color: var(--text-dim); font-weight: 700; }
+.mf-f b { font-size: 12.5px; color: var(--text-dim); font-weight: 700; }
 .mf-f.on { background: var(--text); color: var(--bg, #fff); }
 .mf-f.on b { color: inherit; opacity: .7; }
 .mf-f:not(.on):hover { background: var(--bg-2); }
@@ -242,9 +242,9 @@ const MF_CSS = `
 .mf-row { display: flex; align-items: center; gap: 6px; padding: 8px 10px; border-bottom: 1px solid var(--border); }
 .mf-row:last-child { border-bottom: 0; }
 .mf-open { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; border: 0; background: none; color: var(--text); text-align: left; cursor: pointer; padding: 4px; }
-.mf-th { width: 42px; height: 42px; border-radius: 9px; flex-shrink: 0; display: grid; place-items: center; color: #fff; font-size: 10.5px; font-weight: 900; }
+.mf-th { width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0; display: grid; place-items: center; color: #fff; font-size: 11px; font-weight: 800; }
 .mf-name { font-weight: 800; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mf-meta { font-size: 11.5px; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mf-meta { font-size: 12.5px; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mf-act { display: flex; gap: 2px; flex-shrink: 0; }
 @media (max-width: 760px) {
   .mf { grid-template-columns: 1fr; }

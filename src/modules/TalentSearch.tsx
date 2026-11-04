@@ -1,4 +1,4 @@
-// RICERCA TALENT — lato brand.
+// RICERCA TALENT - lato brand.
 // Il referente del brand compila le caratteristiche dell'atleta che cerca
 // (specchio dell'onboarding commerciale); il sistema calcola un match 0-100
 // rule-based con gli atleti del roster usando SOLO dati già visibili al brand
@@ -25,7 +25,7 @@ function MatchRing({ pct, size = 64 }: { pct: number; size?: number }) {
       <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round"
         strokeDasharray={`${(pct / 100) * circ} ${circ}`} transform={`rotate(-90 ${size / 2} ${size / 2})`} />
       <text x="50%" y="52%" textAnchor="middle" dominantBaseline="middle"
-        style={{ fontFamily: 'var(--font-display)', fontSize: size * 0.3, fontWeight: 700, fill: 'var(--text)' }}>{pct}</text>
+        style={{ fontFamily: 'var(--font-display)', fontSize: size * 0.3, fontWeight: 600, fill: 'var(--text)' }}>{pct}</text>
     </svg>
   )
 }
@@ -120,7 +120,7 @@ export default function TalentSearch({ goto }: { goto?: (r: string) => void }) {
       <div className="card">
         <div className="flex between" style={{ flexWrap: 'wrap', gap: 8 }}>
           <div>
-            <div style={{ fontWeight: 700 }}>{t('La tua ricerca')}</div>
+            <div style={{ fontWeight: 600 }}>{t('La tua ricerca')}</div>
             <div className="muted" style={{ fontSize: 12.5 }}>
               {t("Descrivi l'atleta ideale per {brand}: il match con il roster si aggiorna in automatico.").replace('{brand}', brand?.name || t('il tuo brand'))}
             </div>
@@ -169,10 +169,10 @@ export default function TalentSearch({ goto }: { goto?: (r: string) => void }) {
             <div className="flex gap" style={{ flexWrap: 'wrap' }}>
               {(search.categories || []).map((k: string) => <Badge key={k} tone="accent">{cats.find((c: any) => c.key === k)?.name || k}</Badge>)}
               {(search.values_wanted || []).map((v: string) => <Badge key={v}>{t(v)}</Badge>)}
-              {(search.age_min || search.age_max) && <Badge>{t('{range} anni').replace('{range}', `${search.age_min || '…'}–${search.age_max || '…'}`)}</Badge>}
+              {(search.age_min || search.age_max) && <Badge>{t('{range} anni').replace('{range}', `${search.age_min || '…'}-${search.age_max || '…'}`)}</Badge>}
               {(search.markets || []).map((m: string) => <Badge key={m}>{t(m)}</Badge>)}
             </div>
-            {search.updated_at && <div className="faint" style={{ fontSize: 11.5, marginTop: 8 }}>{t('Aggiornata {date}').replace('{date}', fmtDateTime(search.updated_at))}</div>}
+            {search.updated_at && <div className="faint" style={{ fontSize: 12.5, marginTop: 8 }}>{t('Aggiornata {date}').replace('{date}', fmtDateTime(search.updated_at))}</div>}
           </div>
         ) : null}
       </div>
@@ -189,10 +189,10 @@ export default function TalentSearch({ goto }: { goto?: (r: string) => void }) {
             <div className="card" key={p.api_player_id}>
               <div className="flex gap" style={{ alignItems: 'center', flexWrap: 'wrap' }}>
                 {p.photo_url
-                  ? <img src={p.photo_url} alt="" style={{ width: 52, height: 52, borderRadius: 14, objectFit: 'cover', border: '1px solid var(--border)', flexShrink: 0 }} />
-                  : <div className="avatar" style={{ width: 52, height: 52, fontSize: 17 }}>{(p.name || '?').slice(0, 1)}</div>}
+                  ? <img src={p.photo_url} alt="" style={{ width: 52, height: 52, borderRadius: 20, objectFit: 'cover', border: '1px solid var(--border)', flexShrink: 0 }} />
+                  : <div className="avatar" style={{ width: 52, height: 52, fontSize: 18 }}>{(p.name || '?').slice(0, 1)}</div>}
                 <div style={{ flex: 1, minWidth: 160 }}>
-                  <div style={{ fontWeight: 750, fontSize: 15.5 }}>{p.name}</div>
+                  <div style={{ fontWeight: 800, fontSize: 15 }}>{p.name}</div>
                   <div className="muted" style={{ fontSize: 12.5 }}>{p.position || ''}{p.team_name ? ` · ${p.team_name}` : ''}{p.age ? ` · ${t('{n} anni').replace('{n}', String(p.age))}` : ''}</div>
                   {m?.partial && !m.blocked && <Badge tone="gold">{t('Profilo in completamento')}</Badge>}
                 </div>
@@ -214,10 +214,10 @@ export default function TalentSearch({ goto }: { goto?: (r: string) => void }) {
 
       {/* ── Claim finale: la via diretta ad AUVI ── */}
       <div className="card card-lg" style={{ textAlign: 'center', padding: '30px 24px' }}>
-        <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, marginBottom: 6 }}>
+        <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 800, marginBottom: 6 }}>
           {t('Non hai trovato ciò che cerchi?')}
         </div>
-        <div className="muted" style={{ fontSize: 13.5, maxWidth: 480, margin: '0 auto 16px', lineHeight: 1.6 }}>
+        <div className="muted" style={{ fontSize: 14, maxWidth: 480, margin: '0 auto 16px', lineHeight: 1.6 }}>
           {t('Scrivi direttamente al team di AUVI: provvederemo alla ricerca di talent on target con la tua richiesta, dentro e fuori dal nostro roster.')}
         </div>
         <button className="btn btn-primary" onClick={() => goto?.('messages')}>

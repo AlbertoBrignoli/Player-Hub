@@ -14,7 +14,7 @@ const ACCENT = '#3F7F00'
 const IN = 'var(--green)'
 const OUT = 'var(--red)'
 
-const kicker: React.CSSProperties = { fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase', fontWeight: 800 }
+const kicker: React.CSSProperties = { fontSize: 11, fontWeight: 800 }
 const today = () => new Date().toISOString().slice(0, 10)
 const monthKey = (d: string) => d.slice(0, 7)
 
@@ -37,7 +37,7 @@ export default function CoachOffice() {
   const [editC, setEditC] = useState<Partial<CoachClient> | null>(null)
   const [editL, setEditL] = useState<Partial<CoachLedger> | null>(null)
 
-  const clientName = (id?: string | null) => clients.find(c => c.id === id)?.name || '—'
+  const clientName = (id?: string | null) => clients.find(c => c.id === id)?.name || '-'
 
   // Cassa del mese in corso: entrate, uscite, saldo.
   const m = monthKey(today())
@@ -75,7 +75,7 @@ export default function CoachOffice() {
   return (
     <div className="grid" style={{ gap: 18 }}>
       {/* --- Cassa del mese in evidenza --- */}
-      <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 18, background: 'var(--bg-2)', border: '1px solid var(--border)', padding: '22px' }}>
+      <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 20, background: 'var(--bg-2)', border: '1px solid var(--border)', padding: '22px' }}>
         <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 5, background: ACCENT }} />
         <div style={{ ...kicker, color: ACCENT }}>{t('Il mio ufficio')} · {new Date().toLocaleDateString(lang === 'en' ? 'en-GB' : 'it-IT', { month: 'long', year: 'numeric' })}</div>
         <div className="flex gap" style={{ gap: 26, marginTop: 14, flexWrap: 'wrap' }}>
@@ -298,7 +298,7 @@ function SessionForm({ value, clients, uid, onClose, onSaved }: { value: Partial
       <Field label={t('Titolo')}><Input value={f.title || ''} onChange={e => set('title', e.target.value)} placeholder={t('Es. Forza · sala pesi')} /></Field>
       <Field label={t('Cliente')}>
         <Select value={f.client_id || ''} onChange={e => set('client_id', e.target.value)}>
-          <option value="">{t('— nessuno —')}</option>
+          <option value="">{t('- nessuno -')}</option>
           {clients.filter(c => !c.archived).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
         </Select>
       </Field>
@@ -388,7 +388,7 @@ function LedgerForm({ value, uid, onClose, onSaved }: { value: Partial<CoachLedg
       </div>
       <Field label={t('Categoria')}>
         <Select value={f.category || ''} onChange={e => set('category', e.target.value)}>
-          <option value="">{t('— nessuna —')}</option>
+          <option value="">{t('- nessuna -')}</option>
           {(isIn ? ['Seduta', 'Programma', 'Consulenza', 'Altro'] : ['Attrezzatura', 'Palestra', 'Trasferte', 'Formazione', 'Tasse', 'Altro'])
             .map(c => <option key={c} value={c}>{t(c)}</option>)}
         </Select>
@@ -436,7 +436,7 @@ function CoachCalendar({ sessions, clientName, onPick }: {
           const isSel = sel === k
           return (
             <div key={i} onClick={() => setSel(k)}
-              style={{ minHeight: 40, borderRadius: 9, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
+              style={{ minHeight: 40, borderRadius: 12, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
                 border: isSel ? '1.5px solid ' + ACCENT : isToday ? '1px solid ' + ACCENT : '1px solid var(--border)',
                 background: isSel ? ACCENT + '22' : isToday ? ACCENT + '11' : 'transparent' }}>
               <span style={{ fontSize: 12.5, fontWeight: has ? 800 : 500 }}>{d}</span>

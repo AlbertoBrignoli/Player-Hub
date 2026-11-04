@@ -390,12 +390,12 @@ export default function Media() {
         <div className="dropzone-overlay" onClick={() => setDragging(false)} onDrop={onDrop} onDragOver={e => e.preventDefault()}>
           <div className="dropzone-inner">
             <Icon name="upload" size={34} strokeWidth={1.4} />
-            <div style={{ fontWeight: 750, marginTop: 10 }}>
+            <div style={{ fontWeight: 800, marginTop: 10 }}>
               {(openFolder && openFolder !== NO_FOLDER) || uploadFolder
                 ? t('Rilascia per caricare in "{folder}"').replace('{folder}', (openFolder && openFolder !== NO_FOLDER) ? openFolder : uploadFolder)
                 : t('Rilascia per caricare')}
             </div>
-            <div className="faint" style={{ fontSize: 12, marginTop: 6 }}>{t('tocca qui per annullare')}</div>
+            <div className="faint" style={{ fontSize: 12.5, marginTop: 6 }}>{t('tocca qui per annullare')}</div>
           </div>
         </div>
       )}
@@ -442,7 +442,7 @@ export default function Media() {
             <button className="btn btn-sm" onClick={() => setOpenFolder(null)}>
               <span style={{ display: 'inline-flex', transform: 'rotate(180deg)' }}><Icon name="chevron-right" size={13} /></span> {t('Cartelle')}
             </button>
-            <div style={{ fontWeight: 650 }}>{openFolder === NO_FOLDER ? t('Senza cartella') : openFolder}</div>
+            <div style={{ fontWeight: 600 }}>{openFolder === NO_FOLDER ? t('Senza cartella') : openFolder}</div>
             <span className="faint" style={{ fontSize: 12.5 }}>{t('{n} elementi').replace('{n}', String(folderItems.length))}</span>
           </div>
           {openFolder !== NO_FOLDER && (
@@ -476,7 +476,7 @@ export default function Media() {
                     : <div className="folder-cover folder-cover-ph"><Icon name="folder" size={30} strokeWidth={1.3} /></div>}
                   <div className="folder-meta">
                     <div className="folder-name"><Icon name="folder" size={13} /> {f}</div>
-                    <div className="faint" style={{ fontSize: 11.5 }}>
+                    <div className="faint" style={{ fontSize: 12.5 }}>
                       {t('{n} elementi').replace('{n}', String(items.length))}{items.some(m => m.status === 'da_approvare') ? ' · ' + t('{n} da approvare').replace('{n}', String(items.filter(m => m.status === 'da_approvare').length)) : ''}
                     </div>
                   </div>
@@ -493,7 +493,7 @@ export default function Media() {
                   : <div className="folder-cover folder-cover-ph"><Icon name="image" size={30} strokeWidth={1.3} /></div>}
                 <div className="folder-meta">
                   <div className="folder-name"><Icon name="image" size={13} /> {t('Senza cartella')}</div>
-                  <div className="faint" style={{ fontSize: 11.5 }}>{t('{n} elementi').replace('{n}', String(senzaCartella.length))}</div>
+                  <div className="faint" style={{ fontSize: 12.5 }}>{t('{n} elementi').replace('{n}', String(senzaCartella.length))}</div>
                 </div>
               </button>
               )
@@ -502,18 +502,18 @@ export default function Media() {
               <button className="folder-card folder-new" onClick={newFolder}>
                 <div className="folder-cover folder-cover-ph"><Icon name="folder-plus" size={30} strokeWidth={1.3} /></div>
                 <div className="folder-meta"><div className="folder-name">{t("Nuova cartella")}</div>
-                  <div className="faint" style={{ fontSize: 11.5 }}>{t('crea e carica')}</div></div>
+                  <div className="faint" style={{ fontSize: 12.5 }}>{t('crea e carica')}</div></div>
               </button>
             )}
           </div>
         )
       )}
 
-      {/* Barra approvazione (player) — vale sia nel flusso che dentro una cartella */}
+      {/* Barra approvazione (player) - vale sia nel flusso che dentro una cartella */}
       {role === 'player' && visibleApprovabili.length > 0 && (view === 'cartelle' ? !!openFolder : tab === 'approvare') && (
         <div className="card flex between wrap gap" style={{ alignItems: 'center', borderColor: picked.size ? 'var(--text-dim)' : undefined }}>
-          <div style={{ fontWeight: 650 }}>
-            {picked.size ? (picked.size > 1 ? t('{n} foto selezionate') : t('{n} foto selezionata')).replace('{n}', String(picked.size)) : t('Scorri a destra per approvare, a sinistra per scartare — o seleziona più foto insieme')}
+          <div style={{ fontWeight: 600 }}>
+            {picked.size ? (picked.size > 1 ? t('{n} foto selezionate') : t('{n} foto selezionata')).replace('{n}', String(picked.size)) : t('Scorri a destra per approvare, a sinistra per scartare - o seleziona più foto insieme')}
           </div>
           <div className="flex gap wrap" style={{ alignItems: 'center' }}>
             <button className="btn btn-sm" onClick={() => setPicked(new Set(visibleApprovabili.map(m => m.id)))}>

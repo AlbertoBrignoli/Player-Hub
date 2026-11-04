@@ -22,7 +22,7 @@ const OK = '#12A150'
 const BUCKET = 'insurance-docs'
 
 const kicker: React.CSSProperties = {
-  fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase', fontWeight: 800,
+  fontSize: 11, fontWeight: 800,
 }
 
 // I due mondi delle polizze, ciascuno con la sua sezione.
@@ -307,11 +307,11 @@ function PolicyCard({ p, highlight, canManage, people, onThread, onPay, onEdit, 
           <div style={{ minWidth: 0 }}>
             <div className="t-item">{p.title}</div>
             <div className="t-meta" style={{ marginTop: 2 }}>
-              {[p.category && tr(p.category), p.company].filter(Boolean).join(' · ') || '—'}
+              {[p.category && tr(p.category), p.company].filter(Boolean).join(' · ') || '-'}
             </div>
           </div>
           {t && (
-            <span className="t-meta" style={{ fontWeight: 800, letterSpacing: .5, textTransform: 'uppercase',
+            <span className="t-meta" style={{ fontWeight: 800,
                            color: t.c, whiteSpace: 'nowrap' }}>{tr(t.l).replace('{n}', String(t.n))}</span>
           )}
         </div>
@@ -387,15 +387,15 @@ function Overview({ rows, pays }: { rows: Policy[]; pays: Payment[] }) {
   function copiaRiepilogo() {
     const righe = attive.map(p => {
       const g = (p.coverage_items || []).map(x =>
-        `    - ${x.name}${x.amount ? ` (${tr('massimale')} ${x.amount} €)` : ''}${x.note ? ` — ${x.note}` : ''}`).join('\n')
+        `    - ${x.name}${x.amount ? ` (${tr('massimale')} ${x.amount} €)` : ''}${x.note ? ` - ${x.note}` : ''}`).join('\n')
       return [
         `${tr('POLIZZA')}: ${p.title}`,
-        `  ${tr('Area')}: ${p.area === 'sport' || p.area === 'personale' ? tr(p.area === 'sport' ? 'Sport' : 'Personale') : p.area} · ${tr('Categoria')}: ${p.category ? tr(p.category) : '—'}`,
-        `  ${tr('Compagnia')}: ${p.company || '—'} · ${tr('N.')} ${p.policy_number || '—'}`,
-        `  ${tr('Assicurato')}: ${p.insured_party || '—'} · ${tr('Contraente')}: ${p.holder || '—'}`,
-        `  ${tr('Decorrenza')}: ${p.start_date || '—'} · ${tr('Scadenza')}: ${p.expiry_date || '—'}`,
-        `  ${tr('Premio')}: ${p.premium ?? '—'} € ${p.payment_frequency ? tr(p.payment_frequency) : ''} → ${tr('costo annuo')} ${annualCost(p)} €`,
-        `  ${tr('Massimale')}: ${p.coverage_amount ?? '—'} € · ${tr('Franchigia')}: ${p.deductible || '—'}`,
+        `  ${tr('Area')}: ${p.area === 'sport' || p.area === 'personale' ? tr(p.area === 'sport' ? 'Sport' : 'Personale') : p.area} · ${tr('Categoria')}: ${p.category ? tr(p.category) : '-'}`,
+        `  ${tr('Compagnia')}: ${p.company || '-'} · ${tr('N.')} ${p.policy_number || '-'}`,
+        `  ${tr('Assicurato')}: ${p.insured_party || '-'} · ${tr('Contraente')}: ${p.holder || '-'}`,
+        `  ${tr('Decorrenza')}: ${p.start_date || '-'} · ${tr('Scadenza')}: ${p.expiry_date || '-'}`,
+        `  ${tr('Premio')}: ${p.premium ?? '-'} € ${p.payment_frequency ? tr(p.payment_frequency) : ''} → ${tr('costo annuo')} ${annualCost(p)} €`,
+        `  ${tr('Massimale')}: ${p.coverage_amount ?? '-'} € · ${tr('Franchigia')}: ${p.deductible || '-'}`,
         g ? `  ${tr('Garanzie')}:\n${g}` : `  ${tr('Garanzie')}: ${tr('non dettagliate')}`,
         p.notes ? `  ${tr('Note')}: ${p.notes}` : '',
       ].filter(Boolean).join('\n')
@@ -531,7 +531,7 @@ function Info({ k, v }: { k: string; v?: any }) {
   return (
     <div>
       <div className="t-label">{k}</div>
-      <div style={{ fontSize: 12.5, marginTop: 1 }}>{v || '—'}</div>
+      <div style={{ fontSize: 12.5, marginTop: 1 }}>{v || '-'}</div>
     </div>
   )
 }
@@ -570,7 +570,7 @@ function PaymentForm({ policy, playerId, onClose, onSaved }: {
       </div>
       <Field label={tr('Metodo')}>
         <Select value={method} onChange={e => setMethod(e.target.value)}>
-          <option value="">—</option>
+          <option value="">-</option>
           <option value="bonifico">{tr('Bonifico')}</option>
           <option value="carta">{tr('Carta')}</option>
           <option value="RID">{tr('Addebito automatico')}</option>
@@ -653,7 +653,7 @@ function PolicyForm({ value, playerId, onClose, onSaved }: {
       {!f.id && (f.attachments?.length ?? 0) > 0 && (
         <div className="faint" style={{ fontSize: 12.5, marginBottom: 10, borderLeft: `2px solid ${ACCENT}`, paddingLeft: 10 }}>
           {tr('Documento allegato. Compila i dati essenziali:')} <b>{tr('area')}</b>, <b>{tr('categoria')}</b>,
-          <b> {tr('importo')}</b> {tr('e')} <b>{tr('scadenza')}</b> — {tr('bastano per la dashboard dei costi.')}
+          <b> {tr('importo')}</b> {tr('e')} <b>{tr('scadenza')}</b> - {tr('bastano per la dashboard dei costi.')}
         </div>
       )}
       <div className="grid g2" style={{ gap: 10 }}>
@@ -665,7 +665,7 @@ function PolicyForm({ value, playerId, onClose, onSaved }: {
         </Field>
         <Field label={tr('Categoria')}>
           <Select value={f.category || ''} onChange={e => set('category', e.target.value)}>
-            <option value="">{tr('— seleziona —')}</option>
+            <option value="">{tr('- seleziona -')}</option>
             {cats.map(c => <option key={c} value={c}>{tr(c)}</option>)}
           </Select>
         </Field>
@@ -692,7 +692,7 @@ function PolicyForm({ value, playerId, onClose, onSaved }: {
         </Field>
         <Field label={tr('Frequenza')}>
           <Select value={f.payment_frequency || ''} onChange={e => set('payment_frequency', e.target.value)}>
-            <option value="">—</option>
+            <option value="">-</option>
             <option value="annuale">{tr('Annuale')}</option>
             <option value="semestrale">{tr('Semestrale')}</option>
             <option value="trimestrale">{tr('Trimestrale')}</option>
@@ -702,7 +702,7 @@ function PolicyForm({ value, playerId, onClose, onSaved }: {
         <Field label={tr('Costo annuo')}>
           <div style={{ padding: '9px 2px' }}>
             <div style={{ fontSize: 15, fontWeight: 800, color: ACCENT }}>
-              {annualCost(f) ? fmtMoney(annualCost(f)) : '—'}
+              {annualCost(f) ? fmtMoney(annualCost(f)) : '-'}
             </div>
             <label className="flex gap" style={{ gap: 7, fontSize: 12.5, cursor: 'pointer', marginTop: 5 }}>
               <input type="checkbox" checked={!!f.premium_is_annual}
@@ -725,7 +725,7 @@ function PolicyForm({ value, playerId, onClose, onSaved }: {
         </div>
         {cov.length === 0 ? (
           <div className="faint" style={{ fontSize: 12.5, marginBottom: 10 }}>
-            {tr('Es. "Invalidità permanente" · 500.000 € — alimentano la dashboard delle coperture.')}
+            {tr('Es. "Invalidità permanente" · 500.000 € - alimentano la dashboard delle coperture.')}
           </div>
         ) : (
           <div className="grid" style={{ gap: 7, marginBottom: 10 }}>
@@ -845,7 +845,7 @@ function AnagraficaCard({ athleteId, canEdit }: { athleteId: number | null; canE
     <div className="flex between" style={{ alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: '1px solid var(--border)' }}>
       <span className="faint" style={{ fontSize: 12.5 }}>{k}</span>
       <span className="flex gap" style={{ alignItems: 'center', gap: 8, minWidth: 0 }}>
-        <span style={{ fontSize: 14, fontWeight: 600, textAlign: 'right', wordBreak: 'break-all' }}>{v || '—'}</span>
+        <span style={{ fontSize: 14, fontWeight: 600, textAlign: 'right', wordBreak: 'break-all' }}>{v || '-'}</span>
         {copy && v && (
           <button className="btn btn-ghost btn-sm" title={tr('Copia')}
             onClick={() => { navigator.clipboard.writeText(v); toast(tr('Copiato')) }}><Icon name="copy" size={12} /></button>
@@ -872,12 +872,12 @@ function AnagraficaCard({ athleteId, canEdit }: { athleteId: number | null; canE
           <Field label={tr('Indirizzo sede della banca')}><Input value={form.bank_address || ''} onChange={e => set('bank_address', e.target.value)} /></Field>
           <div className="flex gap" style={{ gap: 10 }}>
             <Field label={tr('Tipo documento')}><Select value={form.id_doc_type || ''} onChange={e => set('id_doc_type', e.target.value)}>
-              <option value="">—</option>{DOC_TYPES.map(t => <option key={t} value={t}>{tr(t)}</option>)}
+              <option value="">-</option>{DOC_TYPES.map(t => <option key={t} value={t}>{tr(t)}</option>)}
             </Select></Field>
             <Field label={tr('Numero documento')}><Input value={form.id_doc_number || ''} onChange={e => set('id_doc_number', e.target.value)} /></Field>
           </div>
           <div>
-            <div className="faint" style={{ fontSize: 12.5, marginBottom: 6 }}>{tr('Documenti (identità, tessera sanitaria, ecc.) — puoi caricarne più insieme')}</div>
+            <div className="faint" style={{ fontSize: 12.5, marginBottom: 6 }}>{tr('Documenti (identità, tessera sanitaria, ecc.) - puoi caricarne più insieme')}</div>
             {(form.id_docs || []).length > 0 && (
               <div className="grid" style={{ gap: 6, marginBottom: 8 }}>
                 {(form.id_docs || []).map((doc: any, i: number) => (

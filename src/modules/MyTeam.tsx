@@ -235,7 +235,7 @@ function MemberCard({ name, roleLabel, icon, title, agency, photo, logo, email, 
           <Icon name={icon} size={12} />
           <span className="t-label" style={{ color: 'inherit' }}>{roleLabel}</span>
         </div>
-        <div style={{ fontSize: 15, fontWeight: 800, marginTop: 3, lineHeight: 1.2 }}>{name || '—'}</div>
+        <div style={{ fontSize: 15, fontWeight: 800, marginTop: 3, lineHeight: 1.2 }}>{name || '-'}</div>
         {sub && <div style={{ fontSize: 12.5, color: 'var(--text-dim)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sub}</div>}
       </div>
       {area && onArea && (

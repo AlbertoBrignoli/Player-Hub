@@ -283,7 +283,7 @@ function DirectChat({ switcher }: { switcher?: React.ReactNode }) {
               preview={preview(c)}
               onClick={() => { setChan(c.key); setOpen(true) }} />
           ))}
-          {ordered.length === 0 && <div className="faint" style={{ padding: 20, fontSize: 13, textAlign: 'center' }}>{tr('Nessun risultato')}</div>}
+          {ordered.length === 0 && <div className="faint" style={{ padding: 20, fontSize: 12.5, textAlign: 'center' }}>{tr('Nessun risultato')}</div>}
         </div>
       </div>
 

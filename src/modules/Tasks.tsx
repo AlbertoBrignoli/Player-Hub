@@ -102,7 +102,7 @@ export default function Tasks() {
                     </div>
                   )
                 })}
-                {items.length + docs.length === 0 && <div className="faint" style={{ fontSize: 12.5, textAlign: 'center', padding: '14px 0' }}>—</div>}
+                {items.length + docs.length === 0 && <div className="faint" style={{ fontSize: 12.5, textAlign: 'center', padding: '14px 0' }}>-</div>}
               </div>
             </div>
           )

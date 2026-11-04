@@ -1,7 +1,7 @@
 // Statistiche da API-Football: stagione (player_stats_api.raw), partita per partita (matches),
 // carriera, trofei, trasferimenti, infortuni (player_api_extra).
 // Regola: si mostra SOLO cio' che API-Football fornisce davvero. Una voce senza dato non
-// compare (niente caselle "—"); una sezione senza voci non compare.
+// compare (niente caselle "-"); una sezione senza voci non compare.
 import { useState } from 'react'
 import { fixLogo } from '../lib/logos'
 import { Badge } from './ui'
@@ -191,7 +191,7 @@ export function ApiSeason({ rows, matches = [], role: roleHint }: { rows: ApiSea
                     <div className="row-title">{r.competition}</div>
                     <div className="row-sub">
                       {tr('{n} pres.').replace('{n}', String(r.appearances ?? 0))}{m ? ` · ${m}′` : ''} · {isGK
-                        ? tr('{n} subiti').replace('{n}', String(n(r.raw?.goals?.conceded) ?? '—')) + (n(r.raw?.goals?.saves) != null ? ' · ' + tr('{n} parate').replace('{n}', String(r.raw.goals.saves)) : '')
+                        ? tr('{n} subiti').replace('{n}', String(n(r.raw?.goals?.conceded) ?? '-')) + (n(r.raw?.goals?.saves) != null ? ' · ' + tr('{n} parate').replace('{n}', String(r.raw.goals.saves)) : '')
                         : tr('{n} gol').replace('{n}', String(r.goals ?? 0)) + ' · ' + tr('{n} assist').replace('{n}', String(r.assists ?? 0))}
                     </div>
                   </div>
@@ -256,14 +256,14 @@ export function ApiMatchList({ matches }: { matches: any[] }) {
               </div>
               <div className="row-right">
                 {r ? <div className="api-vote" style={{ color: r >= 7 ? 'var(--green)' : r < 6 ? 'var(--red)' : undefined }}>{r.toFixed(1)}</div> : null}
-                <div className="faint" style={{ fontSize: 11.5 }}>{m.minutes}′</div>
+                <div className="faint" style={{ fontSize: 12.5 }}>{m.minutes}′</div>
               </div>
             </div>
           )
         })}
       </div>
       {noData > 0 && (
-        <div className="faint" style={{ fontSize: 12, marginTop: 8 }}>
+        <div className="faint" style={{ fontSize: 12.5, marginTop: 8 }}>
           {(noData === 1 ? tr('{n} partita senza statistiche del giocatore (non entrato, oppure coppe e amichevoli che API-Football non copre).') : tr('{n} partite senza statistiche del giocatore (non entrato, oppure coppe e amichevoli che API-Football non copre).')).replace('{n}', String(noData))}
         </div>
       )}
@@ -311,7 +311,7 @@ export function ApiCareer({ rows, role: roleHint }: { rows: ApiSeasonRow[]; role
           // squadra per squadra, ognuna con le sue competizioni
           const byTeam = new Map<string, ApiSeasonRow[]>()
           for (const r of bySeason.get(y)!) {
-            const t = r.raw?.team?.name || '—'
+            const t = r.raw?.team?.name || '-'
             byTeam.set(t, [...(byTeam.get(t) || []), r])
           }
           const teamsY = [...byTeam.entries()].sort((a, b) =>

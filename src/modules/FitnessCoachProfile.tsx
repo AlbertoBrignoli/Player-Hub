@@ -12,7 +12,7 @@ import { whatsappUrl } from '../lib/ics'
 
 const ALL_SPEC = ['Performance', 'Strength', 'Return To Play', 'Speed', 'Mobility', 'Recovery', 'Prevenzione infortuni']
 const ALL_SERV = ['Allenamento Online', 'Allenamento in presenza', 'Programmi personalizzati', 'Test atletici', 'Valutazioni', 'Video Analisi']
-const label: React.CSSProperties = { fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: 'var(--text-dim)', fontWeight: 700, margin: '22px 2px 10px' }
+const label: React.CSSProperties = { fontSize: 11, color: 'var(--text-dim)', fontWeight: 700, margin: '22px 2px 10px' }
 const chip = (on: boolean): React.CSSProperties => ({ padding: '7px 13px', borderRadius: 999, cursor: 'pointer', fontSize: 12.5, border: on ? '1.5px solid var(--ink)' : '1px solid var(--border)', background: on ? 'var(--yellow-soft)' : 'transparent' })
 
 const empty = (tid: string): CoachProfile => ({ trainer_id: tid, verified: true, specializations: [], services: [], contacts: {} })
@@ -126,8 +126,8 @@ export default function FitnessCoachProfile({ goto }: { goto?: (r: string) => vo
       {/* Header */}
       <div className="card" style={{ padding: 20, display: 'flex', gap: 18, alignItems: 'center', flexWrap: 'wrap' }}>
         {p.photo_url
-          ? <img src={p.photo_url} alt="" style={{ width: 76, height: 76, borderRadius: 18, objectFit: 'cover' }} />
-          : <div style={{ width: 76, height: 76, borderRadius: 18, background: 'var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 26 }}>{(p.name || 'C').slice(0, 1)}</div>}
+          ? <img src={p.photo_url} alt="" style={{ width: 76, height: 76, borderRadius: 20, objectFit: 'cover' }} />
+          : <div style={{ width: 76, height: 76, borderRadius: 20, background: 'var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 26 }}>{(p.name || 'C').slice(0, 1)}</div>}
         <div style={{ flex: 1, minWidth: 180 }}>
           <div className="flex gap" style={{ alignItems: 'center' }}>
             <div style={{ fontSize: 22, fontWeight: 800 }}>{p.name || t('Preparatore')}</div>

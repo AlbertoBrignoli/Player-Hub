@@ -24,7 +24,7 @@ const DEFAULT_ACCENT = '#DD0088' // magenta AUVI (= var(--magenta)); hex perché
 
 // Tipografia del brand: maiuscolo compatto, come sui loro materiali.
 const kicker: React.CSSProperties = {
-  fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase', fontWeight: 800,
+  fontSize: 11, fontWeight: 800,
 }
 
 export default function BrandHome({ goto }: { goto?: (r: string) => void }) {
@@ -77,7 +77,7 @@ export default function BrandHome({ goto }: { goto?: (r: string) => void }) {
     <div className="grid" style={{ gap: 20 }}>
       {/* --- HERO brandizzata --- */}
       <div style={{
-        position: 'relative', overflow: 'hidden', borderRadius: 18,
+        position: 'relative', overflow: 'hidden', borderRadius: 20,
         background: 'var(--surface)', border: '1px solid var(--border)',
         padding: '26px 24px',
       }}>
@@ -89,16 +89,16 @@ export default function BrandHome({ goto }: { goto?: (r: string) => void }) {
         }} />
 
         <div className="flex gap" style={{ alignItems: 'center', gap: 16, flexWrap: 'wrap', position: 'relative' }}>
-          <div style={{ background: '#fff', borderRadius: 14, padding: 8, display: 'flex' }}>
+          <div style={{ background: '#fff', borderRadius: 20, padding: 8, display: 'flex' }}>
             <BrandLogo url={brand?.logo_url} name={brand?.name} size={54} />
           </div>
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ ...kicker, color: accent }}>{t('Area partner · AUVI')}</div>
-            <div style={{ fontSize: 30, fontWeight: 900, letterSpacing: -0.5, lineHeight: 1.05, marginTop: 3, textTransform: 'uppercase' }}>
+            <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: -0.5, lineHeight: 1.05, marginTop: 3, textTransform: 'uppercase' }}>
               {brand?.name || 'Brand'}
             </div>
             {brand?.tagline && (
-              <div style={{ ...kicker, fontSize: 11.5, color: 'var(--text-dim)', marginTop: 7 }}>{brand.tagline}</div>
+              <div style={{ ...kicker, fontSize: 12.5, color: 'var(--text-dim)', marginTop: 7 }}>{brand.tagline}</div>
             )}
           </div>
           {goto && (
@@ -113,8 +113,8 @@ export default function BrandHome({ goto }: { goto?: (r: string) => void }) {
         <div className="flex gap" style={{ gap: 26, marginTop: 22, flexWrap: 'wrap', position: 'relative' }}>
           <Metric label="In partnership" value={String(partners.length)} accent={accent} />
           <Metric label="Profili proposti" value={String(proposti.length)} accent={accent} />
-          <Metric label="Follower totali" value={reach ? fmtK(reach) : '—'} accent={accent} />
-          <Metric label="Referente" value={brand?.contact_name || '—'} accent={accent} small />
+          <Metric label="Follower totali" value={reach ? fmtK(reach) : '-'} accent={accent} />
+          <Metric label="Referente" value={brand?.contact_name || '-'} accent={accent} small />
         </div>
       </div>
 
@@ -129,7 +129,7 @@ export default function BrandHome({ goto }: { goto?: (r: string) => void }) {
           <Info k="Sito" v={brand?.website?.replace(/^https?:\/\//, '')} />
         </div>
         {brand?.notes && (
-          <div className="faint" style={{ fontSize: 13, marginTop: 14, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
+          <div className="faint" style={{ fontSize: 12.5, marginTop: 14, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
             {brand.notes}
           </div>
         )}
@@ -169,9 +169,9 @@ function AthleteGroup({ title, hint, rows, accent, kicker, fmtK, open, isPartner
             <span style={{ width: 3, height: 15, background: isPartner ? accent : 'var(--text-dim)', borderRadius: 2 }} />
             <span style={{ ...kicker, color: 'var(--text)' }}>{t(title)}</span>
           </div>
-          <div className="faint" style={{ fontSize: 11.5, marginTop: 4, marginLeft: 12 }}>{t(hint)}</div>
+          <div className="faint" style={{ fontSize: 12.5, marginTop: 4, marginLeft: 12 }}>{t(hint)}</div>
         </div>
-        <span className="faint" style={{ fontSize: 12 }}>{rows.length}</span>
+        <span className="faint" style={{ fontSize: 12.5 }}>{rows.length}</span>
       </div>
 
       <div className="grid g3" style={{ gap: 12 }}>
@@ -185,20 +185,20 @@ function AthleteGroup({ title, hint, rows, accent, kicker, fmtK, open, isPartner
             <div style={{ padding: 16 }}>
               <div className="flex gap" style={{ alignItems: 'center', gap: 12 }}>
                 {a.photo_url
-                  ? <img src={a.photo_url} alt={a.name || ''} style={{ width: 54, height: 54, borderRadius: 14, objectFit: 'cover' }} />
-                  : <div style={{ width: 54, height: 54, borderRadius: 14, background: 'var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>
+                  ? <img src={a.photo_url} alt={a.name || ''} style={{ width: 54, height: 54, borderRadius: 20, objectFit: 'cover' }} />
+                  : <div style={{ width: 54, height: 54, borderRadius: 20, background: 'var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>
                       {(a.name || '?').slice(0, 1)}
                     </div>}
                 <div style={{ minWidth: 0 }}>
                   <div className="flex gap" style={{ alignItems: 'center', gap: 7 }}>
-                    <span style={{ fontSize: 15.5, fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</span>
-                    {isPartner && <span style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: .8, textTransform: 'uppercase', color: '#111', background: accent, borderRadius: 999, padding: '2px 7px' }}>Partner</span>}
+                    <span style={{ fontSize: 15, fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</span>
+                    {isPartner && <span className="t-label" style={{ color: '#111', background: accent, borderRadius: 999, padding: '2px 7px' }}>Partner</span>}
                   </div>
-                  <div className="faint" style={{ fontSize: 12 }}>
+                  <div className="faint" style={{ fontSize: 12.5 }}>
                     {[a.position, a.team_name].filter(Boolean).join(' · ') || t('Atleta')}
                   </div>
                   {a.instagram_followers ? (
-                    <div style={{ ...kicker, fontSize: 10.5, color: isPartner ? accent : 'var(--text-dim)', marginTop: 4 }}>
+                    <div style={{ ...kicker, fontSize: 11, color: isPartner ? accent : 'var(--text-dim)', marginTop: 4 }}>
                       {t('{n} follower').replace('{n}', fmtK(a.instagram_followers))}
                     </div>
                   ) : null}
@@ -230,8 +230,8 @@ function Metric({ label, value, accent, small }: { label: string; value: string;
   const { t } = useLang()
   return (
     <div>
-      <div style={{ ...kicker, fontSize: 10, color: 'var(--text-dim)' }}>{t(label)}</div>
-      <div style={{ fontSize: small ? 15 : 22, fontWeight: 900, marginTop: 2, borderBottom: `2px solid ${accent}`, display: 'inline-block', paddingBottom: 2 }}>
+      <div style={{ ...kicker, fontSize: 11, color: 'var(--text-dim)' }}>{t(label)}</div>
+      <div style={{ fontSize: small ? 15 : 22, fontWeight: 800, marginTop: 2, borderBottom: `2px solid ${accent}`, display: 'inline-block', paddingBottom: 2 }}>
         {value}
       </div>
     </div>
@@ -242,8 +242,8 @@ function Info({ k, v }: { k: string; v: any }) {
   const { t } = useLang()
   return (
     <div>
-      <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.8px', fontWeight: 700 }}>{t(k)}</div>
-      <div style={{ fontSize: 13.5, marginTop: 2 }}>{v || '—'}</div>
+      <div className="t-label" style={{ color: 'inherit' }}>{t(k)}</div>
+      <div style={{ fontSize: 14, marginTop: 2 }}>{v || '-'}</div>
     </div>
   )
 }

@@ -6,7 +6,7 @@ function curLang(): 'it' | 'en' {
 export function locale() { return curLang() === 'en' ? 'en-GB' : 'it-IT' }
 
 export function fmtMoney(n: number | null | undefined, currency = 'EUR') {
-  if (n == null) return '—'
+  if (n == null) return '-'
   try {
     return new Intl.NumberFormat(locale(), { style: 'currency', currency, maximumFractionDigits: 0 }).format(n)
   } catch {
@@ -15,16 +15,16 @@ export function fmtMoney(n: number | null | undefined, currency = 'EUR') {
 }
 
 export function fmtDate(d: string | null | undefined) {
-  if (!d) return '—'
+  if (!d) return '-'
   const dt = new Date(d)
-  if (isNaN(dt.getTime())) return '—'
+  if (isNaN(dt.getTime())) return '-'
   return dt.toLocaleDateString(locale(), { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
 export function fmtDateTime(d: string | null | undefined) {
-  if (!d) return '—'
+  if (!d) return '-'
   const dt = new Date(d)
-  if (isNaN(dt.getTime())) return '—'
+  if (isNaN(dt.getTime())) return '-'
   return dt.toLocaleString(locale(), { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
@@ -73,13 +73,13 @@ export function seasonOf(d: string | Date) {
 // Orari partita nel fuso dello STADIO (non del dispositivo): cosi tutti vedono
 // lo stesso orario locale della partita (es. 20:00 in Grecia).
 export function fmtMatchDateTime(d: string | null | undefined, tz?: string | null) {
-  if (!d) return '—'
+  if (!d) return '-'
   try {
     return new Date(d).toLocaleString(locale(), {
       day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
       timeZone: tz || 'Europe/Rome',
     })
-  } catch { return '—' }
+  } catch { return '-' }
 }
 export function fmtMatchTime(d: string | null | undefined, tz?: string | null) {
   if (!d) return ''

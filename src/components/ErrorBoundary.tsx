@@ -1,3 +1,4 @@
+import Icon from './Icon'
 // Se una schermata va in errore non resta la pagina bianca: messaggio, "Ricarica" e il resto
 // dell'app (menu, navigazione) continua a funzionare. Cambiando schermata l'errore si azzera.
 import React from 'react'
@@ -7,9 +8,9 @@ function Fallback({ onRetry }: { onRetry: () => void }) {
   const { t } = useLang()
   return (
     <div className="card" style={{ maxWidth: 520, margin: '40px auto', textAlign: 'center', display: 'grid', gap: 10 }}>
-      <div style={{ fontSize: 28 }}>⚠️</div>
-      <b style={{ fontSize: 16 }}>{t('Questa schermata ha avuto un problema')}</b>
-      <div className="faint" style={{ fontSize: 13 }}>{t('Il resto dell\'app funziona. Riprova o ricarica la pagina; se si ripete, avvisa AUVI.')}</div>
+      <div style={{ display: 'grid', placeItems: 'center' }}><Icon name="x" size={28} /></div>
+      <b style={{ fontSize: 15 }}>{t('Questa schermata ha avuto un problema')}</b>
+      <div className="faint" style={{ fontSize: 12.5 }}>{t('Il resto dell\'app funziona. Riprova o ricarica la pagina; se si ripete, avvisa AUVI.')}</div>
       <div className="flex gap" style={{ justifyContent: 'center', gap: 8 }}>
         <button className="btn" onClick={onRetry}>{t('Riprova')}</button>
         <button className="btn btn-primary" onClick={() => location.reload()}>{t('Ricarica')}</button>

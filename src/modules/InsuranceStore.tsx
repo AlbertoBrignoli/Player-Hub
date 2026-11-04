@@ -6,7 +6,7 @@ import { toast } from '../lib/toast'
 import { Modal, Field, Input, Textarea, Select, Badge, Empty, Spinner, ConfirmButton } from '../components/ui'
 import Icon from '../components/Icon'
 
-const ACCENT = '#1F6FEB'
+const ACCENT = '#0A0A0A' // accento unico AUVI
 const BUCKET = 'crm-documents'
 
 const TYPES: { k: string; l: string }[] = [
@@ -62,7 +62,7 @@ export function OffersTab({ athleteId, isInsurer, canInterest, uid }: { athleteI
     <div className="grid" style={{ gap: 14 }}>
       <div className="card flex between wrap gap" style={{ alignItems: 'center' }}>
         <div>
-          <div style={{ fontSize: 11, letterSpacing: 1.4, textTransform: 'uppercase', fontWeight: 800, color: ACCENT }}>{tr('Proposte')}</div>
+          <div className="t-label" style={{ color: ACCENT }}>{tr('Proposte')}</div>
           <div className="faint" style={{ fontSize: 12.5, marginTop: 2 }}>
             {isInsurer ? tr('Proposte che i tuoi atleti vedono nella loro area. Aggiungile e gestiscile qui.')
                        : tr('Soluzioni pensate per te dal tuo assicuratore. Apri, leggi e segnala se ti interessano.')}
@@ -75,7 +75,7 @@ export function OffersTab({ athleteId, isInsurer, canInterest, uid }: { athleteI
       <div className="flex gap" style={{ gap: 12 }}>
         {([{ k: 'sport', l: 'Sport', icon: 'dumbbell' }, { k: 'personale', l: 'Personale', icon: 'home' }] as const).map(c => (
           <button key={c.k} onClick={() => setCat(c.k)}
-            style={{ flex: 1, padding: 18, borderRadius: 16, cursor: 'pointer', fontWeight: 800, fontSize: 16,
+            style={{ flex: 1, padding: 18, borderRadius: 20, cursor: 'pointer', fontWeight: 800, fontSize: 15,
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
               background: cat === c.k ? ACCENT : 'var(--card)', color: cat === c.k ? '#fff' : 'var(--text)',
               border: '1px solid ' + (cat === c.k ? ACCENT : 'var(--border)') }}>
@@ -99,11 +99,11 @@ export function OffersTab({ athleteId, isInsurer, canInterest, uid }: { athleteI
                   <div style={{ minWidth: 0 }}>
                     <div className="flex gap" style={{ alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
                       <Badge>{tr(typeLabel(o.type))}</Badge>
-                      {o.price_hint && <span style={{ fontSize: 12.5, fontWeight: 700, color: ACCENT }}>{o.price_hint}</span>}
+                      {o.price_hint && <span style={{ fontSize: 12.5, fontWeight: 600, color: ACCENT }}>{o.price_hint}</span>}
                       {isInsurer && <span className="faint" style={{ fontSize: 11 }}>· {o.player_id ? (athletes.find(a => a.api_player_id === o.player_id)?.name || tr('atleta')) : tr('tutti i tuoi atleti')}{o.active ? '' : ' · ' + tr('nascosta')}</span>}
                     </div>
-                    <div style={{ fontSize: 16, fontWeight: 800, letterSpacing: -0.2 }}>{o.title}</div>
-                    {o.description && <div className="faint" style={{ fontSize: 13, marginTop: 4, whiteSpace: 'pre-wrap' }}>{o.description}</div>}
+                    <div style={{ fontSize: 15, fontWeight: 800, letterSpacing: -0.2 }}>{o.title}</div>
+                    {o.description && <div className="faint" style={{ fontSize: 12.5, marginTop: 4, whiteSpace: 'pre-wrap' }}>{o.description}</div>}
                   </div>
                 </div>
                 <div className="flex gap" style={{ gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
@@ -183,7 +183,7 @@ function OfferModal({ offer, uid, defaultCategory, onClose, onSaved }: { offer: 
           </Select>
         </Field>
         <div>
-          <div className="faint" style={{ fontSize: 12, marginBottom: 6 }}>{tr('Brochure (PDF/immagine, facoltativa)')}</div>
+          <div className="faint" style={{ fontSize: 12.5, marginBottom: 6 }}>{tr('Brochure (PDF/immagine, facoltativa)')}</div>
           <div className="flex gap" style={{ gap: 8, alignItems: 'center' }}>
             <button className="btn btn-sm" disabled={uploading} onClick={() => fileRef.current?.click()}><Icon name="upload" size={13} /> {uploading ? tr('Carico…') : f.brochure_path ? tr('Sostituisci') : tr('Carica')}</button>
             {f.brochure_path && <><button className="btn btn-ghost btn-sm" onClick={() => openPath(f.brochure_path)}>{tr('Apri')}</button>
@@ -191,7 +191,7 @@ function OfferModal({ offer, uid, defaultCategory, onClose, onSaved }: { offer: 
             <input ref={fileRef} type="file" accept="image/*,application/pdf" hidden onChange={uploadBrochure} />
           </div>
         </div>
-        <label className="flex gap" style={{ alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13.5 }}>
+        <label className="flex gap" style={{ alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 14 }}>
           <input type="checkbox" checked={f.active !== false} onChange={e => set('active', e.target.checked)} /> {tr('Visibile agli atleti')}
         </label>
       </div>
@@ -250,12 +250,12 @@ export function EditorialTab({ slug, isInsurer, uid, defaultTitle, defaultBody }
   return (
     <div className="card">
       <div className="flex between" style={{ alignItems: 'flex-start', gap: 12, marginBottom: 10 }}>
-        <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: -0.4 }}>{shownTitle}</div>
+        <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: -0.4 }}>{shownTitle}</div>
         {isInsurer && <button className="btn btn-sm" onClick={() => { setTitle(page?.title || tr(defaultTitle)); setBody(page?.body || tr(defaultBody)); setEditing(true) }}>
           <Icon name="edit" size={13} /> {tr('Modifica')}</button>}
       </div>
       <div style={{ fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-wrap', color: 'var(--text)' }}>{shownBody}</div>
-      {isInsurer && !page && <div className="faint" style={{ fontSize: 12, marginTop: 12 }}>{tr('Questo è un testo di partenza: premi "Modifica" per personalizzarlo. Lo vedono i tuoi atleti.')}</div>}
+      {isInsurer && !page && <div className="faint" style={{ fontSize: 12.5, marginTop: 12 }}>{tr('Questo è un testo di partenza: premi "Modifica" per personalizzarlo. Lo vedono i tuoi atleti.')}</div>}
     </div>
   )
 }
@@ -268,9 +268,9 @@ export const EDITORIAL_DEFAULTS: Record<string, { title: string; body: string }>
 La carriera è breve, il patrimonio deve durare: casa, auto, famiglia, figli, viaggi e investimenti vanno protetti nel tempo.
 
 Cosa controllare in una polizza:
-•  Massimali — quanto copre davvero
-•  Esclusioni — attenzione: spesso lo sport professionistico è escluso!
-•  Franchigie e carenze — cosa paghi tu e da quando parte la copertura
+•  Massimali - quanto copre davvero
+•  Esclusioni - attenzione: spesso lo sport professionistico è escluso!
+•  Franchigie e carenze - cosa paghi tu e da quando parte la copertura
 •  Durata e diritto di rivalsa
 •  Se copre l'attività agonistica`,
   },
@@ -281,7 +281,7 @@ Cosa controllare in una polizza:
 •  Analizza i tuoi rischi reali (ruolo, età, contratto, patrimonio) ed elimina sovrapposizioni e buchi di tutela
 •  Negozia condizioni e prezzi al posto tuo
 •  Ti segue nei sinistri: gestisce la pratica per te
-•  Aggiorna le coperture quando cambia la tua situazione — trasferimento, famiglia, nuovi beni
+•  Aggiorna le coperture quando cambia la tua situazione - trasferimento, famiglia, nuovi beni
 
 Hai una domanda? Scrivimi dalla chat: sono qui per aiutarti a scegliere con consapevolezza.`,
   },

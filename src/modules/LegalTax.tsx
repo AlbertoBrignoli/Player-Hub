@@ -22,7 +22,7 @@ const OK = '#12A150'
 const BUCKET = 'tax-docs'
 
 const kicker: React.CSSProperties = {
-  fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase', fontWeight: 800,
+  fontSize: 11, fontWeight: 800,
 }
 
 // id delle sezioni della pagina (una sola pagina che scorre, niente tab interni)
@@ -192,7 +192,7 @@ export default function LegalTax() {
                           <div style={{ fontSize: 15, fontWeight: 800, marginTop: 2 }}>{i.title}</div>
                           {i.period && <div className="faint" style={{ fontSize: 12.5 }}>{i.period}</div>}
                         </div>
-                        {t && <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase',
+                        {t && <span style={{ fontSize: 11, fontWeight: 800,
                                              color: t.c, whiteSpace: 'nowrap' }}>{tr(t.l).replace('{n}', String(t.n))}</span>}
                       </div>
 
@@ -277,7 +277,7 @@ export default function LegalTax() {
                 <div className="flex between" style={{ alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{ fontSize: 14, fontWeight: 600 }}>{i.title}</div>
-                    <div className="faint" style={{ fontSize: 12.5 }}>{i.description || (i.category && tr(i.category)) || '—'}</div>
+                    <div className="faint" style={{ fontSize: 12.5 }}>{i.description || (i.category && tr(i.category)) || '-'}</div>
                   </div>
                   <button className="btn btn-sm" style={{ background: 'var(--yellow)', color: 'var(--ink)', fontWeight: 800, border: 'none' }}
                     onClick={() => setRespond(i)}>
@@ -441,7 +441,7 @@ function Overview({ rows }: { rows: TaxItem[] }) {
                     </div>
                   </div>
                   <div style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                    <div style={{ fontSize: 12.5, fontWeight: 800 }}>{i.amount ? fmtMoney(i.amount) : '—'}</div>
+                    <div style={{ fontSize: 12.5, fontWeight: 800 }}>{i.amount ? fmtMoney(i.amount) : '-'}</div>
                     <div style={{ fontSize: 11, color: t?.c }}>{fmtDate(i.due_date)}</div>
                   </div>
                 </div>
@@ -492,7 +492,7 @@ function Info({ k, v }: { k: string; v?: any }) {
   return (
     <div>
       <div className="t-label">{k}</div>
-      <div style={{ fontSize: 12.5, marginTop: 1 }}>{v || '—'}</div>
+      <div style={{ fontSize: 12.5, marginTop: 1 }}>{v || '-'}</div>
     </div>
   )
 }
@@ -563,7 +563,7 @@ function ItemForm({ value, playerId, onClose, onSaved }: {
       <div className="grid g2" style={{ gap: 10 }}>
         <Field label={tr('Categoria')}>
           <Select value={f.category || ''} onChange={e => set('category', e.target.value)}>
-            <option value="">{tr('— seleziona —')}</option>
+            <option value="">{tr('- seleziona -')}</option>
             {cats.map(c => <option key={c} value={c}>{tr(c)}</option>)}
           </Select>
         </Field>

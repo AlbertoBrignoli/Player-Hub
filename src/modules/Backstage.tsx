@@ -299,7 +299,7 @@ function OwnerView({ playerId }: { playerId: number }) {
         <Modal title={t(open.category)} onClose={() => setOpen(null)} dismissable>
           <div className="grid" style={{ gap: 12 }}>
             {open.image_path && urls[open.image_path] && <img src={urls[open.image_path]} alt="" className="bs-img" />}
-            {open.caption && <div style={{ fontSize: 14.5, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{open.caption}</div>}
+            {open.caption && <div style={{ fontSize: 14, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{open.caption}</div>}
             <div className="bs-why">
               <b>{t(AUD[open.audience].l)}</b> · {timeAgo(open.created_at)}<br />
               👁 {t('Visto da {n} professionisti').replace('{n}', String(stats[open.id]?.views || 0))}
@@ -372,7 +372,7 @@ function Composer({ playerId, onClose, onDone }: { playerId: number; onClose: ()
         <input ref={ref} type="file" accept="image/*" hidden onChange={e => { const f = e.target.files?.[0]; if (f) setFile(f); e.target.value = '' }} />
         <textarea className="textarea" rows={3} value={caption} onChange={e => setCaption(e.target.value)} placeholder={t('Racconta il momento, come lo racconteresti a un amico…')} />
         <div className="bs-cats" style={{ padding: 0 }}>{CATS.map(c => <button key={c} className={cat === c ? 'on' : ''} onClick={() => setCat(c)}>{t(c)}</button>)}</div>
-        <b style={{ fontSize: 13 }}>{t('Chi lo vede')}</b>
+        <b style={{ fontSize: 12.5 }}>{t('Chi lo vede')}</b>
         {Object.entries(AUD).map(([k, v]) => (
           <label key={k} className={`bs-opt ${aud === k ? 'on' : ''}`}>
             <input type="radio" name="aud" checked={aud === k} onChange={() => setAud(k)} />
@@ -438,8 +438,8 @@ function ViewerArea() {
   return (
     <div className="bs-wrap">
       <div className="flex between" style={{ alignItems: 'flex-end', gap: 10, flexWrap: 'wrap' }}>
-        <div><div className="bs-kick">Backstage</div><div style={{ fontSize: 22, fontWeight: 900, letterSpacing: -.4 }}>{t('Scopri chi sono davvero gli atleti')}</div>
-          <div className="faint" style={{ fontSize: 13, maxWidth: 560 }}>{t('Ogni Backstage è privato: chiedi l\'accesso spiegando perché. L\'atleta vede chi sei e decide lui.')}</div></div>
+        <div><div className="bs-kick">Backstage</div><div style={{ fontSize: 22, fontWeight: 800, letterSpacing: -.4 }}>{t('Scopri chi sono davvero gli atleti')}</div>
+          <div className="faint" style={{ fontSize: 12.5, maxWidth: 560 }}>{t('Ogni Backstage è privato: chiedi l\'accesso spiegando perché. L\'atleta vede chi sei e decide lui.')}</div></div>
         <label className={`bs-incog ${incognito ? 'on' : ''}`} onClick={async () => { const n = !incognito; setIncognito(n); await supabase.rpc('bs_set_incognito', { p_on: n }); toast(n ? t('Navighi in incognito') : t('Le tue visite sono visibili')) }}>
           <span className="bs-knob" /> {t('Incognito')}
         </label>
@@ -507,7 +507,7 @@ function ViewerProfile({ d, photo, onBack, onChanged }: { d: Dir; photo: string 
           <div className="bs-grid bs-blur">{Array.from({ length: Math.max(3, Math.min(6, d.posts)) }).map((_, i) => <div key={i} className="bs-tile ph" />)}</div>
           <div className="bs-gate card">
             <div style={{ fontSize: 26 }}>🔒</div>
-            <b style={{ fontSize: 16 }}>{t('Il Backstage di {name} è privato').replace('{name}', d.name.split(' ')[0])}</b>
+            <b style={{ fontSize: 15 }}>{t('Il Backstage di {name} è privato').replace('{name}', d.name.split(' ')[0])}</b>
             {status === 'pending' ? <div className="bs-why">✓ {t('Richiesta inviata. Riceverai una notifica quando risponde.')}</div>
               : status === 'declined' ? <div className="bs-why">{t('Richiesta non accettata.')}</div>
               : <>
@@ -533,7 +533,7 @@ function ViewerProfile({ d, photo, onBack, onChanged }: { d: Dir; photo: string 
         <Modal title={t(open.category)} onClose={() => setOpen(null)} dismissable>
           <div className="grid" style={{ gap: 12 }}>
             {open.image_path && urls[open.image_path] && <img src={urls[open.image_path]} alt="" className="bs-img" />}
-            {open.caption && <div style={{ fontSize: 14.5, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{open.caption}</div>}
+            {open.caption && <div style={{ fontSize: 14, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{open.caption}</div>}
             <div className="bs-two">
               <button className={`btn ${mine.has(`${open.id}:interest`) ? 'btn-primary' : ''}`} onClick={() => signal(open, 'interest')}>★ {t('Mi interessa')}</button>
               <button className={`btn ${mine.has(`${open.id}:save`) ? 'btn-primary' : ''}`} onClick={() => signal(open, 'save')}>{mine.has(`${open.id}:save`) ? t('Salvato') : t('Salva')}</button>
@@ -548,7 +548,7 @@ function ViewerProfile({ d, photo, onBack, onChanged }: { d: Dir; photo: string 
 
 const BS_CSS = `
 .bs-wrap { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; max-width: 860px; margin: 0 auto; width: 100%; }
-.bs-kick { font-size: 11px; letter-spacing: 2.2px; text-transform: uppercase; font-weight: 800; color: var(--text-faint); }
+.bs-kick { font-size: 12.5px; font-weight: 800; color: var(--text-faint); }
 .bs-head { display: grid; gap: 12px; }
 .bs-id { display: flex; gap: 14px; align-items: center; }
 .bs-av { width: 84px; height: 84px; border-radius: 50%; padding: 3px; flex-shrink: 0; background: conic-gradient(var(--yellow), #0A0A0A, var(--yellow)); }
@@ -556,59 +556,59 @@ const BS_CSS = `
 .bs-av { position: relative; }
 .bs-av.edit { cursor: pointer; }
 .bs-cam { position: absolute; right: -2px; bottom: -2px; width: 28px; height: 28px; border-radius: 50%; background: var(--yellow); color: #0A0A0A; display: grid; place-items: center; border: 3px solid var(--surface); font-style: normal; }
-.bs-av img, .bs-av span { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 3px solid var(--surface); display: grid; place-items: center; background: var(--bg-2); font-weight: 900; }
-.bs-nm { font-weight: 900; font-size: 21px; letter-spacing: -.4px; }
-.bs-rl { font-size: 13px; color: var(--text-dim); margin-top: 2px; }
+.bs-av img, .bs-av span { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 3px solid var(--surface); display: grid; place-items: center; background: var(--bg-2); font-weight: 800; }
+.bs-nm { font-weight: 800; font-size: 22px; letter-spacing: -.4px; }
+.bs-rl { font-size: 12.5px; color: var(--text-dim); margin-top: 2px; }
 .bs-lock { white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; margin-top: 6px; font-size: 11px; font-weight: 800; background: #0A0A0A; color: #fff; padding: 3px 9px; border-radius: 999px; }
 .bs-bio { font-size: 14px; line-height: 1.5; white-space: pre-wrap; }
 .bs-chips { display: flex; gap: 6px; flex-wrap: wrap; }
-.bs-chip { font-size: 12px; font-weight: 700; padding: 5px 11px; border-radius: 999px; background: var(--bg); border: 1px solid var(--border); }
+.bs-chip { font-size: 12.5px; font-weight: 700; padding: 5px 11px; border-radius: 999px; background: var(--bg); border: 1px solid var(--border); }
 .bs-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.bs-stats div { background: var(--bg); border-radius: 14px; padding: 10px 12px; display: grid; }
-.bs-stats b { font-size: 19px; font-weight: 900; }
+.bs-stats div { background: var(--bg); border-radius: 20px; padding: 10px 12px; display: grid; }
+.bs-stats b { font-size: 18px; font-weight: 800; }
 .bs-stats span { font-size: 11px; color: var(--text-faint); font-weight: 600; }
-.bs-tabs { display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 4px; }
-.bs-tabs button { flex: 1; border: 0; background: none; padding: 9px 6px; border-radius: 10px; font-weight: 800; font-size: 13px; color: var(--text-dim); cursor: pointer; position: relative; }
+.bs-tabs { display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 4px; }
+.bs-tabs button { flex: 1; border: 0; background: none; padding: 9px 6px; border-radius: 12px; font-weight: 800; font-size: 12.5px; color: var(--text-dim); cursor: pointer; position: relative; }
 .bs-tabs button.on { background: var(--text); color: var(--bg, #fff); }
-.bs-dot { margin-left: 6px; background: var(--red); color: #fff; font-size: 10px; padding: 1px 6px; border-radius: 999px; }
+.bs-dot { margin-left: 6px; background: var(--red); color: #fff; font-size: 11px; padding: 1px 6px; border-radius: 999px; }
 .bs-cats { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
 .bs-cats button { white-space: nowrap; border: 1px solid var(--border); background: var(--surface); border-radius: 999px; padding: 7px 13px; font-size: 12.5px; font-weight: 700; cursor: pointer; color: var(--text-dim); }
 .bs-cats button.on { background: var(--text); color: var(--bg, #fff); border-color: var(--text); }
-.bs-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; border-radius: 16px; overflow: hidden; }
+.bs-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; border-radius: 20px; overflow: hidden; }
 .bs-tile { position: relative; aspect-ratio: 4/5; border: 0; padding: 0; cursor: pointer; background: var(--bg-2) center/cover; display: grid; place-items: center; }
 .bs-tile.ph { cursor: default; background: linear-gradient(135deg, #cfcfcb, #9d9d98); }
-.bs-txt { padding: 12px; font-size: 13px; font-weight: 700; line-height: 1.35; color: var(--text); text-align: left; }
-.bs-aud { position: absolute; top: 7px; right: 7px; background: rgba(0,0,0,.55); color: #fff; border-radius: 7px; padding: 2px 6px; font-size: 10px; font-weight: 800; backdrop-filter: blur(4px); }
-.bs-sv { position: absolute; bottom: 7px; left: 7px; background: var(--yellow); color: #0A0A0A; border-radius: 7px; padding: 2px 7px; font-size: 11px; font-weight: 900; }
-.bs-hero { background: #0A0A0A; color: #fff; border-radius: 18px; padding: 16px; display: grid; gap: 8px; }
-.bs-hero b { font-size: 34px; font-weight: 900; letter-spacing: -.5px; }
-.bs-hero-l { font-size: 12px; color: #bdbdbd; }
+.bs-txt { padding: 12px; font-size: 12.5px; font-weight: 700; line-height: 1.35; color: var(--text); text-align: left; }
+.bs-aud { position: absolute; top: 7px; right: 7px; background: rgba(0,0,0,.55); color: #fff; border-radius: 8px; padding: 2px 6px; font-size: 11px; font-weight: 800; backdrop-filter: blur(4px); }
+.bs-sv { position: absolute; bottom: 7px; left: 7px; background: var(--yellow); color: #0A0A0A; border-radius: 8px; padding: 2px 7px; font-size: 11px; font-weight: 800; }
+.bs-hero { background: #0A0A0A; color: #fff; border-radius: 20px; padding: 16px; display: grid; gap: 8px; }
+.bs-hero b { font-size: 34px; font-weight: 800; letter-spacing: -.5px; }
+.bs-hero-l { font-size: 12.5px; color: #bdbdbd; }
 .bs-bars { display: flex; align-items: flex-end; gap: 6px; height: 60px; }
-.bs-bars i { flex: 1; background: #2b2b2b; border-radius: 5px 5px 2px 2px; }
+.bs-bars i { flex: 1; background: #2b2b2b; border-radius: 8px 5px 2px 2px; }
 .bs-bars i.hi { background: var(--yellow); }
-.bs-days { display: flex; gap: 6px; font-size: 10px; color: #9a9a9a; } .bs-days span { flex: 1; text-align: center; text-transform: uppercase; }
-.bs-row { display: flex; gap: 12px; align-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 11px 12px; color: var(--text); }
-.bs-lg { width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0; display: grid; place-items: center; font-weight: 900; color: #fff; background: #0A0A0A center/cover; font-size: 14px; }
+.bs-days { display: flex; gap: 6px; font-size: 11px; color: #9a9a9a; } .bs-days span { flex: 1; text-align: center; text-transform: uppercase; }
+.bs-row { display: flex; gap: 12px; align-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 11px 12px; color: var(--text); }
+.bs-lg { width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0; display: grid; place-items: center; font-weight: 800; color: #fff; background: #0A0A0A center/cover; font-size: 14px; }
 .bs-lg.anon { color: var(--text-faint); background: repeating-linear-gradient(45deg, #e9e9e7, #e9e9e7 6px, #f3f3f1 6px, #f3f3f1 12px); }
 .bs-rw { flex: 1; min-width: 0; display: grid; gap: 1px; }
 .bs-rw b { font-size: 14px; }
-.bs-rw span, .bs-dim { font-size: 12px; color: var(--text-faint); display: block; }
-.bs-mute { font-size: 12px; color: var(--text-faint); text-align: center; }
+.bs-rw span, .bs-dim { font-size: 12.5px; color: var(--text-faint); display: block; }
+.bs-mute { font-size: 12.5px; color: var(--text-faint); text-align: center; }
 .bs-req { display: grid; gap: 10px; }
 .bs-why { font-size: 12.5px; line-height: 1.5; background: var(--bg); border-radius: 12px; padding: 10px 12px; color: var(--text-dim); }
 .bs-two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .bs-sec { font-size: 11px; letter-spacing: 1.4px; text-transform: uppercase; font-weight: 800; color: var(--text-faint); margin-top: 6px; }
-.bs-img { width: 100%; border-radius: 16px; max-height: 70vh; object-fit: contain; background: var(--bg-2); }
-.bs-pick { aspect-ratio: 4/5; max-width: 340px; justify-self: center; width: 100%; border: 2px dashed var(--border); border-radius: 18px; background: var(--bg) center/cover; cursor: pointer; display: grid; place-items: center; color: var(--text-dim); font-weight: 700; font-size: 13px; }
-.bs-opt { display: flex; gap: 11px; align-items: flex-start; border: 1px solid var(--border); border-radius: 14px; padding: 11px; cursor: pointer; }
+.bs-img { width: 100%; border-radius: 20px; max-height: 70vh; object-fit: contain; background: var(--bg-2); }
+.bs-pick { aspect-ratio: 4/5; max-width: 340px; justify-self: center; width: 100%; border: 2px dashed var(--border); border-radius: 20px; background: var(--bg) center/cover; cursor: pointer; display: grid; place-items: center; color: var(--text-dim); font-weight: 700; font-size: 12.5px; }
+.bs-opt { display: flex; gap: 11px; align-items: flex-start; border: 1px solid var(--border); border-radius: 20px; padding: 11px; cursor: pointer; }
 .bs-opt.on { border-color: var(--text); background: var(--bg); }
 .bs-opt input { margin-top: 3px; accent-color: #0A0A0A; }
-.bs-opt b { font-size: 13.5px; display: block; } .bs-opt span span { font-size: 12px; color: var(--text-faint); display: block; }
-.bs-promise { display: grid; gap: 4px; font-size: 12px; color: var(--text-dim); background: var(--yellow-soft, #FFF9C2); border-radius: 14px; padding: 11px 12px; }
+.bs-opt b { font-size: 14px; display: block; } .bs-opt span span { font-size: 12.5px; color: var(--text-faint); display: block; }
+.bs-promise { display: grid; gap: 4px; font-size: 12.5px; color: var(--text-dim); background: var(--yellow-soft, #FFF9C2); border-radius: 20px; padding: 11px 12px; }
 .bs-dir { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
-.bs-card { display: flex; gap: 12px; align-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 12px; cursor: pointer; color: var(--text); }
+.bs-card { display: flex; gap: 12px; align-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 12px; cursor: pointer; color: var(--text); }
 .bs-card b { font-size: 15px; display: block; }
-.bs-st { font-size: 10.5px; font-weight: 800; padding: 3px 8px; border-radius: 999px; white-space: nowrap; background: #0A0A0A; color: #fff; }
+.bs-st { font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 999px; white-space: nowrap; background: #0A0A0A; color: #fff; }
 .bs-st.approved { background: var(--green); } .bs-st.pending { background: var(--yellow); color: #0A0A0A; } .bs-st.declined { background: var(--bg-2); color: var(--text-faint); }
 .bs-gatewrap { position: relative; }
 .bs-blur { filter: blur(10px) saturate(.6); pointer-events: none; }

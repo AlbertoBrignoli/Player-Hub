@@ -84,7 +84,7 @@ export default function MediaKit({ goto }: { goto?: (r: string) => void }) {
   if (loading) return <Spinner />
   if (!player) return <Empty icon={<Icon name="award" size={28} strokeWidth={1.4} />} title={tr("Profilo non disponibile")} hint={tr("Nessun atleta collegato a questo accesso. Contatta AUVI Agency.")} />
 
-  const fmtK = (n?: number | null) => n == null ? '—' : n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1) + 'K' : String(n)
+  const fmtK = (n?: number | null) => n == null ? '-' : n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1) + 'K' : String(n)
   const aggOf = (y: number) => seasonMap.get(y) ?? { app: 0, min: 0, goals: 0, assists: 0, rW: 0, rMin: 0 }
   const ratingOf = (a: Agg) => a.rMin > 0 ? a.rW / a.rMin : null
 
@@ -118,7 +118,7 @@ export default function MediaKit({ goto }: { goto?: (r: string) => void }) {
       {tab === 'social' && (isBrand ? <SocialTeaser player={player} teaser={teaser} goto={goto} /> : <Social player={player} fmtK={fmtK} />)}
       {tab === 'partnership' && <Partnership player={player} goto={goto} />}
 
-      <div className="faint" style={{ fontSize: 11.5, textAlign: 'center', padding: '4px 0 8px' }}>
+      <div className="faint" style={{ fontSize: 12.5, textAlign: 'center', padding: '4px 0 8px' }}>
         {tr('Dati riservati · condivisi da AUVI Agency per la valutazione della partnership.')}
       </div>
     </div>
@@ -135,7 +135,7 @@ function Hero({ player, season, onOpen }: { player: Player; season: string; onOp
         <div className="ed-kicker">{tr('Media kit · stagione {s}').replace('{s}', season)}</div>
         <div className="mk-hero-name">{player.name}</div>
         <div className="mk-hero-meta">
-          {player.position || '—'} · {player.team_name}{player.team_country ? ` (${player.team_country})` : ''}{player.shirt_number ? ` · #${player.shirt_number}` : ''}
+          {player.position || '-'} · {player.team_name}{player.team_country ? ` (${player.team_country})` : ''}{player.shirt_number ? ` · #${player.shirt_number}` : ''}
         </div>
         <div className="mk-hero-facts">
           <Fact k="Età" v={player.age} />
@@ -161,8 +161,8 @@ function Overview({ player, agg, rating, seasonTxt, fmtK, onPitch, onSocial, isB
     <>
       <SectionHead t={tr('In campo · {s}').replace('{s}', seasonTxt)} onMore={onPitch} moreLabel={tr("Dettaglio")} />
       <div className="grid g4">
-        <StatCard label="Presenze" value={agg.app || '—'} sub={agg.min ? tr('{n}′ giocati').replace('{n}', agg.min.toLocaleString(loc)) : undefined} />
-        <StatCard label="Rating medio" value={rating ? rating.toFixed(2) : '—'} tone={rating && rating >= 7 ? 'var(--green)' : undefined} />
+        <StatCard label="Presenze" value={agg.app || '-'} sub={agg.min ? tr('{n}′ giocati').replace('{n}', agg.min.toLocaleString(loc)) : undefined} />
+        <StatCard label="Rating medio" value={rating ? rating.toFixed(2) : '-'} tone={rating && rating >= 7 ? 'var(--green)' : undefined} />
         <StatCard label="Gol" value={agg.goals} />
         <StatCard label="Assist" value={agg.assists} />
       </div>
@@ -173,12 +173,12 @@ function Overview({ player, agg, rating, seasonTxt, fmtK, onPitch, onSocial, isB
       ) : (
         <div className="grid g4">
           <StatCard label="Follower" value={fmtK(player.instagram_followers)} />
-          <StatCard label="Engagement" value={player.instagram_engagement != null ? player.instagram_engagement + '%' : '—'} tone="var(--green)" />
+          <StatCard label="Engagement" value={player.instagram_engagement != null ? player.instagram_engagement + '%' : '-'} tone="var(--green)" />
           <StatCard label="Reach medio" value={fmtK(player.instagram_reach)} />
           <div className="card stat mk-ig" onClick={() => player.instagram_url && window.open(player.instagram_url, '_blank')} style={{ cursor: player.instagram_url ? 'pointer' : 'default' }}>
             <div className="stat-label">{tr('Profilo')}</div>
             <div className="stat-value" style={{ fontSize: 15, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Icon name="instagram" size={16} /> {igHandle(player.instagram_url) || '—'}
+              <Icon name="instagram" size={16} /> {igHandle(player.instagram_url) || '-'}
             </div>
             {player.instagram_url && <div className="stat-sub">{tr('apri su Instagram ↗')}</div>}
           </div>
@@ -187,7 +187,7 @@ function Overview({ player, agg, rating, seasonTxt, fmtK, onPitch, onSocial, isB
       {!isBrand && player.audience_note && (
         <div className="card" style={{ background: 'var(--bg-2)' }}>
           <div className="ed-kicker" style={{ marginBottom: 6 }}>{tr('Pubblico')}</div>
-          <div style={{ fontSize: 13.5, color: 'var(--text-dim)' }}>{player.audience_note}</div>
+          <div style={{ fontSize: 14, color: 'var(--text-dim)' }}>{player.audience_note}</div>
         </div>
       )}
     </>
@@ -204,12 +204,12 @@ function TeaserBlock({ player, teaser, compact, goto }: { player: Player; teaser
   const { t: tr } = useLang()
   return (
     <div className="card card-lg">
-      {teaser?.headline && <div style={{ fontWeight: 750, fontSize: compact ? 15 : 17, marginBottom: 10 }}>{teaser.headline}</div>}
+      {teaser?.headline && <div style={{ fontWeight: 800, fontSize: compact ? 15 : 17, marginBottom: 10 }}>{teaser.headline}</div>}
       <div className="flex gap" style={{ alignItems: 'center', flexWrap: 'wrap', marginBottom: highlights.length || cats.length ? 12 : 0 }}>
         <div className="mk-ig-badge"><Icon name="instagram" size={20} /></div>
         <div>
-          <div style={{ fontFamily: 'var(--font-display)', fontSize: compact ? 24 : 30, fontWeight: 700 }}>{band || '—'}</div>
-          <div className="faint" style={{ fontSize: 11.5 }}>{tr('follower')} · {igHandle(player.instagram_url) || 'Instagram'}</div>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: compact ? 24 : 30, fontWeight: 600 }}>{band || '-'}</div>
+          <div className="faint" style={{ fontSize: 12.5 }}>{tr('follower')} · {igHandle(player.instagram_url) || 'Instagram'}</div>
         </div>
       </div>
       {cats.length > 0 && (
@@ -219,7 +219,7 @@ function TeaserBlock({ player, teaser, compact, goto }: { player: Player; teaser
         </div>
       )}
       {highlights.length > 0 && (
-        <div style={{ fontSize: 13, color: 'var(--text-dim)', lineHeight: 1.8 }}>
+        <div style={{ fontSize: 12.5, color: 'var(--text-dim)', lineHeight: 1.8 }}>
           {highlights.map((h, i) => <div key={i}>· {h}</div>)}
         </div>
       )}
@@ -241,7 +241,7 @@ function SocialTeaser({ player, teaser, goto }: { player: Player; teaser?: any; 
       <div className="card card-lg mk-social-head">
         <div className="mk-ig-badge"><Icon name="instagram" size={22} /></div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 750, fontSize: 17 }}>{igHandle(player.instagram_url) || player.name}</div>
+          <div style={{ fontWeight: 800, fontSize: 18 }}>{igHandle(player.instagram_url) || player.name}</div>
           <div className="muted" style={{ fontSize: 12.5 }}>{tr('Account ufficiale')}</div>
         </div>
         {player.instagram_url && (
@@ -249,7 +249,7 @@ function SocialTeaser({ player, teaser, goto }: { player: Player; teaser?: any; 
         )}
       </div>
       <TeaserBlock player={player} teaser={teaser} goto={goto} />
-      <div className="faint" style={{ fontSize: 11.5 }}>{tr('Panoramica indicativa curata da AUVI Agency · profilo commerciale completo disponibile su richiesta.')}</div>
+      <div className="faint" style={{ fontSize: 12.5 }}>{tr('Panoramica indicativa curata da AUVI Agency · profilo commerciale completo disponibile su richiesta.')}</div>
     </>
   )
 }
@@ -279,8 +279,8 @@ function Pitch({ matches, api, agg, rating, year, years, onYear, tech }: {
       </div>
 
       <div className="grid g4">
-        <StatCard label="Presenze" value={agg.app || '—'} sub={agg.min ? tr('{n}′ giocati').replace('{n}', agg.min.toLocaleString(loc)) : undefined} />
-        <StatCard label="Rating medio" value={rating ? rating.toFixed(2) : '—'} tone={rating && rating >= 7 ? 'var(--green)' : undefined} />
+        <StatCard label="Presenze" value={agg.app || '-'} sub={agg.min ? tr('{n}′ giocati').replace('{n}', agg.min.toLocaleString(loc)) : undefined} />
+        <StatCard label="Rating medio" value={rating ? rating.toFixed(2) : '-'} tone={rating && rating >= 7 ? 'var(--green)' : undefined} />
         <StatCard label="Gol" value={agg.goals} />
         <StatCard label="Assist" value={agg.assists} />
       </div>
@@ -295,11 +295,11 @@ function Pitch({ matches, api, agg, rating, year, years, onYear, tech }: {
                 {seasonComps.map(s => (
                   <tr key={s.id}>
                     <td><b>{s.competition}</b></td>
-                    <td className="mono">{s.appearances ?? '—'}</td>
-                    <td className="mono">{s.minutes != null ? s.minutes.toLocaleString(loc) : '—'}</td>
+                    <td className="mono">{s.appearances ?? '-'}</td>
+                    <td className="mono">{s.minutes != null ? s.minutes.toLocaleString(loc) : '-'}</td>
                     <td className="mono">{s.goals ?? 0}</td>
                     <td className="mono">{s.assists ?? 0}</td>
-                    <td className="mono" style={{ color: s.rating && s.rating >= 7 ? 'var(--green)' : undefined }}>{s.rating ? Number(s.rating).toFixed(2) : '—'}</td>
+                    <td className="mono" style={{ color: s.rating && s.rating >= 7 ? 'var(--green)' : undefined }}>{s.rating ? Number(s.rating).toFixed(2) : '-'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -311,20 +311,20 @@ function Pitch({ matches, api, agg, rating, year, years, onYear, tech }: {
       {nextMatch && (
         <div className="card">
           <div className="card-head"><div className="card-title">{tr('Prossima partita')}</div></div>
-          <div style={{ fontSize: 16, fontWeight: 750 }}>{nextMatch.home_team} vs {nextMatch.away_team}</div>
+          <div style={{ fontSize: 15, fontWeight: 800 }}>{nextMatch.home_team} vs {nextMatch.away_team}</div>
           <div className="muted" style={{ marginTop: 4 }}>{nextMatch.league}{nextMatch.round ? ` · ${nextMatch.round}` : ''} · {fmtDateTime(nextMatch.match_date)}</div>
         </div>
       )}
 
       {last5.length > 0 && (
         <div className="card">
-          <div className="card-head"><div className="card-title">{tr('Ultime {n} · andamento rating').replace('{n}', String(last5.length))}</div><div className="card-hint">{tr('scala 0–10')}</div></div>
+          <div className="card-head"><div className="card-title">{tr('Ultime {n} · andamento rating').replace('{n}', String(last5.length))}</div><div className="card-hint">{tr('scala 0-10')}</div></div>
           <div className="chart">
             {last5.map(m => {
               const r = Number(m.rating) || 0
               return (
                 <div className="chart-col" key={m.id}>
-                  <div className="chart-v" style={{ color: r >= 7 ? 'var(--green)' : r >= 6 ? 'var(--text)' : 'var(--red)' }}>{r ? r.toFixed(1) : '—'}</div>
+                  <div className="chart-v" style={{ color: r >= 7 ? 'var(--green)' : r >= 6 ? 'var(--text)' : 'var(--red)' }}>{r ? r.toFixed(1) : '-'}</div>
                   <div className="chart-bar" style={{ height: `${(r / maxR) * 100}%` }} />
                   <div className="chart-x">{(m.opponent || m.away_team || '').slice(0, 3).toUpperCase()}</div>
                 </div>
@@ -354,7 +354,7 @@ function Social({ player, fmtK }: { player: Player; fmtK: (n?: number | null) =>
       <div className="card card-lg mk-social-head">
         <div className="mk-ig-badge"><Icon name="instagram" size={22} /></div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 750, fontSize: 17 }}>{igHandle(player.instagram_url) || player.name}</div>
+          <div style={{ fontWeight: 800, fontSize: 18 }}>{igHandle(player.instagram_url) || player.name}</div>
           <div className="muted" style={{ fontSize: 12.5 }}>{tr('Account ufficiale')}</div>
         </div>
         {player.instagram_url && (
@@ -364,19 +364,19 @@ function Social({ player, fmtK }: { player: Player; fmtK: (n?: number | null) =>
 
       <div className="grid g3">
         <StatCard label="Follower" value={fmtK(player.instagram_followers)} big />
-        <StatCard label="Engagement rate" value={player.instagram_engagement != null ? player.instagram_engagement + '%' : '—'} tone="var(--green)" big />
+        <StatCard label="Engagement rate" value={player.instagram_engagement != null ? player.instagram_engagement + '%' : '-'} tone="var(--green)" big />
         <StatCard label="Reach medio / post" value={fmtK(player.instagram_reach)} big />
       </div>
 
       {player.audience_note && (
         <div className="card" style={{ background: 'var(--bg-2)' }}>
           <div className="ed-kicker" style={{ marginBottom: 6 }}>{tr('Chi è il pubblico')}</div>
-          <div style={{ fontSize: 13.5, color: 'var(--text-dim)' }}>{player.audience_note}</div>
+          <div style={{ fontSize: 14, color: 'var(--text-dim)' }}>{player.audience_note}</div>
         </div>
       )}
 
-      {!hasNumbers && <div className="faint" style={{ fontSize: 12 }}>{tr('I numeri social saranno aggiornati da AUVI.')}</div>}
-      <div className="faint" style={{ fontSize: 11.5 }}>{tr('Dati Instagram indicativi · aggiornati periodicamente da AUVI Agency.')}</div>
+      {!hasNumbers && <div className="faint" style={{ fontSize: 12.5 }}>{tr('I numeri social saranno aggiornati da AUVI.')}</div>}
+      <div className="faint" style={{ fontSize: 12.5 }}>{tr('Dati Instagram indicativi · aggiornati periodicamente da AUVI Agency.')}</div>
     </>
   )
 }
@@ -406,7 +406,7 @@ function StatCard({ label, value, sub, tone, big }: { label: string; value: Reac
 function Fact({ k, v }: { k: string; v: any }) {
   const { t: tr } = useLang()
   if (v == null || v === '') return null
-  return <div><div className="faint" style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '.4px' }}>{tr(k)}</div><div style={{ fontWeight: 700, fontSize: 14 }}>{v}</div></div>
+  return <div><div className="t-label" style={{ color: 'inherit' }}>{tr(k)}</div><div style={{ fontWeight: 600, fontSize: 14 }}>{v}</div></div>
 }
 
 function igHandle(url?: string | null): string | null {
@@ -418,7 +418,7 @@ function igHandle(url?: string | null): string | null {
 /* ---------- PARTNERSHIP ----------
    Le scelte commerciali dell'atleta, visibili al brand: valori, stile,
    interessi, categorie gradite/escluse, disponibilità, territori e lingue.
-   Fonte: vista cp_preferences_public — SOLO colonne sicure (mai fee minima,
+   Fonte: vista cp_preferences_public - SOLO colonne sicure (mai fee minima,
    sponsor attivi, esclusività o dati audience). */
 function Partnership({ player, goto }: { player: Player; goto?: (r: string) => void }) {
   const { isBrand } = useAuth()
@@ -463,10 +463,10 @@ function Partnership({ player, goto }: { player: Player; goto?: (r: string) => v
             <circle cx={31} cy={31} r={26} fill="none" stroke="var(--border)" strokeWidth={6} />
             <circle cx={31} cy={31} r={26} fill="none" stroke={match.pct >= 70 ? 'var(--green)' : match.pct >= 45 ? 'var(--gold)' : 'var(--text-faint)'}
               strokeWidth={6} strokeLinecap="round" strokeDasharray={`${(match.pct / 100) * 2 * Math.PI * 26} ${2 * Math.PI * 26}`} transform="rotate(-90 31 31)" />
-            <text x="50%" y="54%" textAnchor="middle" dominantBaseline="middle" style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, fill: 'var(--text)' }}>{match.pct}</text>
+            <text x="50%" y="54%" textAnchor="middle" dominantBaseline="middle" style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 800, fill: 'var(--text)' }}>{match.pct}</text>
           </svg>
           <div style={{ flex: 1, minWidth: 180 }}>
-            <div style={{ fontWeight: 750 }}>{tr('Match con la tua ricerca: {n}/100').replace('{n}', String(match.pct))}</div>
+            <div style={{ fontWeight: 800 }}>{tr('Match con la tua ricerca: {n}/100').replace('{n}', String(match.pct))}</div>
             <div className="muted" style={{ fontSize: 12.5 }}>{tr("Calcolato sulle preferenze dell'atleta e i criteri che hai indicato in Ricerca talent.")}</div>
           </div>
           <button className="btn btn-sm" onClick={() => setShowWhy(!showWhy)}>{showWhy ? tr('Nascondi') : tr('Perché')}</button>
@@ -480,7 +480,7 @@ function Partnership({ player, goto }: { player: Player; goto?: (r: string) => v
       <SectionHead t={tr("Identità e posizionamento")} />
       <div className="card card-lg">
         {ident.desired_image && (
-          <div style={{ fontSize: 16, fontWeight: 650, lineHeight: 1.5, marginBottom: 14, fontStyle: 'italic' }}>
+          <div style={{ fontSize: 15, fontWeight: 600, lineHeight: 1.5, marginBottom: 14, fontStyle: 'italic' }}>
             “{ident.desired_image}”
           </div>
         )}
@@ -521,7 +521,7 @@ function Partnership({ player, goto }: { player: Player; goto?: (r: string) => v
         <div className="card">
           <div className="ed-kicker" style={{ marginBottom: 8 }}>{tr('Disponibile per')}</div>
           {avail.length
-            ? <div style={{ fontSize: 13.5, lineHeight: 2 }}>{avail.map(a => <div key={a}>· {tr(a)}</div>)}</div>
+            ? <div style={{ fontSize: 14, lineHeight: 2 }}>{avail.map(a => <div key={a}>· {tr(a)}</div>)}</div>
             : <div className="faint" style={{ fontSize: 12.5 }}>{tr('Disponibilità in definizione con AUVI.')}</div>}
         </div>
       </div>
@@ -542,21 +542,21 @@ function Partnership({ player, goto }: { player: Player; goto?: (r: string) => v
                 <div className="flex gap" style={{ flexWrap: 'wrap' }}>{terr.languages.map((l: string) => <Badge key={l}>{tr(l)}</Badge>)}</div>
               </div>
             )}
-            {terr.travel && <div style={{ marginTop: 12, fontSize: 13, color: 'var(--green)', fontWeight: 600 }}>{tr('Disponibile a viaggiare per le campagne')}</div>}
+            {terr.travel && <div style={{ marginTop: 12, fontSize: 12.5, color: 'var(--green)', fontWeight: 600 }}>{tr('Disponibile a viaggiare per le campagne')}</div>}
           </div>
         </>
       )}
 
       <div className="card" style={{ background: 'var(--bg-2)', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
         <div style={{ flex: 1, minWidth: 220 }}>
-          <div style={{ fontWeight: 700, marginBottom: 3 }}>{tr('Hai in mente una collaborazione?')}</div>
+          <div style={{ fontWeight: 600, marginBottom: 3 }}>{tr('Hai in mente una collaborazione?')}</div>
           <div className="muted" style={{ fontSize: 12.5 }}>{tr("AUVI costruisce la proposta con l'atleta sulla base di queste disponibilità.")}</div>
         </div>
         {goto
           ? <button className="btn btn-primary" onClick={() => goto('messages')}><Icon name="message" size={15} /> {tr('Scrivici in chat')}</button>
           : <Badge tone="gold">{tr('Scrivici in chat')}</Badge>}
       </div>
-      <div className="faint" style={{ fontSize: 11.5 }}>{tr("Preferenze indicate dall'atleta con AUVI Agency")}{prefs.updated_at ? ` · ${tr('aggiornate {date}').replace('{date}', fmtDate(prefs.updated_at))}` : ''}.</div>
+      <div className="faint" style={{ fontSize: 12.5 }}>{tr("Preferenze indicate dall'atleta con AUVI Agency")}{prefs.updated_at ? ` · ${tr('aggiornate {date}').replace('{date}', fmtDate(prefs.updated_at))}` : ''}.</div>
     </>
   )
 }

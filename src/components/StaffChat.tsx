@@ -202,8 +202,8 @@ export default function StaffChat({ openThread, switcher }: { openThread?: strin
           <div className="wa-blank">
             <div>
               <div className="wa-blank-mark"><img src="/brand/auvi-mark-yellow.svg" alt="" /></div>
-              <div style={{ fontWeight: 800, fontSize: 16, color: 'var(--text)' }}>{t('Scegli una conversazione')}</div>
-              <div style={{ fontSize: 13, marginTop: 4 }}>{t('Ogni chat la leggono solo i partecipanti, AUVI e l\'atleta, per trasparenza.')}</div>
+              <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--text)' }}>{t('Scegli una conversazione')}</div>
+              <div style={{ fontSize: 12.5, marginTop: 4 }}>{t('Ogni chat la leggono solo i partecipanti, AUVI e l\'atleta, per trasparenza.')}</div>
             </div>
           </div>
         ) : (
@@ -255,12 +255,12 @@ export default function StaffChat({ openThread, switcher }: { openThread?: strin
                           <button onClick={() => setTags(ts => ts.filter(y => y !== x))} aria-label={t('Rimuovi')}><Icon name="x" size={11} /></button>
                         </span>
                       ))}
-                      <span className="faint" style={{ fontSize: 11.5 }}>{t('riceveranno una notifica')}</span>
+                      <span className="faint" style={{ fontSize: 12.5 }}>{t('riceveranno una notifica')}</span>
                     </div>
                   )}
                   {picking && (
                     <div className="sc-picker">
-                      <div style={{ fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', fontWeight: 800, padding: '4px 8px 6px' }}>{t('Tagga una persona')}</div>
+                      <div className="t-label" style={{ padding: '4px 8px 6px', color: 'inherit' }}>{t('Tagga una persona')}</div>
                       {tagOpts.length === 0 && <div className="faint" style={{ padding: 8, fontSize: 12.5 }}>{t('Nessun altro professionista collegato a questo atleta.')}</div>}
                       {tagOpts.map(o => {
                         const on = tags.includes(o.id)
@@ -269,7 +269,7 @@ export default function StaffChat({ openThread, switcher }: { openThread?: strin
                             onClick={() => { setTags(ts => on ? ts.filter(y => y !== o.id) : [...ts, o.id]); setText(x => x.replace(/@$/, '')); setPicking(false) }}>
                             <span className="sc-av" style={{ width: 28, height: 28, fontSize: 11 }}>{initials(o.name)}</span>
                             <span style={{ minWidth: 0, flex: 1 }}>
-                              <span style={{ display: 'block', fontWeight: 800, fontSize: 13 }}>{o.name}</span>
+                              <span style={{ display: 'block', fontWeight: 800, fontSize: 12.5 }}>{o.name}</span>
                               <span className="faint" style={{ display: 'block', fontSize: 11 }}>{t(STAFF_ROLE[o.role] || o.role)}</span>
                             </span>
                             {on && <Icon name="check" size={14} />}
@@ -323,8 +323,8 @@ function NewThread({ team, onClose, onCreate }: { team: Pro[]; onClose: () => vo
               <input type="checkbox" checked={sel.includes(p.pro_id)} onChange={() => toggle(p.pro_id)} />
               {p.photo_url ? <img src={p.photo_url} alt="" /> : <span className="sc-av" style={{ width: 34, height: 34 }}>{initials(p.name)}</span>}
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontWeight: 800, fontSize: 14 }}>{p.name || '—'}</div>
-                <div className="faint" style={{ fontSize: 12 }}>{t(STAFF_ROLE[p.role] || p.role)}</div>
+                <div style={{ fontWeight: 800, fontSize: 14 }}>{p.name || '-'}</div>
+                <div className="faint" style={{ fontSize: 12.5 }}>{t(STAFF_ROLE[p.role] || p.role)}</div>
               </div>
             </label>
           ))}
@@ -339,8 +339,8 @@ function NewThread({ team, onClose, onCreate }: { team: Pro[]; onClose: () => vo
 }
 
 const SC_CSS = `
-.sc-note { display: grid; gap: 8px; font-size: 12px; line-height: 1.45; color: var(--text-dim); }
-.sc-av { width: 38px; height: 38px; border-radius: 12px; flex-shrink: 0; display: grid; place-items: center; background: var(--bg-2); border: 1px solid var(--border); font-weight: 800; font-size: 13px; }
+.sc-note { display: grid; gap: 8px; font-size: 12.5px; line-height: 1.45; color: var(--text-dim); }
+.sc-av { width: 38px; height: 38px; border-radius: 12px; flex-shrink: 0; display: grid; place-items: center; background: var(--bg-2); border: 1px solid var(--border); font-weight: 800; font-size: 12.5px; }
 .sc-toggle { display: inline-flex; align-items: center; gap: 8px; justify-self: start; border: 1px solid var(--border); background: var(--surface); color: var(--text-dim); border-radius: 999px; padding: 5px 12px 5px 5px; font-weight: 700; font-size: 12.5px; cursor: pointer; }
 .sc-knob { width: 30px; height: 18px; border-radius: 999px; background: var(--border); position: relative; transition: background .2s; }
 .sc-knob::after { content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; transition: transform .2s; box-shadow: 0 1px 2px rgba(0,0,0,.2); }
@@ -348,16 +348,16 @@ const SC_CSS = `
 .sc-toggle.on .sc-knob { background: var(--green, #1a9e55); }
 .sc-toggle.on .sc-knob::after { transform: translateX(12px); }
 .sc-tagrow { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
-.sc-tag { display: inline-flex; align-items: center; gap: 4px; background: #FFE600; color: #0A0A0A; border-radius: 999px; padding: 2px 8px; font-size: 11.5px; font-weight: 800; white-space: nowrap; }
+.sc-tag { display: inline-flex; align-items: center; gap: 4px; background: #FFE600; color: #0A0A0A; border-radius: 999px; padding: 2px 8px; font-size: 12.5px; font-weight: 800; white-space: nowrap; }
 .sc-tag.me { background: #0A0A0A; color: #FFE600; }
 .sc-tag.big { font-size: 12.5px; padding: 3px 6px 3px 10px; }
 .sc-tag button { border: 0; background: rgba(0,0,0,.12); color: inherit; border-radius: 50%; width: 17px; height: 17px; display: grid; place-items: center; cursor: pointer; padding: 0; }
 .sc-tagbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 10px 14px 0; font-size: 12.5px; }
 .sc-tagrow .sc-tag { font-size: 11px; }
-.sc-picker { position: absolute; bottom: 100%; left: 12px; margin-bottom: 6px; width: 280px; max-height: 300px; overflow-y: auto; background: var(--card, #fff); border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 12px 32px rgba(0,0,0,.16); padding: 6px; z-index: 5; }
-.sc-opt { display: flex; align-items: center; gap: 9px; width: 100%; border: 0; background: transparent; color: var(--text); text-align: left; padding: 7px 8px; border-radius: 10px; cursor: pointer; }
+.sc-picker { position: absolute; bottom: 100%; left: 12px; margin-bottom: 6px; width: 280px; max-height: 300px; overflow-y: auto; background: var(--card, #fff); border: 1px solid var(--border); border-radius: 20px; box-shadow: 0 12px 32px rgba(0,0,0,.16); padding: 6px; z-index: 5; }
+.sc-opt { display: flex; align-items: center; gap: 9px; width: 100%; border: 0; background: transparent; color: var(--text); text-align: left; padding: 7px 8px; border-radius: 12px; cursor: pointer; }
 .sc-opt:hover, .sc-opt.on { background: var(--bg-2); }
 .sc-pick { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; cursor: pointer; }
 .sc-pick.on { border-color: var(--text); background: var(--bg-2); }
-.sc-pick img { width: 34px; height: 34px; border-radius: 10px; object-fit: cover; }
+.sc-pick img { width: 34px; height: 34px; border-radius: 12px; object-fit: cover; }
 `

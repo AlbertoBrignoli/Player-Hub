@@ -88,16 +88,16 @@ button.home-card:active, .home-qa:active, .home-contact:active { transform: scal
 .home-qa-l { font-size: 12.5px; font-weight: 600; color: var(--text); }
 .home-qa-ic { position: relative; }
 .home-qa.primary .home-qa-ic { box-shadow: 0 6px 18px -8px rgba(10,10,10,.35); }
-.home-qa-badge { position: absolute; top: -4px; right: -8px; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; background: var(--ink); color: var(--yellow); font-size: 11px; font-weight: 800; display: grid; place-items: center; border: 2px solid var(--bg); font-variant-numeric: tabular-nums; }
-.home-score-content { display: flex; align-items: center; gap: 10px; margin-top: 14px; padding: 10px 12px; border-radius: 14px; background: rgba(255,255,255,.1); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); text-align: left; }
-.home-score-content img, .home-score-content-ic { width: 38px; height: 38px; border-radius: 10px; object-fit: cover; flex-shrink: 0; display: grid; place-items: center; background: rgba(255,255,255,.12); }
+.home-qa-badge { position: absolute; top: -4px; right: -8px; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 12px; background: var(--ink); color: var(--yellow); font-size: 11px; font-weight: 800; display: grid; place-items: center; border: 2px solid var(--bg); font-variant-numeric: tabular-nums; }
+.home-score-content { display: flex; align-items: center; gap: 10px; margin-top: 14px; padding: 10px 12px; border-radius: 20px; background: rgba(255,255,255,.1); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); text-align: left; }
+.home-score-content img, .home-score-content-ic { width: 38px; height: 38px; border-radius: 12px; object-fit: cover; flex-shrink: 0; display: grid; place-items: center; background: rgba(255,255,255,.12); }
 .home-score-content-k { font-size: 11px; color: rgba(255,255,255,.7); font-weight: 600; letter-spacing: .3px; }
 .home-score-content-st { color: var(--yellow); }
 
 /* 3 da fare ora */
 .home-todo { display: flex; flex-direction: column; gap: 10px; }
 .home-thumbs { display: flex; gap: 4px; margin-top: 8px; }
-.home-thumbs img { width: 28px; height: 28px; border-radius: 7px; object-fit: cover; display: block; opacity: 0; transition: opacity .25s; }
+.home-thumbs img { width: 28px; height: 28px; border-radius: 8px; object-fit: cover; display: block; opacity: 0; transition: opacity .25s; }
 .home-thumbs img.ok { opacity: 1; }
 .home-thumbs img:not(.ok) { display: none; } /* niente buchi mentre carica */
 .home-calm { display: flex; align-items: center; gap: 12px; padding: 14px 16px; }
@@ -200,7 +200,7 @@ button.home-card:active, .home-qa:active, .home-contact:active { transform: scal
   .home-id-hi, .home-id-name { display: none; }
   .home-id-line { display: block; font-size: 17px; line-height: 1.25; color: var(--text); }
   .home-id-line b { font-weight: var(--w-bold); }
-  .home-top { padding: 12px; border-radius: 18px; }
+  .home-top { padding: 12px; border-radius: 20px; }
   .home-top { gap: 12px; }
   .home-top .home-qa { width: auto; flex: 1; gap: 5px; }
   .home-top .home-qa-ic { width: 40px; height: 40px; }

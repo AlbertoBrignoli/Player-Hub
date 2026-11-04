@@ -15,7 +15,7 @@ import { Modal, Field, Input, Tabs, Empty } from './ui'
 // Schermate home dei vari ruoli: qui compare l'invito ad attivare le notifiche.
 const HOME_ROUTES = ['dashboard', 'brandhome', 'agent-home', 'insurer-home', 'tax-home', 'physio-home', 'partner-home', 'wealth-home']
 
-export const APP_VERSION = 'v12.47'
+export const APP_VERSION = 'v12.48'
 
 export interface NavDef {
   key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[]
@@ -443,10 +443,10 @@ export default function Shell({ route, setRoute, right, children }: {
           </button>
           {myRoles.length > 1 && (
             <div style={{ marginTop: 10 }}>
-              <div style={{ fontSize: 10, letterSpacing: 1.2, textTransform: 'uppercase', fontWeight: 800, color: 'var(--text-dim)', marginBottom: 5 }}>
+              <div className="t-label" style={{ marginBottom: 5 }}>
                 {tr('Cambia profilo')}
               </div>
-              <select className="input" style={{ width: '100%', fontSize: 13 }}
+              <select className="input" style={{ width: '100%', fontSize: 12.5 }}
                 value={role || ''} onChange={e => switchRole(e.target.value)}>
                 {myRoles.map(r => (
                   <option key={r.role} value={r.role}>{r.label || r.role}</option>

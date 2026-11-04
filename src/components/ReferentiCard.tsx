@@ -24,13 +24,13 @@ type Ref = {
 }
 
 const C_AGENTE = '#8A6D00'
-const C_ASSIC = '#1F6FEB'
+const C_ASSIC = '#0A0A0A'
 const C_COACH = '#3F7F00'
 const C_TAX = '#9A5530'
 const C_WEALTH = '#1F4E79'
 
 const kicker: React.CSSProperties = {
-  fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase', fontWeight: 800,
+  fontSize: 11, fontWeight: 800,
 }
 
 export default function ReferentiCard({ goto }: { goto?: (r: string) => void }) {
@@ -139,8 +139,8 @@ export default function ReferentiCard({ goto }: { goto?: (r: string) => void }) 
         <div className="card" style={{ borderColor: 'var(--yellow)', marginBottom: 14 }}>
           <div className="flex between" style={{ alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <div>
-              <div style={{ ...kicker, fontSize: 10, color: 'var(--text)' }}>{t('Da approvare')}</div>
-              <div style={{ fontSize: 14.5, fontWeight: 700, marginTop: 2 }}>
+              <div style={{ ...kicker, fontSize: 11, color: 'var(--text)' }}>{t('Da approvare')}</div>
+              <div style={{ fontSize: 14, fontWeight: 600, marginTop: 2 }}>
                 {(pending === 1 ? t('{n} professionista chiede accesso alla tua area') : t('{n} professionisti chiedono accesso alla tua area')).replace('{n}', String(pending))}
               </div>
             </div>
@@ -153,7 +153,7 @@ export default function ReferentiCard({ goto }: { goto?: (r: string) => void }) 
       {refs.length > 0 && (
       <div className="flex between" style={{ alignItems: 'center', marginBottom: 12 }}>
         <div style={{ ...kicker, color: 'var(--text-dim)' }}>{t('I tuoi referenti')}</div>
-        <span className="faint" style={{ fontSize: 11.5 }}>{t("Scrivi direttamente dall'app")}</span>
+        <span className="faint" style={{ fontSize: 12.5 }}>{t("Scrivi direttamente dall'app")}</span>
       </div>
       )}
 
@@ -164,19 +164,19 @@ export default function ReferentiCard({ goto }: { goto?: (r: string) => void }) 
             <div style={{ padding: 15 }}>
               <div className="flex gap" style={{ alignItems: 'center', gap: 12 }}>
                 {r.photo
-                  ? <img src={r.photo} alt="" style={{ width: 48, height: 48, borderRadius: 13, objectFit: 'cover' }} />
-                  : <div style={{ width: 48, height: 48, borderRadius: 13, background: r.accent,
+                  ? <img src={r.photo} alt="" style={{ width: 48, height: 48, borderRadius: 12, objectFit: 'cover' }} />
+                  : <div style={{ width: 48, height: 48, borderRadius: 12, background: r.accent,
                                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                                   fontWeight: 900, color: '#fff', fontSize: 18 }}>
                       {r.name.slice(0, 1)}
                     </div>}
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ ...kicker, fontSize: 9.5, color: r.accent }}>{t(r.label)}</div>
+                  <div style={{ ...kicker, fontSize: 11, color: r.accent }}>{t(r.label)}</div>
                   <div style={{ fontSize: 15, fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {t(r.name)}
                   </div>
                   {r.detail && (
-                    <div className="faint" style={{ fontSize: 11.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <div className="faint" style={{ fontSize: 12.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {r.detail}
                     </div>
                   )}

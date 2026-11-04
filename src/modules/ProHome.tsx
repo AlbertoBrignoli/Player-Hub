@@ -782,20 +782,20 @@ function Skeleton() {
       <style>{PRO_CSS}</style>
       <div className="pro-col">
         <div className="pro-id">
-          <div className="pro-sk" style={{ width: 52, height: 52, borderRadius: 15 }} />
+          <div className="pro-sk" style={{ width: 52, height: 52, borderRadius: 20 }} />
           <div style={{ flex: 1 }}>
             <div className="pro-sk" style={{ width: '40%', height: 12 }} />
             <div className="pro-sk" style={{ width: '70%', height: 20, marginTop: 8 }} />
           </div>
         </div>
-        <div className="pro-sk" style={{ height: 86, borderRadius: 18 }} />
-        <div className="pro-sk" style={{ height: 70, borderRadius: 16 }} />
+        <div className="pro-sk" style={{ height: 86, borderRadius: 20 }} />
+        <div className="pro-sk" style={{ height: 70, borderRadius: 20 }} />
         <div style={{ display: 'flex', gap: 10, overflow: 'hidden' }}>
-          {[0, 1, 2].map(i => <div key={i} className="pro-sk" style={{ flex: '0 0 150px', height: 150, borderRadius: 16 }} />)}
+          {[0, 1, 2].map(i => <div key={i} className="pro-sk" style={{ flex: '0 0 150px', height: 150, borderRadius: 20 }} />)}
         </div>
       </div>
       <div className="pro-col">
-        <div className="pro-sk" style={{ height: 260, borderRadius: 16 }} />
+        <div className="pro-sk" style={{ height: 260, borderRadius: 20 }} />
       </div>
     </div>
   )
@@ -808,11 +808,11 @@ const PRO_CSS = `
 .pro-trunc { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pro-h { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; font-weight: 600; font-size: 12.5px; color: var(--text-dim); margin: 0 2px 10px; }
 .pro-h .n { font-weight: 600; font-size: 12.5px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
-.pro-card { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+.pro-card { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 20px; overflow: hidden; }
 
 /* identità + anello profilo */
 .pro-id { display: flex; align-items: center; gap: 14px; }
-.pro-id-ph { width: 52px; height: 52px; border-radius: 15px; object-fit: cover; border: 1px solid var(--border-2); flex-shrink: 0; }
+.pro-id-ph { width: 52px; height: 52px; border-radius: 20px; object-fit: cover; border: 1px solid var(--border-2); flex-shrink: 0; }
 .pro-id-ini { display: grid; place-items: center; background: var(--ink); color: var(--yellow); font-weight: 700; font-size: 18px; border: 0; }
 .pro-id-hi { font-size: 12.5px; color: var(--text-faint); font-weight: 400; }
 .pro-id-name { font-family: var(--font-display); font-stretch: 125%; font-weight: 700; text-transform: uppercase; font-size: 22px; line-height: 1.05; margin: 2px 0 0; }
@@ -825,7 +825,7 @@ const PRO_CSS = `
 .pro-ring-l { font-size: 11px; font-weight: 600; color: var(--text-faint); }
 
 /* riepilogo: tabellone scuro come la partita dell'atleta */
-.pro-board { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); background: var(--card-dark); color: #fff; border-radius: 18px; padding: 18px 6px; box-shadow: 0 10px 28px -16px rgba(10,10,10,.5); }
+.pro-board { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); background: var(--card-dark); color: #fff; border-radius: 20px; padding: 18px 6px; box-shadow: 0 10px 28px -16px rgba(10,10,10,.5); }
 .pro-board > div { display: flex; flex-direction: column; align-items: center; min-width: 0; }
 .pro-board > div + div { border-left: 1px solid rgba(255,255,255,.14); }
 .pro-board .v { font-family: var(--font-display); font-stretch: 125%; font-weight: 700; font-size: 28px; line-height: 1; font-variant-numeric: tabular-nums; }
@@ -833,7 +833,7 @@ const PRO_CSS = `
 .pro-board .l { font-size: 12.5px; font-weight: 600; color: rgba(255,255,255,.72); margin-top: 7px; }
 
 /* completa il profilo */
-.pro-complete { display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 16px; background: var(--yellow-soft); border: 1px solid rgba(154,134,0,.22); }
+.pro-complete { display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 20px; background: var(--yellow-soft); border: 1px solid rgba(154,134,0,.22); }
 .pro-complete-ic { width: 38px; height: 38px; border-radius: 12px; background: var(--ink); color: var(--yellow); display: grid; place-items: center; flex-shrink: 0; }
 .pro-complete-t { font-weight: 700; font-size: 14px; color: var(--ink); }
 .pro-complete-s { font-size: 12.5px; color: var(--text-dim); margin-top: 2px; line-height: 1.35; }
@@ -852,20 +852,20 @@ const PRO_CSS = `
 /* atleti: carosello su mobile, griglia su desktop */
 .pro-aths { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; margin: 0 -16px; padding: 0 16px 4px; scroll-padding-inline: 16px; scrollbar-width: none; }
 .pro-aths::-webkit-scrollbar { display: none; }
-.pro-ath { scroll-snap-align: start; flex: 0 0 150px; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; text-align: left; cursor: pointer; min-width: 0; transition: border-color .15s, box-shadow .15s, transform .12s; }
+.pro-ath { scroll-snap-align: start; flex: 0 0 150px; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 20px; text-align: left; cursor: pointer; min-width: 0; transition: border-color .15s, box-shadow .15s, transform .12s; }
 .pro-ath:hover { border-color: var(--border-2); box-shadow: var(--shadow-sm); }
 .pro-ath-top { position: relative; margin-bottom: 8px; }
-.pro-ath-ph { width: 56px; height: 56px; border-radius: 15px; object-fit: cover; display: grid; }
+.pro-ath-ph { width: 56px; height: 56px; border-radius: 20px; object-fit: cover; display: grid; }
 .pro-ath-sw { position: absolute; left: -2px; bottom: -2px; width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--surface); }
-.pro-ath-warn { position: absolute; right: -4px; top: -4px; width: 14px; height: 14px; border-radius: 50%; background: var(--club); border: 2px solid var(--surface); }
+.pro-ath-warn { position: absolute; right: -4px; top: -4px; width: 14px; height: 14px; border-radius: 50%; background: var(--red); border: 2px solid var(--surface); }
 .pro-ath-n { font-size: 14px; font-weight: 700; color: var(--text); width: 100%; }
 .pro-ath-c { font-size: 12.5px; color: var(--text-faint); width: 100%; }
 .pro-ath-m { display: flex; align-items: center; gap: 5px; margin-top: 8px; padding: 5px 8px; border-radius: 8px; background: var(--bg-2); font-size: 12.5px; font-weight: 600; color: var(--text); max-width: 100%; min-width: 0; }
 .pro-ath-m.none { color: var(--text-faint); font-weight: 400; }
 
 /* vuoto */
-.pro-empty { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 20px 18px; border-radius: 18px; background: var(--surface); border: 1px dashed var(--border-2); }
-.pro-empty-ic { width: 44px; height: 44px; border-radius: 14px; background: var(--yellow); color: var(--ink); display: grid; place-items: center; margin-bottom: 6px; }
+.pro-empty { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 20px 18px; border-radius: 20px; background: var(--surface); border: 1px dashed var(--border-2); }
+.pro-empty-ic { width: 44px; height: 44px; border-radius: 20px; background: var(--yellow); color: var(--ink); display: grid; place-items: center; margin-bottom: 6px; }
 .pro-empty-t { font-family: var(--font-display); font-stretch: 125%; font-weight: 700; text-transform: uppercase; font-size: 15px; line-height: 1.15; }
 .pro-empty-s { font-size: 12.5px; color: var(--text-dim); line-height: 1.45; max-width: 46ch; margin-bottom: 8px; }
 
@@ -873,7 +873,7 @@ const PRO_CSS = `
 .pro-todo { width: 100%; display: flex; align-items: center; gap: 12px; min-height: 58px; padding: 9px 14px; background: none; border: 0; text-align: left; cursor: pointer; transition: background .15s; }
 .pro-todo + .pro-todo { border-top: 1px solid var(--border); }
 .pro-todo:hover { background: var(--surface-2); }
-.pro-todo-ic { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; flex-shrink: 0; background: var(--bg-2); color: var(--text-dim); }
+.pro-todo-ic { width: 34px; height: 34px; border-radius: 12px; display: grid; place-items: center; flex-shrink: 0; background: var(--bg-2); color: var(--text-dim); }
 .pro-todo-ic.hot { background: var(--ink); color: var(--yellow); }
 .pro-todo-ic.warm { background: var(--yellow-soft); color: var(--ink); }
 .pro-todo-t { font-size: 14px; font-weight: 600; color: var(--text); }
@@ -894,17 +894,17 @@ const PRO_CSS = `
 .pro-tl-time { width: 42px; flex-shrink: 0; font-size: 12.5px; font-weight: 600; color: var(--text-dim); font-variant-numeric: tabular-nums; }
 .pro-tl-bar { width: 3px; align-self: stretch; margin: 4px 0; border-radius: 2px; flex-shrink: 0; }
 .pro-tl-av { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; border: 2.5px solid; flex-shrink: 0; display: grid; place-items: center; font-size: 12.5px; font-weight: 800; }
-.pro-tl-who { display: block; font-size: 11px; font-weight: 800; letter-spacing: .3px; text-transform: uppercase; }
+.pro-tl-who { display: block; font-size: 12.5px; font-weight: 800; }
 .pro-wf { display: flex; gap: 6px; overflow-x: auto; padding: 2px 0 10px; scrollbar-width: none; }
 .pro-wf::-webkit-scrollbar { display: none; }
 .pro-wf button { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; padding: 5px 11px 5px 5px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); font-size: 12.5px; font-weight: 600; color: var(--text); cursor: pointer; }
 .pro-wf button:first-child { padding-left: 12px; }
 .pro-wf button img, .pro-wf-i { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; border: 2px solid var(--c, var(--border)); display: inline-grid; place-items: center; font-size: 11px; font-weight: 800; }
 .pro-wf button.on { background: var(--ink); color: #fff; border-color: var(--ink); }
-.pro-rs-who { font-size: 11px; font-weight: 800; letter-spacing: .8px; text-transform: uppercase; color: var(--text-dim); }
+.pro-rs-who { font-size: 12.5px; font-weight: 800; color: var(--text-dim); }
 .pro-rs-what { font-size: 18px; font-weight: 850; margin-top: 2px; }
 .pro-rs-when { font-size: 12.5px; color: var(--text-faint); margin-top: 2px; }
-.pro-rs-note { margin-top: 10px; padding: 9px 12px; border-radius: 10px; background: var(--surface-2); font-size: 12.5px; overflow-wrap: anywhere; }
+.pro-rs-note { margin-top: 10px; padding: 9px 12px; border-radius: 12px; background: var(--surface-2); font-size: 12.5px; overflow-wrap: anywhere; }
 .pro-rs-acts { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
 .pro-rs-big { justify-content: center; min-height: 46px; width: 100%; font-size: 14px; }
 .pro-rs-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }

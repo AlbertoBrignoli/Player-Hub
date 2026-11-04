@@ -91,7 +91,7 @@ const WD = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom']
 
 function dayKey(d: Date) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` }
 function localKey(iso: string) { return dayKey(new Date(iso)) }
-const sectionLabel: React.CSSProperties = { fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: 'var(--text-dim)', fontWeight: 700, margin: '18px 4px 10px' }
+const sectionLabel: React.CSSProperties = { fontSize: 11, color: 'var(--text-dim)', fontWeight: 700, margin: '18px 4px 10px' }
 const emptyEv = (type: string): Partial<EventItem> => ({ title: '', type, start_at: '' })
 
 export default function Agenda({ goto }: { goto?: (r: string) => void }) {
@@ -152,7 +152,7 @@ export default function Agenda({ goto }: { goto?: (r: string) => void }) {
       const key = String(x.fixture_id ?? x.id)
       const prev = matches.get(key)
       if (prev) { if (x.player_id != null && !prev._pids!.includes(x.player_id)) prev._pids!.push(x.player_id); return }
-      const title = x.home_team && x.away_team ? `${x.home_team} – ${x.away_team}` : (x.opponent ? `vs ${x.opponent}` : tr('Partita'))
+      const title = x.home_team && x.away_team ? `${x.home_team} - ${x.away_team}` : (x.opponent ? `vs ${x.opponent}` : tr('Partita'))
       matches.set(key, {
         id: 'match-' + key, title, type: 'partita', start_at: x.match_date, end_at: null,
         location: x.stadium || x.venue || null, notes: x.league || null, created_at: x.match_date,
@@ -185,7 +185,7 @@ export default function Agenda({ goto }: { goto?: (r: string) => void }) {
   const tagOf: TagOf = scope === 'all' ? (pid: number) => {
     const i = athletes.findIndex(a => a.api_player_id === pid)
     if (i < 0) return null
-    return { name: athletes[i].name || '—', color: ATHLETE_PALETTE[i % ATHLETE_PALETTE.length] }
+    return { name: athletes[i].name || '-', color: ATHLETE_PALETTE[i % ATHLETE_PALETTE.length] }
   } : null
   const canOpenMatch = !!goto && !!role && PERF_ROLES.includes(role)
   const onOpenMatch = canOpenMatch ? (e: AgItem) => { const pid = pidsOf(e)[0]; if (pid != null) setAthleteId(pid); goto!('performance') } : undefined
@@ -289,7 +289,7 @@ const AG_CSS = `
 .ag-note { margin-top: 6px; padding: 6px 10px; border-left: 3px solid var(--yellow); background: rgba(255,236,0,.14); border-radius: 0 8px 8px 0; font-size: 12.5px; color: var(--text); overflow-wrap: anywhere; }
 .ag-thread { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
 .ag-cm { font-size: 12.5px; line-height: 1.4; padding: 7px 10px; border-radius: 12px; background: var(--surface-2); overflow-wrap: anywhere; }
-.ag-cm.mod { background: rgba(221,0,136,.07); border: 1px solid rgba(221,0,136,.25); }
+.ag-cm.mod { background: var(--yellow-soft); border: 1px solid rgba(255,236,0,.25); }
 .ag-cm-h { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--text-dim); margin-bottom: 2px; flex-wrap: wrap; }
 .ag-cm-h b { color: var(--text); font-weight: 700; }
 .ag-cm-x { margin-left: auto; color: var(--text-faint); display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 8px; }

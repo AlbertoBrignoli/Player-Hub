@@ -21,7 +21,7 @@ export default function Archivio() {
           <button key={t.k} onClick={() => setTab(t.k)}
             className="flex gap"
             style={{ alignItems: 'center', gap: 7, cursor: 'pointer', border: 'none', borderRadius: 999,
-              padding: '8px 16px', fontSize: 13.5, fontWeight: 700,
+              padding: '8px 16px', fontSize: 14, fontWeight: 700,
               background: tab === t.k ? 'var(--text)' : 'transparent',
               color: tab === t.k ? 'var(--bg)' : 'var(--text-dim)' }}>
             <Icon name={t.icon} size={15} /> {tr(t.label)}
