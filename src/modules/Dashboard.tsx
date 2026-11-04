@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../auth/AuthContext'
 import { useAthlete } from '../lib/athlete'
 import { useLang } from '../lib/i18n'
-import { Spinner } from '../components/ui'
+import { Spinner, Modal } from '../components/ui'
 import Icon from '../components/Icon'
 import { defaultWeek } from '../components/WeekPlan'
 import { QuickAddModal, useQuickAddPermissions } from '../components/QuickAdd'
@@ -80,6 +80,14 @@ button.home-card:active, .home-qa:active, .home-contact:active { transform: scal
 .home-top .home-qas { display: flex; gap: 10px; flex: 0 0 auto; width: auto; }
 .home-top .home-qa { width: 52px; }
 .home-top .home-qa-ic { width: 44px; height: 44px; }
+.home-qa-edit { align-self: flex-start; width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface); color: var(--text-dim); display: grid; place-items: center; cursor: pointer; flex-shrink: 0; margin-top: 8px; }
+.home-qa-edit:hover { color: var(--ink); border-color: var(--border-2); }
+.qa-pick { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 48px; padding: 6px 12px 6px 6px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); font: inherit; color: var(--text); cursor: pointer; }
+.qa-pick.on { border-color: var(--ink); }
+.qa-pick:disabled { opacity: .45; cursor: default; }
+.qa-pick-ic { width: 36px; height: 36px; border-radius: 12px; background: var(--bg-2); display: grid; place-items: center; }
+.qa-pick.on .qa-pick-ic { background: var(--yellow); }
+.qa-pick-n { width: 24px; height: 24px; border-radius: 50%; background: var(--ink); color: var(--yellow); font-size: 12.5px; font-weight: 800; display: grid; place-items: center; }
 /* sul giallo i cerchi sono tutti uguali: bianchi con bordo nero */
 .home-top .home-qa .home-qa-ic, .home-top .home-qa.primary .home-qa-ic { background: var(--bg-2); color: var(--ink); border: 0; }
 .home-top .home-qa:hover .home-qa-ic { background: var(--yellow); }
@@ -275,6 +283,10 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
   // l'unica azione attiva dell'atleta: il programma settimanale del club
   const [planMissing, setPlanMissing] = useState(false)
   const [adding, setAdding] = useState<'event' | 'task' | null>(null)
+  // cerchi della Home scelti dall'atleta (max 5, in ordine), salvati su questo dispositivo
+  const qaStore = `home_qa:${profile?.id || ''}`
+  const [qaKeys, setQaKeys] = useState<string[] | null>(() => { try { const v = localStorage.getItem(`home_qa:${profile?.id || ''}`); return v ? JSON.parse(v) : null } catch { return null } })
+  const [editQa, setEditQa] = useState(false)
   // Task aperti dell'atleta (attività + documenti richiesti dal commercialista): stesso conteggio della pagina Task
   const [openTasks, setOpenTasks] = useState(0)
   useEffect(() => {
@@ -406,18 +418,29 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
     </header>
   )
 
-  // ---- 2 azioni rapide (sostituiscono il "+" globale) ----
+  // ---- 2 azioni rapide: l'atleta sceglie quali (fino a 5) e in che ordine, con "Modifica" ----
   type QA = { key: string; label: string; icon: string; run: () => void; badge?: number }
-  const qas: QA[] = []
-  // Media per primo: è l'unico ingresso a Media (non è nel menu); il numero = foto da approvare
-  qas.push(isTeam
-    ? { key: 'media', label: t('Media'), icon: 'image', run: () => goto('media?tab=cartelle'), badge: toApprove.length }
-    : { key: 'media', label: t('Media'), icon: 'image', run: () => goto('media?tab=cartelle'), badge: toApprove.length })
-  if (canEvent) qas.push({ key: 'event', label: t('Impegno'), icon: 'calendar', run: () => setAdding('event') })
-  qas.push({ key: 'tasks', label: t('Task'), icon: 'check-square', run: () => goto('tasks'), badge: openTasks })
-  // Mail solo se l'atleta ha la casella AUVI (sul telefono non è più nel menu: si apre da qui)
-  if (hasMailbox) qas.push({ key: 'mail', label: t('Mail'), icon: 'mail', run: () => goto('mail') })
-  qas.push({ key: 'chat', label: t('Chat'), icon: 'message', run: () => goto('messages') })
+  const ALL: QA[] = [
+    // il numero su Media = foto da approvare
+    { key: 'media', label: t('Media'), icon: 'image', run: () => goto('media?tab=cartelle'), badge: toApprove.length },
+    ...(canEvent ? [{ key: 'event', label: t('Impegno'), icon: 'calendar', run: () => setAdding('event') }] : []),
+    { key: 'tasks', label: t('Task'), icon: 'check-square', run: () => goto('tasks'), badge: openTasks },
+    // Mail solo se l'atleta ha la casella AUVI
+    ...(hasMailbox ? [{ key: 'mail', label: t('Mail'), icon: 'mail', run: () => goto('mail') }] : []),
+    { key: 'chat', label: t('Chat'), icon: 'message', run: () => goto('messages') },
+    { key: 'docs', label: t('Documenti'), icon: 'archive', run: () => goto('documents') },
+    { key: 'fitness', label: t('Preparazione'), icon: 'dumbbell', run: () => goto('fitness') },
+    { key: 'services', label: t('Servizi'), icon: 'layers', run: () => goto('services') },
+    { key: 'agenda', label: t('Calendario'), icon: 'calendar', run: () => goto('agenda') },
+    { key: 'contracts', label: t('Contratti'), icon: 'briefcase', run: () => goto('contracts') },
+  ]
+  const DEFAULT_QA = ['media', 'event', 'tasks', 'mail', 'chat']
+  const chosen = (qaKeys || DEFAULT_QA).map(k => ALL.find(q => q.key === k)).filter(Boolean) as QA[]
+  const qas: QA[] = (chosen.length ? chosen : ALL.filter(q => DEFAULT_QA.includes(q.key))).slice(0, 5)
+  function saveQa(keys: string[]) {
+    setQaKeys(keys)
+    try { localStorage.setItem(qaStore, JSON.stringify(keys)) } catch { /* modalità privata */ }
+  }
   const quick = (
     <nav className="home-sec home-qas" aria-label={t('Azioni rapide')} style={{ gridTemplateColumns: `repeat(${qas.length}, minmax(0, 1fr))` }}>
       {qas.map(q => (
@@ -430,6 +453,9 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
           <span className="home-qa-l">{q.label}</span>
         </button>
       ))}
+      <button className="home-qa-edit" onClick={() => setEditQa(true)} aria-label={t('Scegli le azioni della Home')} title={t('Modifica')}>
+        <Icon name="sliders" size={14} />
+      </button>
     </nav>
   )
 
@@ -447,9 +473,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
           </span>
         </button>
         <button className={`home-today-wait ${waiting.total ? 'on' : ''}`} onClick={() => goto('tasks')}>
-          {waiting.total
-            ? (waiting.total === 1 ? t('1 cosa ti aspetta') : t('{n} cose ti aspettano').replace('{n}', String(waiting.total)))
-            : t('Sei in pari')}
+          {waiting.total ? t('{n} da fare').replace('{n}', String(waiting.total)) : t('In pari')}
           <Icon name="chevron-right" size={14} />
         </button>
       </div>
@@ -601,6 +625,30 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
         <div className="home-o6 home-desk"><HomeContacts goto={goto} title={t('Il mio team')} /></div>
       </div>
       {adding && <QuickAddModal initialKind={adding} onClose={() => setAdding(null)} />}
+      {editQa && (
+        <Modal title={t('Le tue azioni rapide')} onClose={() => setEditQa(false)} dismissable
+          footer={<>
+            <button className="btn btn-ghost" onClick={() => saveQa(DEFAULT_QA)}>{t('Ripristina')}</button>
+            <button className="btn btn-primary" onClick={() => setEditQa(false)}>{t('Fatto')}</button>
+          </>}>
+          <div className="t-meta" style={{ marginBottom: 10 }}>{t('Scegline fino a 5: compaiono nella Home in questo ordine.')}</div>
+          <div className="grid" style={{ gap: 6 }}>
+            {ALL.map(q => {
+              const keys = qas.map(x => x.key)
+              const i = keys.indexOf(q.key)
+              const on = i >= 0
+              return (
+                <button key={q.key} className={`qa-pick ${on ? 'on' : ''}`} disabled={!on && keys.length >= 5}
+                  onClick={() => saveQa(on ? keys.filter(k => k !== q.key) : [...keys, q.key])}>
+                  <span className="qa-pick-ic"><Icon name={q.icon} size={16} /></span>
+                  <span style={{ flex: 1, textAlign: 'left', fontWeight: 600 }}>{q.label}</span>
+                  {on ? <span className="qa-pick-n">{i + 1}</span> : <Icon name="plus" size={14} />}
+                </button>
+              )
+            })}
+          </div>
+        </Modal>
+      )}
     </div>
   )
 }

@@ -3908,9 +3908,11 @@ const EN: Record<string, string> = {
   'Professionisti che vogliono entrare nel team': 'Professionals who want to join your team',
   'Il PDF o la foto del club': 'Your club\'s PDF or photo',
   'Niente in sospeso: sei in pari.': 'Nothing pending: you are all caught up.',
-  '1 cosa ti aspetta': '1 thing waiting',
-  '{n} cose ti aspettano': '{n} things waiting',
-  'Sei in pari': 'All caught up',
+  '{n} da fare': '{n} to do',
+  'In pari': 'All done',
   'Ti aspettano': 'Waiting for you',
+  'Scegli le azioni della Home': 'Choose your Home actions',
+  'Le tue azioni rapide': 'Your quick actions',
+  'Scegline fino a 5: compaiono nella Home in questo ordine.': 'Pick up to 5: they appear on Home in this order.',
 }
 
