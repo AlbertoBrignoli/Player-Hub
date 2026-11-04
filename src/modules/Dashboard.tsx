@@ -10,6 +10,7 @@ import { defaultWeek } from '../components/WeekPlan'
 import { QuickAddModal, useQuickAddPermissions } from '../components/QuickAdd'
 import HomeContacts from './home/HomeContacts'
 import HomeServices from './home/HomeServices'
+import HomeTodo from './home/HomeTodo'
 import { fmtDate, fmtMatchTime, daysUntil, isImageFile } from '../lib/format'
 import type { Player, EventItem, Contract, Match, StatsMatch, EditorialEntry, MediaItem } from '../lib/types'
 
@@ -457,7 +458,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
 
   // ---- 3 da fare ora: solo ciò che non ha già un posto in Home ----
   // (foto → icona Foto delle azioni rapide; prossimo contenuto → tabellone partita)
-  const todo = accessPending > 0 || proposals > 0 || planMissing ? (
+  const todo = accessPending > 0 || planMissing ? (
     <section className="home-sec">
       <div className="home-todo">
         {planMissing && (
@@ -466,16 +467,6 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
             <div style={{ flex: 1, minWidth: 0 }}>
               <div className="ed-action-t">{t('Carica il programma della settimana')}</div>
               <div className="ed-action-s">{t('Il PDF o la foto del club: lo leggo io, tu spunti e salvi. Al resto pensa il tuo team.')}</div>
-            </div>
-            <Icon name="chevron-right" size={18} style={{ color: 'var(--text-faint)', flexShrink: 0 }} />
-          </button>
-        )}
-        {proposals > 0 && (
-          <button className="ed-action prio" onClick={() => goto('agenda')}>
-            <div className="ed-action-num">{proposals}</div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div className="ed-action-t">{t('Proposte da confermare')}</div>
-              <div className="ed-action-s">{t('Impegni proposti dal tuo team: conferma, chiedi una modifica o rifiuta')}</div>
             </div>
             <Icon name="chevron-right" size={18} style={{ color: 'var(--text-faint)', flexShrink: 0 }} />
           </button>
@@ -642,6 +633,8 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
           {quick}
         </div></div>
         <div className="home-o2">{today}</div>
+        {/* le cose concrete da fare, ognuna con la sua azione: si smarca qui */}
+        <div className="home-o2"><HomeTodo goto={goto} locale={locale} tz={athleteTz} /></div>
         {todo && <div className="home-o2">{todo}</div>}
         {/* Atleta: prossima partita e numeri della stagione, sotto lo stesso titolo del menu */}
         <div className="home-o3 home-group">

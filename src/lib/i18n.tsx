@@ -3919,5 +3919,10 @@ const EN: Record<string, string> = {
   'Impegni, contratti, documenti, messaggi, servizi…': 'Commitments, contracts, documents, messages, services…',
   'Cerco…': 'Searching…',
   'scade': 'expires',
+  'proposto da': 'proposed by',
+  'Da AUVI': 'From AUVI',
+  'dì al preparatore se lo farai': 'tell your coach if you\'ll do it',
+  'Documento richiesto': 'Requested document',
+  'Fatto: {t}': 'Done: {t}',
 }
 
