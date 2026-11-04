@@ -3951,5 +3951,6 @@ const EN: Record<string, string> = {
   "Attiva le notifiche: ti avvisiamo quando qualcuno ti scrive, ti propone un impegno o ti chiede qualcosa. Puoi scegliere cosa ricevere dalle Impostazioni.": "Turn on notifications: we'll let you know when someone writes to you, proposes an appointment or asks you something. You can choose what to receive in Settings.",
   "Salta": "Skip",
   "Inizia": "Get started",
+  "Niente in programma questa settimana": "Nothing scheduled this week",
 }
 

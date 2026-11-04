@@ -101,6 +101,8 @@ type Todo = {
   route: string
   /** richieste dell'atleta al preparatore (stesso tipo raggruppate): si aprono in un pannello con le azioni */
   req?: { ids: string[]; type: string; note: string | null; first: string }
+  /** impegno proposto dall'atleta a questo professionista: si conferma dalla riga */
+  ev?: string
 }
 type TL = {
   key: string
@@ -216,7 +218,12 @@ export default function ProHome({ goto }: { goto: (r: string) => void }) {
         }
       }
 
-      const [prof, pl, ms, ev, r1, r2, acc] = await Promise.all([
+      const propQ: PromiseLike<{ data: any[] | null }> = has
+        ? supabase.from('crm_events').select('id, title, start_at, player_id')
+            .in('player_id', ids).eq('assignee_role', pro).eq('proposed_by_role', 'player')
+            .eq('request_status', 'da_confermare').order('start_at').limit(20)
+        : none
+      const [prof, pl, ms, ev, r1, r2, acc, props] = await Promise.all([
         supabase.from(cfg.table).select('*').eq(cfg.idCol, uid).maybeSingle(),
         has
           ? supabase.from('player').select('api_player_id, name, photo_url, team_name, contract_expiry, timezone').in('api_player_id', ids)
@@ -232,6 +239,7 @@ export default function ProHome({ goto }: { goto: (r: string) => void }) {
         roleQ2,
         supabase.from('crm_access_requests').select('id, player_id')
           .eq('requester_id', uid).eq('status', 'pending'),
+        propQ,
       ])
       if (!ok) return
 
@@ -241,6 +249,13 @@ export default function ProHome({ goto }: { goto: (r: string) => void }) {
         || athletes.find(a => a.api_player_id === id)?.name || t('Atleta')
 
       const list: Todo[] = []
+      // impegni che gli atleti mi hanno proposto: in cima, con Conferma accanto
+      ;((props.data as any[]) || []).forEach(e => list.push({
+        key: 'pe' + e.id, pid: e.player_id, icon: 'calendar',
+        title: e.title || t('Impegno'),
+        sub: [pname(e.player_id), new Date(e.start_at).toLocaleString(locale, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).replace('.', '')].join(' · '),
+        days: null, route: `agenda?event=${e.id}`, ev: e.id,
+      }))
       const rows = (r1.data as any[]) || []
       if (pro === 'assicuratore') {
         rows.forEach(p => list.push({
@@ -341,7 +356,7 @@ export default function ProHome({ goto }: { goto: (r: string) => void }) {
         days: null, route: 'my-athletes',
       })
       // più urgente prima: senza data (richieste) in cima, poi per scadenza
-      const rank = (x: Todo) => x.key === 'acc' ? 1e6 : x.days == null ? -1e6 : x.days
+      const rank = (x: Todo) => x.ev ? -2e6 : x.key === 'acc' ? 1e6 : x.days == null ? -1e6 : x.days
       list.sort((a, b) => rank(a) - rank(b))
 
       setMe((prof.data as any) || {})
@@ -419,6 +434,34 @@ export default function ProHome({ goto }: { goto: (r: string) => void }) {
     return Math.round((filled / cfg.fields.length) * 100)
   }, [me, cfg])
 
+  // messaggi da leggere dei miei atleti (scritti dagli altri): numero sul cerchio Chat
+  const [unread, setUnread] = useState(0)
+  useEffect(() => {
+    const me = profile?.id
+    if (!me || !ids.length) { setUnread(0); return }
+    const count = () => supabase.from('crm_messages').select('id', { count: 'exact', head: true })
+      .in('player_id', ids).is('read_at', null).neq('sender_id', me)
+      .then(({ count }) => setUnread(count || 0))
+    count()
+    const ch = supabase.channel('pro_unread_' + me)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'crm_messages' }, () => count())
+      .subscribe()
+    return () => { supabase.removeChannel(ch) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.id, idsKey])
+
+  const [busyEv, setBusyEv] = useState<string | null>(null)
+  async function confirmEv(x: Todo) {
+    if (!x.ev) return
+    setBusyEv(x.ev)
+    const { error } = await supabase.rpc('crm_event_answer', { p_event: x.ev, p_ok: true })
+    setBusyEv(null)
+    if (error) { toast(error.message, 'err'); return }
+    toast(t('Impegno confermato'))
+    setTodos(ts => ts.filter(y => y.key !== x.key))
+    setEvents(es => es.map(e => e.id === x.ev ? { ...e, request_status: 'confermata' } : e))
+  }
+
   // ---------- azioni ----------
   const open = (pid: number | null, route: string) => {
     if (pid != null) setAthleteId(pid)
@@ -468,12 +511,21 @@ export default function ProHome({ goto }: { goto: (r: string) => void }) {
     </header>
   )
 
-  const board = (
-    <section className="pro-board" aria-label={t('Riepilogo')}>
-      <div><span className="v">{athList.length}</span><span className="l">{athList.length === 1 ? t('Atleta') : t('Atleti')}</span></div>
-      <div><span className="v">{todos.length}</span><span className="l">{t('Da fare')}</span></div>
-      <div><span className="v">{week.length}</span><span className="l">{t('In settimana')}</span></div>
-    </section>
+  // Oggi: il prossimo impegno o partita dei miei atleti, una riga sola (come nella Home dell'atleta)
+  const nextUp = week.find(it => it.at.getTime() >= Date.now() - 2 * 3600000)
+  const today = (
+    <button className="pro-today" onClick={() => nextUp ? open(nextUp.pid, nextUp.kind === 'match' ? cfg.mainRoute : 'agenda') : goto('agenda')}>
+      <span className="pro-today-ic"><Icon name={nextUp?.kind === 'match' ? 'ball' : 'calendar'} size={16} /></span>
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <span className="pro-today-k">{nextUp ? (dayDiff(nextUp.at) === 0 ? t('Oggi') : dayDiff(nextUp.at) === 1 ? t('Domani') : nextUp.at.toLocaleDateString(locale, { weekday: 'long', day: 'numeric' })) : t('Oggi')}</span>
+        <span className="pro-today-t pro-trunc">
+          {nextUp
+            ? `${nextUp.kind === 'match' ? fmtMatchTime(nextUp.at.toISOString(), tzOf(nextUp.pid)) : nextUp.at.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })} · ${nameOf(nextUp.pid).split(' ').slice(-1)[0]} · ${nextUp.title}`
+            : t('Niente in programma questa settimana')}
+        </span>
+      </span>
+      <Icon name="chevron-right" size={16} style={{ color: 'var(--text-faint)' }} />
+    </button>
   )
 
   const completeCard = completion < 100 ? (
@@ -491,14 +543,15 @@ export default function ProHome({ goto }: { goto: (r: string) => void }) {
     { key: 'ath', label: t('Atleti'), icon: 'users', route: 'my-athletes' },
     { key: 'inv', label: t('Invita'), icon: 'plus', route: 'my-athletes', primary: true },
     { key: 'ag', label: t('Agenda'), icon: 'calendar', route: 'agenda' },
-    { key: 'chat', label: t('Chat'), icon: 'message', route: 'messages' },
+    { key: 'chat', label: t('Chat'), icon: 'message', route: 'messages', badge: unread },
     { key: 'role', label: t(cfg.action.label), icon: cfg.action.icon, route: cfg.action.route },
   ]
   const quick = (
     <nav className="pro-qas" aria-label={t('Azioni rapide')}>
       {qas.map(q => (
         <button key={q.key} className={`pro-qa${q.primary ? ' primary' : ''}`} onClick={() => goto(q.route)}>
-          <span className="pro-qa-ic"><Icon name={q.icon} size={21} strokeWidth={1.7} /></span>
+          <span className="pro-qa-ic"><Icon name={q.icon} size={21} strokeWidth={1.7} />
+            {!!(q as any).badge && <span className="pro-qa-badge">{(q as any).badge > 99 ? '99+' : (q as any).badge}</span>}</span>
           <span className="pro-qa-l">{q.label}</span>
         </button>
       ))}
@@ -561,17 +614,20 @@ export default function ProHome({ goto }: { goto: (r: string) => void }) {
       ) : (
         <div className="pro-card">
           {shownTodos.map(x => (
-            <button key={x.key} className="pro-todo" onClick={() => x.req ? setSheet(x) : open(x.pid, x.route)}>
-              <span className={`pro-todo-ic ${dueTone(x.days)}`}><Icon name={x.icon} size={16} /></span>
-              <span style={{ flex: 1, minWidth: 0 }}>
-                <span className="pro-todo-t pro-trunc">{x.title}</span>
-                <span className="pro-todo-s pro-trunc">
-                  {x.pid != null && <span className="pro-dot" style={{ background: colorOf(x.pid) }} aria-hidden="true" />}
-                  {x.sub}
+            <div key={x.key} className="pro-todo-row">
+              <button className="pro-todo" onClick={() => x.req ? setSheet(x) : open(x.pid, x.route)}>
+                <span className={`pro-todo-ic ${x.ev ? 'ev' : dueTone(x.days)}`}><Icon name={x.icon} size={16} /></span>
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <span className="pro-todo-t pro-trunc">{x.title}</span>
+                  <span className="pro-todo-s pro-trunc">
+                    {x.pid != null && <span className="pro-dot" style={{ background: colorOf(x.pid) }} aria-hidden="true" />}
+                    {x.sub}
+                  </span>
                 </span>
-              </span>
-              <span className={`pro-due ${dueTone(x.days)}`}>{dueLabel(x.days)}</span>
-            </button>
+                {!x.ev && <span className={`pro-due ${dueTone(x.days)}`}>{dueLabel(x.days)}</span>}
+              </button>
+              {x.ev && <button className="pro-act" disabled={busyEv === x.ev} onClick={() => confirmEv(x)}>{t('Conferma')}</button>}
+            </div>
           ))}
           {todos.length > shownTodos.length && (
             <div className="pro-more">{t('+ altri {n}').replace('{n}', String(todos.length - shownTodos.length))}</div>
@@ -658,12 +714,12 @@ export default function ProHome({ goto }: { goto: (r: string) => void }) {
       <style>{PRO_CSS}</style>
       <div className="pro-col">
         {header}
-        {pro === 'preparatore' && <CoachTrainingCalendar />}
-        {board}
-        {completeCard}
         {quick}
-        {athSection}
+        {today}
         {todoSection}
+        {completeCard}
+        {pro === 'preparatore' && <CoachTrainingCalendar />}
+        {athSection}
       </div>
       <div className="pro-col">
         {weekSection}
@@ -825,12 +881,6 @@ const PRO_CSS = `
 .pro-ring-l { font-size: 11px; font-weight: 600; color: var(--text-faint); }
 
 /* riepilogo: tabellone scuro come la partita dell'atleta */
-.pro-board { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); background: var(--card-dark); color: #fff; border-radius: 20px; padding: 18px 6px; box-shadow: 0 10px 28px -16px rgba(10,10,10,.5); }
-.pro-board > div { display: flex; flex-direction: column; align-items: center; min-width: 0; }
-.pro-board > div + div { border-left: 1px solid rgba(255,255,255,.14); }
-.pro-board .v { font-family: var(--font-display); font-stretch: 125%; font-weight: 700; font-size: 28px; line-height: 1; font-variant-numeric: tabular-nums; }
-.pro-board > div:nth-child(2) .v { color: var(--yellow); }
-.pro-board .l { font-size: 12.5px; font-weight: 600; color: rgba(255,255,255,.72); margin-top: 7px; }
 
 /* completa il profilo */
 .pro-complete { display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 20px; background: var(--yellow-soft); border: 1px solid rgba(154,134,0,.22); }
@@ -871,7 +921,19 @@ const PRO_CSS = `
 
 /* da fare */
 .pro-todo { width: 100%; display: flex; align-items: center; gap: 12px; min-height: 58px; padding: 9px 14px; background: none; border: 0; text-align: left; cursor: pointer; transition: background .15s; }
-.pro-todo + .pro-todo { border-top: 1px solid var(--border); }
+.pro-todo-row { display: flex; align-items: center; }
+.pro-todo-row + .pro-todo-row { border-top: 1px solid var(--border); }
+.pro-todo-row .pro-todo { flex: 1; min-width: 0; }
+.pro-todo-ic.ev { background: var(--yellow); color: var(--ink); }
+.pro-act { flex-shrink: 0; min-height: 36px; margin-right: 12px; padding: 0 14px; border-radius: 999px; border: 0; background: var(--yellow); color: var(--ink); font: inherit; font-size: 12.5px; font-weight: 800; cursor: pointer; }
+.pro-act:disabled { opacity: .5; }
+.pro-qa-ic { position: relative; }
+.pro-qa-badge { position: absolute; top: -3px; right: -5px; min-width: 19px; height: 19px; padding: 0 5px; border-radius: 999px; background: var(--ink); color: var(--yellow); font-size: 11px; font-weight: 800; display: grid; place-items: center; border: 2px solid var(--bg); font-variant-numeric: tabular-nums; }
+.pro-today { width: 100%; display: flex; align-items: center; gap: 12px; text-align: left; padding: 10px 14px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface); cursor: pointer; font: inherit; color: var(--text); }
+.pro-today:hover { border-color: var(--border-2); }
+.pro-today-ic { width: 32px; height: 32px; border-radius: 12px; background: var(--yellow); color: var(--ink); display: grid; place-items: center; flex-shrink: 0; }
+.pro-today-k { display: block; font-size: 12.5px; font-weight: 700; color: var(--text-dim); text-transform: capitalize; }
+.pro-today-t { display: block; font-size: 14px; font-weight: 600; }
 .pro-todo:hover { background: var(--surface-2); }
 .pro-todo-ic { width: 34px; height: 34px; border-radius: 12px; display: grid; place-items: center; flex-shrink: 0; background: var(--bg-2); color: var(--text-dim); }
 .pro-todo-ic.hot { background: var(--ink); color: var(--yellow); }
@@ -934,7 +996,6 @@ const PRO_CSS = `
 @media (max-width: 380px) {
   .pro-complete { flex-wrap: wrap; }
   .pro-complete .pro-btn { width: 100%; }
-  .pro-board .v { font-size: 24px; }
   .pro-qa-ic { width: 44px; height: 44px; }
 }
 `
