@@ -5,7 +5,6 @@ import { useAthlete } from '../lib/athlete'
 import { supabase } from '../lib/supabase'
 import { initials } from '../lib/format'
 import NotificationBell from './NotificationBell'
-import { SearchButton } from './GlobalSearch'
 import { useLang, LangToggle } from '../lib/i18n'
 import Toaster from './Toaster'
 import PushNudge from './PushNudge'
@@ -16,7 +15,7 @@ import { Modal, Field, Input, Tabs, Empty } from './ui'
 // Schermate home dei vari ruoli: qui compare l'invito ad attivare le notifiche.
 const HOME_ROUTES = ['dashboard', 'brandhome', 'agent-home', 'insurer-home', 'tax-home', 'physio-home', 'partner-home', 'wealth-home']
 
-export const APP_VERSION = 'v12.55'
+export const APP_VERSION = 'v12.56'
 
 export interface NavDef {
   key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[]
@@ -524,11 +523,7 @@ export default function Shell({ route, setRoute, right, children }: {
               </select>
             )}
             <span className="topbar-lang"><LangToggle /></span>
-            {right}
-            {/* ricerca unica: anche le sezioni dell'app (voci di menu, schede e pagine) */}
-            <SearchButton goto={setRoute} sections={allItems.flatMap(i => [{ key: i.key, label: i.label }, ...tabsOf(i), ...pagesOf(i)])
-              .filter((x, n, a) => a.findIndex(y => y.key === x.key) === n)} />
-            <NotificationBell goto={setRoute} />
+            {right}<NotificationBell goto={setRoute} />
             {fullTabbar && (
               <button className="topbar-me" onClick={() => setOpen(true)} aria-label={tr('Profilo e impostazioni')}>
                 {initials(profile?.full_name || profile?.email)}
