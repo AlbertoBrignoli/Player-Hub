@@ -296,6 +296,20 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
     ]).then(([a, b]) => setOpenTasks((a.count || 0) + (b.count || 0)))
   }, [athleteId])
   const isPlayer = role === 'player'
+  // messaggi da leggere (scritti dagli altri, non ancora letti): numero sul cerchio Chat
+  const [unreadChat, setUnreadChat] = useState(0)
+  useEffect(() => {
+    const me = profile?.id
+    if (!athleteId || !me) { setUnreadChat(0); return }
+    const count = () => supabase.from('crm_messages').select('id', { count: 'exact', head: true })
+      .eq('player_id', athleteId).is('read_at', null).neq('sender_id', me)
+      .then(({ count }) => setUnreadChat(count || 0))
+    count()
+    const ch = supabase.channel('home_unread_' + athleteId)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'crm_messages' }, () => count())
+      .subscribe()
+    return () => { supabase.removeChannel(ch) }
+  }, [athleteId, profile?.id])
   const [hasMailbox, setHasMailbox] = useState(false)
   useEffect(() => {
     if (!athleteId) { setHasMailbox(false); return }
@@ -424,7 +438,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
     { key: 'tasks', label: t('Task'), icon: 'check-square', run: () => goto('tasks'), badge: openTasks },
     // Mail solo se l'atleta ha la casella AUVI
     ...(hasMailbox ? [{ key: 'mail', label: t('Mail'), icon: 'mail', run: () => goto('mail') }] : []),
-    { key: 'chat', label: t('Chat'), icon: 'message', run: () => goto('messages') },
+    { key: 'chat', label: t('Chat'), icon: 'message', run: () => goto('messages'), badge: unreadChat },
     { key: 'docs', label: t('Documenti'), icon: 'archive', run: () => goto('documents') },
     { key: 'fitness', label: t('Preparazione'), icon: 'dumbbell', run: () => goto('fitness') },
     { key: 'services', label: t('Servizi'), icon: 'layers', run: () => goto('services') },
@@ -442,7 +456,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
     <nav className="home-sec home-qas" aria-label={t('Azioni rapide')} style={{ gridTemplateColumns: `repeat(${qas.length}, minmax(0, 1fr))` }}>
       {qas.map(q => (
         <button key={q.key} className={`home-qa home-qa-${q.key}${q.badge ? ' primary' : ''}`} onClick={q.run}
-          aria-label={q.badge ? `${q.label}: ${q.badge} ${q.key === 'tasks' ? t('da fare') : t('da approvare')}` : q.label}>
+          aria-label={q.badge ? `${q.label}: ${q.badge} ${q.key === 'tasks' ? t('da fare') : q.key === 'chat' ? t('da leggere') : t('da approvare')}` : q.label}>
           <span className="home-qa-ic">
             <Icon name={q.icon} size={21} strokeWidth={1.7} />
             {!!q.badge && <span className="home-qa-badge">{q.badge > 99 ? '99+' : q.badge}</span>}

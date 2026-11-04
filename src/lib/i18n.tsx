@@ -3924,5 +3924,6 @@ const EN: Record<string, string> = {
   'dì al preparatore se lo farai': 'tell your coach if you\'ll do it',
   'Documento richiesto': 'Requested document',
   'Fatto: {t}': 'Done: {t}',
+  'da leggere': 'unread',
 }
 
