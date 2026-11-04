@@ -193,6 +193,8 @@ function DirectChat({ switcher }: { switcher?: React.ReactNode }) {
     setRows(list)
     setLoading(false)
     if (list.length) markSeen(seenKey(chan), list[list.length - 1].created_at)
+    // spunte di lettura: chi apre la conversazione segna come letti i messaggi degli altri
+    if (list.some(m => m.sender_id !== me && !(m as any).read_at)) supabase.rpc('crm_messages_mark_read', { p_player: athleteId, p_channel: chan }).then(() => {})
     setUnread(u => ({ ...u, [chan]: 0 }))
   }
 
@@ -200,6 +202,8 @@ function DirectChat({ switcher }: { switcher?: React.ReactNode }) {
     setLoading(true); load(); loadLast()
     const ch = supabase.channel('crm_messages_rt')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'crm_messages' }, () => { load(); loadLast() })
+      // l'altro ha letto: aggiorna le spunte
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'crm_messages' }, () => load())
       .subscribe()
     return () => { supabase.removeChannel(ch) }
   }, [athleteId, chan]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -301,7 +305,7 @@ function DirectChat({ switcher }: { switcher?: React.ReactNode }) {
           </div>
         )}
         {loading ? <div className="wa-blank"><Spinner /></div> : (
-          <WaMessages msgs={rows} me={me} photoOf={(id, r) => r === 'brand' && active?.logo ? active.logo : photoOf(id, r)}
+          <WaMessages msgs={rows} me={me} receipts photoOf={(id, r) => r === 'brand' && active?.logo ? active.logo : photoOf(id, r)}
             names={m => tr(roleLabel(m.sender_role))}
             empty={<Empty icon={<Icon name="message" size={30} strokeWidth={1.4} />} title={tr('Nessun messaggio')}
               hint={tr('Inizia la conversazione con {name}.').replace('{name}', toAthlete ? (athlete?.name || tr('il giocatore')) : (active?.label || tr('il tuo referente')))} />} />

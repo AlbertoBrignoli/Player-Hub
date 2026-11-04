@@ -13,6 +13,8 @@ import { ChatAttachment } from './ChatAttachment'
 export type WaMsg = {
   id: string; sender_id: string | null; sender_name: string | null; sender_role: string | null; body: string; created_at: string
   file_path?: string | null; file_name?: string | null; file_mime?: string | null; file_size?: number | null
+  /** quando il destinatario l'ha letto (solo chat dirette): ✓ inviato, ✓✓ letto */
+  read_at?: string | null
 }
 
 const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString()
@@ -69,7 +71,7 @@ export function WaItem({ active, avatar, title, preview, when, unread, onClick }
 }
 
 /** Messaggi con separatori di giorno e bolle raggruppate per mittente */
-export function WaMessages({ msgs, me, photoOf, names, decorate, empty }: {
+export function WaMessages({ msgs, me, photoOf, names, decorate, empty, receipts }: {
   msgs: WaMsg[]; me?: string
   photoOf: (id: string | null | undefined, role: string | null | undefined) => string | null
   /** etichetta sotto il nome di chi scrive (es. il ruolo); se assente i nomi non compaiono */
@@ -77,6 +79,8 @@ export function WaMessages({ msgs, me, photoOf, names, decorate, empty }: {
   /** contenuto extra in testa alla bolla e bolla evidenziata (es. tag dello staff) */
   decorate?: (m: WaMsg) => { pre?: React.ReactNode; highlight?: boolean } | null
   empty?: React.ReactNode
+  /** mostra le spunte di lettura sui propri messaggi (chat dirette) */
+  receipts?: boolean
 }) {
   const { t } = useLang()
   const endRef = useRef<HTMLDivElement>(null)
@@ -120,7 +124,13 @@ export function WaMessages({ msgs, me, photoOf, names, decorate, empty }: {
                     {deco?.pre}
                     {m.file_path && <ChatAttachment path={m.file_path} name={m.file_name} mime={m.file_mime} size={m.file_size} mine={false} />}
                     {!onlyFile && <span className="wa-text">{m.body}</span>}
-                    <span className="wa-time">{hhmm(m.created_at)}</span>
+                    <span className="wa-time">{hhmm(m.created_at)}
+                      {receipts && mine && (
+                        <span className={`wa-tick ${m.read_at ? 'read' : ''}`} title={m.read_at ? t('Letto') : t('Inviato')} aria-label={m.read_at ? t('Letto') : t('Inviato')}>
+                          <Icon name="check" size={12} strokeWidth={2.4} />{m.read_at && <Icon name="check" size={12} strokeWidth={2.4} />}
+                        </span>
+                      )}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -232,6 +242,9 @@ export const WA_CSS = `
 .wa-name { font-size: 12.5px; font-weight: 800; color: var(--ink); margin-bottom: 1px; }
 .wa-name span { color: var(--text-faint); font-weight: 600; }
 .wa-time { float: right; font-size: 11px; color: rgba(10,10,10,.5); margin: 8px 0 -4px 10px; line-height: 1; position: relative; top: 2px; }
+.wa-tick { display: inline-flex; margin-left: 3px; vertical-align: -2px; color: rgba(10,10,10,.42); }
+.wa-tick svg + svg { margin-left: -7px; }
+.wa-tick.read { color: var(--ink); }
 .wa-bubble.media .wa-time { float: none; display: block; text-align: right; margin: 2px 0 0; }
 .wa-comp-wrap { background: var(--surface); border-top: 1px solid var(--border); position: relative; }
 .wa-chip { padding-top: 2px; }

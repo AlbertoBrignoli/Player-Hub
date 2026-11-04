@@ -81,8 +81,27 @@ export function Empty({ icon, title, hint, action }: {
   )
 }
 
+// Caricamento a sagoma (come le app migliori): al posto della rotella la forma grigia del contenuto
+// che sta arrivando, così la pagina non salta da vuota a piena. Usato da tutte le schermate.
 export function Spinner() {
-  return <div className="center"><div className="spinner" /></div>
+  return (
+    <div className="skel" aria-busy="true" aria-label="Caricamento">
+      <div className="skel-card skel-hero" />
+      <div className="skel-row"><div className="skel-card" /><div className="skel-card" /></div>
+      <div className="skel-line" style={{ width: '42%' }} />
+      <div className="skel-card skel-list">
+        {[0, 1, 2].map(i => (
+          <div key={i} className="skel-item">
+            <span className="skel-dot" />
+            <span style={{ flex: 1, display: 'grid', gap: 6 }}>
+              <span className="skel-line" style={{ width: `${70 - i * 12}%` }} />
+              <span className="skel-line skel-faint" style={{ width: `${45 - i * 6}%` }} />
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
 }
 
 export function Stat({ label, value, sub, icon, tone }: { label: string; value: React.ReactNode; sub?: React.ReactNode; icon?: React.ReactNode; tone?: string }) {

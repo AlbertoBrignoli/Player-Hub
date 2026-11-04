@@ -3893,5 +3893,6 @@ const EN: Record<string, string> = {
   'gol': 'goals',
   'voto': 'rating',
   'Apri Performance': 'Open Performance',
+  'Inviato': 'Sent',
 }
 

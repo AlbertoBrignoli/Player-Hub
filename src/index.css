@@ -920,3 +920,17 @@ input[type="time"]::-webkit-date-and-time-value { text-align: left; }
   body:has(.wa.open) .content { padding-bottom: calc(10px + env(safe-area-inset-bottom)); }
   .content { overflow-x: clip; }
 }
+
+/* Caricamento a sagoma: blocchi grigi con un riflesso che scorre (fermo con "riduci movimento") */
+.skel { display: grid; gap: 14px; padding: 4px 0; }
+.skel-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.skel-card, .skel-line, .skel-dot { background: linear-gradient(90deg, var(--bg-2) 0%, #F7F7F6 50%, var(--bg-2) 100%); background-size: 200% 100%; animation: skel 1.3s ease-in-out infinite; }
+.skel-card { border-radius: var(--radius); min-height: 84px; }
+.skel-hero { min-height: 150px; }
+.skel-list { background: var(--surface); animation: none; border: 1px solid var(--border); padding: 14px; display: grid; gap: 16px; }
+.skel-item { display: flex; align-items: center; gap: 12px; }
+.skel-dot { width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0; }
+.skel-line { display: block; height: 12px; border-radius: 999px; }
+.skel-faint { opacity: .6; }
+@keyframes skel { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+@media (prefers-reduced-motion: reduce) { .skel-card, .skel-line, .skel-dot { animation: none; } }
