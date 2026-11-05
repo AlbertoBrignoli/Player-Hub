@@ -26,7 +26,8 @@ export function useRequesters(items: Pick<TaxItem, 'created_by'>[]) {
 
 export function RequestSteps({ item, who }: { item: TaxItem; who?: string | null }) {
   const { t } = useLang()
-  const done = item.status !== 'aperto'
+  const done = item.status !== 'aperto' && item.status !== 'modifiche'
+  const appr = item.kind === 'approvazione'
   const d = daysUntil(item.due_date)
   const late = !done && d != null && d < 0
   const dueText = !item.due_date ? t('Nessuna scadenza')
@@ -40,7 +41,7 @@ export function RequestSteps({ item, who }: { item: TaxItem; who?: string | null
       <style>{DR_CSS}</style>
       <div className="dr-step on">
         <span className="dr-dot"><Icon name="send" size={11} /></span>
-        <span className="dr-k">{t('Richiesta')}</span>
+        <span className="dr-k">{t(item.kind === 'approvazione' ? 'Inviata' : 'Richiesta')}</span>
         <span className="dr-v">{fmtDate(item.created_at)}</span>
         {who && <span className="dr-s">{t('da {who}').replace('{who}', who)}</span>}
       </div>
@@ -51,8 +52,8 @@ export function RequestSteps({ item, who }: { item: TaxItem; who?: string | null
       </div>
       <div className={'dr-step' + (done ? ' on ok' : '')}>
         <span className="dr-dot"><Icon name="check" size={11} /></span>
-        <span className="dr-k">{t('Consegna')}</span>
-        <span className="dr-v">{done ? fmtDate(item.completed_at || item.updated_at) : t('Da consegnare')}</span>
+        <span className="dr-k">{t(appr ? 'Approvazione' : 'Consegna')}</span>
+        <span className="dr-v">{done ? fmtDate(item.completed_at || item.updated_at) : t(appr ? 'Da approvare' : 'Da consegnare')}</span>
       </div>
     </div>
   )

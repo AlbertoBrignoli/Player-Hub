@@ -30,17 +30,29 @@ const secId = (k: string) => `legaltax-${k}`
 const scrollToSec = (k: string) =>
   document.getElementById(secId(k))?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 
+// Categoria = l'oggetto fiscale. Nomi generali, validi anche per posizioni estere;
+// il dettaglio (F24, IRPEF, IMU…) va nel titolo.
 const CATEGORIES: Record<string, string[]> = {
-  // poche voci generiche: il dettaglio (F24, IRPEF, IVA…) va nel titolo
-  fiscale: ['Pagamenti', 'Dichiarativi', 'Altro'],
+  fiscale: ['Dichiarazioni fiscali', 'Imposte e versamenti', 'Certificazioni fiscali', 'Comunicazioni fiscali', 'Altri documenti fiscali'],
   legale: ['Contratti', 'Pratiche', 'Altro'],
 }
 
-const KINDS = [
-  { k: 'pagamento', l: 'Da pagare' },
-  { k: 'documento', l: 'Documento' },
-  { k: 'richiesta', l: 'Richiesta di documenti' },
+// Azione = cosa si vuole fare con la voce
+export const KINDS = [
+  { k: 'pagamento', l: 'Pagamento da effettuare', hint: "Un'imposta da versare: indica importo e scadenza. L'atleta paga e carica la ricevuta qui." },
+  { k: 'documento', l: 'Condivisione documento', hint: 'Un documento già pronto da mettere a disposizione, senza chiedere niente.' },
+  { k: 'richiesta', l: 'Richiesta documentale', hint: "Chiedi documenti all'atleta o a un professionista del team, con una scadenza." },
+  { k: 'approvazione', l: 'Richiesta di approvazione', hint: "Carica la bozza: l'atleta la approva o chiede modifiche prima che tu proceda." },
 ]
+
+const COUNTRIES = ['Italia', 'Grecia', 'Spagna', 'Francia', 'Germania', 'Regno Unito', 'Portogallo', 'Svizzera',
+  'Paesi Bassi', 'Belgio', 'Turchia', 'Arabia Saudita', 'Emirati Arabi Uniti', 'Stati Uniti']
+
+/** "Certificazioni fiscali · Italia · 2025": categoria, Paese e anno fiscale della voce */
+export function taxMeta(i: { category?: string | null; country?: string | null; tax_year?: number | null }, tr: (s: string) => string) {
+  return [i.category ? tr(i.category) : null, i.country ? tr(i.country) : null, i.tax_year ? String(i.tax_year) : null]
+    .filter(Boolean).join(' · ')
+}
 
 export type TaxItem = {
   id: string
@@ -55,6 +67,10 @@ export type TaxItem = {
   status: string
   paid_on: string | null
   period: string | null
+  country?: string | null
+  tax_year?: number | null
+  /** richiesta documentale: a chi è chiesta (null = all'atleta) */
+  assignee_id?: string | null
   attachments: { name: string; path: string }[] | null
   response_attachments: { name: string; path: string }[] | null
   response_note: string | null
@@ -69,7 +85,8 @@ const daysTo = (d?: string | null) =>
 
 function dueTone(i: TaxItem) {
   // l è la chiave di traduzione: {n} si sostituisce al momento del render
-  if (i.status !== 'aperto') return { c: OK, l: i.status === 'pagato' ? 'Pagato' : i.status === 'letto' ? 'Letto' : 'Completato', n: 0 }
+  if (i.status === 'modifiche') return { c: WARN, l: 'Modifiche richieste', n: 0 }
+  if (i.status !== 'aperto') return { c: OK, l: i.status === 'pagato' ? 'Pagato' : i.status === 'letto' ? 'Letto' : i.status === 'approvato' ? 'Approvato' : 'Completato', n: 0 }
   const n = daysTo(i.due_date)
   if (n === null) return null
   if (n < 0) return { c: DANGER, l: 'Scaduto da {n} g', n: -n }
@@ -85,15 +102,19 @@ async function openDoc(path: string, errMsg = 'Impossibile aprire il documento')
 }
 
 export default function LegalTax() {
-  const { role } = useAuth()
+  const { role, session } = useAuth()
+  const uid = session?.user.id
   const { t: tr } = useLang()
   const { athleteId } = useAthlete()
   const [edit, setEdit] = useState<Partial<TaxItem> | null>(null)
-  const [respond, setRespond] = useState<TaxItem | null>(null)
+  const [respond, setRespond] = useState<{ item: TaxItem; mode: RespondMode } | null>(null)
 
   const isAdvisor = role === 'commercialista' || role === 'admin'
   const isPlayer = role === 'player'
-  const canManage = isAdvisor || isPlayer
+  // il procuratore coordina: inserisce le attività e coinvolge gli altri professionisti
+  const canManage = isAdvisor || isPlayer || role === 'agente'
+  const team = useTeam(athleteId)
+  const nameOfUser = (id?: string | null) => team.find(m => m.pro_id === id)?.name || tr('un professionista')
 
   const { rows, loading, reload } = useCollection<TaxItem>('crm_tax_items', {
     orderBy: 'due_date', ascending: true,
@@ -107,30 +128,34 @@ export default function LegalTax() {
     const it = itemParam ? rows.find(r => r.id === itemParam) : null
     if (!it) return
     // richiesta ancora da consegnare aperta dall'atleta (es. dai Task): va dritta a "Rispondi"
-    if (isPlayer && it.kind === 'richiesta' && it.status === 'aperto') { setRespond(it); return }
+    if (it.kind === 'richiesta' && it.status === 'aperto' && iAnswer(it)) { setRespond({ item: it, mode: 'completato' }); return }
     setThread(it)
     setTimeout(() => scrollToSec(it.area), 50)
   }, [itemParam, rows.length]) // eslint-disable-line react-hooks/exhaustive-deps
   // documento già letto: per l'atleta non è più una voce, resta nella sezione Documenti
   const isRead = (i: TaxItem) => i.kind === 'documento' && i.status === 'letto'
-  const aperte = useMemo(() => rows.filter(i => i.kind === 'richiesta' && i.status === 'aperto'), [rows])
+  // tocca a me rispondere? richiesta all'atleta (atleta o AUVI) o a me come professionista
+  function iAnswer(i: TaxItem) {
+    if (i.kind !== 'richiesta') return false
+    return i.assignee_id ? i.assignee_id === uid || role === 'admin' : isPlayer || role === 'admin'
+  }
+  const aperte = useMemo(() => rows.filter(i => i.status === 'aperto'
+    && (iAnswer(i) || (i.kind === 'approvazione' && (isPlayer || role === 'admin')))), [rows, uid, role]) // eslint-disable-line react-hooks/exhaustive-deps
   // consegnate negli ultimi 60 giorni: restano visibili con la data di consegna
-  const consegnate = useMemo(() => rows.filter(i => i.kind === 'richiesta' && i.status !== 'aperto'
+  const consegnate = useMemo(() => rows.filter(i => (i.kind === 'richiesta' || i.kind === 'approvazione') && i.status !== 'aperto' && i.status !== 'modifiche'
     && Date.now() - new Date(i.completed_at || i.updated_at || 0).getTime() < 60 * 86400000), [rows])
   const requesters = useRequesters([...aperte, ...consegnate])
   const whoOf = (i: TaxItem) => (i.created_by && requesters[i.created_by]) || null
 
   async function marcaLetto(i: TaxItem) {
-    const { error } = await updateRow('crm_tax_items', i.id, { status: 'letto', completed_at: new Date().toISOString() })
+    const { error } = await supabase.rpc('crm_tax_respond', { p_item: i.id, p_status: 'letto' })
     if (error) { toast(error.message, 'err'); return }
     toast(tr('Segnato come letto · lo trovi in Documenti')); reload()
   }
-
-  async function marcaPagato(i: TaxItem) {
-    await updateRow('crm_tax_items', i.id, {
-      status: 'pagato', paid_on: new Date().toISOString().slice(0, 10),
-    })
-    toast(tr('Segnato come pagato')); reload()
+  async function approva(i: TaxItem) {
+    const { error } = await supabase.rpc('crm_tax_respond', { p_item: i.id, p_status: 'approvato' })
+    if (error) { toast(error.message, 'err'); return }
+    toast(tr('Approvato')); reload()
   }
 
   // blocco di un'area (fiscale o legale): numeri, voci, aggiungi
@@ -173,7 +198,7 @@ export default function LegalTax() {
             <div className="card">
               <Empty icon={<Icon name="archive" size={30} strokeWidth={1.4} />}
                 title={tr('Niente in questa area')}
-                hint={canManage ? tr('Aggiungi un pagamento, un documento o una richiesta.')
+                hint={canManage ? tr('Aggiungi un pagamento, un documento, una richiesta o una bozza da approvare.')
                                 : tr('Il tuo commercialista caricherà qui documenti e scadenze.')} />
             </div>
           ) : (
@@ -187,10 +212,13 @@ export default function LegalTax() {
                       <div className="flex between" style={{ alignItems: 'flex-start', gap: 10 }}>
                         <div style={{ minWidth: 0 }}>
                           <div style={{ ...kicker, fontSize: 11, color: ACCENT }}>
-                            {tr(KINDS.find(k => k.k === i.kind)?.l || '')}{i.category ? ` · ${tr(i.category)}` : ''}
+                            {tr(KINDS.find(k => k.k === i.kind)?.l || '')}
                           </div>
                           <div style={{ fontSize: 15, fontWeight: 800, marginTop: 2 }}>{i.title}</div>
-                          {i.period && <div className="faint" style={{ fontSize: 12.5 }}>{i.period}</div>}
+                          {(taxMeta(i, tr) || i.period) && <div className="faint" style={{ fontSize: 12.5 }}>{taxMeta(i, tr) || i.period}</div>}
+                          {i.kind === 'richiesta' && i.assignee_id && (
+                            <div className="faint" style={{ fontSize: 12.5 }}>{tr('Chiesta a {n}').replace('{n}', nameOfUser(i.assignee_id))}</div>
+                          )}
                         </div>
                         {t && <span style={{ fontSize: 11, fontWeight: 800,
                                              color: t.c, whiteSpace: 'nowrap' }}>{tr(t.l).replace('{n}', String(t.n))}</span>}
@@ -219,7 +247,9 @@ export default function LegalTax() {
 
                       {i.response_attachments && i.response_attachments.length > 0 && (
                         <div style={{ marginTop: 11, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
-                          <div style={{ ...kicker, fontSize: 11, color: OK, marginBottom: 6 }}>{tr("Consegnato dall'atleta")}</div>
+                          <div style={{ ...kicker, fontSize: 11, color: i.status === 'modifiche' ? WARN : OK, marginBottom: 6 }}>
+                            {tr(i.kind === 'pagamento' ? 'Ricevuta di pagamento' : i.status === 'modifiche' ? 'Modifiche richieste' : i.kind === 'approvazione' ? 'Risposta' : i.assignee_id ? 'Consegnato' : "Consegnato dall'atleta")}
+                          </div>
                           <div className="flex gap" style={{ flexWrap: 'wrap' }}>
                             {i.response_attachments.map(a => (
                               <button key={a.path} className="btn btn-ghost btn-sm" onClick={() => openDoc(a.path, tr('Impossibile aprire il documento'))}>
@@ -230,19 +260,35 @@ export default function LegalTax() {
                           {i.response_note && <div className="faint" style={{ fontSize: 12.5, marginTop: 6 }}>{i.response_note}</div>}
                         </div>
                       )}
+                      {/* modifiche richieste senza file: la nota da sola */}
+                      {i.status === 'modifiche' && !(i.response_attachments || []).length && i.response_note && (
+                        <div style={{ marginTop: 11, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
+                          <div style={{ ...kicker, fontSize: 11, color: WARN, marginBottom: 4 }}>{tr('Modifiche richieste')}</div>
+                          <div style={{ fontSize: 12.5 }}>{i.response_note}</div>
+                        </div>
+                      )}
 
                       <PeopleRow people={people[i.id] || []} onOpen={() => setThread(i)} />
                       <div className="flex gap" style={{ marginTop: 13, flexWrap: 'wrap' }}>
                         {i.kind === 'pagamento' && i.status === 'aperto' && (
                           <button className="btn btn-sm" style={{ background: OK, color: '#fff', fontWeight: 800, border: 'none' }}
-                            onClick={() => marcaPagato(i)}>{tr('Segna pagato')}</button>
+                            onClick={() => setRespond({ item: i, mode: 'pagato' })}>{tr('Segna pagato')}</button>
+                        )}
+                        {i.kind === 'approvazione' && i.status === 'aperto' && (isPlayer || role === 'admin') && <>
+                          <button className="btn btn-sm" style={{ background: OK, color: '#fff', fontWeight: 800, border: 'none' }}
+                            onClick={() => approva(i)}><Icon name="check" size={12} /> {tr('Approva')}</button>
+                          <button className="btn btn-sm" onClick={() => setRespond({ item: i, mode: 'modifiche' })}>{tr('Chiedi modifiche')}</button>
+                        </>}
+                        {i.kind === 'approvazione' && i.status === 'modifiche' && canManage && !isPlayer && (
+                          <button className="btn btn-sm" style={{ background: 'var(--yellow)', color: 'var(--ink)', fontWeight: 800, border: 'none' }}
+                            onClick={() => setEdit(i)}><Icon name="upload" size={12} /> {tr('Carica nuova versione')}</button>
                         )}
                         {i.kind === 'documento' && i.status === 'aperto' && (
                           <button className="btn btn-sm" style={{ background: OK, color: '#fff', fontWeight: 800, border: 'none' }}
                             onClick={() => marcaLetto(i)}><Icon name="check" size={12} /> {tr('Segna come letto')}</button>
                         )}
-                        {i.kind === 'richiesta' && i.status === 'aperto' && (
-                          <button className="btn btn-sm" onClick={() => setRespond(i)}>
+                        {i.kind === 'richiesta' && i.status === 'aperto' && iAnswer(i) && (
+                          <button className="btn btn-sm" onClick={() => setRespond({ item: i, mode: 'completato' })}>
                             <Icon name="upload" size={12} /> {tr('Rispondi')}
                           </button>
                         )}
@@ -268,7 +314,7 @@ export default function LegalTax() {
       {aperte.length > 0 && (
         <div className="card" style={{ borderColor: `${WARN}55` }}>
           <div className="flex between" style={{ alignItems: 'center', marginBottom: 12 }}>
-            <div style={{ ...kicker, color: WARN }}>{tr('Ti hanno chiesto questi documenti')}</div>
+            <div style={{ ...kicker, color: WARN }}>{tr('Tocca a te')}</div>
             <span className="faint" style={{ fontSize: 12.5 }}>{aperte.length}</span>
           </div>
           <div className="grid" style={{ gap: 16 }}>
@@ -277,12 +323,26 @@ export default function LegalTax() {
                 <div className="flex between" style={{ alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{ fontSize: 14, fontWeight: 600 }}>{i.title}</div>
-                    <div className="faint" style={{ fontSize: 12.5 }}>{i.description || (i.category && tr(i.category)) || '-'}</div>
+                    <div className="faint" style={{ fontSize: 12.5 }}>
+                      {tr(i.kind === 'approvazione' ? 'Da approvare' : 'Documenti da consegnare')}{taxMeta(i, tr) ? ' · ' + taxMeta(i, tr) : ''}
+                    </div>
+                    {i.description && <div className="faint" style={{ fontSize: 12.5 }}>{i.description}</div>}
                   </div>
-                  <button className="btn btn-sm" style={{ background: 'var(--yellow)', color: 'var(--ink)', fontWeight: 800, border: 'none' }}
-                    onClick={() => setRespond(i)}>
-                    <Icon name="upload" size={13} /> {tr('Rispondi')}
-                  </button>
+                  {i.kind === 'approvazione' ? (
+                    <div className="flex gap" style={{ gap: 6 }}>
+                      {(i.attachments || []).slice(0, 1).map(a => (
+                        <button key={a.path} className="btn btn-sm" onClick={() => openDoc(a.path)}><Icon name="download" size={13} /> {tr('Leggi')}</button>
+                      ))}
+                      <button className="btn btn-sm" style={{ background: 'var(--yellow)', color: 'var(--ink)', fontWeight: 800, border: 'none' }}
+                        onClick={() => approva(i)}><Icon name="check" size={13} /> {tr('Approva')}</button>
+                      <button className="btn btn-sm" onClick={() => setRespond({ item: i, mode: 'modifiche' })}>{tr('Modifiche')}</button>
+                    </div>
+                  ) : (
+                    <button className="btn btn-sm" style={{ background: 'var(--yellow)', color: 'var(--ink)', fontWeight: 800, border: 'none' }}
+                      onClick={() => setRespond({ item: i, mode: 'completato' })}>
+                      <Icon name="upload" size={13} /> {tr('Rispondi')}
+                    </button>
+                  )}
                 </div>
                 <RequestSteps item={i} who={whoOf(i)} />
               </div>
@@ -293,7 +353,7 @@ export default function LegalTax() {
 
       {consegnate.length > 0 && (
         <div className="card">
-          <div style={{ ...kicker, color: OK, marginBottom: 12 }}>{tr('Documenti consegnati')}</div>
+          <div style={{ ...kicker, color: OK, marginBottom: 12 }}>{tr('Concluse di recente')}</div>
           <div className="grid" style={{ gap: 14 }}>
             {consegnate.map(i => (
               <div key={i.id}>
@@ -314,58 +374,100 @@ export default function LegalTax() {
       {(canManage || rows.some(i => i.area === 'legale')) && renderArea('legale')}
 
       <div id={secId('documenti')}>
-        <Section title={tr('Documenti')} sub={tr('Allegati e file mandati in chat')}>
+        <Section title={tr('Archivio')} sub={tr('Documenti per adempimento, con filtri per categoria, Paese e anno')}>
           <LegalDocs rows={rows} />
         </Section>
       </div>
 
       {edit && athleteId && (
-        <ItemForm value={edit} playerId={athleteId}
+        <ItemForm value={edit} playerId={athleteId} team={team}
           onClose={() => setEdit(null)} onSaved={() => { setEdit(null); reload() }} />
       )}
       {thread && athleteId && (
         <ItemPeopleModal kind="tax" itemId={thread.id} playerId={athleteId} title={thread.title}
-          sub={tr(KINDS.find(k => k.k === thread.kind)?.l || '') + (thread.due_date ? ' · ' + fmtDate(thread.due_date) : '')}
+          sub={[tr(KINDS.find(k => k.k === thread.kind)?.l || ''), taxMeta(thread, tr), thread.due_date ? fmtDate(thread.due_date) : ''].filter(Boolean).join(' · ')}
           people={people[thread.id] || []} onPeople={reloadPeople} onClose={() => setThread(null)}>
           {thread.description && <div style={{ fontSize: 14, whiteSpace: 'pre-wrap' }}>{thread.description}</div>}
         </ItemPeopleModal>
       )}
       {respond && athleteId && (
-        <RespondForm item={respond} playerId={athleteId}
+        <RespondForm item={respond.item} mode={respond.mode} playerId={athleteId}
           onClose={() => setRespond(null)} onSaved={() => { setRespond(null); reload() }} />
       )}
     </div>
   )
 }
 
-// Tab Documenti: i file delle voci (caricati dal commercialista o in risposta dall'atleta)
-// e, sotto, quelli mandati nella chat con il commercialista.
+// Archivio: i documenti raggruppati per adempimento (bozza, presentata, ricevuta stanno insieme),
+// già classificati con categoria, Paese e anno fiscale della voce. Sotto, i file mandati in chat.
 function LegalDocs({ rows }: { rows: TaxItem[] }) {
   const { t: tr } = useLang()
-  const files = rows.flatMap(i => [
-    ...(i.attachments || []).map(a => ({ ...a, item: i, reply: false })),
-    ...(i.response_attachments || []).map(a => ({ ...a, item: i, reply: true })),
-  ]).filter(f => f.path)
+  const [cat, setCat] = useState('')
+  const [country, setCountry] = useState('')
+  const [year, setYear] = useState('')
+  const groups = rows.map(i => ({
+    item: i,
+    files: [
+      ...(i.attachments || []).map(a => ({ ...a, reply: false })),
+      ...(i.response_attachments || []).map(a => ({ ...a, reply: true })),
+    ].filter(f => f.path),
+  })).filter(g => g.files.length > 0)
+  const opts = (f: (i: TaxItem) => any) => [...new Set(groups.map(g => f(g.item)).filter(Boolean))].sort() as string[]
+  const cats = opts(i => i.category), countries = opts(i => i.country), years = opts(i => i.tax_year ? String(i.tax_year) : null).reverse()
+  const shown = groups.filter(g => (!cat || g.item.category === cat) && (!country || g.item.country === country)
+    && (!year || String(g.item.tax_year || '') === year))
+  const nFiles = shown.reduce((n, g) => n + g.files.length, 0)
+  const replyLabel = (i: TaxItem) => tr(i.kind === 'pagamento' ? 'Ricevuta' : i.kind === 'approvazione' ? 'Risposta' : 'Consegnato')
   return (
     <div className="grid" style={{ gap: 12 }}>
       <div className="card">
-        <div className="flex gap" style={{ alignItems: 'center', gap: 9, marginBottom: 10 }}>
-          <span style={{ width: 3, height: 15, background: ACCENT, borderRadius: 2 }} />
-          <span style={{ ...kicker, color: 'var(--text)' }}>{tr('Documenti delle voci')}</span>
-          <span className="faint" style={{ fontSize: 12.5 }}>{files.length}</span>
+        <div className="flex between" style={{ alignItems: 'center', gap: 9, marginBottom: 10, flexWrap: 'wrap' }}>
+          <div className="flex gap" style={{ alignItems: 'center', gap: 9 }}>
+            <span style={{ width: 3, height: 15, background: ACCENT, borderRadius: 2 }} />
+            <span style={{ ...kicker, color: 'var(--text)' }}>{tr('Documenti delle voci')}</span>
+            <span className="faint" style={{ fontSize: 12.5 }}>{nFiles}</span>
+          </div>
         </div>
-        {files.length === 0
+        {groups.length > 0 && (cats.length > 1 || countries.length > 0 || years.length > 0) && (
+          <div className="grid g3" style={{ gap: 8, marginBottom: 12 }}>
+            <Select value={cat} onChange={e => setCat(e.target.value)} aria-label={tr('Categoria')}>
+              <option value="">{tr('Tutte le categorie')}</option>
+              {cats.map(c => <option key={c} value={c}>{tr(c)}</option>)}
+            </Select>
+            <Select value={country} onChange={e => setCountry(e.target.value)} aria-label={tr('Paese')}>
+              <option value="">{tr('Tutti i Paesi')}</option>
+              {countries.map(c => <option key={c} value={c}>{tr(c)}</option>)}
+            </Select>
+            <Select value={year} onChange={e => setYear(e.target.value)} aria-label={tr('Anno fiscale')}>
+              <option value="">{tr('Tutti gli anni')}</option>
+              {years.map(y => <option key={y} value={y}>{y}</option>)}
+            </Select>
+          </div>
+        )}
+        {shown.length === 0
           ? <Empty icon={<Icon name="archive" size={30} strokeWidth={1.4} />} title={tr('Nessun documento')}
-              hint={tr('I file allegati alle voci fiscali e legali compaiono qui.')} />
-          : <div className="list">
-              {files.map(f => (
-                <div className="row" key={f.path}>
-                  <span style={{ display: 'inline-flex', color: ACCENT }}><Icon name="file" size={18} /></span>
-                  <div className="row-main">
-                    <div className="row-title" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</div>
-                    <div className="row-sub">{f.item.title}{f.reply ? ' · ' + tr("Risposta dell'atleta") : ''}</div>
+              hint={groups.length ? tr('Nessun documento con questi filtri.') : tr('I file allegati alle voci fiscali e legali compaiono qui.')} />
+          : <div className="grid" style={{ gap: 10 }}>
+              {shown.map(g => (
+                <div key={g.item.id} style={{ border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
+                  <div style={{ padding: '9px 12px', background: 'var(--surface-2)' }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.item.title}</div>
+                    <div className="faint" style={{ fontSize: 12.5 }}>
+                      {[tr(KINDS.find(k => k.k === g.item.kind)?.l || ''), taxMeta(g.item, tr)].filter(Boolean).join(' · ')}
+                    </div>
                   </div>
-                  <button className="btn btn-sm" onClick={() => openDoc(f.path)}>{tr('Apri')}</button>
+                  <div className="list">
+                    {g.files.map(f => (
+                      <div className="row" key={f.path}>
+                        <span style={{ display: 'inline-flex', color: ACCENT }}><Icon name="file" size={18} /></span>
+                        <div className="row-main">
+                          <div className="row-title" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</div>
+                          <div className="row-sub">{f.reply ? replyLabel(g.item) : g.item.kind === 'approvazione' ? tr('Bozza') : tr('Documento')}</div>
+                        </div>
+                        <button className="btn btn-sm" onClick={() => openDoc(f.path)}>{tr('Apri')}</button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ))}
             </div>}
@@ -373,6 +475,22 @@ function LegalDocs({ rows }: { rows: TaxItem[] }) {
       <ChatDocs channel="commercialista" accent={ACCENT} />
     </div>
   )
+}
+
+type TeamMember = { pro_id: string; role: string; name: string | null }
+/** le persone del team dell'atleta (per chiedere un documento a un professionista) */
+function useTeam(playerId?: number | null) {
+  const [team, setTeam] = useState<TeamMember[]>([])
+  useEffect(() => {
+    if (!playerId) { setTeam([]); return }
+    supabase.from('crm_athlete_team').select('pro_id, role, name').eq('player_id', playerId)
+      .then(({ data }) => setTeam(((data as TeamMember[]) || []).filter(m => m.pro_id)))
+  }, [playerId])
+  return team
+}
+const ROLE_L: Record<string, string> = {
+  agente: 'Procuratore', commercialista: 'Commercialista', wealth: 'Wealth manager', assicuratore: 'Assicuratore',
+  preparatore: 'Preparatore', fisioterapista: 'Fisioterapista', nutrizionista: 'Nutrizionista',
 }
 
 function Overview({ rows }: { rows: TaxItem[] }) {
@@ -497,8 +615,8 @@ function Info({ k, v }: { k: string; v?: any }) {
   )
 }
 
-function ItemForm({ value, playerId, onClose, onSaved }: {
-  value: Partial<TaxItem>; playerId: number; onClose: () => void; onSaved: () => void
+function ItemForm({ value, playerId, team, onClose, onSaved }: {
+  value: Partial<TaxItem>; playerId: number; team: TeamMember[]; onClose: () => void; onSaved: () => void
 }) {
   const { t: tr } = useLang()
   const [f, setF] = useState<Partial<TaxItem>>(value)
@@ -525,19 +643,35 @@ function ItemForm({ value, playerId, onClose, onSaved }: {
   async function save() {
     if (!f.title) return
     setBusy(true)
+    const kind = f.kind || 'pagamento'
+    const assignee = kind === 'richiesta' ? (f.assignee_id || null) : null
+    const year = Number(f.tax_year)
     const payload = {
-      player_id: playerId, area: f.area || 'fiscale', kind: f.kind || 'pagamento',
+      player_id: playerId, area: f.area || 'fiscale', kind,
       category: f.category || null, title: f.title, description: f.description || null,
-      amount: f.amount ? Number(f.amount) : null, due_date: f.due_date || null,
-      status: f.status || 'aperto', period: f.period || null,
+      amount: kind === 'pagamento' && f.amount ? Number(f.amount) : null, due_date: f.due_date || null,
+      // una bozza corretta dopo le modifiche richieste torna da approvare
+      status: f.status === 'modifiche' ? 'aperto' : (f.status || 'aperto'),
+      country: (f.country || '').trim() || null, tax_year: year >= 1990 && year <= 2100 ? year : null,
+      assignee_id: assignee,
       attachments: atts, updated_at: new Date().toISOString(),
     }
-    if (f.id) await updateRow('crm_tax_items', f.id, payload)
-    else await insertRow('crm_tax_items', payload)
+    const { data, error } = f.id ? await updateRow('crm_tax_items', f.id, payload) : await insertRow('crm_tax_items', payload)
+    if (error) { setBusy(false); toast(error.message, 'err'); return }
+    // richiesta a un professionista: lo coinvolge nella voce (gli arriva la notifica e la vede)
+    const m = assignee ? team.find(x => x.pro_id === assignee) : null
+    if (m && data?.id && assignee !== value.assignee_id) {
+      await supabase.from('crm_item_people').insert({ kind: 'tax', item_id: data.id, user_id: m.pro_id, role: m.role, name: m.name })
+    }
     setBusy(false); onSaved()
   }
 
   const cats = CATEGORIES[f.area || 'fiscale'] || []
+  const kindInfo = KINDS.find(k => k.k === (f.kind || 'pagamento'))
+  const placeholder: Record<string, string> = {
+    pagamento: 'Es. Imposte greche saldo 2025', documento: 'Es. Dichiarazione dei redditi presentata',
+    richiesta: 'Es. Certificazioni bancarie per la dichiarazione', approvazione: 'Es. Bozza dichiarazione dei redditi 2025',
+  }
 
   return (
     <Modal title={f.id ? tr('Modifica voce') : tr('Nuova voce')} onClose={onClose}
@@ -552,14 +686,23 @@ function ItemForm({ value, playerId, onClose, onSaved }: {
             <option value="legale">{tr('Legale')}</option>
           </Select>
         </Field>
-        <Field label={tr('Tipo')}>
-          <Select value={f.kind || 'pagamento'} onChange={e => set('kind', e.target.value)}>
+        <Field label={tr('Azione')}>
+          <Select value={f.kind || 'pagamento'} onChange={e => set('kind', e.target.value)} disabled={!!f.id && f.status !== 'aperto'}>
             {KINDS.map(k => <option key={k.k} value={k.k}>{tr(k.l)}</option>)}
           </Select>
         </Field>
       </div>
+      {kindInfo && <div className="faint" style={{ fontSize: 12.5, marginTop: -4, marginBottom: 6 }}>{tr(kindInfo.hint)}</div>}
+      {f.kind === 'richiesta' && (
+        <Field label={tr('A chi chiedi')}>
+          <Select value={f.assignee_id || ''} onChange={e => set('assignee_id', e.target.value || null)}>
+            <option value="">{tr("All'atleta")}</option>
+            {team.map(m => <option key={m.pro_id} value={m.pro_id}>{(m.name || tr('Professionista')) + ' · ' + tr(ROLE_L[m.role] || m.role)}</option>)}
+          </Select>
+        </Field>
+      )}
       <Field label={tr('Titolo')}><Input value={f.title || ''} onChange={e => set('title', e.target.value)}
-        placeholder={f.kind === 'richiesta' ? tr('Es. Contratto di sponsorizzazione 2026') : tr('Es. F24 acconto IRPEF')} /></Field>
+        placeholder={tr(placeholder[f.kind || 'pagamento'])} /></Field>
       <div className="grid g2" style={{ gap: 10 }}>
         <Field label={tr('Categoria')}>
           <Select value={f.category || ''} onChange={e => set('category', e.target.value)}>
@@ -567,11 +710,18 @@ function ItemForm({ value, playerId, onClose, onSaved }: {
             {cats.map(c => <option key={c} value={c}>{tr(c)}</option>)}
           </Select>
         </Field>
-        <Field label={tr('Periodo')}><Input value={f.period || ''} onChange={e => set('period', e.target.value)} placeholder={tr('Es. 2026')} /></Field>
         {f.kind === 'pagamento' && (
-          <Field label={tr('Importo (€)')}><Input type="number" value={f.amount ?? ''} onChange={e => set('amount', e.target.value)} /></Field>
+          <Field label={tr('Importo (€)')}><Input type="number" inputMode="decimal" value={f.amount ?? ''} onChange={e => set('amount', e.target.value)} /></Field>
         )}
-        <Field label={f.kind === 'richiesta' ? tr('Consegnare entro') : tr('Scadenza')}>
+        <Field label={tr('Paese (facoltativo)')}>
+          <Input list="tax-countries" value={f.country || ''} onChange={e => set('country', e.target.value)} placeholder={tr('Es. Italia')} />
+          <datalist id="tax-countries">{COUNTRIES.map(c => <option key={c} value={tr(c)} />)}</datalist>
+        </Field>
+        <Field label={tr('Anno fiscale (facoltativo)')}>
+          <Input type="number" inputMode="numeric" value={f.tax_year ?? ''} onChange={e => set('tax_year', e.target.value)}
+            placeholder={String(new Date().getFullYear() - 1)} />
+        </Field>
+        <Field label={f.kind === 'richiesta' ? tr('Consegnare entro') : f.kind === 'approvazione' ? tr('Approvare entro') : tr('Scadenza')}>
           <Input type="date" value={f.due_date || ''} onChange={e => set('due_date', e.target.value)} />
         </Field>
       </div>
@@ -579,7 +729,7 @@ function ItemForm({ value, playerId, onClose, onSaved }: {
         placeholder={f.kind === 'richiesta' ? tr('Cosa serve esattamente') : tr('Note e istruzioni')} /></Field>
 
       <div style={{ marginTop: 4 }}>
-        <div style={{ ...kicker, color: 'var(--text-dim)', marginBottom: 8 }}>{tr('Allegati')}</div>
+        <div style={{ ...kicker, color: 'var(--text-dim)', marginBottom: 8 }}>{tr(f.kind === 'approvazione' ? 'Bozza da approvare' : 'Allegati')}</div>
         {atts.length > 0 && (
           <div className="grid" style={{ gap: 6, marginBottom: 8 }}>
             {atts.map(a => (
@@ -602,13 +752,14 @@ function ItemForm({ value, playerId, onClose, onSaved }: {
   )
 }
 
-// Risposta dell'atleta a una richiesta di documenti: carica e smarca.
-function RespondForm({ item, playerId, onClose, onSaved }: {
-  item: TaxItem; playerId: number; onClose: () => void; onSaved: () => void
+// Risposta nella stessa voce: documenti richiesti, ricevuta di pagamento, modifiche alla bozza.
+export type RespondMode = 'completato' | 'pagato' | 'modifiche'
+export function RespondForm({ item, mode, playerId, onClose, onSaved }: {
+  item: TaxItem; mode: RespondMode; playerId: number; onClose: () => void; onSaved: () => void
 }) {
   const { t: tr } = useLang()
-  const [atts, setAtts] = useState(item.response_attachments || [])
-  const [note, setNote] = useState(item.response_note || '')
+  const [atts, setAtts] = useState(mode === 'completato' ? item.response_attachments || [] : [])
+  const [note, setNote] = useState(mode === 'completato' ? item.response_note || '' : '')
   const [uploading, setUploading] = useState(false)
   const [busy, setBusy] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -629,26 +780,34 @@ function RespondForm({ item, playerId, onClose, onSaved }: {
 
   async function invia() {
     setBusy(true)
-    await updateRow('crm_tax_items', item.id, {
-      response_attachments: atts, response_note: note || null,
-      status: 'completato', completed_at: new Date().toISOString(),
+    const { error } = await supabase.rpc('crm_tax_respond', {
+      p_item: item.id, p_status: mode, p_atts: atts.length ? atts : null, p_note: note || null,
     })
     setBusy(false)
-    toast(tr('Richiesta smarcata'))
+    if (error) { toast(error.message, 'err'); return }
+    toast(tr(mode === 'pagato' ? 'Segnato come pagato' : mode === 'modifiche' ? 'Modifiche inviate' : 'Richiesta smarcata'))
     onSaved()
   }
 
+  const ready = mode === 'completato' ? atts.length > 0 : mode === 'modifiche' ? note.trim().length > 0 : true
+  const title = mode === 'pagato' ? tr('Segna pagato') : mode === 'modifiche' ? tr('Chiedi modifiche') : tr('Rispondi')
   return (
-    <Modal title={`${tr('Rispondi')} · ${item.title}`} onClose={onClose}
+    <Modal title={`${title} · ${item.title}`} onClose={onClose}
       footer={<>
         <button className="btn btn-ghost" onClick={onClose}>{tr('Annulla')}</button>
-        <button className="btn btn-primary" disabled={busy || atts.length === 0} onClick={invia}>
-          {busy ? tr('Invio…') : tr('Invia e smarca')}
+        <button className="btn btn-primary" disabled={busy || uploading || !ready} onClick={invia}>
+          {busy ? tr('Invio…') : mode === 'pagato' ? tr('Conferma pagamento') : mode === 'modifiche' ? tr('Invia') : tr('Invia e smarca')}
         </button>
       </>}>
       {item.description && (
         <div className="faint" style={{ fontSize: 12.5, marginBottom: 12, borderLeft: `2px solid ${ACCENT}`, paddingLeft: 10 }}>
           {item.description}
+        </div>
+      )}
+      {mode === 'pagato' && (
+        <div style={{ fontSize: 14, marginBottom: 10 }}>
+          {item.amount ? <b>{fmtMoney(item.amount)}</b> : null}{item.amount ? ' · ' : ''}
+          {tr('Carica la ricevuta: resta in questa voce e nell\'archivio.')}
         </div>
       )}
 
@@ -667,12 +826,14 @@ function RespondForm({ item, playerId, onClose, onSaved }: {
       )}
 
       <button className="btn btn-sm" disabled={uploading} onClick={() => fileRef.current?.click()}>
-        <Icon name="upload" size={14} /> {uploading ? tr('Carico…') : tr('Carica documento')}
+        <Icon name="upload" size={14} /> {uploading ? tr('Carico…')
+          : mode === 'pagato' ? tr('Carica la ricevuta (facoltativa)') : mode === 'modifiche' ? tr('Allega un file (facoltativo)') : tr('Carica documento')}
       </button>
       <input ref={fileRef} type="file" multiple hidden onChange={onFiles} />
 
-      <Field label={tr('Nota (facoltativa)')}>
-        <Textarea rows={2} value={note} onChange={e => setNote(e.target.value)} placeholder={tr('Es. mancano le ultime due pagine')} />
+      <Field label={mode === 'modifiche' ? tr('Cosa va cambiato') : tr('Nota (facoltativa)')}>
+        <Textarea rows={mode === 'modifiche' ? 3 : 2} value={note} onChange={e => setNote(e.target.value)}
+          placeholder={mode === 'modifiche' ? tr('Es. manca il reddito della Grecia') : tr('Es. mancano le ultime due pagine')} />
       </Field>
     </Modal>
   )

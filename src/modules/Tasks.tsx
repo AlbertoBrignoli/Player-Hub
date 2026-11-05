@@ -28,7 +28,7 @@ export default function Tasks() {
   const [docReqs, setDocReqs] = useState<TaxItem[]>([])
   useEffect(() => {
     if (!athleteId) { setDocReqs([]); return }
-    supabase.from('crm_tax_items').select('*').eq('player_id', athleteId).eq('kind', 'richiesta')
+    supabase.from('crm_tax_items').select('*').eq('player_id', athleteId).in('kind', ['richiesta', 'approvazione']).is('assignee_id', null)
       .order('due_date', { ascending: true, nullsFirst: false })
       .then(({ data }) => setDocReqs((data as TaxItem[]) || []))
   }, [athleteId])

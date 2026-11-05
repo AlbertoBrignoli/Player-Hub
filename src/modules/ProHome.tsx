@@ -188,6 +188,10 @@ export default function ProHome({ goto }: { goto: (r: string) => void }) {
             .in('player_id', ids).eq('status', 'aperto')
             .not('due_date', 'is', null).lte('due_date', plus(30))
             .order('due_date')
+          // bozze su cui l'atleta ha chiesto modifiche
+          roleQ2 = supabase.from('crm_tax_items')
+            .select('id, player_id, title, response_note')
+            .in('player_id', ids).eq('kind', 'approvazione').eq('status', 'modifiche')
         } else if (pro === 'wealth') {
           roleQ = supabase.from('crm_wealth_items')
             .select('id, player_id, title, kind, due_date, status')
@@ -269,7 +273,13 @@ export default function ProHome({ goto }: { goto: (r: string) => void }) {
           key: 'tax' + i.id, pid: i.player_id, icon: 'briefcase',
           title: i.title || (i.kind === 'pagamento' ? t('Pagamento') : t('Richiesta')),
           sub: pname(i.player_id),
-          days: dayDiff(i.due_date), route: 'legaltax',
+          days: dayDiff(i.due_date), route: `legaltax?item=${i.id}`,
+        }))
+        ;((r2.data as any[]) || []).forEach(i => list.push({
+          key: 'mod' + i.id, pid: i.player_id, icon: 'file',
+          title: t('Modifiche richieste') + ': ' + i.title,
+          sub: [pname(i.player_id), i.response_note].filter(Boolean).join(' · '),
+          days: null, route: `legaltax?item=${i.id}`,
         }))
       } else if (pro === 'wealth') {
         rows.forEach(i => list.push({

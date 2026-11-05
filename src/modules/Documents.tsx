@@ -175,7 +175,7 @@ function useProFiles(playerId: number | null, docs: Doc[]) {
         supabase.from('crm_messages').select('id, channel, sender_name, created_at, file_path, file_name, file_mime, file_size')
           .eq('player_id', playerId).not('file_path', 'is', null).order('created_at', { ascending: false }),
         supabase.from('crm_wealth_items').select('id, title, created_at, attachments, response_attachments').eq('player_id', playerId),
-        supabase.from('crm_tax_items').select('id, title, created_at, attachments, response_attachments').eq('player_id', playerId),
+        supabase.from('crm_tax_items').select('id, title, created_at, attachments, response_attachments, category, country, tax_year').eq('player_id', playerId),
         supabase.from('crm_athlete_team').select('role, name').eq('player_id', playerId),
         supabase.from('crm_doc_placements').select('file_path, group_key').eq('player_id', playerId),
       ])
@@ -187,7 +187,9 @@ function useProFiles(playerId: number | null, docs: Doc[]) {
           date: m.created_at, size: m.file_size, mime: m.file_mime, bucket: 'chat-files', path: m.file_path })
       const items = (k: string, bucket: string, rows: any[]) => rows.forEach(i => {
         for (const a of [...(i.attachments || []), ...(i.response_attachments || [])])
-          if (a?.path) push(k, { key: a.path, name: a.name, sub: i.title, date: i.created_at, bucket, path: a.path })
+          if (a?.path) push(k, { key: a.path, name: a.name, date: i.created_at, bucket, path: a.path,
+            // documenti fiscali: già classificati con categoria, Paese e anno della voce
+            sub: [i.title, i.category, i.country, i.tax_year].filter(Boolean).join(' · ') })
       })
       items('wealth', 'wealth-docs', (w.data as any[]) || [])
       items('commercialista', 'tax-docs', (tx.data as any[]) || [])

@@ -32,7 +32,7 @@ const KINDS = [
   { k: 'report', l: 'Report' },
   { k: 'documento', l: 'Documento' },
 ]
-const CATEGORIES = ['Investimenti', 'Liquidità', 'Immobili', 'Previdenza', 'Protezione', 'Fiscalità', 'Successione', 'Bancario', 'Altro']
+const CATEGORIES = ['Investimenti', 'Liquidità', 'Immobili', 'Previdenza', 'Protezione', 'Successione', 'Bancario', 'Altro']
 const RISK = ['Conservativo', 'Moderato', 'Bilanciato', 'Dinamico', 'Aggressivo']
 
 type File_ = { name: string; path: string }
@@ -542,6 +542,9 @@ function ItemForm({ value, playerId, onClose, onSaved }: {
             {CATEGORIES.map(c => <option key={c} value={c}>{tr(c)}</option>)}
           </Select>
         </Field>
+      </div>
+      <div className="faint" style={{ fontSize: 12.5, marginTop: -4, marginBottom: 6 }}>
+        {tr("Documenti per la dichiarazione o imposte da pagare? Vanno in Fisco e legale.")}
       </div>
       <Field label={tr('Titolo')}><Input value={f.title || ''} onChange={e => set('title', e.target.value)}
         placeholder={isDoc ? tr('Es. Report trimestrale Q3 2026') : f.kind === 'richiesta' ? tr('Es. Estratti conto 2025') : tr('Es. Firma mandato di consulenza')} /></Field>

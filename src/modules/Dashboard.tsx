@@ -292,7 +292,7 @@ export default function Dashboard({ goto }: { goto: (r: string) => void }) {
     if (!athleteId) { setOpenTasks(0); return }
     Promise.all([
       supabase.from('crm_tasks').select('id', { count: 'exact', head: true }).eq('player_id', athleteId).neq('status', 'done'),
-      supabase.from('crm_tax_items').select('id', { count: 'exact', head: true }).eq('player_id', athleteId).eq('kind', 'richiesta').eq('status', 'aperto'),
+      supabase.from('crm_tax_items').select('id', { count: 'exact', head: true }).eq('player_id', athleteId).in('kind', ['richiesta', 'approvazione']).is('assignee_id', null).eq('status', 'aperto'),
     ]).then(([a, b]) => setOpenTasks((a.count || 0) + (b.count || 0)))
   }, [athleteId])
   const isPlayer = role === 'player'

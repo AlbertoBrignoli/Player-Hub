@@ -12,7 +12,7 @@ import Icon from '../../components/Icon'
 //  - allenamento del preparatore → Rispondi (apre la scheda)
 //  - documento richiesto dal commercialista → Carica (apre la richiesta)
 // Se non c'è niente la sezione non compare.
-type Row = { id: string; kind: 'task' | 'event' | 'program' | 'doc'; title: string; sub: string; route?: string }
+type Row = { id: string; kind: 'task' | 'event' | 'program' | 'doc' | 'approve'; title: string; sub: string; route?: string }
 
 const PRO_ROLES = ['agente', 'preparatore', 'assicuratore', 'commercialista', 'fisioterapista', 'nutrizionista', 'wealth', 'partner']
 const ROLE_L: Record<string, string> = {
@@ -40,7 +40,7 @@ export default function HomeTodo({ goto, locale, tz }: { goto: (r: string) => vo
         .neq('status', 'done').order('due_date', { ascending: true, nullsFirst: false }).limit(5),
       supabase.from('fitness_programs').select('id, name, program_date').eq('player_id', athleteId).eq('status', 'published')
         .is('deleted_at', null).is('athlete_response', null).gte('program_date', today).order('program_date').limit(3),
-      supabase.from('crm_tax_items').select('id, title, due_date').eq('player_id', athleteId).eq('kind', 'richiesta')
+      supabase.from('crm_tax_items').select('id, title, due_date, kind').eq('player_id', athleteId).in('kind', ['richiesta', 'approvazione']).is('assignee_id', null)
         .eq('status', 'aperto').order('due_date', { ascending: true, nullsFirst: false }).limit(3),
     ])
     const out: Row[] = []
@@ -50,8 +50,8 @@ export default function HomeTodo({ goto, locale, tz }: { goto: (r: string) => vo
       sub: x.due_date ? t('entro il {d}').replace('{d}', when(x.due_date, false)) : t('Da AUVI') }))
     ;((pr.data as any[]) || []).forEach(p => out.push({ id: p.id, kind: 'program', title: p.name || t('Allenamento'),
       sub: `${when(p.program_date, false)} · ${t('dì al preparatore se lo farai')}`, route: `fitness?program=${p.id}` }))
-    ;((dc.data as any[]) || []).forEach(d => out.push({ id: d.id, kind: 'doc', title: d.title,
-      sub: d.due_date ? `${t('Documento richiesto')} · ${t('entro il {d}').replace('{d}', when(d.due_date, false))}` : t('Documento richiesto'),
+    ;((dc.data as any[]) || []).forEach(d => out.push({ id: d.id, kind: d.kind === 'approvazione' ? 'approve' : 'doc', title: d.title,
+      sub: [t(d.kind === 'approvazione' ? 'Da approvare' : 'Documento richiesto'), d.due_date ? t('entro il {d}').replace('{d}', when(d.due_date, false)) : null].filter(Boolean).join(' · '),
       route: `legaltax?item=${d.id}` }))
     setRows(out)
   }
@@ -87,7 +87,7 @@ export default function HomeTodo({ goto, locale, tz }: { goto: (r: string) => vo
           <div key={r.kind + r.id} className="td-row">
             {r.kind === 'task'
               ? <button className="td-check" onClick={() => doneTask(r)} aria-label={t('Segna come fatto')}><Icon name="check" size={14} strokeWidth={2.6} /></button>
-              : <span className="td-ic"><Icon name={r.kind === 'event' ? 'calendar' : r.kind === 'program' ? 'dumbbell' : 'file'} size={15} /></span>}
+              : <span className="td-ic"><Icon name={r.kind === 'event' ? 'calendar' : r.kind === 'program' ? 'dumbbell' : r.kind === 'approve' ? 'check' : 'file'} size={15} /></span>}
             <button className="td-txt" onClick={() => r.route ? goto(r.route) : goto('tasks')}>
               <span className="td-t">{r.title}</span>
               <span className="td-s">{r.sub}</span>
@@ -97,6 +97,7 @@ export default function HomeTodo({ goto, locale, tz }: { goto: (r: string) => vo
             )}
             {r.kind === 'program' && <button className="td-act ghost" onClick={() => goto(r.route!)}>{t('Rispondi')}</button>}
             {r.kind === 'doc' && <button className="td-act ghost" onClick={() => goto(r.route!)}>{t('Carica')}</button>}
+            {r.kind === 'approve' && <button className="td-act" onClick={() => goto(r.route!)}>{t('Rivedi')}</button>}
           </div>
         ))}
       </div>

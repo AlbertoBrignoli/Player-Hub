@@ -8,12 +8,13 @@ import { fmtDate, fmtDateTime, fmtMoney } from '../lib/format'
 import { Spinner, Empty } from '../components/ui'
 import Icon from '../components/Icon'
 import { ItemThread, useItemPeople, type ItemKind } from '../components/ItemPeople'
+import { RespondForm, KINDS, taxMeta } from './LegalTax'
 
 // Una voce condivisa aperta da una notifica (item?k=<tipo>&id=<id>): la vede chi la segue
 // e chi è stato coinvolto. Mostra i dati essenziali, le persone coinvolte e la conversazione.
 const AREA: Record<ItemKind, { table: string; label: string; route: (id: string) => string; owners: string[] }> = {
   wealth: { table: 'crm_wealth_items', label: 'Patrimonio', route: id => `wealth?item=${id}`, owners: ['admin', 'player', 'wealth'] },
-  tax: { table: 'crm_tax_items', label: 'Fisco e legale', route: () => 'legaltax', owners: ['admin', 'player', 'commercialista', 'agente'] },
+  tax: { table: 'crm_tax_items', label: 'Fisco e legale', route: id => `legaltax?item=${id}`, owners: ['admin', 'player', 'commercialista', 'agente'] },
   insurance: { table: 'crm_insurance_policies', label: 'Polizze', route: () => 'insurance', owners: ['admin', 'player', 'assicuratore', 'agente'] },
   contract: { table: 'crm_contracts', label: 'Contratti', route: () => 'contracts', owners: ['admin', 'player', 'agente'] },
   event: { table: 'crm_events', label: 'Agenda', route: id => `agenda?event=${id}`, owners: ['admin', 'player', 'agente', 'preparatore', 'assicuratore', 'commercialista', 'fisioterapista', 'nutrizionista', 'wealth'] },
@@ -21,7 +22,9 @@ const AREA: Record<ItemKind, { table: string; label: string; route: (id: string)
 
 export default function ItemPage() {
   const { t: tr } = useLang()
-  const { role } = useAuth()
+  const { role, session } = useAuth()
+  const [answer, setAnswer] = useState(false)
+  const [tick, setTick] = useState(0)
   const { setAthleteId } = useAthlete()
   const k = (useRouteParam('k') || '') as ItemKind
   const id = useRouteParam('id') || ''
@@ -35,7 +38,7 @@ export default function ItemPage() {
       setRow((data as any) || null)
       if ((data as any)?.player_id) setAthleteId((data as any).player_id)
     })
-  }, [k, id]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [k, id, tick]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (row === undefined) return <Spinner />
   if (!row || !area) return <Empty icon={<Icon name="lock" size={26} />} title={tr('Voce non disponibile')}
@@ -48,14 +51,22 @@ export default function ItemPage() {
     row.amount ? fmtMoney(row.amount) : null,
     row.company || row.counterpart || row.location || null,
   ].filter(Boolean)
-  const files: { name: string; path: string }[] = Array.isArray(row.attachments) ? row.attachments.filter((a: any) => a?.path) : []
+  const files: { name: string; path: string }[] = [
+    ...(Array.isArray(row.attachments) ? row.attachments : []),
+    ...(Array.isArray(row.response_attachments) ? row.response_attachments : []),
+  ].filter((a: any) => a?.path)
+  // richiesta documentale fatta a me come professionista: rispondo da qui
+  const mine = k === 'tax' && row.kind === 'richiesta' && row.status === 'aperto' && row.assignee_id && row.assignee_id === session?.user.id
+  const label = k === 'tax'
+    ? [tr(KINDS.find(x => x.k === row.kind)?.l || area.label), taxMeta(row, tr)].filter(Boolean).join(' · ')
+    : tr(area.label)
 
   return (
     <div className="grid" style={{ gap: 16, maxWidth: 820 }}>
       <div className="card">
         <div className="flex between" style={{ alignItems: 'flex-start', gap: 10, flexWrap: 'wrap' }}>
           <div style={{ minWidth: 0 }}>
-            <div className="t-label" style={{ color: '#1F4E79' }}>{tr(area.label)}</div>
+            <div className="t-label" style={{ color: 'var(--text-dim)' }}>{label}</div>
             <div style={{ fontSize: 22, fontWeight: 800, marginTop: 2 }}>{row.title || '-'}</div>
             {facts.length > 0 && <div className="faint" style={{ fontSize: 12.5, marginTop: 3 }}>{facts.join(' · ')}</div>}
           </div>
@@ -66,6 +77,11 @@ export default function ItemPage() {
           )}
         </div>
         {(row.description || row.notes) && <div style={{ fontSize: 14, marginTop: 12, whiteSpace: 'pre-wrap' }}>{row.description || row.notes}</div>}
+        {mine && (
+          <button className="btn btn-primary" style={{ marginTop: 12 }} onClick={() => setAnswer(true)}>
+            <Icon name="upload" size={14} /> {tr('Carica i documenti richiesti')}
+          </button>
+        )}
         {files.length > 0 && (
           <div className="flex gap" style={{ marginTop: 12, flexWrap: 'wrap' }}>
             {files.map(f => <FileBtn key={f.path} kind={k} f={f} />)}
@@ -75,6 +91,10 @@ export default function ItemPage() {
       <div className="card">
         <ItemThread kind={k} itemId={id} playerId={row.player_id} people={people[id] || []} onPeople={reload} />
       </div>
+      {answer && (
+        <RespondForm item={row as any} mode="completato" playerId={row.player_id}
+          onClose={() => setAnswer(false)} onSaved={() => { setAnswer(false); setTick(x => x + 1) }} />
+      )}
     </div>
   )
 }
