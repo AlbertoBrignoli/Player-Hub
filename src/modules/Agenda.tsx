@@ -94,6 +94,17 @@ function localKey(iso: string) { return dayKey(new Date(iso)) }
 const sectionLabel: React.CSSProperties = { fontSize: 11, color: 'var(--text-dim)', fontWeight: 700, margin: '18px 4px 10px' }
 const emptyEv = (type: string): Partial<EventItem> => ({ title: '', type, start_at: '' })
 
+// Calendario unico: tre famiglie di voci, ognuna con il suo segno di colore
+type Filter = 'all' | 'sport' | 'team' | 'social'
+type SocialItem = { id: string; day: string; type: string; title: string; status: string; fixture: string | null; player_id: number | null }
+const SOCIAL_ROLES = ['admin', 'creator', 'player', 'agente']
+const SOCIAL_STATUS: Record<string, string> = {
+  da_preparare: 'Da preparare', copy_pronto: 'Copy pronto', grafica_caricata: 'Grafica caricata', pronto: 'Pronto', pubblicato: 'Pubblicato',
+}
+const catOf = (e: AgItem): 'sport' | 'team' => e._match || e.type === 'allenamento' || e.type === 'partita' ? 'sport' : 'team'
+const CAT_COLOR: Record<'sport' | 'team' | 'social', string> = { sport: 'var(--ink)', team: '#9A9A96', social: 'var(--yellow)' }
+function mondayOf(d: Date) { const x = new Date(d); x.setHours(0, 0, 0, 0); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x }
+
 export default function Agenda({ goto }: { goto?: (r: string) => void }) {
   const { athleteId, athletes, setAthleteId, loading: athletesLoading, athleteTz } = useAthlete()
   const { t: tr } = useLang()
@@ -110,7 +121,12 @@ export default function Agenda({ goto }: { goto?: (r: string) => void }) {
   const showScope = (isPro || role === 'admin' || role === 'creator') && athletes.length > 1
   const [scopeState, setScope] = useState<'all' | 'one'>(isPro ? 'all' : 'one')
   const scope = showScope ? scopeState : 'one'
-  const [view, setView] = useState<'lista' | 'calendario'>('calendario')
+  // Settimana: la vista che l'atleta apre (cosa faccio oggi e nei prossimi giorni); il mese è secondario
+  const [view, setView] = useState<'settimana' | 'mese'>('settimana')
+  // un solo calendario, filtri leggeri al posto delle schede: sport, team, social
+  const [filter, setFilter] = useState<Filter>('all')
+  const canSocial = !!role && SOCIAL_ROLES.includes(role)
+  const [socials, setSocials] = useState<SocialItem[]>([])
   const [edit, setEdit] = useState<Partial<EventItem> | null>(null)
   const [askFor, setAskFor] = useState<EventItem | null>(null)
   const [counts, setCounts] = useState<Record<string, number>>({})
@@ -132,7 +148,6 @@ export default function Agenda({ goto }: { goto?: (r: string) => void }) {
     supabase.from('crm_events').select('player_id').eq('id', focusId).maybeSingle().then(({ data }) => {
       const pid = (data as { player_id: number | null } | null)?.player_id
       if (pid != null && pid !== athleteId && athletes.some(a => a.api_player_id === pid)) { setScope('one'); setAthleteId(pid) }
-      setView('calendario')
     })
   }, [focusId, athletes.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -142,10 +157,18 @@ export default function Agenda({ goto }: { goto?: (r: string) => void }) {
     if (!list.length) { setRows([]); setLoading(true); return }
     const from = new Date(Date.now() - 30 * 86400000).toISOString()
     const to = new Date(Date.now() + 120 * 86400000).toISOString()
-    const [ev, m] = await Promise.all([
+    const [ev, m, ed] = await Promise.all([
       supabase.from('crm_events').select('*').in('player_id', list).order('start_at', { ascending: true }),
       supabase.from('matches').select('*').in('player_id', list).gte('match_date', from).lte('match_date', to).order('match_date', { ascending: true }),
+      canSocial
+        ? supabase.from('crm_editorial').select('id, entry_date, type, title, status, match_info, player_id').in('player_id', list)
+            .gte('entry_date', from.slice(0, 10)).lte('entry_date', to.slice(0, 10))
+        : Promise.resolve({ data: [] as any[] }),
     ])
+    setSocials(((ed.data as any[]) || []).map(x => ({
+      id: x.id, day: String(x.entry_date).slice(0, 10), type: x.type, title: x.title || '', status: x.status || '',
+      fixture: x.match_info?.fixture_id != null ? String(x.match_info.fixture_id) : null, player_id: x.player_id,
+    })))
     const matches = new Map<string, AgItem>()
     ;((m.data as any[]) || []).forEach(x => {
       if (!x.match_date) return
@@ -221,6 +244,18 @@ export default function Agenda({ goto }: { goto?: (r: string) => void }) {
   const onAdd = canAdd ? (dayIso: string) => setEdit({ ...emptyEv(defType), start_at: dayIso }) : undefined
   const shared = { canEdit, onEdit: setEdit, onDel, canConfirm, onConfirm, goto, onAdd, tagOf, onOpenMatch, canRespond, onRespond, onAsk, counts, bump, uid, isPro: isPro && !isAdmin, canNutri, onNutri: setNutriFor }
   const selName = athletes.find(a => a.api_player_id === athleteId)?.name || tr('Atleta')
+  // contenuti social: le partite hanno già la loro voce (lo stato della grafica va sotto la partita)
+  const socialByFixture: Record<string, SocialItem> = {}
+  socials.forEach(x => { if (x.type === 'partita' && x.fixture) socialByFixture[x.fixture] = x })
+  const socialRows = socials.filter(x => !(x.type === 'partita' && x.fixture && rows.some(r => r.id === 'match-' + x.fixture)))
+  const shownRows = filter === 'social' ? rows.filter(r => r._match && socialByFixture[r.id.slice(6)])
+    : filter === 'all' ? rows : rows.filter(r => catOf(r) === filter)
+  const shownSocial = filter === 'all' || filter === 'social' ? socialRows : []
+  const addNew = () => setEdit(emptyEv(defType))
+  const FILTERS: { k: Filter; l: string }[] = [
+    { k: 'all', l: tr('Tutto') }, { k: 'sport', l: tr('Sport') }, { k: 'team', l: tr('Team') },
+    ...(canSocial ? [{ k: 'social' as Filter, l: tr('Social') }] : []),
+  ]
 
   return (
     <div className="grid" style={{ gap: 8 }}>
@@ -228,25 +263,35 @@ export default function Agenda({ goto }: { goto?: (r: string) => void }) {
       {showScope && (
         <Tabs tabs={[{ key: 'all', label: tr('Tutti i miei atleti') }, { key: 'one', label: selName }]} value={scope} onChange={setScope} />
       )}
-      <div className="flex between" style={{ alignItems: 'center' }}>
-        <div className="flex gap">
-          <Tabs tabs={[{ key: 'calendario', label: tr('Calendario') }, { key: 'lista', label: tr('Lista') }]} value={view} onChange={setView} />
-        </div>
-        <div className="flex gap" style={{ gap: 6, flexShrink: 0 }}>
-          {canPlan && athleteId != null && (
-            <button className="btn btn-primary" onClick={() => setPlanOpen(true)}><Icon name="upload" size={14} /> {tr('Programma settimana')}</button>
-          )}
-          {/* atleta e AUVI aggiungono dal cerchio Impegno in Home: qui solo il programma (niente tasto fuori schermo) */}
-          {canAdd && !canPlan && <button className="btn btn-primary" onClick={() => setEdit(emptyEv(defType))}>+ {addLabel}</button>}
-        </div>
+      {/* due soli gesti: caricare il programma della settimana e aggiungere un impegno */}
+      <div className="cal-actions">
+        {canPlan && athleteId != null && (
+          <button className="btn" onClick={() => setPlanOpen(true)}><Icon name="upload" size={14} /> {tr('Carica programma')}</button>
+        )}
+        {canAdd && <button className="btn btn-primary" onClick={addNew}><Icon name="plus" size={14} /> {canPlan ? tr('Aggiungi') : addLabel}</button>}
+      </div>
+      <div className="cal-filters">
+        {FILTERS.map(f => (
+          <button key={f.k} className={'cal-pill' + (filter === f.k ? ' on' : '')} onClick={() => setFilter(f.k)}>{f.l}</button>
+        ))}
+        <span className="cal-seg">
+          <button className={view === 'settimana' ? 'on' : ''} onClick={() => setView('settimana')}>{tr('Settimana')}</button>
+          <button className={view === 'mese' ? 'on' : ''} onClick={() => setView('mese')}>{tr('Mese')}</button>
+        </span>
       </div>
 
-      {rows.length === 0 ? (
-        <Empty icon={<Icon name="clock" size={24} strokeWidth={1.6} />} title={tr('Agenda vuota')} hint={tr('Aggiungi i tuoi impegni personali; allenamenti e partite compaiono in automatico.')}
-          action={canAdd ? { label: '+ ' + addLabel, onClick: () => setEdit(emptyEv(defType)) } : undefined} />
-      ) : view === 'lista'
-        ? <ListView rows={rows} {...shared} />
-        : <CalendarView rows={rows} focusId={focusId} {...shared} />}
+      {rows.length === 0 && socialRows.length === 0 ? (
+        <Empty icon={<Icon name="clock" size={24} strokeWidth={1.6} />} title={tr('Calendario vuoto')}
+          hint={canPlan ? tr('Carica il programma della settimana: il tuo team sa subito cosa fare, quando e come.') : tr('Aggiungi i tuoi impegni personali; allenamenti e partite compaiono in automatico.')}
+          action={canPlan && athleteId != null ? { label: tr('Carica programma'), onClick: () => setPlanOpen(true) } : canAdd ? { label: '+ ' + addLabel, onClick: addNew } : undefined} />
+      ) : view === 'settimana'
+        ? <WeekView rows={shownRows} socials={shownSocial} socialByFixture={socialByFixture} focusId={focusId} {...shared} />
+        : <CalendarView rows={shownRows} focusId={focusId} {...shared} />}
+      {filter === 'social' && goto && (
+        <button className="ed-more" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }} onClick={() => goto('editorial')}>
+          <Icon name="image" size={14} /> {tr('Tutti i contenuti, copy e grafiche')} →
+        </button>
+      )}
 
       {/* la scheda completa sta in Impostazioni: qui solo un rimando di una riga */}
       <button className="ed-more" style={{ marginTop: 12, display: 'inline-flex', alignItems: 'center', gap: 6 }} onClick={() => goto?.('settings')}>
@@ -272,6 +317,45 @@ export default function Agenda({ goto }: { goto?: (r: string) => void }) {
 }
 
 const AG_CSS = `
+.cal-actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+.cal-filters { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-top: 4px; }
+.cal-pill { font-size: 13px; font-weight: 600; padding: 6px 13px; border-radius: 999px; border: 1px solid var(--border); background: var(--card); color: var(--text); cursor: pointer; }
+.cal-pill.on { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.cal-seg { margin-left: auto; display: inline-flex; padding: 3px; border-radius: 999px; background: var(--bg-2); }
+.cal-seg button { font-size: 12.5px; font-weight: 600; padding: 5px 12px; border-radius: 999px; border: none; background: transparent; color: var(--text-dim); cursor: pointer; }
+.cal-seg button.on { background: var(--card); color: var(--text); box-shadow: 0 1px 3px rgba(10,10,10,.08); }
+.wk-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; }
+.wk-nav { width: 36px; height: 36px; border-radius: 12px; border: 1px solid var(--border); background: var(--card); display: grid; place-items: center; cursor: pointer; color: var(--text); }
+.wk-range { border: none; background: none; font-size: 15px; font-weight: 700; color: var(--text); cursor: pointer; }
+.wk-range span { color: var(--text-dim); font-weight: 500; }
+.wk-strip { display: grid; grid-template-columns: repeat(7, minmax(0,1fr)); gap: 6px; }
+.wk-day { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 0 7px; border-radius: 14px; border: 1px solid transparent; background: transparent; cursor: pointer; color: var(--text); }
+.wk-day:hover { background: var(--bg-2); }
+.wk-day.today .wk-n { text-decoration: underline; text-decoration-color: var(--yellow); text-decoration-thickness: 3px; text-underline-offset: 4px; }
+.wk-day.sel { background: var(--yellow); color: #0A0A0A; }
+.wk-day.sel .wk-wd { color: #0A0A0A; }
+.wk-wd { font-size: 11.5px; color: var(--text-dim); font-weight: 600; }
+.wk-n { font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.wk-dots { display: flex; gap: 3px; height: 6px; }
+.wk-dots i { width: 5px; height: 5px; border-radius: 50%; display: block; }
+.wk-day.sel .wk-dots i { box-shadow: 0 0 0 1px rgba(10,10,10,.25); }
+.wk-sec { scroll-margin-top: 90px; }
+.wk-label { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12.5px; color: var(--text-dim); font-weight: 600; margin: 16px 4px 8px; }
+.wk-label > span:first-letter { text-transform: uppercase; }
+.wk-add { display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px; font-weight: 700; color: var(--text); background: var(--bg-2); border: none; border-radius: 999px; padding: 5px 10px; cursor: pointer; }
+.wk-free { font-size: 13px; color: var(--text-faint); padding: 2px 4px 4px; }
+.wk-list { display: flex; flex-direction: column; gap: 6px; }
+.wk-row { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 11px 14px; min-height: 56px; border-radius: 14px; border: 1px solid var(--border); background: var(--card); color: inherit; cursor: pointer; }
+.wk-row:hover, .wk-row.open { border-color: var(--border-strong, rgba(10,10,10,.18)); }
+.wk-time { width: 42px; flex-shrink: 0; font-size: 13.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.wk-bar { width: 3px; align-self: stretch; border-radius: 2px; flex-shrink: 0; }
+.wk-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.wk-t { font-size: 14.5px; font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wk-s { font-size: 12.5px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wk-st { flex-shrink: 0; font-size: 11.5px; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: var(--yellow-soft); color: var(--gold); }
+.wk-st.no { background: rgba(229,63,0,.10); color: var(--red); }
+.wk-card { margin-top: 6px; }
+@media (max-width: 560px) { .wk-strip { gap: 3px; } .wk-n { font-size: 15.5px; } .wk-row { gap: 10px; padding: 10px 12px; } .wk-st { display: none; } }
 .nut-box { margin-top: 10px; padding: 9px 12px; border-radius: 12px; background: rgba(77,124,15,.07); border: 1px solid rgba(77,124,15,.22); }
 .nut-head { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; color: #4D7C0F; }
 .nut-head .faint { text-transform: none; letter-spacing: 0; font-weight: 600; }
@@ -336,44 +420,127 @@ function cardFor(p: SharedProps & { focusId?: string | null }, e: AgItem) {
     canNutri={p.canNutri(e)} onNutri={() => p.onNutri(e)} />
 }
 
-function ListView(props: SharedProps) {
-  const { rows } = props
-  const { t: tr } = useLang()
-  const now = Date.now()
-  const upcoming = rows.filter(e => new Date(e.start_at).getTime() >= now - 3600000)
-  const past = rows.filter(e => new Date(e.start_at).getTime() < now - 3600000).reverse()
+// Settimana: striscia dei 7 giorni e, sotto, i giorni con le loro voci in ordine di orario.
+// Ogni voce ha un segno di colore: nero sport, grigio team, giallo social. Un tocco apre la scheda.
+function WeekView(props: SharedProps & { focusId?: string | null; socials: SocialItem[]; socialByFixture: Record<string, SocialItem> }) {
+  const { rows, socials, socialByFixture, onAdd, onOpenMatch, focusId, goto, tagOf } = props
+  const { t: tr, lang } = useLang()
+  const loc = lang === 'en' ? 'en-GB' : 'it-IT'
+  const focused = focusId ? rows.find(r => r.id === focusId) : undefined
+  const [start, setStart] = useState(() => mondayOf(focused ? new Date(focused.start_at) : new Date()))
+  const [sel, setSel] = useState<string>(() => dayKey(focused ? new Date(focused.start_at) : new Date()))
+  const [open, setOpen] = useState<string | null>(focused?.id || null)
+  useEffect(() => {
+    if (!focused) return
+    const d = new Date(focused.start_at)
+    setStart(mondayOf(d)); setSel(dayKey(d)); setOpen(focused.id)
+    setTimeout(() => document.getElementById('ev-' + focused.id)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 120)
+  }, [focused?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const today = dayKey(new Date())
-  const tomorrow = dayKey(new Date(now + 86400000))
-  const in7 = dayKey(new Date(now + 7 * 86400000))
-  const groups: { label: string; items: AgItem[] }[] = [
-    { label: tr('Oggi'), items: [] }, { label: tr('Domani'), items: [] },
-    { label: tr('Questa settimana'), items: [] }, { label: tr('Più avanti'), items: [] },
-  ]
-  upcoming.forEach(e => {
-    const k = localKey(e.start_at)
-    if (k === today) groups[0].items.push(e)
-    else if (k === tomorrow) groups[1].items.push(e)
-    else if (k <= in7) groups[2].items.push(e)
-    else groups[3].items.push(e)
-  })
-
-  const card = (e: AgItem) => cardFor(props, e)
+  const days = Array.from({ length: 7 }, (_, i) => { const d = new Date(start); d.setDate(d.getDate() + i); return d })
+  const todayK = dayKey(new Date())
+  const byDay: Record<string, AgItem[]> = {}
+  rows.forEach(e => { const k = localKey(e.start_at); (byDay[k] = byDay[k] || []).push(e) })
+  const socByDay: Record<string, SocialItem[]> = {}
+  socials.forEach(x => { (socByDay[x.day] = socByDay[x.day] || []).push(x) })
+  const move = (n: number) => { const d = new Date(start); d.setDate(d.getDate() + n * 7); setStart(d); setSel(dayKey(n === 0 ? new Date() : d)) }
+  const isThisWeek = dayKey(mondayOf(new Date())) === dayKey(start)
+  const end = days[6]
+  const range = start.getMonth() === end.getMonth()
+    ? `${start.getDate()}–${end.getDate()} ${tr(MONTHS[end.getMonth()]).toLowerCase()}`
+    : `${start.getDate()} ${tr(MONTHS[start.getMonth()]).slice(0, 3).toLowerCase()} – ${end.getDate()} ${tr(MONTHS[end.getMonth()]).slice(0, 3).toLowerCase()}`
+  const pick = (k: string) => {
+    setSel(k)
+    setTimeout(() => document.getElementById('wd-' + k)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 30)
+  }
+  const shown = days.filter(d => { const k = dayKey(d); return k === sel || (byDay[k] || []).length || (socByDay[k] || []).length })
+  const time = (iso: string) => new Date(iso).toLocaleTimeString(loc, { hour: '2-digit', minute: '2-digit' })
 
   return (
     <>
-      {groups.filter(g => g.items.length).map(g => (
-        <div key={g.label}>
-          <div style={sectionLabel}>{g.label}</div>
-          <div className="ev-list">{g.items.map(card)}</div>
-        </div>
-      ))}
-      {past.length > 0 && (
-        <div style={{ opacity: .55 }}>
-          <div style={sectionLabel}>{tr('Passati')}</div>
-          <div className="ev-list">{past.slice(0, 5).map(card)}</div>
-        </div>
-      )}
+      <div className="wk-head">
+        <button className="wk-nav" onClick={() => move(-1)} aria-label={tr('Settimana precedente')}><Icon name="chevron-left" size={16} /></button>
+        <button className="wk-range" onClick={() => move(0)} title={tr('Torna a oggi')}>
+          {isThisWeek ? tr('Questa settimana') : tr('Settimana')} <span>· {range}</span>
+        </button>
+        <button className="wk-nav" onClick={() => move(1)} aria-label={tr('Settimana successiva')}><Icon name="chevron-right" size={16} /></button>
+      </div>
+      <div className="wk-strip">
+        {days.map(d => {
+          const k = dayKey(d)
+          const n = (byDay[k] || []).length + (socByDay[k] || []).length
+          return (
+            <button key={k} className={'wk-day' + (k === sel ? ' sel' : '') + (k === todayK ? ' today' : '')} onClick={() => pick(k)}>
+              <span className="wk-wd">{tr(WD[(d.getDay() + 6) % 7])}</span>
+              <span className="wk-n">{d.getDate()}</span>
+              <span className="wk-dots">
+                {(byDay[k] || []).slice(0, 3).map((e, j) => <i key={j} style={{ background: CAT_COLOR[catOf(e)] }} />)}
+                {n > 0 && (socByDay[k] || []).length > 0 && (byDay[k] || []).length < 3 && <i style={{ background: CAT_COLOR.social }} />}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+
+      {shown.map(d => {
+        const k = dayKey(d)
+        const evs = byDay[k] || []
+        const soc = socByDay[k] || []
+        const label = d.toLocaleDateString(loc, { weekday: 'long', day: 'numeric', month: 'long' })
+        return (
+          <div key={k} id={'wd-' + k} className="wk-sec">
+            <div className="wk-label">
+              <span>{label}{k === todayK ? ' · ' + tr('oggi') : ''}</span>
+              {onAdd && k === sel && <button className="wk-add" onClick={() => { const dd = new Date(d); dd.setHours(12, 0, 0, 0); onAdd(dd.toISOString()) }}><Icon name="plus" size={13} /> {tr('Aggiungi')}</button>}
+            </div>
+            {evs.length === 0 && soc.length === 0 && <div className="wk-free">{tr('Niente in programma.')}</div>}
+            <div className="wk-list">
+              {evs.map(e => {
+                const cat = catOf(e)
+                const s = e._match ? socialByFixture[e.id.slice(6)] : undefined
+                const who = !e._match && e.proposed_by_role && e.proposed_by_role !== 'player' ? tr(ROLE_LABEL[e.proposed_by_role] || '') : ''
+                const sub = [
+                  e._match ? tr('Partita') : tr(typeOf(e.type).l),
+                  e._match ? e.notes : who,
+                  e.location,
+                  s ? tr('Social') + ': ' + tr(SOCIAL_STATUS[s.status] || s.status) : '',
+                ].filter(Boolean).join(' · ')
+                const isOpen = open === e.id
+                const tap = () => e._match ? (onOpenMatch ? onOpenMatch(e) : s && goto ? goto(`editorial?entry=${s.id}`) : undefined) : setOpen(isOpen ? null : e.id)
+                return (
+                  <div key={e.id}>
+                    <button className={'wk-row' + (isOpen ? ' open' : '')} onClick={tap}>
+                      <span className="wk-time">{time(e.start_at)}</span>
+                      <span className="wk-bar" style={{ background: CAT_COLOR[cat] }} />
+                      <span className="wk-main">
+                        <span className="wk-t">{tr(e.title)}</span>
+                        <span className="wk-s">{sub}</span>
+                      </span>
+                      <Chips e={e} tagOf={tagOf} />
+                      {!e._match && e.request_status === 'da_confermare' && <span className="wk-st">{tr('Da confermare')}</span>}
+                      {!e._match && e.request_status === 'modifica_richiesta' && <span className="wk-st">{tr('Modifica richiesta')}</span>}
+                      {!e._match && e.request_status === 'rifiutata' && <span className="wk-st no">{tr('Non accettata')}</span>}
+                      <Icon name="chevron-right" size={15} style={{ color: 'var(--text-faint)', flexShrink: 0, transform: isOpen ? 'rotate(90deg)' : undefined, transition: 'transform .15s' }} />
+                    </button>
+                    {isOpen && <div className="wk-card">{cardFor(props, e)}</div>}
+                  </div>
+                )
+              })}
+              {soc.map(x => (
+                <button key={x.id} className="wk-row" onClick={() => goto?.(`editorial?entry=${x.id}`)}>
+                  <span className="wk-time">—</span>
+                  <span className="wk-bar" style={{ background: CAT_COLOR.social }} />
+                  <span className="wk-main">
+                    <span className="wk-t">{x.title || tr(x.type)}</span>
+                    <span className="wk-s">{tr('Social')} · {tr(SOCIAL_STATUS[x.status] || x.status)}{x.status !== 'pubblicato' ? ' · ' + tr('lo prepara AUVI') : ''}</span>
+                  </span>
+                  <Icon name="chevron-right" size={15} style={{ color: 'var(--text-faint)', flexShrink: 0 }} />
+                </button>
+              ))}
+            </div>
+          </div>
+        )
+      })}
     </>
   )
 }

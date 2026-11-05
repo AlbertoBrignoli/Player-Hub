@@ -15,7 +15,7 @@ import { Modal, Field, Input, Tabs, Empty } from './ui'
 // Schermate home dei vari ruoli: qui compare l'invito ad attivare le notifiche.
 const HOME_ROUTES = ['dashboard', 'brandhome', 'agent-home', 'insurer-home', 'tax-home', 'physio-home', 'partner-home', 'wealth-home']
 
-export const APP_VERSION = 'v12.64'
+export const APP_VERSION = 'v12.65'
 
 export interface NavDef {
   key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[]
@@ -39,10 +39,16 @@ export const NAV: { group: string; items: NavDef[] }[] = [
     { key: 'services', label: 'Servizi AUVI', icon: 'layers', fromHome: true },
     { key: 'messages', label: 'Chat', icon: 'message', fromHome: true },
     { key: 'mail', label: 'Mail', icon: 'mail', mailbox: true, fromHome: true },
-    { key: 'editorial', label: 'Calendario', icon: 'calendar', tabs: [
-      { key: 'editorial', label: 'Editoriale' },
-      { key: 'agenda', label: 'Impegni' },
-      { key: 'tasks', label: 'Task' },
+    // Calendario unico: si apre sulla settimana dell'atleta (sport, team, social insieme).
+    // La gestione completa dei contenuti (Editoriale) e le Task restano schede solo per AUVI;
+    // l'atleta apre un contenuto toccandolo nel calendario.
+    { key: 'agenda', label: 'Calendario', icon: 'calendar', tabs: [
+      { key: 'agenda', label: 'Calendario' },
+      { key: 'editorial', label: 'Editoriale', roles: ['admin', 'creator'] },
+      { key: 'tasks', label: 'Task', roles: ['admin', 'creator'] },
+    ], pages: [
+      { key: 'editorial', label: 'Contenuti social', roles: ['player'] },
+      { key: 'tasks', label: 'Task', roles: ['player'] },
     ]},
     // Media non è nel menu: ci si entra dal tasto Media in Home (stessa cosa, niente doppioni)
     ...(FEATURES.backstage ? [{ key: 'backstage', label: 'Backstage', icon: 'eye' }] : []),
@@ -188,14 +194,14 @@ export function proNav(role: ProRole): { group: string; items: NavDef[] }[] {
   const r = PRO_ROLES[role]
   // l'agente lavora anche su contenuti ed editoriale: Calendario completo al posto della sola Agenda
   const cal: NavDef = role === 'agente'
-    ? { key: 'editorial', label: 'Calendario', icon: 'calendar', tabs: [
-        { key: 'agenda', label: 'Impegni' },
+    ? { key: 'agenda', label: 'Calendario', icon: 'calendar', tabs: [
+        { key: 'agenda', label: 'Calendario' },
         { key: 'editorial', label: 'Editoriale' },
         { key: 'tasks', label: 'Task' },
       ]}
     : role === 'nutrizionista'
       ? { key: 'agenda', label: 'Piano alimentare', icon: 'calendar' }
-      : { key: 'agenda', label: 'Agenda', icon: 'calendar' }
+      : { key: 'agenda', label: 'Calendario', icon: 'calendar' }
   return [
     { group: 'Ufficio', items: [
       { key: r.home, label: 'Home', icon: 'home' },
@@ -219,7 +225,7 @@ export function proTabbar(role: ProRole) {
     { key: r.home, label: 'Home', icon: 'home' },
     { key: 'my-athletes', label: 'Atleti', icon: 'users' },
     r.tab,
-    role === 'agente' ? { key: 'editorial', label: 'Calendario', icon: 'calendar' } : { key: 'agenda', label: 'Agenda', icon: 'calendar' },
+    role === 'nutrizionista' ? { key: 'agenda', label: 'Piano', icon: 'calendar' } : { key: 'agenda', label: 'Calendario', icon: 'calendar' },
   ]
 }
 
@@ -239,7 +245,7 @@ const TITLES: Record<string, { t: string; s: string }> = {
   'cp-kit': { t: 'Media Kit', s: 'La scheda da mandare ai brand' },
   'cp-profile': { t: 'Scheda commerciale', s: 'Pubblico, contenuti, valori e disponibilità' },
   'cp-admin': { t: 'Gestione', s: 'Pipeline, brand e impostazioni del punteggio' },
-  agenda: { t: 'Agenda', s: 'Extra campo · impegni, prenotazioni, call, viaggi' },
+  agenda: { t: 'Calendario', s: 'La settimana: allenamenti, partite, team e contenuti' },
   tasks: { t: 'Task', s: 'Attività condivise' },
   messages: { t: 'Messaggi', s: 'Comunicazione diretta' },
   mail: { t: 'Mail', s: 'Tutte le mail della gestione, in un solo indirizzo' },
@@ -291,6 +297,7 @@ export default function Shell({ route, setRoute, right, children }: {
   const athleteName = athletes.find(a => a.api_player_id === athleteId)?.name
   const title0 = route === 'mediakit' && athleteName
     ? { t: baseTitle.t, s: tr('I numeri di {name}').replace('{name}', athleteName) }
+    : route === 'agenda' && role === 'nutrizionista' ? { t: 'Piano alimentare', s: 'Pasti e integratori sul calendario dell\'atleta' }
     : baseTitle
   const isCoach = role === 'preparatore'
   const isAgent = role === 'agente'
@@ -394,7 +401,7 @@ export default function Shell({ route, setRoute, right, children }: {
               // Chat, Mail e Servizi sono già in Home (cerchi in alto e copertina Servizi): qui niente doppioni.
               // Al posto di "Altro" c'è Atleta; impostazioni e lingua si aprono dal tondo con le iniziali in alto.
               { key: 'dashboard', label: 'Home', icon: 'home' },
-              { key: 'editorial', label: 'Calendario', icon: 'calendar' },
+              { key: 'agenda', label: 'Calendario', icon: 'calendar' },
               { key: 'my-team', label: 'Team', icon: 'users' },
               { key: 'commercial', label: 'Business', icon: 'briefcase' },
               { key: 'performance', label: 'Atleta', icon: 'activity' },
