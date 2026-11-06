@@ -15,7 +15,7 @@ import { Modal, Field, Input, Tabs, Empty } from './ui'
 // Schermate home dei vari ruoli: qui compare l'invito ad attivare le notifiche.
 const HOME_ROUTES = ['dashboard', 'brandhome', 'agent-home', 'insurer-home', 'tax-home', 'physio-home', 'partner-home', 'wealth-home']
 
-export const APP_VERSION = 'v12.65'
+export const APP_VERSION = 'v12.66'
 
 export interface NavDef {
   key: string; label: string; icon: string; adminOnly?: boolean; roles?: string[]
@@ -70,7 +70,7 @@ export const NAV: { group: string; items: NavDef[] }[] = [
       { key: 'cp-opps', label: 'Opportunità', roles: ['admin', 'player', 'creator'] },
       { key: 'cp-kit', label: 'Media Kit', roles: ['admin', 'player', 'creator'] },
       { key: 'cp-profile', label: 'Scheda commerciale', roles: ['admin', 'player', 'creator'] },
-      { key: 'sponsors', label: 'Sponsor' },
+      { key: 'sponsors', label: 'Accordi' },
       { key: 'cp-admin', label: 'Gestione', roles: ['admin'] },
     ]},
     { key: 'performance', label: 'Atleta', icon: 'activity', tabs: [
@@ -124,7 +124,7 @@ export const PRO_ROLES: Record<ProRole, { home: string; profile: string; area: N
         { key: 'cp-opps', label: 'Opportunità' },
         { key: 'cp-kit', label: 'Media Kit' },
         { key: 'cp-profile', label: 'Scheda commerciale' },
-        { key: 'sponsors', label: 'Sponsor' },
+        { key: 'sponsors', label: 'Accordi' },
       ]},
       { key: 'contracts', label: 'Contratti', icon: 'file', tabs: [
         { key: 'contracts', label: 'Contratti' },
@@ -239,7 +239,7 @@ const TITLES: Record<string, { t: string; s: string }> = {
   documents: { t: 'Documenti', s: 'Archivio file riservato' },
   editorial: { t: 'Calendario', s: 'Partite, copy e grafiche pronte da pubblicare' },
   media: { t: 'Media', s: 'Foto, selezioni e grafiche del team' },
-  sponsors: { t: 'Sponsor & Commerciale', s: 'Accordi e deliverable' },
+  sponsors: { t: 'Accordi', s: 'Sponsor e collaborazioni: consegne, incassi e commissioni' },
   commercial: { t: 'Commercial Profile', s: 'Misura il tuo valore, scopri i brand compatibili, costruisci opportunità' },
   'cp-opps': { t: 'Opportunità', s: 'Proposte dei brand e collaborazioni' },
   'cp-kit': { t: 'Media Kit', s: 'La scheda da mandare ai brand' },

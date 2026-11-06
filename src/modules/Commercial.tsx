@@ -10,6 +10,7 @@ import { useAuth } from '../auth/AuthContext'
 import { useAthlete } from '../lib/athlete'
 import { useLang } from '../lib/i18n'
 import { supabase, AGENCY_NAME } from '../lib/supabase'
+import Vetrina from './Vetrina'
 import { Modal, Field, Input, Textarea, Select, Badge, Empty, Spinner, Stat, ConfirmButton, Tabs } from '../components/ui'
 import { useRouteParam, goto } from '../lib/route'
 import Icon from '../components/Icon'
@@ -161,6 +162,7 @@ export default function Commercial({ page = 'valore' }: { page?: TabKey }) {
       )}
 
       {tab === 'valore' && score && (<>
+        {athleteId && role !== 'brand' && <Vetrina athleteId={athleteId} />}
         <Overview score={score} snaps={snaps} />
         <Recos score={score} recos={recos} goto={go} />
         <Section title={tr('Componenti del punteggio')} />

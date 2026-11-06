@@ -170,10 +170,17 @@ export interface Sponsor {
   end_date: string | null
   status: string
   deliverables: { title: string; due_date?: string; done?: boolean }[]
+  /** rate dell'accordo: quando arrivano e se sono state incassate */
+  payments?: DealPayment[]
+  /** commissione dell'agenzia/procuratore, in % sul valore */
+  commission_pct?: number | null
+  contract_id?: string | null
   contact: string | null
   notes: string | null
   created_at: string
 }
+
+export interface DealPayment { label: string; amount: number | null; due_date?: string | null; paid_on?: string | null }
 
 export interface EventAttachment {
   name: string
